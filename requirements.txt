@@ -1,0 +1,47 @@
+# Core Django
+Django>=5.0,<5.1
+python-decouple>=3.8
+
+# Base de datos
+mysqlclient>=2.2.0
+
+# API REST
+djangorestframework>=3.14.0
+django-filter>=23.5
+django-cors-headers>=4.3.0
+
+# Celery y Redis
+celery>=5.3.0
+redis>=5.0.0
+
+# Manejo de variables de entorno
+django-environ>=0.11.0
+
+# Procesamiento de imágenes
+Pillow>=10.0.0
+
+# Excel import/export
+pandas>=2.0.0
+openpyxl>=3.1.0
+xlrd>=2.0.1
+
+# Códigos de barras y QR
+python-barcode>=0.15.1
+qrcode[pil]>=7.4.2
+
+# Generación de PDFs
+reportlab>=4.0.0
+
+# Utilidades
+python-slugify>=8.0.0
+pytz>=2023.3
+
+# Para producción
+gunicorn>=21.2.0
+whitenoise>=6.6.0
+
+# AFIP/ARCA (agregar cuando integres)
+# pyafipws>=3.0.0
+
+# Desarrollo (comentar en producción)
+django-debug-toolbar>=4.2.0

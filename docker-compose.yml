@@ -1,0 +1,42 @@
+services:
+  # Base de datos MariaDB
+  db:
+    image: mariadb:10.11
+    container_name: bulonera_mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+  # Redis para Celery y caché
+  redis:
+    image: redis:7-alpine
+    container_name: bulonera_redis
+    ports:
+      - "6379:6379"
+
+  # Aplicación Django
+  web:
+    build: .
+    container_name: bulonera_web
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=erp_crm_bulonera.settings
+      - DB_HOST=db
+      - DB_PORT=3306
+    depends_on:
+      - db
+      - redis
+      
+volumes:
+  mariadb_data:
