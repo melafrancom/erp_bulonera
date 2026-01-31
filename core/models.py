@@ -143,3 +143,73 @@ class UserLog(BaseModel):
     
     def __str__(self):
         return f"{self.user.username}: {self.action}"
+
+class RegistrationRequest(BaseModel):
+    """Solicitud de registro pendiente de aprobación"""
+    STATUS_CHOICES = (
+        ('pending', 'Pendiente'),
+        ('approved', 'Aprobada'),
+        ('rejected', 'Rechazada'),
+    )
+    
+    # Datos del solicitante
+    username = models.CharField(max_length=150, unique=True)
+    email = models.EmailField()
+    first_name = models.CharField(max_length=150)
+    last_name = models.CharField(max_length=150)
+    phone = models.CharField(max_length=20, blank=True)
+    
+    # Estado y justificación
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    reason = models.TextField(verbose_name="Motivo de solicitud", blank=True)
+    
+    # Aprobación
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_requests')
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True)
+    
+    # Permisos solicitados (para pre-configuración)
+    requested_role = models.CharField(max_length=20, choices=User.ROLE_CHOICES, default='operator')
+    
+    class Meta:
+        verbose_name = "Solicitud de Registro"
+        verbose_name_plural = "Solicitudes de Registro"
+        ordering = ['-created_at']
+        
+    def __str__(self):
+        return f"{self.username} - {self.get_status_display()}"
+    
+    def approve(self, approved_by):
+        """Aprobar solicitud y crear usuario"""
+        from django.contrib.auth.models import make_password
+        import secrets
+        
+        # Generar contraseña temporal
+        temp_password = secrets.token_urlsafe(12)
+        
+        user = User.objects.create(
+            username=self.username,
+            email=self.email,
+            first_name=self.first_name,
+            last_name=self.last_name,
+            role=self.requested_role,
+            password=make_password(temp_password),
+        )
+        
+        self.status = 'approved'
+        self.reviewed_by = approved_by
+        self.reviewed_at = timezone.now()
+        self.save()
+        
+        # Enviar email con contraseña temporal
+        # TODO: Implementar envío de email
+        
+        return user, temp_password
+    
+    def reject(self, rejected_by, reason):
+        """Rechazar solicitud"""
+        self.status = 'rejected'
+        self.reviewed_by = rejected_by
+        self.reviewed_at = timezone.now()
+        self.rejection_reason = reason
+        self.save()
