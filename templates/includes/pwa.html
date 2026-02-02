@@ -1,0 +1,41 @@
+<!-- Botón de Instalación PWA -->
+<button id="install-button" style="display: none;" class="fixed bottom-6 right-6 z-50 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-semibold rounded-full shadow-2xl hover:from-blue-700 hover:to-blue-900 transition-all transform hover:scale-105 flex items-center gap-2">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    </svg>
+    Instalar App
+</button>
+
+<!-- Script para botón de instalación -->
+<script>
+    let deferredPrompt;
+    const installButton = document.getElementById('install-button');
+
+    // Detectar si la app es instalable
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        installButton.style.display = 'flex';
+    });
+
+    // Manejar clic en el botón
+    installButton.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        
+        if (outcome === 'accepted') {
+            console.log('App instalada correctamente');
+        }
+        
+        deferredPrompt = null;
+        installButton.style.display = 'none';
+    });
+
+    // Ocultar botón después de instalar
+    window.addEventListener('appinstalled', () => {
+        console.log('PWA instalada');
+        installButton.style.display = 'none';
+    });
+</script>

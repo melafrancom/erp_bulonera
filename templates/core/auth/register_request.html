@@ -1,0 +1,175 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitar Acceso - ERP Bulonera Alvear</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-white to-blue-50 min-h-screen flex items-center justify-center p-4">
+    
+    <div class="w-full max-w-2xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="inline-block p-4 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl shadow-lg mb-4">
+                <i data-lucide="user-plus" class="w-12 h-12 text-white"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Solicitar Acceso</h1>
+            <p class="text-gray-600">ERP Bulonera Alvear</p>
+        </div>
+
+        <!-- Card -->
+        <div class="bg-white p-8 rounded-2xl shadow-xl">
+            <!-- Info Alert -->
+            <div class="mb-6 p-4 bg-blue-50 border-l-4 border-blue-600 rounded-lg">
+                <div class="flex items-start">
+                    <i data-lucide="info" class="w-5 h-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0"></i>
+                    <div>
+                        <p class="text-sm font-medium text-blue-900">Tu solicitud será revisada por un administrador</p>
+                        <p class="text-sm text-blue-700 mt-1">Recibirás un email cuando sea aprobada con tus credenciales de acceso.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mensajes -->
+            {% if messages %}
+                <div class="mb-6 space-y-3">
+                    {% for message in messages %}
+                        <div class="p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700{% else %}bg-blue-100 text-blue-700{% endif %} font-medium">
+                            {{ message|safe }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Formulario -->
+            <form method="POST" action="{% url 'core:register_request' %}" id="registerForm">
+                {% csrf_token %}
+
+                <!-- Grid de 2 columnas -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <!-- Username -->
+                    <div>
+                        <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            {{ form.username.label }} <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.username.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            {{ form.email.label }} <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.email.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- First Name -->
+                    <div>
+                        <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            {{ form.first_name.label }} <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.first_name.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Last Name -->
+                    <div>
+                        <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            {{ form.last_name.label }} <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.last_name.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Phone -->
+                    <div>
+                        <label for="{{ form.phone.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            {{ form.phone.label }}
+                        </label>
+                        {{ form.phone }}
+                        {% if form.phone.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.phone.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Requested Role -->
+                    <div>
+                        <label for="{{ form.requested_role.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            {{ form.requested_role.label }} <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.requested_role }}
+                        {% if form.requested_role.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.requested_role.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Reason (full width) -->
+                <div class="mb-6">
+                    <label for="{{ form.reason.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        {{ form.reason.label }}
+                    </label>
+                    {{ form.reason }}
+                    {% if form.reason.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.reason.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="submitBtn" class="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-semibold rounded-lg shadow-lg hover:from-blue-700 hover:to-blue-900 transition-transform transform hover:scale-105">
+                    <span id="btnText">Enviar Solicitud</span>
+                    <span id="btnLoader" class="hidden">
+                        <i data-lucide="loader-2" class="w-5 h-5 inline animate-spin"></i> Enviando...
+                    </span>
+                </button>
+            </form>
+
+            <!-- Link a Login -->
+            <div class="mt-6 text-center border-t pt-4">
+                <p class="text-sm text-gray-600">
+                    ¿Ya tienes cuenta? 
+                    <a href="{% url 'core:login' %}" class="text-blue-600 hover:text-blue-800 font-medium transition">
+                        Inicia sesión aquí
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Prevenir doble submit
+        const registerForm = document.getElementById('registerForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const btnLoader = document.getElementById('btnLoader');
+
+        registerForm.addEventListener('submit', function() {
+            submitBtn.disabled = true;
+            btnText.classList.add('hidden');
+            btnLoader.classList.remove('hidden');
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>

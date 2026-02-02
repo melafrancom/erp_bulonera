@@ -1,0 +1,21 @@
+{% load static %}
+
+<!-- Breadcrumb Navigation -->
+<nav class="flex items-center space-x-2 text-sm text-gray-600 mb-4" aria-label="Breadcrumb">
+    <!-- Home siempre visible -->
+    <a href="{% url 'core:home' %}" class="hover:text-blue-600 transition flex items-center">
+        <i data-lucide="home" class="w-4 h-4"></i>
+    </a>
+    
+    {% block breadcrumb_items %}
+        <!-- Este bloque será sobrescrito en cada template -->
+
+    {% endblock %}
+</nav>
+
+<!-- Script para inicializar iconos de Lucide en breadcrumb -->
+<script>
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+</script>

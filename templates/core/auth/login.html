@@ -1,0 +1,147 @@
+{% load static %}
+<!DOCTYPE html>
+<html
+
+ lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - ERP Bulonera Alvear</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-white to-blue-50 min-h-screen flex items-center justify-center p-4">
+    
+    <div class="w-full max-w-md">
+        <!-- Logo/Header -->
+        <div class="text-center mb-8">
+            <div class="inline-block p-4 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl shadow-lg mb-4">
+                <i data-lucide="package" class="w-12 h-12 text-white"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Bulonera Alvear</h1>
+            <p class="text-gray-600">Sistema ERP/CRM</p>
+        </div>
+
+        <!-- Card de Login -->
+        <div class="bg-white p-8 rounded-2xl shadow-xl">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Iniciar Sesión</h2>
+
+            <!-- Mensajes de Django -->
+            {% if messages %}
+                <div class="mb-6 space-y-3">
+                    {% for message in messages %}
+                        <div class="p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700{% else %}bg-blue-100 text-blue-700{% endif %} font-medium">
+                            {{ message|safe }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Formulario -->
+            <form method="POST" action="{% url 'core:login' %}" id="loginForm">
+                {% csrf_token %}
+
+                <!-- Campo Usuario -->
+                <div class="mb-4">
+                    <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Usuario
+                    </label>
+                    {{ form.username }}
+                    {% if form.username.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.username.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Campo Contraseña -->
+                <div class="mb-6">
+                    <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Contraseña
+                    </label>
+                    <div class="relative">
+                        {{ form.password }}
+                        <button type="button" id="togglePassword" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                            <i data-lucide="eye" class="w-5 h-5" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                    {% if form.password.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.password.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Botón Submit -->
+                <button type="submit" id="submitBtn" class="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-semibold rounded-lg shadow-lg hover:from-blue-700 hover:to-blue-900 transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    <span id="btnText">Iniciar Sesión</span>
+                    <span id="btnLoader" class="hidden">
+                        <i data-lucide="loader-2" class="w-5 h-5 inline animate-spin"></i> Iniciando...
+                    </span>
+                </button>
+            </form>
+
+            <!-- Enlaces -->
+            <div class="mt-6 space-y-3 text-center">
+                <a href="{% url 'core:password_reset_request' %}" class="block text-sm text-blue-600 hover:text-blue-800 transition">
+                    ¿Olvidaste tu contraseña?
+                </a>
+                <div class="border-t pt-3">
+                    <p class="text-sm text-gray-600">
+                        ¿No tienes cuenta? 
+                        <a href="{% url 'core:register_request' %}" class="text-blue-600 hover:text-blue-800 font-medium transition">
+                            Solicitar acceso
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <p class="text-center text-gray-500 text-sm mt-6">
+            © 2026 Bulonera Alvear. Todos los derechos reservados.
+        </p>
+    </div>
+
+    <script>
+        // Inicializar iconos
+        lucide.createIcons();
+
+        // Toggle password visibility
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordField = document.getElementById('{{ form.password.id_for_label }}');
+        const eyeIcon = document.getElementById('eyeIcon');
+
+        togglePassword.addEventListener('click', function() {
+            const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordField.setAttribute('type', type);
+            
+            // Cambiar icono
+            eyeIcon.setAttribute('data-lucide', type === 'password' ? 'eye' : 'eye-off');
+            lucide.createIcons();
+        });
+
+        // Prevenir doble submit
+        const loginForm = document.getElementById('loginForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const btnLoader = document.getElementById('btnLoader');
+
+        loginForm.addEventListener('submit', function() {
+            submitBtn.disabled = true;
+            btnText.classList.add('hidden');
+            btnLoader.classList.remove('hidden');
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
