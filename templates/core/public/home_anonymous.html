@@ -1,7 +1,59 @@
-{% extends 'base/base.html' %} 
-{% load static %} 
-{% block content %}
-<main class="flex-1 p-6 bg-gray-100">
-    ESTE ES EL MAIN DEL HOME cuando no estás logueado.
-</main>
-{% endblock%}
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bulonera Alvear | ERP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Tailwind CDN (solo para prototipo; en prod usar build) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primaryBlue: '#1c00a1',
+            primaryRed: '#fd1202',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="bg-primaryBlue w-screen h-screen overflow-hidden">
+
+  <!-- Login (top-right) -->
+  <header class="absolute top-6 right-8">
+    <a
+      href="{% url 'core:login' %}"
+      class="text-white text-sm font-medium hover:opacity-80 transition"
+    >
+      Login
+    </a>
+  </header>
+
+  <!-- Contenedor central -->
+  <main class="w-full h-full flex items-center justify-center">
+    
+    <!-- Logo wrapper -->
+    <div class="flex items-center gap-12">
+
+      <!-- Ícono (hexágono + tornillo) -->
+      <div class="w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 lg:w-64 lg:h-64">
+        <img
+          src="{% static 'img/transpLOGO BULONERA.svg' %}"
+          alt="Bulonera Alvear"
+          class="w-full h-full object-contain"
+        />
+      </div>
+      
+
+    </div>
+
+  </main>
+
+</body>
+</html>
