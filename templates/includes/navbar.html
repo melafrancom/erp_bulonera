@@ -53,7 +53,7 @@
               {{ user.first_name|default:user.username }}
             </p>
             <p class="text-xs text-gray-500">
-              {{ tenant_user_role|capfirst|default:"Usuario" }}
+              {{ user.role|capfirst|default:"Operator" }}
             </p>
           </div>
 
@@ -77,7 +77,7 @@
           <div class="py-2">
             <!--  url 'user:profile'  -->
             <a
-              href="#"
+              href="{% url 'core:profile' %}"
               class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
             >
               <i data-lucide="user" class="w-4 h-4 mr-3"></i>
@@ -85,24 +85,12 @@
             </a>
             <!--  url 'user:password_change'  -->
             <a
-              href="#
+              href="{% url 'core:password_change' %}"
               class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
             >
               <i data-lucide="key" class="w-4 h-4 mr-3"></i>
               Cambiar Contraseña
             </a>
-
-            {% if user.is_admin %}
-            <!-- {% url 'user:settings' %} -->
-            <a
-              href="#"
-              class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
-            >
-              <i data-lucide="settings" class="w-4 h-4 mr-3"></i>
-              Configuración
-            </a>
-            {% endif %}
-
             <!-- Divider -->
             <div class="border-t border-gray-100 my-2"></div>
 
@@ -130,6 +118,13 @@
           </div>
         </div>
       </div>
+      <a
+      href="{% url 'core:settings' %}"
+      class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+      >
+        <i data-lucide="settings" class="w-4 h-4 mr-3"></i>
+        Configuración
+      </a>
       {% else %}
       <!-- Si no está autenticado -->
       <a
