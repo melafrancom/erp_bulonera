@@ -13,7 +13,7 @@ from django.core.mail import send_mail
 
 # from Local apps
 from core.models import User, RegistrationRequest
-from core.forms import LoginForm, RegistrationRequestForm
+from core.forms import LoginForm, RegistrationRequestForm, UserEditForm
 
 # ================================
 # LOGIN / LOGOUT

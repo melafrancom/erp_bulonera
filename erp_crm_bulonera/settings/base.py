@@ -138,6 +138,17 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# ================================
+# PWA CONFIGURATION
+# ================================
+
+# Ensure manifest.json is served with correct Content-Type
+import mimetypes
+mimetypes.add_type("application/manifest+json", ".json", True)
+mimetypes.add_type("application/json", ".webmanifest", True)
+
+
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

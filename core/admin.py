@@ -139,7 +139,7 @@ class UserAdmin(BaseUserAdmin):
                 'created_at',
                 'updated_at',
                 'last_login',
-                'last_acces',
+                'last_access',
                 'deleted_at',
                 'activated_at',
             ),
@@ -185,7 +185,7 @@ class UserAdmin(BaseUserAdmin):
         'created_at',
         'updated_at',
         'last_login',
-        'last_acces',
+        'last_access',
         'deleted_at',
         'activated_at',
         'created_by',
@@ -217,10 +217,10 @@ class UserAdmin(BaseUserAdmin):
         """Muestra el último login en formato relativo"""
         return time_since(obj.last_login)
     
-    @admin.display(description='Último Acceso', ordering='last_acces')
+    @admin.display(description='Último Acceso', ordering='last_access')
     def last_access_display(self, obj):
         """Muestra el último acceso en formato relativo"""
-        return time_since(obj.last_acces)
+        return time_since(obj.last_access)
     
     @admin.display(description='Fecha de Creación', ordering='created_at')
     def created_at_display(self, obj):

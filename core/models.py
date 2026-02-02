@@ -114,7 +114,7 @@ class User(BaseModel, AbstractUser):
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='manager')
     # Status ---> is_active it's on basemodel
-    last_acces = models.DateTimeField(null=True, blank=True)
+    last_access = models.DateTimeField(null=True, blank=True, verbose_name="Último Acceso")
     # Specific permits
     can_manage_users = models.BooleanField(default=False)
     can_manage_products = models.BooleanField(default=True)
