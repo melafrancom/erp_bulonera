@@ -15,5 +15,8 @@ urlpatterns = [
     path('dashboard/', public_views.dashboard_view, name='dashboard'),
     
     # Settings (futuro)
-    # path('settings/', public_views.settings_view, name='settings'),
+    path('settings/', public_views.settings_view, name='settings'),
+
+    # offline
+    path('offline/', public_views.offline_view, name='offline'),
 ]

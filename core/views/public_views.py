@@ -111,3 +111,12 @@ def server_error_view(request):
         'message': 'Ocurrió un error en el servidor. Estamos trabajando para solucionarlo.',
     }
     return render(request, 'core/errors/500.html', context, status=500)
+
+
+# ================================
+# PÁGINAS sin conexion
+# ================================
+
+def offline_view(request):
+    """Página que se muestra cuando no hay conexión"""
+    return render(request, 'pwa/offline.html')
