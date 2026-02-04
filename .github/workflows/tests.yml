@@ -1,0 +1,39 @@
+name: Tests Básicos
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mariadb:10.11
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test_db
+        ports:
+          - 3306:3306
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -y default-libmysqlclient-dev
+          pip install -r requirements.txt
+      
+      - name: Run tests
+        env:
+          SECRET_KEY: 'test-key'
+          DB_NAME: 'test_db'
+          DB_USER: 'root'
+          DB_PASSWORD: 'root'
+          DB_HOST: '127.0.0.1'
+        run: |
+          python manage.py test core

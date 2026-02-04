@@ -14,7 +14,9 @@ CORS_ALLOW_ALL_ORIGINS = True
 import sys
 
 # Usar SQLite si estamos corriendo tests
-if 'test' in sys.argv:
+# Usar SQLite si estamos corriendo tests LOCALMENTE (no en CI)
+# Si estamos en GitHub Actions, usaremos la DB definida en services (mysql/mariadb)
+if 'test' in sys.argv and not os.environ.get('GITHUB_ACTIONS'):
     DATABASES['default'] = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3_test',
