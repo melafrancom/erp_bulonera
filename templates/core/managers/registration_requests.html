@@ -1,5 +1,151 @@
 {% extends 'base/base.html' %}
 {% load static %}
+
+{% block title %}Solicitudes de Registro - ERP Bulonera Alvear{% endblock %}
+
+{% block breadcrumb_items %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <span class="text-gray-900 font-medium">Solicitudes de Registro</span>
+{% endblock %}
+
 {% block content %}
-    <main>SOLICITUDES DE REGISTROS.</main>
-{% endblock%}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-gray-900">Solicitudes de Registro</h1>
+        <div class="flex gap-2">
+            <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+                {{ pending_count }} Pendientes
+            </span>
+        </div>
+    </div>
+
+    <!-- PENDIENTES -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 bg-yellow-50 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i data-lucide="clock" class="w-5 h-5 text-yellow-600"></i>
+                <h2 class="font-semibold text-gray-900">Pendientes de Aprobación</h2>
+            </div>
+        </div>
+        
+        {% if pending %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario / Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol Solicitado</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Motivo</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for req in pending %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ req.created_at|date:"d/m/Y H:i" }}
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-medium text-gray-900">{{ req.first_name }} {{ req.last_name }}</span>
+                                <span class="text-xs text-gray-500">{{ req.username }}</span>
+                                <span class="text-xs text-gray-400">{{ req.email }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                                {{ req.get_requested_role_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                            {{ req.reason|default:"-" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex justify-end gap-2">
+                                <a href="{% url 'core:approve_request' req.id %}" class="text-green-600 hover:text-green-900 bg-green-50 px-3 py-1 rounded-lg hover:bg-green-100 transition">
+                                    Aprobar
+                                </a>
+                                <a href="{% url 'core:reject_request' req.id %}" class="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded-lg hover:bg-red-100 transition">
+                                    Rechazar
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-8 text-center text-gray-500">
+            No hay solicitudes pendientes en este momento.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- HISTORIAL (Grid 2 columnas) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- APROBADAS -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+                <i data-lucide="check-circle" class="w-5 h-5 text-green-500"></i>
+                <h3 class="font-semibold text-gray-900">Últimas Aprobadas</h3>
+            </div>
+            
+            {% if approved %}
+            <ul class="divide-y divide-gray-100">
+                {% for req in approved %}
+                <li class="px-6 py-3 hover:bg-gray-50">
+                    <div class="flex justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">{{ req.username }}</p>
+                            <p class="text-xs text-gray-500">{{ req.email }}</p>
+                        </div>
+                        <div class="text-right">
+                             <p class="text-xs text-gray-400">{{ req.reviewed_at|date:"d/m/Y" }}</p>
+                             <p class="text-xs text-green-600">por {{ req.reviewed_by.username }}</p>
+                        </div>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="p-4 text-center text-gray-400 text-sm">Sin historial.</div>
+            {% endif %}
+        </div>
+
+        <!-- RECHAZADAS -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+                <i data-lucide="x-circle" class="w-5 h-5 text-red-500"></i>
+                <h3 class="font-semibold text-gray-900">Últimas Rechazadas</h3>
+            </div>
+            
+             {% if rejected %}
+            <ul class="divide-y divide-gray-100">
+                {% for req in rejected %}
+                <li class="px-6 py-3 hover:bg-gray-50">
+                    <div class="flex justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">{{ req.username }}</p>
+                            <p class="text-xs text-red-400">{{ req.rejection_reason|truncatechars:30 }}</p>
+                        </div>
+                        <div class="text-right">
+                             <p class="text-xs text-gray-400">{{ req.reviewed_at|date:"d/m/Y" }}</p>
+                             <p class="text-xs text-gray-500">por {{ req.reviewed_by.username }}</p>
+                        </div>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="p-4 text-center text-gray-400 text-sm">Sin historial.</div>
+            {% endif %}
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

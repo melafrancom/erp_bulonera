@@ -21,6 +21,9 @@ from core.forms import LoginForm, RegistrationRequestForm, UserEditForm
 def login_view(request):
     """Vista de inicio de sesión"""
     if request.user.is_authenticated:
+        if user.password_change_required:
+            messages.warning(request, 'Por seguridad, debes cambiar tu contraseña.')
+            return redirect('core:password_change')
         return redirect('core:home')
     
     if request.method == 'POST':
@@ -33,6 +36,12 @@ def login_view(request):
             if user is not None:
                 if user.is_active:
                     login(request, user)
+                    
+                    # Verificar expiración de contraseña
+                    if getattr(user, 'password_change_required', False):
+                        messages.warning(request, 'Por seguridad, debes cambiar tu contraseña.')
+                        return redirect('core:password_change')
+
                     # Actualizar último acceso
                     user.last_access = timezone.now()
                     user.save(update_fields=['last_access'])
@@ -43,9 +52,26 @@ def login_view(request):
                     next_url = request.GET.get('next', 'core:home')
                     return redirect(next_url)
                 else:
+                    # Este bloque es redundante si authenticate retorna None para inactivos,
+                    # pero se mantiene por si el backend cambia.
                     messages.error(request, 'Tu cuenta está desactivada. Contacta al administrador.')
             else:
-                messages.error(request, 'Usuario o contraseña incorrectos.')
+                # Verificar si el usuario existe pero está inactivo
+                try:
+                    # Usamos all_objects porque objects filtra los inactivos
+                    existing_user = User.all_objects.get(username=username)
+                    
+                    if existing_user.check_password(password):
+                        if not existing_user.is_active:
+                            messages.error(request, 'Tu cuenta está desactivada. Contacta al administrador.')
+                        else:
+                            # Si es activo y password coincide, authenticate debió funcionar.
+                            # Si llegamos acá es raro, pero asumimos error genérico.
+                            messages.error(request, 'Usuario o contraseña incorrectos.')
+                    else:
+                        messages.error(request, 'Usuario o contraseña incorrectos.')
+                except User.DoesNotExist:
+                    messages.error(request, 'Usuario o contraseña incorrectos.')
     else:
         form = LoginForm()
     
@@ -147,7 +173,10 @@ def password_change_view(request):
     if request.method == 'POST':
         form = PasswordChangeForm(request.user, request.POST)
         if form.is_valid():
-            user = form.save()
+            if user.password_change_required:
+                user.password_change_required = False
+                user.save(update_fields=['password_change_required'])
+            
             # Actualizar la sesión para que no se cierre
             from django.contrib.auth import update_session_auth_hash
             update_session_auth_hash(request, user)

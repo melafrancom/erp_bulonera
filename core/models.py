@@ -71,7 +71,7 @@ class SoftDeleteModel(models.Model):
             self.is_active = False
             self.deleted_at = timezone.now()
             if user: # if a user is provided and the models has update_by field
-                self.delete_by = user # record who perfomed the soft delete
+                self.deleted_by = user # record who perfomed the soft delete
                 if hasattr(self, 'updated_by'):
                     self.updated_by = user
             self.save(*args, **kwargs)
@@ -112,6 +112,7 @@ class User(BaseModel, AbstractUser):
         ('operator', 'Operador'),
         ('viewer', 'Solo Lectura')
     )
+    password_change_required = models.BooleanField(default=False, verbose_name="Requiere Cambio de Contraseña")
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='manager')
     # Status ---> is_active it's on basemodel
     last_access = models.DateTimeField(null=True, blank=True, verbose_name="Último Acceso")
@@ -183,6 +184,9 @@ class RegistrationRequest(BaseModel):
         """Aprobar solicitud y crear usuario"""
         from django.contrib.auth.models import make_password
         import secrets
+
+        if self.status != 'pending':
+            raise ValueError(f"No se puede aprobar solicitud en estado '{self.status}'")
         
         # Generar contraseña temporal
         temp_password = secrets.token_urlsafe(12)
@@ -213,3 +217,12 @@ class RegistrationRequest(BaseModel):
         self.reviewed_at = timezone.now()
         self.rejection_reason = reason
         self.save()
+
+class EmailLog(BaseModel):
+    subject = models.CharField(max_length=255)
+    recipient = models.EmailField()
+    status = models.CharField(max_length=20, choices=[('sent', 'Enviado'), ('failed', 'Fallido')])
+    error_message = models.TextField(blank=True)
+    
+    def __str__(self):
+        return f"{self.recipient}: {self.subject}"
