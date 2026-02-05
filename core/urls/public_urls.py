@@ -19,4 +19,6 @@ urlpatterns = [
 
     # offline
     path('offline/', public_views.offline_view, name='offline'),
+
+    path('sw.js', public_views.serve_service_worker, name='service_worker'),
 ]

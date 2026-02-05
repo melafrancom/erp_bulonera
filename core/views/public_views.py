@@ -5,6 +5,9 @@ Vistas públicas accesibles para usuarios autenticados o anónimos
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from django.http import HttpResponse
+from django.views.decorators.cache import never_cache
+from django.conf import settings
 
 # from Local apps
 from core.models import User, RegistrationRequest
@@ -120,3 +123,10 @@ def server_error_view(request):
 def offline_view(request):
     """Página que se muestra cuando no hay conexión"""
     return render(request, 'pwa/offline.html')
+
+
+@never_cache
+def serve_service_worker(request):
+    sw_path = settings.BASE_DIR / 'static' / 'service-worker.js'
+    with open(sw_path, 'r') as f:
+        return HttpResponse(f.read(), content_type='application/javascript')
