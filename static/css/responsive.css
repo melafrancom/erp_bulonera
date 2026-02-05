@@ -1,0 +1,492 @@
+/* ============================================
+   RESPONSIVE STYLES - Bulonera Alvear ERP/CRM
+   Complementa Tailwind con estilos responsive específicos
+   ============================================ */
+
+/* ============================================
+   1. PWA SAFE AREAS (iPhone X+)
+   ============================================ */
+
+:root {
+  /* Safe area insets para notch/dynamic island */
+  --sat: env(safe-area-inset-top);
+  --sar: env(safe-area-inset-right);
+  --sab: env(safe-area-inset-bottom);
+  --sal: env(safe-area-inset-left);
+}
+
+body {
+  /* Respetar áreas seguras en dispositivos con notch */
+  padding-top: var(--sat);
+  padding-bottom: var(--sab);
+  padding-left: var(--sal);
+  padding-right: var(--sar);
+}
+
+/* ============================================
+   2. SIDEBAR RESPONSIVE
+   ============================================ */
+
+/* Overlay oscuro para mobile cuando sidebar está abierto */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 40;
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Sidebar con transición suave */
+.sidebar {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* En mobile, sidebar es fixed y oculto por defecto */
+@media (max-width: 1023px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 50;
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
+}
+
+/* En desktop, sidebar es estático y siempre visible */
+@media (min-width: 1024px) {
+  .sidebar {
+    position: static;
+    transform: translateX(0) !important;
+  }
+}
+
+/* ============================================
+   3. NAVBAR RESPONSIVE
+   ============================================ */
+
+/* Navbar compacto en mobile */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background-color: white;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Search bar expandible en mobile */
+.mobile-search {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out;
+}
+
+.mobile-search.expanded {
+  max-height: 80px;
+}
+
+/* ============================================
+   4. TOUCH TARGETS (PWA)
+   ============================================ */
+
+/* Mínimo 44x44px para elementos táctiles (Apple HIG) */
+@media (max-width: 767px) {
+  .btn,
+  button,
+  a[role="button"],
+  .nav-item,
+  .clickable {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* ============================================
+   5. TABLAS RESPONSIVE
+   ============================================ */
+
+/* Wrapper con scroll horizontal */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* Smooth scroll en iOS */
+}
+
+/* Ocultar columnas secundarias en mobile */
+@media (max-width: 767px) {
+  .table-hide-mobile {
+    display: none;
+  }
+}
+
+/* ============================================
+   6. CARDS RESPONSIVE
+   ============================================ */
+
+/* Cards con padding adaptativo */
+.card {
+  padding: 1rem;
+}
+
+@media (min-width: 768px) {
+  .card {
+    padding: 1.5rem;
+  }
+}
+
+/* ============================================
+   7. FORMS RESPONSIVE
+   ============================================ */
+
+/* Inputs más grandes en mobile para facilitar escritura */
+@media (max-width: 767px) {
+  .form-input,
+  .form-select,
+  .form-textarea {
+    font-size: 16px; /* Evita zoom en iOS */
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Botones de formulario stacked en mobile */
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+@media (max-width: 639px) {
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+  
+  .form-actions .btn {
+    width: 100%;
+  }
+}
+
+/* ============================================
+   8. MODALES RESPONSIVE
+   ============================================ */
+
+/* Modal full-screen en mobile */
+@media (max-width: 767px) {
+  .modal-content {
+    position: fixed;
+    inset: 0;
+    border-radius: 0;
+    max-width: 100%;
+    max-height: 100%;
+  }
+}
+
+/* Modal centrado en desktop */
+@media (min-width: 768px) {
+  .modal-content {
+    max-width: 600px;
+    margin: 2rem auto;
+    border-radius: 1rem;
+  }
+}
+
+/* ============================================
+   9. BOTTOM NAVIGATION (PWA)
+   ============================================ */
+
+/* Navegación inferior solo en mobile */
+.bottom-nav {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: white;
+  border-top: 1px solid #e5e7eb;
+  padding: 0.5rem;
+  padding-bottom: calc(0.5rem + var(--sab)); /* Safe area bottom */
+  z-index: 40;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem;
+  color: #6b7280;
+  transition: color 0.2s;
+}
+
+.bottom-nav-item.active {
+  color: #667eea;
+}
+
+.bottom-nav-item i {
+  width: 24px;
+  height: 24px;
+  margin-bottom: 0.25rem;
+}
+
+.bottom-nav-item span {
+  font-size: 0.625rem;
+  font-weight: 500;
+}
+
+/* Ocultar en tablet/desktop */
+@media (min-width: 768px) {
+  .bottom-nav {
+    display: none;
+  }
+}
+
+/* ============================================
+   10. VIEWPORT HEIGHT SEGURO
+   ============================================ */
+
+/* Usar dvh (dynamic viewport height) para altura completa real */
+.full-height {
+  height: 100vh; /* Fallback */
+  height: 100dvh; /* Safari 15.4+ */
+}
+
+/* ============================================
+   11. SCROLL BEHAVIOR
+   ============================================ */
+
+/* Scroll suave */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Ocultar scrollbar pero mantener funcionalidad */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE y Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari, Opera */
+}
+
+/* ============================================
+   12. RESPONSIVE IMAGES
+   ============================================ */
+
+/* Imágenes responsive por defecto */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Avatar responsive */
+.avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+}
+
+@media (min-width: 768px) {
+  .avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+
+/* ============================================
+   13. GRID BREAKPOINTS CUSTOM
+   ============================================ */
+
+/* Grid de stats responsive */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+}
+
+/* ============================================
+   14. TYPOGRAPHY RESPONSIVE
+   ============================================ */
+
+/* Escalado de títulos */
+.responsive-title {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+@media (min-width: 768px) {
+  .responsive-title {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-title {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+  }
+}
+
+/* ============================================
+   15. LOADING STATES
+   ============================================ */
+
+/* Skeleton loading responsive */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 0.5rem;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ============================================
+   16. ACCESSIBILITY
+   ============================================ */
+
+/* Focus visible mejorado para teclado */
+*:focus-visible {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+/* Reducir movimiento para usuarios con preferencias */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================
+   17. PRINT STYLES
+   ============================================ */
+
+@media print {
+  .sidebar,
+  .navbar,
+  .bottom-nav,
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    padding: 0;
+  }
+}
+
+/* ============================================
+   18. ORIENTACIÓN
+   ============================================ */
+
+/* Mensaje para landscape en tablets pequeñas */
+@media (max-width: 768px) and (orientation: landscape) {
+  .landscape-warning {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: #fef3c7;
+    color: #92400e;
+    padding: 0.5rem;
+    text-align: center;
+    font-size: 0.875rem;
+    z-index: 9999;
+  }
+}
+
+/* ============================================
+   19. UTILIDADES RESPONSIVE
+   ============================================ */
+
+/* Contenedor con ancho máximo responsive */
+.container-responsive {
+  width: 100%;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 640px) {
+  .container-responsive {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container-responsive {
+    max-width: 768px;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-responsive {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container-responsive {
+    max-width: 1280px;
+  }
+}
+
+/* ============================================
+   20. DEBUG (Solo desarrollo)
+   ============================================ */
+
+/* Mostrar breakpoint actual (comentar en producción) */
+/*
+body::before {
+  content: 'Mobile';
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  background: #667eea;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 9999;
+}
+
+@media (min-width: 640px) {
+  body::before { content: 'SM: 640px+'; }
+}
+
+@media (min-width: 768px) {
+  body::before { content: 'MD: 768px+'; }
+}
+
+@media (min-width: 1024px) {
+  body::before { content: 'LG: 1024px+'; }
+}
+
+@media (min-width: 1280px) {
+  body::before { content: 'XL: 1280px+'; }
+}
+*/

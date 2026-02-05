@@ -1,0 +1,130 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}ERP Bulonera Alvear{% endblock %}</title>
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Sistema ERP/CRM para Bulonera Alvear - Gestión de inventario, ventas y clientes">
+    <meta name="theme-color" content="#2563eb">
+    
+    <!-- Mobile Web App -->
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- Apple iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Bulonera">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="{% static 'pwa/icons/logo_bulonera/ios/152.png' %}">
+    <link rel="apple-touch-icon" sizes="152x152" href="{% static 'pwa/icons/logo_bulonera/ios/152.png' %}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'pwa/icons/logo_bulonera/ios/180.png' %}">
+    <link rel="apple-touch-icon" sizes="192x192" href="{% static 'pwa/icons/logo_bulonera/ios/192.png' %}">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'pwa/icons/logo_bulonera/ios/32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'pwa/icons/logo_bulonera/ios/16.png' %}">
+    
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="{% static 'pwa/manifest.json' %}">
+    
+    <!-- Responsive CSS -->
+    <link rel="stylesheet" href="{% static 'css/responsive.css' %}" />
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Alpine.js (opcional, para interactividad ligera) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Service Worker Registration -->
+    <script src="{% static 'pwa/js/sw-register.js' %}"></script>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
+
+    <!-- Tailwind Config Inline -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+    <!-- Google Fonts (Inter) -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Custom CSS Files -->
+    <link rel="stylesheet" href="{% static 'css/base.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/forms.css' %}" />
+
+    <!-- Custom Inline Styles -->
+    <style>
+      /* Sidebar styling */
+      .sidebar {
+        width: 260px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+
+      .nav-item {
+        @apply flex items-center space-x-3 px-3 py-2.5 rounded-lg text-blue-100 hover:bg-white/10 transition-all duration-200 mb-1;
+      }
+
+      .nav-item.active {
+        @apply bg-white/20 text-white font-medium;
+      }
+
+      .nav-item:hover {
+        @apply text-white;
+      }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body class="flex bg-gray-50 font-sans">
+    {% if user.is_authenticated %} {% include 'includes/dashboard_sidebar.html' %} {% endif %}
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col min-h-screen">
+      {% include 'includes/pwa.html' %}
+      {% if user.is_authenticated %} {% include 'includes/navbar.html' %} {% endif %}
+
+      <!-- Page Content -->
+      <main class="{% if user.is_authenticated %}flex-1 p-6 bg-gray-100{% endif %}">
+        {% include 'includes/alerts.html' %} 
+        {% block content %}
+        <!-- Content will be injected here -->
+        {% endblock %}
+      </main>
+    </div>
+
+    <!-- Custom JavaScript -->
+    <script src="{% static 'js/utils.js' %}"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+
+    <!-- Inicializar iconos Lucide -->
+    <script>
+      if (typeof lucide !== "undefined") {
+        lucide.createIcons();
+      }
+    </script>
+
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>
