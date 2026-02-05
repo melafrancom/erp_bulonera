@@ -1,144 +1,142 @@
 {% load static %}
 
-<header class="bg-white shadow-sm border-b border-gray-200">
-  <!-- Top Bar -->
-  <div class="px-6 py-4 flex justify-between items-center">
-    <!-- Left: Breadcrumb -->
-    <div class="flex-1">{% include 'includes/breadcrumb.html' %}</div>
-
-    <!-- Center: Search -->
-    <div class="flex-1 max-w-md mx-6">
-      <div class="relative">
-        <input
-          type="search"
-          placeholder="Buscar productos, clientes..."
-          class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-        />
-        <i
-          data-lucide="search"
-          class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"
-        ></i>
-      </div>
-    </div>
-
-    <!-- Right: User Menu -->
-    <div class="flex items-center space-x-4">
-      <!-- Notifications -->
-      <button
-        class="relative p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition"
-      >
-        <i data-lucide="bell" class="w-5 h-5"></i>
-        <!-- Badge de notificaciones pendientes -->
-        <span
-          class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"
-        ></span>
+<!-- Navbar Responsive -->
+<header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+  <div class="px-4 md:px-6 py-3 md:py-4">
+    
+    <!-- Mobile Layout -->
+    <div class="flex items-center justify-between lg:hidden">
+      <!-- Menu Toggle Button -->
+      <button @click="sidebarOpen = !sidebarOpen"
+              class="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+        <i data-lucide="menu" class="w-6 h-6 text-gray-700"></i>
       </button>
 
-      <!-- User Dropdown -->
-      {% if user.is_authenticated %}
-      <div class="relative group">
-        <button
-          class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 transition"
-        >
-          <!-- Avatar -->
-          <div
-            class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm"
-          >
-            {{ user.first_name|slice:":1"|upper|default:"U" }}
-          </div>
+      <!-- Logo Mobile (center) -->
+      <a href="{% url 'core:dashboard' %}" class="flex items-center">
+        <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
+          <i data-lucide="package" class="w-5 h-5 text-white"></i>
+        </div>
+      </a>
 
-          <!-- User Info -->
-          <div class="text-left">
-            <p class="text-sm font-medium text-gray-800">
-              {{ user.first_name|default:user.username }}
-            </p>
-            <p class="text-xs text-gray-500">
-              {{ user.role|capfirst|default:"Operator" }}
-            </p>
-          </div>
+      <!-- User Avatar Mobile -->
+      <a href="{% url 'core:profile' %}" 
+         class="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-md">
+        {{ user.first_name|slice:":1"|upper|default:"U" }}
+      </a>
+    </div>
 
-          <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
+    <!-- Desktop Layout -->
+    <div class="hidden lg:flex items-center gap-4">
+      <!-- Breadcrumb -->
+      <div class="flex-1">
+        {% include 'includes/breadcrumb.html' %}
+      </div>
+
+      <!-- Search Bar -->
+      <div class="flex-1 max-w-md">
+        <div class="relative">
+          <input type="search"
+                 placeholder="Buscar productos, clientes..."
+                 class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+          <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+        </div>
+      </div>
+
+      <!-- Actions (Notifications + User Menu) -->
+      <div class="flex items-center space-x-4">
+        <!-- Notifications -->
+        <button class="relative p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
         </button>
 
-        <!-- Dropdown Menu -->
-        <div
-          class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50"
-        >
-          <!-- User Info en Dropdown -->
-          <div class="px-4 py-3 border-b border-gray-100">
-            <p class="text-sm font-semibold text-gray-800">
-              {{ user.get_full_name|default:user.username }}
-            </p>
-            <p class="text-xs text-gray-500">{{ user.email }}</p>
-          </div>
-
-          <!-- Menu Items -->
-          
-          <div class="py-2">
-            <!--  url 'user:profile'  -->
-            <a
-              href="{% url 'core:profile' %}"
-              class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
-            >
-              <i data-lucide="user" class="w-4 h-4 mr-3"></i>
-              Mi Perfil
-            </a>
-            <!--  url 'user:password_change'  -->
-            <a
-              href="{% url 'core:password_change' %}"
-              class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
-            >
-              <i data-lucide="key" class="w-4 h-4 mr-3"></i>
-              Cambiar Contraseña
-            </a>
-            <!-- Divider -->
-            <div class="border-t border-gray-100 my-2"></div>
-
-            <!-- Empresa Info -->
-            <div class="px-4 py-2">
-              <p class="text-xs text-gray-500 mb-1">Empresa</p>
-              <p class="text-sm font-medium text-gray-800">{{ user.name }}</p>
-              <p class="text-xs text-gray-500">Rol: {{ current_user.rol }}</p>
+        <!-- User Dropdown -->
+        <div class="relative group">
+          <button class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 transition">
+            <!-- Avatar -->
+            <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+              {{ user.first_name|slice:":1"|upper|default:"U" }}
             </div>
 
-            <!-- Divider -->
-            <div class="border-t border-gray-100 my-2"></div>
+            <!-- User Info -->
+            <div class="text-left hidden xl:block">
+              <p class="text-sm font-medium text-gray-800">
+                {{ user.first_name|default:user.username }}
+              </p>
+              <p class="text-xs text-gray-500">
+                {{ user.get_role_display|default:"Operator" }}
+              </p>
+            </div>
 
-            <!-- Logout -->
-            <form action="{% url 'core:logout' %}" method="post" class="block">
-              {% csrf_token %}
-              <button
-                type="submit"
-                class="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition text-left"
-              >
-                <i data-lucide="log-out" class="w-4 h-4 mr-3"></i>
-                Cerrar Sesión
-              </button>
-            </form>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
+          </button>
+
+          <!-- Dropdown Menu -->
+          <div class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50">
+            
+            <!-- User Info en Dropdown -->
+            <div class="px-4 py-3 border-b border-gray-100">
+              <p class="text-sm font-semibold text-gray-800">
+                {{ user.get_full_name|default:user.username }}
+              </p>
+              <p class="text-xs text-gray-500">{{ user.email }}</p>
+            </div>
+
+            <!-- Menu Items -->
+            <div class="py-2">
+              <a href="{% url 'core:profile' %}"
+                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
+                <i data-lucide="user" class="w-4 h-4 mr-3"></i>
+                Mi Perfil
+              </a>
+              <a href="{% url 'core:password_change' %}"
+                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
+                <i data-lucide="key" class="w-4 h-4 mr-3"></i>
+                Cambiar Contraseña
+              </a>
+              
+              <!-- Divider -->
+              <div class="border-t border-gray-100 my-2"></div>
+
+              <a href="{% url 'core:settings' %}"
+                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
+                <i data-lucide="settings" class="w-4 h-4 mr-3"></i>
+                Configuración
+              </a>
+
+              <!-- Divider -->
+              <div class="border-t border-gray-100 my-2"></div>
+
+              <!-- Logout -->
+              <form action="{% url 'core:logout' %}" method="post" class="block">
+                {% csrf_token %}
+                <button type="submit"
+                        class="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition text-left">
+                  <i data-lucide="log-out" class="w-4 h-4 mr-3"></i>
+                  Cerrar Sesión
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </div>
-      <a
-      href="{% url 'core:settings' %}"
-      class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
-      >
-        <i data-lucide="settings" class="w-4 h-4 mr-3"></i>
-        Configuración
-      </a>
-      {% else %}
-      <!-- Si no está autenticado -->
-      <a
-        href="{% url 'core:login' %}"
-        class="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 transition"
-      >
-        Iniciar Sesión
-      </a>
-      {% endif %}
     </div>
+
+    <!-- Mobile Search Bar (expandible) -->
+    <div class="lg:hidden mt-3">
+      <div class="relative">
+        <input type="search"
+               placeholder="Buscar..."
+               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+        <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+      </div>
+    </div>
+
   </div>
 </header>
 
-<!-- Inicializar iconos de Lucide -->
+<!-- Inicializar iconos de Lucide en navbar -->
 <script>
   if (typeof lucide !== "undefined") {
     lucide.createIcons();

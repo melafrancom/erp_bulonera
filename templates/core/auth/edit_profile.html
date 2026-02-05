@@ -3,6 +3,15 @@
 
 {% block title %}Editar Perfil - ERP Bulonera Alvear{% endblock %}
 
+{% block breadcrumb_items %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <a href="{% url 'core:profile' %}" class="hover:text-blue-600 transition">Mi Perfil</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <span class="text-gray-900 font-medium">Editar</span>
+{% endblock %}
+
+{% block mobile_title %}Editar Perfil{% endblock %}
+
 {% block content %}
 <div class="max-w-2xl mx-auto">
   <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
