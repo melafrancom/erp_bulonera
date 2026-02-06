@@ -6,56 +6,85 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solicitud Recibida - ERP Bulonera Alvear</title>
     
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+        }
+        
+        @keyframes pulse-slow {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        .animate-pulse-slow {
+            animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 via-white to-blue-50 min-h-screen flex items-center justify-center p-4">
     
     <div class="w-full max-w-lg">
+        
         <!-- Logo/Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-2xl font-bold text-gray-900">Bulonera Alvear</h1>
-            <p class="text-gray-500 text-sm">Sistema de Gestión Integrado</p>
+        <div class="text-center mb-6 md:mb-8">
+            <h1 class="text-xl md:text-2xl font-bold text-gray-900">Bulonera Alvear</h1>
+            <p class="text-gray-500 text-xs md:text-sm">Sistema de Gestión Integrado</p>
         </div>
 
         <!-- Card de Éxito -->
         <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+            
             <!-- Banner Superior -->
-            <div class="bg-green-50 p-6 flex flex-col items-center justify-center border-b border-green-100">
-                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 shadow-sm">
-                    <i data-lucide="check" class="w-8 h-8 text-green-600"></i>
+            <div class="bg-green-50 p-6 md:p-8 flex flex-col items-center justify-center border-b border-green-100">
+                <div class="w-16 h-16 md:w-20 md:h-20 bg-green-100 rounded-full flex items-center justify-center mb-4 shadow-sm">
+                    <i data-lucide="check" class="w-8 h-8 md:w-10 md:h-10 text-green-600"></i>
                 </div>
-                <h2 class="text-xl font-bold text-green-800 text-center">¡Solicitud Enviada!</h2>
-                <p class="text-green-600 text-center mt-2 text-sm">Hemos recibido tus datos correctamente.</p>
+                <h2 class="text-xl md:text-2xl font-bold text-green-800 text-center">¡Solicitud Enviada!</h2>
+                <p class="text-green-600 text-center mt-2 text-sm md:text-base">Hemos recibido tus datos correctamente.</p>
             </div>
 
-            <div class="p-8">
-                <p class="text-gray-600 text-center mb-8">
+            <div class="p-6 md:p-8">
+                <p class="text-gray-600 text-center mb-6 md:mb-8 text-sm md:text-base">
                     Gracias por solicitar acceso. Para garantizar la seguridad, todas las cuentas deben ser aprobadas manualmente por un gerente.
                 </p>
 
                 <!-- Timeline Vertical -->
-                <div class="relative pl-4 border-l-2 border-gray-100 space-y-8 ml-4 mb-8">
+                <div class="relative pl-4 border-l-2 border-gray-100 space-y-6 md:space-y-8 ml-4 mb-6 md:mb-8">
+                    
                     <!-- Paso 1: Enviado (Activo) -->
                     <div class="relative">
                         <span class="absolute -left-[21px] top-1 w-4 h-4 rounded-full bg-green-500 ring-4 ring-white"></span>
                         <div class="ml-4">
                             <h3 class="text-sm font-bold text-gray-900">Solicitud Recibida</h3>
-                            <p class="text-xs text-gray-500 mt-1">Tu información ya está en nuestro sistema.</p>
+                            <p class="text-xs md:text-sm text-gray-500 mt-1">Tu información ya está en nuestro sistema.</p>
                         </div>
                     </div>
 
                     <!-- Paso 2: Revisión (Pendiente) -->
                     <div class="relative">
-                        <span class="absolute -left-[21px] top-1 w-4 h-4 rounded-full bg-blue-200 ring-4 ring-white animate-pulse"></span>
+                        <span class="absolute -left-[21px] top-1 w-4 h-4 rounded-full bg-blue-400 ring-4 ring-white animate-pulse-slow"></span>
                         <div class="ml-4">
                             <h3 class="text-sm font-semibold text-gray-700">En Revisión</h3>
-                            <p class="text-xs text-gray-500 mt-1">Un administrador revisará tus permisos solicitados.</p>
+                            <p class="text-xs md:text-sm text-gray-500 mt-1">Un administrador revisará tus permisos solicitados.</p>
+                            <div class="mt-2 flex items-center gap-2">
+                                <div class="flex-1 bg-gray-200 rounded-full h-1.5 max-w-[120px]">
+                                    <div class="bg-blue-500 h-1.5 rounded-full animate-pulse" style="width: 45%"></div>
+                                </div>
+                                <span class="text-xs text-blue-600 font-medium">En proceso</span>
+                            </div>
                         </div>
                     </div>
 
@@ -64,13 +93,27 @@
                         <span class="absolute -left-[21px] top-1 w-4 h-4 rounded-full bg-gray-200 ring-4 ring-white"></span>
                         <div class="ml-4">
                             <h3 class="text-sm font-medium text-gray-500">Activación</h3>
-                            <p class="text-xs text-gray-400 mt-1">Recibirás un email confirmando tu alta.</p>
+                            <p class="text-xs md:text-sm text-gray-400 mt-1">Recibirás un email confirmando tu alta.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info adicional -->
+                <div class="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-100">
+                    <div class="flex items-start gap-3">
+                        <i data-lucide="mail" class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"></i>
+                        <div>
+                            <p class="text-sm font-medium text-blue-900">Revisa tu email</p>
+                            <p class="text-xs md:text-sm text-blue-700 mt-1">
+                                Te notificaremos cuando tu solicitud sea procesada. El tiempo de respuesta habitual es de 24-48 horas.
+                            </p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Botón de Volver -->
-                <a href="{% url 'core:login' %}" class="block w-full text-center py-3 px-4 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 font-medium transition border border-gray-200">
+                <a href="{% url 'core:login' %}" 
+                   class="block w-full text-center py-3 px-4 rounded-lg bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white font-medium transition transform hover:scale-105 shadow-lg">
                     <span class="flex items-center justify-center gap-2">
                         <i data-lucide="arrow-left" class="w-4 h-4"></i>
                         Volver al inicio de sesión
@@ -79,12 +122,14 @@
             </div>
         </div>
 
+        <!-- Footer -->
         <p class="text-center text-gray-400 text-xs mt-6">
-            &copy; 2024 Bulonera Alvear. Si tienes dudas contacta a administración.
+            © 2026 Bulonera Alvear. Si tienes dudas contacta a administración.
         </p>
     </div>
 
     <script>
+        // Inicializar iconos
         lucide.createIcons();
     </script>
 </body>

@@ -6,35 +6,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solicitar Acceso - ERP Bulonera Alvear</title>
     
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 via-white to-blue-50 min-h-screen flex items-center justify-center p-4">
     
     <div class="w-full max-w-2xl">
+        
         <!-- Header -->
-        <div class="text-center mb-8">
-            <div class="inline-block p-4 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl shadow-lg mb-4">
-                <i data-lucide="user-plus" class="w-12 h-12 text-white"></i>
+        <div class="text-center mb-6 md:mb-8">
+            <div class="inline-block p-3 md:p-4 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl shadow-lg mb-4">
+                <i data-lucide="user-plus" class="w-10 h-10 md:w-12 md:h-12 text-white"></i>
             </div>
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Solicitar Acceso</h1>
-            <p class="text-gray-600">ERP Bulonera Alvear</p>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Solicitar Acceso</h1>
+            <p class="text-sm md:text-base text-gray-600">ERP Bulonera Alvear</p>
         </div>
 
         <!-- Card -->
-        <div class="bg-white p-8 rounded-2xl shadow-xl">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl">
+            
             <!-- Info Alert -->
-            <div class="mb-6 p-4 bg-blue-50 border-l-4 border-blue-600 rounded-lg">
+            <div class="mb-6 p-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg">
                 <div class="flex items-start">
                     <i data-lucide="info" class="w-5 h-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0"></i>
                     <div>
                         <p class="text-sm font-medium text-blue-900">Tu solicitud será revisada por un administrador</p>
-                        <p class="text-sm text-blue-700 mt-1">Recibirás un email cuando sea aprobada con tus credenciales de acceso.</p>
+                        <p class="text-xs md:text-sm text-blue-700 mt-1">Recibirás un email cuando sea aprobada con tus credenciales de acceso.</p>
                     </div>
                 </div>
             </div>
@@ -43,7 +52,7 @@
             {% if messages %}
                 <div class="mb-6 space-y-3">
                     {% for message in messages %}
-                        <div class="p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700{% else %}bg-blue-100 text-blue-700{% endif %} font-medium">
+                        <div class="p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700{% else %}bg-blue-100 text-blue-700{% endif %} font-medium text-sm">
                             {{ message|safe }}
                         </div>
                     {% endfor %}
@@ -54,8 +63,9 @@
             <form method="POST" action="{% url 'core:register_request' %}" id="registerForm">
                 {% csrf_token %}
 
-                <!-- Grid de 2 columnas -->
+                <!-- Grid de 2 columnas en desktop, 1 en mobile -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    
                     <!-- Username -->
                     <div>
                         <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
@@ -63,7 +73,7 @@
                         </label>
                         {{ form.username }}
                         {% if form.username.errors %}
-                            <p class="mt-1 text-sm text-red-600">{{ form.username.errors.0 }}</p>
+                            <p class="mt-1 text-xs md:text-sm text-red-600">{{ form.username.errors.0 }}</p>
                         {% endif %}
                     </div>
 
@@ -74,7 +84,7 @@
                         </label>
                         {{ form.email }}
                         {% if form.email.errors %}
-                            <p class="mt-1 text-sm text-red-600">{{ form.email.errors.0 }}</p>
+                            <p class="mt-1 text-xs md:text-sm text-red-600">{{ form.email.errors.0 }}</p>
                         {% endif %}
                     </div>
 
@@ -85,7 +95,7 @@
                         </label>
                         {{ form.first_name }}
                         {% if form.first_name.errors %}
-                            <p class="mt-1 text-sm text-red-600">{{ form.first_name.errors.0 }}</p>
+                            <p class="mt-1 text-xs md:text-sm text-red-600">{{ form.first_name.errors.0 }}</p>
                         {% endif %}
                     </div>
 
@@ -96,7 +106,7 @@
                         </label>
                         {{ form.last_name }}
                         {% if form.last_name.errors %}
-                            <p class="mt-1 text-sm text-red-600">{{ form.last_name.errors.0 }}</p>
+                            <p class="mt-1 text-xs md:text-sm text-red-600">{{ form.last_name.errors.0 }}</p>
                         {% endif %}
                     </div>
 
@@ -107,7 +117,7 @@
                         </label>
                         {{ form.phone }}
                         {% if form.phone.errors %}
-                            <p class="mt-1 text-sm text-red-600">{{ form.phone.errors.0 }}</p>
+                            <p class="mt-1 text-xs md:text-sm text-red-600">{{ form.phone.errors.0 }}</p>
                         {% endif %}
                     </div>
 
@@ -118,7 +128,7 @@
                         </label>
                         {{ form.requested_role }}
                         {% if form.requested_role.errors %}
-                            <p class="mt-1 text-sm text-red-600">{{ form.requested_role.errors.0 }}</p>
+                            <p class="mt-1 text-xs md:text-sm text-red-600">{{ form.requested_role.errors.0 }}</p>
                         {% endif %}
                     </div>
                 </div>
@@ -130,12 +140,14 @@
                     </label>
                     {{ form.reason }}
                     {% if form.reason.errors %}
-                        <p class="mt-1 text-sm text-red-600">{{ form.reason.errors.0 }}</p>
+                        <p class="mt-1 text-xs md:text-sm text-red-600">{{ form.reason.errors.0 }}</p>
                     {% endif %}
                 </div>
 
                 <!-- Submit Button -->
-                <button type="submit" id="submitBtn" class="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-semibold rounded-lg shadow-lg hover:from-blue-700 hover:to-blue-900 transition-transform transform hover:scale-105">
+                <button type="submit" 
+                        id="submitBtn" 
+                        class="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-semibold rounded-lg shadow-lg hover:from-blue-700 hover:to-blue-900 transition-transform transform hover:scale-105">
                     <span id="btnText">Enviar Solicitud</span>
                     <span id="btnLoader" class="hidden">
                         <i data-lucide="loader-2" class="w-5 h-5 inline animate-spin"></i> Enviando...
@@ -153,9 +165,15 @@
                 </p>
             </div>
         </div>
+
+        <!-- Footer -->
+        <p class="text-center text-gray-500 text-xs md:text-sm mt-6">
+            © 2026 Bulonera Alvear. Todos los derechos reservados.
+        </p>
     </div>
 
     <script>
+        // Inicializar iconos
         lucide.createIcons();
 
         // Prevenir doble submit

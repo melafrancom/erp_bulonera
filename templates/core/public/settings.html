@@ -4,8 +4,8 @@
 {% block title %}Configuración - ERP Bulonera Alvear{% endblock %}
 
 {% block breadcrumb_items %}
-  <i data-lucide="chevron-right" class="w-4 h-4"></i>
-  <span>Configuración</span>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <span class="text-gray-900 font-medium">Configuración</span>
 {% endblock %}
 
 {% block mobile_title %}Configuración{% endblock %}
@@ -15,7 +15,7 @@
     
     <!-- Info Banner -->
     <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg shadow-sm">
-        <div class="flex">
+        <div class="flex items-start">
             <div class="flex-shrink-0">
                 <i data-lucide="alert-triangle" class="h-5 w-5 text-yellow-500"></i>
             </div>
@@ -57,28 +57,58 @@
             
             <!-- Card Notificaciones -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+                <div class="px-4 md:px-6 py-4 border-b border-gray-100 flex items-center gap-2">
                     <i data-lucide="bell" class="w-5 h-5 text-gray-400"></i>
                     <h3 class="font-semibold text-gray-900">Preferencias de Notificación</h3>
                 </div>
-                <div class="p-6 space-y-6">
+                <div class="p-4 md:p-6 space-y-6">
+                    
+                    <!-- Email Notifications -->
                     <div class="flex items-center justify-between">
-                        <div>
+                        <div class="flex-1 pr-4">
                             <p class="text-sm font-medium text-gray-900">Notificaciones por Email</p>
-                            <p class="text-sm text-gray-500">Recibir resúmenes semanales y alertas de seguridad.</p>
+                            <p class="text-xs md:text-sm text-gray-500 mt-1">Recibir resúmenes semanales y alertas de seguridad.</p>
                         </div>
                         <!-- Toggle Mockup -->
-                        <button type="button" class="bg-blue-600 relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2" role="switch" aria-checked="true">
+                        <button type="button" 
+                                class="bg-blue-600 relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2" 
+                                role="switch" 
+                                aria-checked="true"
+                                disabled
+                                title="Próximamente">
                             <span aria-hidden="true" class="translate-x-5 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
                         </button>
                     </div>
+
+                    <!-- Push Notifications -->
                     <div class="border-t border-gray-100 pt-4 flex items-center justify-between">
-                        <div>
+                        <div class="flex-1 pr-4">
                             <p class="text-sm font-medium text-gray-900">Notificaciones Push</p>
-                            <p class="text-sm text-gray-500">Alertas en tiempo real en tu navegador o móvil.</p>
+                            <p class="text-xs md:text-sm text-gray-500 mt-1">Alertas en tiempo real en tu navegador o móvil.</p>
                         </div>
-                        <button type="button" class="bg-gray-200 relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none" role="switch" aria-checked="false">
+                        <button type="button" 
+                                class="bg-gray-200 relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none" 
+                                role="switch" 
+                                aria-checked="false"
+                                disabled
+                                title="Próximamente">
                             <span aria-hidden="true" class="translate-x-0 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                        </button>
+                    </div>
+
+                    <!-- Alertas de Sistema -->
+                    <div class="border-t border-gray-100 pt-4 flex items-center justify-between">
+                        <div class="flex-1 pr-4">
+                            <p class="text-sm font-medium text-gray-900">Alertas de Sistema</p>
+                            <p class="text-xs md:text-sm text-gray-500 mt-1">Recibir notificaciones de actualizaciones y mantenimiento.</p>
+                        </div>
+                        <button type="button" 
+                                class="bg-blue-600 relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2" 
+                                role="switch" 
+                                aria-checked="true"
+                                disabled
+                                title="Próximamente">
+                            <span aria-hidden="true" class="translate-x-5 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
                         </button>
                     </div>
                 </div>
@@ -86,31 +116,112 @@
 
             <!-- Card Apariencia -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+                <div class="px-4 md:px-6 py-4 border-b border-gray-100 flex items-center gap-2">
                     <i data-lucide="monitor" class="w-5 h-5 text-gray-400"></i>
                     <h3 class="font-semibold text-gray-900">Apariencia</h3>
                 </div>
-                <div class="p-6 space-y-4">
+                <div class="p-4 md:p-6 space-y-4">
+                    
+                    <!-- Tema -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Tema de la interfaz</label>
-                        <select disabled class="mt-1 block w-full rounded-lg border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm bg-gray-50 cursor-not-allowed">
+                        <select disabled 
+                                class="mt-1 block w-full rounded-lg border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm bg-gray-50 cursor-not-allowed"
+                                title="Próximamente">
                             <option selected>Automático (Sistema)</option>
                             <option>Claro</option>
                             <option>Oscuro</option>
                         </select>
+                        <p class="mt-1 text-xs text-gray-500">El tema se ajustará según las preferencias de tu sistema.</p>
                     </div>
+
+                    <!-- Idioma -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Idioma</label>
-                        <select disabled class="mt-1 block w-full rounded-lg border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm bg-gray-50 cursor-not-allowed">
+                        <select disabled 
+                                class="mt-1 block w-full rounded-lg border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm bg-gray-50 cursor-not-allowed"
+                                title="Próximamente">
                             <option selected>Español (Argentina)</option>
                             <option>English (US)</option>
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500">El idioma de la interfaz y las notificaciones.</p>
+                    </div>
+
+                    <!-- Tamaño de Fuente -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tamaño de fuente</label>
+                        <select disabled 
+                                class="mt-1 block w-full rounded-lg border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm bg-gray-50 cursor-not-allowed"
+                                title="Próximamente">
+                            <option>Pequeño</option>
+                            <option selected>Mediano</option>
+                            <option>Grande</option>
                         </select>
                     </div>
                 </div>
             </div>
 
-            <div class="flex justify-end">
-                <button type="button" disabled class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 opacity-50 cursor-not-allowed" title="Próximamente">
+            <!-- Card Privacidad -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-4 md:px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+                    <i data-lucide="lock" class="w-5 h-5 text-gray-400"></i>
+                    <h3 class="font-semibold text-gray-900">Privacidad y Seguridad</h3>
+                </div>
+                <div class="p-4 md:p-6 space-y-6">
+                    
+                    <!-- Perfil Público -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1 pr-4">
+                            <p class="text-sm font-medium text-gray-900">Perfil Público</p>
+                            <p class="text-xs md:text-sm text-gray-500 mt-1">Permitir que otros usuarios vean tu perfil.</p>
+                        </div>
+                        <button type="button" 
+                                class="bg-gray-200 relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none" 
+                                role="switch" 
+                                aria-checked="false"
+                                disabled
+                                title="Próximamente">
+                            <span aria-hidden="true" class="translate-x-0 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                        </button>
+                    </div>
+
+                    <!-- Mostrar Email -->
+                    <div class="border-t border-gray-100 pt-4 flex items-center justify-between">
+                        <div class="flex-1 pr-4">
+                            <p class="text-sm font-medium text-gray-900">Mostrar Email</p>
+                            <p class="text-xs md:text-sm text-gray-500 mt-1">Hacer visible tu correo electrónico en el perfil.</p>
+                        </div>
+                        <button type="button" 
+                                class="bg-gray-200 relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none" 
+                                role="switch" 
+                                aria-checked="false"
+                                disabled
+                                title="Próximamente">
+                            <span aria-hidden="true" class="translate-x-0 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                        </button>
+                    </div>
+
+                    <!-- Link a Cambiar Contraseña -->
+                    <div class="border-t border-gray-100 pt-4">
+                        <a href="{% url 'core:password_change' %}" 
+                           class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition">
+                            <i data-lucide="key" class="w-4 h-4 mr-2"></i>
+                            Cambiar contraseña
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botón Guardar (Deshabilitado) -->
+            <div class="flex flex-col sm:flex-row justify-end gap-3">
+                <a href="{% url 'core:dashboard' %}" 
+                   class="w-full sm:w-auto text-center inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">
+                    Volver
+                </a>
+                <button type="button" 
+                        disabled 
+                        class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 opacity-50 cursor-not-allowed" 
+                        title="Próximamente">
                     <i data-lucide="save" class="w-4 h-4 mr-2"></i>
                     Guardar Cambios
                 </button>
