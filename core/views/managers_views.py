@@ -9,6 +9,7 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.db.models import Count
 from django.utils import timezone
+
 # from local apps
 from core.models import User, RegistrationRequest
 # ================================
@@ -51,7 +52,7 @@ def managers_dashboard_view(request):
         # 'pending_invoices': Invoice.objects.filter(status='pending').count(),
     }
     
-    return render(request, 'core/managers/dashboard.html', context)
+    return render(request, 'core/managers/managers_dashboard.html', context)
 # ================================
 # INVITACIÓN DE USUARIOS (Nuevo)
 # ================================
@@ -61,7 +62,7 @@ def managers_dashboard_view(request):
 # GESTIÓN DE SOLICITUDES DE REGISTRO
 # ================================
 @login_required
-@user_passes_test(lambda u: u.role == 'manager')
+@user_passes_test(lambda u: u.role == 'manager' or u.role == 'admin')
 def pending_requests_view(request):
     """Lista de solicitudes pendientes (solo managers)"""
     pending = RegistrationRequest.objects.filter(status='pending').order_by('-created_at')
@@ -77,7 +78,7 @@ def pending_requests_view(request):
     return render(request, 'core/managers/registration_requests.html', context)
 
 @login_required
-@user_passes_test(lambda u: u.role == 'manager')
+@user_passes_test(lambda u: u.role == 'manager' or u.role == 'admin')
 def approve_request_view(request, request_id):
     """Aprobar solicitud de registro"""
     reg_request = get_object_or_404(RegistrationRequest, id=request_id, status='pending')
@@ -107,7 +108,7 @@ def approve_request_view(request, request_id):
     return render(request, 'core/managers/approve_request.html', context)
 
 @login_required
-@user_passes_test(lambda u: u.role == 'manager')
+@user_passes_test(lambda u: u.role == 'manager' or u.role == 'admin')
 def reject_request_view(request, request_id):
     """Rechazar solicitud de registro"""
     reg_request = get_object_or_404(RegistrationRequest, id=request_id, status='pending')
@@ -139,7 +140,7 @@ def reject_request_view(request, request_id):
 # GESTION DE USUARIOS: LISTA DE ROLES A CREAR / EDITAR / ELIMINAR (Admin)
 # ================================
 @login_required
-@user_passes_test(lambda u: u.role == 'manager')
+@user_passes_test(lambda u: u.role == 'manager' or u.role == 'admin')
 def users_list_view(request):
     """Lista de todos los usuarios del sistema"""
     # TODO: Implementar filtros (activos, inactivos, por rol, etc.)
@@ -153,7 +154,7 @@ def users_list_view(request):
     return render(request, 'core/managers/users_list.html', context)
 
 @login_required
-@user_passes_test(lambda u: u.role == 'manager')
+@user_passes_test(lambda u: u.role == 'manager' or u.role == 'admin')
 def user_detail_view(request, user_id):
     """Ver detalles de un usuario"""
     user = get_object_or_404(User, id=user_id)
@@ -164,7 +165,7 @@ def user_detail_view(request, user_id):
     return render(request, 'core/managers/user_detail.html', context)
 
 @login_required
-@user_passes_test(lambda u: u.role == 'manager')
+@user_passes_test(lambda u: u.role == 'manager' or u.role == 'admin')
 def user_toggle_active_view(request, user_id):
     """Activar/Desactivar un usuario"""
     user = get_object_or_404(User, id=user_id)

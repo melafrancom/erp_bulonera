@@ -20,6 +20,70 @@ services:
     container_name: bulonera_redis
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  celery_worker:
+    build: .
+    container_name: bulonera_celery_worker
+    command: >
+      celery -A erp_crm_bulonera worker
+      --loglevel=info
+      --concurrency=4
+      --time-limit=3600
+      --soft-time-limit=3300
+    volumes:
+      - .:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=erp_crm_bulonera.settings.local
+      - DB_HOST=db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_started
+    restart: always
+
+  celery_beat:
+    build: .
+    container_name: bulonera_celery_beat
+    command: >
+      celery -A erp_crm_bulonera beat
+      --loglevel=info
+      --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - .:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=erp_crm_bulonera.settings.local
+      - DB_HOST=db
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+      - db
+    restart: always
+
+  flower:
+    build: .
+    container_name: bulonera_flower
+    command: celery -A erp_crm_bulonera flower --port=5555
+    ports:
+      - "5555:5555"
+    volumes:
+      - .:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=erp_crm_bulonera.settings.local
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+      - celery_worker
 
   # Aplicación Django
   web:
@@ -40,3 +104,4 @@ services:
       
 volumes:
   mariadb_data:
+  redis_data:

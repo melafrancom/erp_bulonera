@@ -100,6 +100,7 @@
   <body class="flex bg-gray-50 font-sans">
     
     {% if user.is_authenticated %}
+      {% include 'includes/pwa.html' %}
       <!-- Layout con Alpine.js para control del sidebar -->
       <div x-data="{ sidebarOpen: false }" class="flex min-h-screen w-full">
         
@@ -142,12 +143,19 @@
         <!-- Bottom Navigation (solo mobile PWA) -->
         <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-30 safe-area-bottom">
           <div class="flex items-center justify-around py-2">
-            
+            {% if user.is_manager or user.is_superuser or user.is_admin %}
+            <a href="{% url 'core:managers_dashboard' %}" 
+               class="flex flex-col items-center py-2 px-3 text-gray-600 hover:text-blue-600 transition {% if request.resolver_match.url_name == 'dashboard' %}text-blue-600{% endif %}">
+              <i data-lucide="layout-dashboard" class="w-6 h-6 mb-1"></i>
+              <span class="text-xs font-medium">Inicio</span>
+            </a>
+            {% else %}
             <a href="{% url 'core:dashboard' %}" 
                class="flex flex-col items-center py-2 px-3 text-gray-600 hover:text-blue-600 transition {% if request.resolver_match.url_name == 'dashboard' %}text-blue-600{% endif %}">
               <i data-lucide="layout-dashboard" class="w-6 h-6 mb-1"></i>
               <span class="text-xs font-medium">Inicio</span>
             </a>
+            {% endif %}
 
             <a href="#" 
                class="flex flex-col items-center py-2 px-3 text-gray-600 hover:text-blue-600 transition">
@@ -173,7 +181,7 @@
       </div>
 
     {% else %}
-      <!-- Layout para usuarios no autenticados -->
+      <!-- Layout para usuarios NO autenticados -->
       <div class="w-full">
         {% include 'includes/pwa.html' %}
         <main class="min-h-screen">

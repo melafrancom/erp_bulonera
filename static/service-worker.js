@@ -1,42 +1,63 @@
-// ESTRUCTURA MÍNIMA REQUERIDA
+// 1. CONSTANTES
+const CACHE_VERSION = 'v1.0.1';
+const CACHE_NAME = `bulonera-${CACHE_VERSION}`;
 
-const CACHE_NAME = 'bulonera-pwa-v1';
-const ASSETS_TO_CACHE = [
+const APP_SHELL = [
+    // Solo agregar archivos que EXISTAN
+    // Páginas base
     '/',
     '/offline/',
+    // CSS
     '/static/css/base.css',
+    '/static/css/components.css',
+    // JavaScript
     '/static/js/main.js',
-    // ... otros assets críticos
+    '/static/js/utils.js',
+    // Manifest e íconos críticos
+    '/static/pwa/manifest.json',
+    '/static/pwa/icons/icon-192x192.png',
+    '/static/pwa/icons/icon-512x512.png',
+    // Fuentes (si las tienes locales)
 ];
 
-// 1. INSTALL - Cachear assets iniciales
+// 2. INSTALL
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(ASSETS_TO_CACHE))
+            .then(cache => cache.addAll(APP_SHELL))
             .then(() => self.skipWaiting())
     );
 });
 
-// 2. ACTIVATE - Limpiar caches viejos
+// 3. ACTIVATE
 self.addEventListener('activate', (event) => {
     event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
-                cacheNames
-                    .filter(name => name !== CACHE_NAME)
-                    .map(name => caches.delete(name))
-            );
-        }).then(() => self.clients.claim())
+        caches.keys()
+            .then(names => Promise.all(
+                names.filter(n => n !== CACHE_NAME).map(n => caches.delete(n))
+            ))
+            .then(() => self.clients.claim())
     );
 });
 
-// 3. FETCH - Interceptar peticiones
+// 4. FETCH (con estrategias diferenciadas)
 self.addEventListener('fetch', (event) => {
-    // Estrategia: Network First, fallback to cache, then offline page
+    const request = event.request;
+    
+    if (request.method !== 'GET') return;
+    
+    // Cache-First para static
+    if (request.url.includes('/static/')) {
+        event.respondWith(
+            caches.match(request).then(r => r || fetch(request))
+        );
+        return;
+    }
+    
+    // Network-First para navegación
     event.respondWith(
-        fetch(event.request)
-            .catch(() => caches.match(event.request))
-            .then(response => response || caches.match('/offline/'))
+        fetch(request)
+            .catch(() => caches.match(request))
+            .then(r => r || caches.match('/offline/'))
     );
 });

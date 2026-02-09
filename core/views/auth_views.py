@@ -226,7 +226,6 @@ Teléfono: {reg_request.phone or "No especificado"}
 Rol solicitado: {reg_request.get_requested_role_display()}
 Motivo: {reg_request.reason or "No especificado"}
 Ingresa al sistema para aprobar o rechazar la solicitud.
-{settings.COMPANY_NAME}
     '''
     
     recipient_list = [manager.email for manager in managers if manager.email]

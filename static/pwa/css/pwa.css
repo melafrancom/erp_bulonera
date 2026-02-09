@@ -1,0 +1,10 @@
+/* Modo standalone (instalado) */
+@media (display-mode: standalone) {
+    /* Ocultar elementos innecesarios cuando está instalada */
+}
+
+/* Safe area para notch de iPhone */
+body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+}

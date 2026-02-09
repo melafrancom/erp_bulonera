@@ -129,4 +129,8 @@ def offline_view(request):
 def serve_service_worker(request):
     sw_path = settings.BASE_DIR / 'static' / 'service-worker.js'
     with open(sw_path, 'r') as f:
-        return HttpResponse(f.read(), content_type='application/javascript')
+        return HttpResponse(
+            f.read(), 
+            content_type='application/javascript',
+            headers={'Service-Worker-Allowed': '/'}
+        )
