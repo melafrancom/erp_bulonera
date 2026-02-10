@@ -1,0 +1,171 @@
+{% extends 'base/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{% if is_update %}Editar Cliente{% else %}Nuevo Cliente{% endif %} - ERP Bulonera{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="md:flex md:items-center md:justify-between mb-6">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                {% if is_update %}Editar Cliente{% else %}Crear Nuevo Cliente{% endif %}
+            </h2>
+        </div>
+        <div class="mt-4 flex md:mt-0 md:ml-4">
+            <a href="{% url 'customers:customer_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Cancelar
+            </a>
+        </div>
+    </div>
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+        <div class="rounded-md bg-red-50 p-4 border border-red-200">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i data-lucide="alert-circle" class="h-5 w-5 text-red-400"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800">Errores</h3>
+                    <div class="mt-2 text-sm text-red-700">
+                        {{ form.non_field_errors }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6 space-y-6 border border-gray-200">
+            <!-- Sección Identificación -->
+            <div>
+                <h3 class="text-lg leading-6 font-medium text-gray-900 border-b pb-2 mb-4">Identificación</h3>
+                <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                    <div class="sm:col-span-2">
+                        <label for="{{ form.customer_type.id_for_label }}" class="block text-sm font-medium text-gray-700">Tipo *</label>
+                        {{ form.customer_type|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="{{ form.cuit_cuil.id_for_label }}" class="block text-sm font-medium text-gray-700">CUIT/DNI *</label>
+                        {{ form.cuit_cuil|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                        {% if form.cuit_cuil.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.cuit_cuil.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="{{ form.tax_condition.id_for_label }}" class="block text-sm font-medium text-gray-700">Condición IVA *</label>
+                        {{ form.tax_condition|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                    </div>
+
+                    <div class="sm:col-span-3">
+                        <label for="{{ form.business_name.id_for_label }}" class="block text-sm font-medium text-gray-700">Razón Social *</label>
+                        {{ form.business_name|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                        {% if form.business_name.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.business_name.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="sm:col-span-3">
+                        <label for="{{ form.trade_name.id_for_label }}" class="block text-sm font-medium text-gray-700">Nombre Fantasía</label>
+                        {{ form.trade_name|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección Contacto -->
+            <div>
+                <h3 class="text-lg leading-6 font-medium text-gray-900 border-b pb-2 mb-4">Contacto</h3>
+                <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                    <div class="sm:col-span-3">
+                        <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700">Email</label>
+                        {{ form.email|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                    </div>
+                    <div class="sm:col-span-3">
+                        <label for="{{ form.website.id_for_label }}" class="block text-sm font-medium text-gray-700">Sitio Web</label>
+                        {{ form.website|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                    </div>
+                    <div class="sm:col-span-3">
+                        <label for="{{ form.phone.id_for_label }}" class="block text-sm font-medium text-gray-700">Teléfono</label>
+                        {{ form.phone|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                    </div>
+                    <div class="sm:col-span-3">
+                        <label for="{{ form.mobile.id_for_label }}" class="block text-sm font-medium text-gray-700">Celular</label>
+                        {{ form.mobile|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                    </div>
+                    
+                    <div class="sm:col-span-6">
+                        <label for="{{ form.billing_address.id_for_label }}" class="block text-sm font-medium text-gray-700">Dirección</label>
+                        {{ form.billing_address|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="{{ form.billing_city.id_for_label }}" class="block text-sm font-medium text-gray-700">Ciudad</label>
+                        {{ form.billing_city|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="{{ form.billing_state.id_for_label }}" class="block text-sm font-medium text-gray-700">Provincia</label>
+                        {{ form.billing_state|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="{{ form.billing_zip_code.id_for_label }}" class="block text-sm font-medium text-gray-700">Código Postal</label>
+                        {{ form.billing_zip_code|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección Comercial -->
+            <div>
+                <h3 class="text-lg leading-6 font-medium text-gray-900 border-b pb-2 mb-4">Datos Comerciales</h3>
+                <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                    <div class="sm:col-span-3">
+                        <label for="{{ form.customer_segment.id_for_label }}" class="block text-sm font-medium text-gray-700">Segmento</label>
+                        {{ form.customer_segment|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                    </div>
+                    <div class="sm:col-span-3">
+                        <label for="{{ form.payment_term.id_for_label }}" class="block text-sm font-medium text-gray-700">Plazo Pago (días)</label>
+                        {{ form.payment_term|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                    </div>
+                    
+                    <div class="sm:col-span-6 bg-gray-50 p-4 rounded-md">
+                        <div class="flex items-start">
+                            <div class="flex h-5 items-center">
+                                {{ form.allow_credit|add_class:"h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" }}
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="{{ form.allow_credit.id_for_label }}" class="font-medium text-gray-700">Habilitar Cuenta Corriente</label>
+                                <p class="text-gray-500">Permite realizar ventas a crédito.</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                             <div class="sm:col-span-3">
+                                <label for="{{ form.credit_limit.id_for_label }}" class="block text-sm font-medium text-gray-700">Límite de Crédito ($)</label>
+                                {{ form.credit_limit|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                            </div>
+                             <div class="sm:col-span-3">
+                                <label for="{{ form.discount_percentage.id_for_label }}" class="block text-sm font-medium text-gray-700">Descuento Especial (%)</label>
+                                {{ form.discount_percentage|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notas -->
+            <div>
+                <h3 class="text-lg leading-6 font-medium text-gray-900 border-b pb-2 mb-4">Notas Internas</h3>
+                <div class="grid grid-cols-1 gap-y-6">
+                    <div class="sm:col-span-6">
+                        {{ form.notes|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="flex justify-end">
+            <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Guardar Cliente
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

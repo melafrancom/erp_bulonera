@@ -1,0 +1,123 @@
+{% extends 'base/base.html' %} 
+{% load static %} 
+{% block title %}Segmentos de Clientes - ERP Bulonera{% endblock %} 
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Segmentos de Clientes</h1>
+      <p class="text-gray-500 mt-1">
+        Organice y categorice su base de clientes para aplicar descuentos y estrategias personalizadas.
+      </p>
+    </div>
+    <div class="flex gap-2">
+      <a
+        href="{% url 'customers:customer_list' %}"
+        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+      >
+        <i data-lucide="users" class="h-4 w-4 mr-2"></i>
+        Ver Clientes
+      </a>
+      <a
+        href="{% url 'customers:segment_create' %}"
+        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+      >
+        <i data-lucide="plus" class="h-4 w-4 mr-2"></i>
+        Nuevo Segmento
+      </a>
+    </div>
+  </div>
+
+  <!-- Segments Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for segment in segments %}
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 hover:shadow-md transition cursor-pointer">
+      <!-- Color Header -->
+      <div
+        class="h-24 relative"
+        style="background: linear-gradient(135deg, {{ segment.color }}DD 0%, {{ segment.color }} 100%);"
+      >
+        <div class="absolute inset-0 bg-black/10"></div>
+        <div class="relative p-6 text-white h-full flex flex-col justify-between">
+            <h3 class="text-xl font-bold tracking-tight shadow-sm">{{ segment.name }}</h3>
+             <div class="text-sm font-medium bg-white/20 backdrop-blur-sm self-start px-2 py-0.5 rounded-full">
+                {{ segment.customer_count }} cliente{{ segment.customer_count|pluralize }}
+             </div>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="p-6">
+        <div class="min-h-[3rem]">
+            {% if segment.description %}
+            <p class="text-sm text-gray-600 line-clamp-3">
+            {{ segment.description }}
+            </p>
+            {% else %}
+            <p class="text-sm text-gray-400 italic">Sin descripción</p>
+            {% endif %}
+        </div>
+
+        <hr class="my-4 border-gray-100">
+
+        <!-- Stats -->
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Descuento</p>
+            <p class="text-2xl font-bold" style="color: {{ segment.color }};">
+              {{ segment.discount_percentage }}%
+            </p>
+          </div>
+          <div class="text-right">
+            <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Estado</p>
+            {% if segment.is_active %}
+            <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 mt-1">
+              <i data-lucide="check-circle" class="w-3 h-3 mr-1"></i>Activo
+            </span>
+            {% else %}
+            <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 mt-1">
+              Inactivo
+            </span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="grid grid-cols-2 gap-3">
+          <a
+            href="{% url 'customers:segment_update' segment.pk %}"
+            class="inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <i data-lucide="edit-2" class="w-4 h-4 mr-2 text-gray-500"></i>Editar
+          </a>
+          <a
+            href="{% url 'customers:customer_list' %}?segment={{ segment.pk }}"
+            class="inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+             <i data-lucide="users" class="w-4 h-4 mr-2"></i>Clientes
+          </a>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-span-full">
+        <div class="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300">
+            <div class="mx-auto h-12 w-12 text-gray-400">
+                <i data-lucide="tags" class="h-12 w-12"></i>
+            </div>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No hay segmentos</h3>
+            <p class="mt-1 text-sm text-gray-500">Comienza creando una categoría para tus clientes.</p>
+            <div class="mt-6">
+                <a href="{% url 'customers:segment_create' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i data-lucide="plus" class="-ml-1 mr-2 h-5 w-5"></i>
+                    Nuevo Segmento
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

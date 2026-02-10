@@ -1,0 +1,168 @@
+{% extends 'base/base.html' %} 
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}{% if object %}Editar{% else %}Nuevo{% endif %} Segmento - ERP Bulonera{% endblock %} 
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <!-- Header -->
+  <div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+            {% if object %} Editar Segmento {% else %} Nuevo Segmento {% endif %}
+        </h1>
+        <p class="text-gray-500 mt-1">Define propiedades visuales y reglas de descuento.</p>
+    </div>
+    <a
+    href="{% url 'customers:segment_list' %}"
+    class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+    >
+    <i data-lucide="arrow-left" class="h-4 w-4 mr-2"></i>
+    Volver
+    </a>
+  </div>
+
+  <!-- Form -->
+  <div class="bg-white shadow rounded-lg border border-gray-200 overflow-hidden">
+    <form method="post" class="p-6 space-y-6">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="rounded-md bg-red-50 p-4 border border-red-200">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i data-lucide="alert-circle" class="h-5 w-5 text-red-400"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800">Errores</h3>
+                    <div class="mt-2 text-sm text-red-700">
+                        {{ form.non_field_errors }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+      <!-- Name -->
+      <div>
+        <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+          Nombre del Segmento <span class="text-red-500">*</span>
+        </label>
+        <div class="mt-1">
+            {{ form.name|add_class:"block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+        </div>
+        {% if form.name.errors %}
+        <p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>
+        {% endif %}
+        <p class="mt-1 text-xs text-gray-500">
+          Ej: Mayorista, Minorista, Distribuidor, VIP
+        </p>
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700">
+          Descripción
+        </label>
+        <div class="mt-1">
+            {{ form.description|add_class:"block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+        </div>
+        {% if form.description.errors %}
+        <p class="mt-1 text-sm text-red-600">{{ form.description.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+        <!-- Color -->
+        <div>
+            <label for="{{ form.color.id_for_label }}" class="block text-sm font-medium text-gray-700">
+            Color de Identificación
+            </label>
+            <div class="mt-1 flex items-center gap-3">
+                <div class="relative">
+                    {{ form.color|add_class:"h-9 w-20 p-1 rounded-md border border-gray-300 cursor-pointer" }}
+                </div>
+                <div id="colorPreview" class="h-9 w-full rounded-md border border-gray-200 bg-gray-50 flex items-center px-3 text-xs text-gray-500 shadow-sm">
+                    Vista previa
+                </div>
+            </div>
+            {% if form.color.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ form.color.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Discount Percentage -->
+        <div>
+            <label for="{{ form.discount_percentage.id_for_label }}" class="block text-sm font-medium text-gray-700">
+            Descuento por Defecto (%)
+            </label>
+            <div class="mt-1 relative rounded-md shadow-sm">
+                {{ form.discount_percentage|add_class:"block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                  <span class="text-gray-500 sm:text-sm">%</span>
+                </div>
+            </div>
+            {% if form.discount_percentage.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ form.discount_percentage.errors.0 }}</p>
+            {% endif %}
+        </div>
+      </div>
+      
+      <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <i data-lucide="info" class="h-5 w-5 text-blue-400"></i>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-blue-700">
+              Los clientes asignados a este segmento recibirán automáticamente el descuento configurado, a menos que tengan un descuento específico en su perfil.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="pt-5 border-t border-gray-200 flex justify-end gap-3">
+        <a
+            href="{% url 'customers:segment_list' %}"
+            class="px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+            Cancelar
+        </a>
+        <button
+            type="submit"
+            class="inline-flex justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+            <i data-lucide="save" class="h-4 w-4 mr-2"></i>
+            {% if object %}Actualizar{% else %}Guardar{% endif %} Segmento
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %} 
+
+{% block extra_js %}
+<script>
+  // Update color preview
+  const colorInput = document.getElementById("{{ form.color.id_for_label }}");
+  const colorPreview = document.getElementById("colorPreview");
+
+  function updateColorPreview() {
+    if (colorInput && colorPreview) {
+        colorPreview.style.backgroundColor = colorInput.value;
+        // Calculate contrast color for text logic if needed, simple approach:
+        colorPreview.style.color = '#fff'; 
+        colorPreview.innerText = colorInput.value;
+        colorPreview.style.textShadow = '0 1px 2px rgba(0,0,0,0.3)';
+    }
+  }
+
+  if (colorInput) {
+      colorInput.addEventListener("input", updateColorPreview);
+      // Initialize with current value
+      updateColorPreview();
+  }
+</script>
+{% endblock %}
