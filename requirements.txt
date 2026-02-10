@@ -39,6 +39,8 @@ reportlab>=4.0.0
 # Utilidades
 python-slugify>=8.0.0
 pytz>=2023.3
+django-widget-tweaks>=1.5.0
+#django_filters>=23.5
 
 # Para producción
 gunicorn>=21.2.0

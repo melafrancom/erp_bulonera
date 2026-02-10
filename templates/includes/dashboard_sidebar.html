@@ -63,7 +63,7 @@
         <span>Facturas</span>
       </a>
       {% endif %} {% if user.can_manage_customers %}
-      <a href="#" class="nav-item">
+      <a href="{% url 'customers:customer_list' %}" class="nav-item">
         <i data-lucide="users" class="w-5 h-5"></i>
         <span>Clientes</span>
       </a>

@@ -42,11 +42,15 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     'rest_framework',
     'corsheaders',
-    # 'django_filters', Descomentar cuando se instale
+    'widget_tweaks',
+    'django_filters',
 ]
 SHARED_APPS = [
     'erp_crm_bulonera',
     'core',
+    'common',
+    'customers',
+    'sales',
 ]
 
 # ALL APPS
