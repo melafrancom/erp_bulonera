@@ -64,6 +64,13 @@ class CustomerForm(forms.ModelForm):
             raise ValidationError('El CUIT/CUIL debe tener el formato XX-XXXXXXXX-X')
         
         return cuit
+        
+        # Validate checksum
+        from common.utils import validate_cuit
+        if not validate_cuit(cuit):
+            raise ValidationError('El CUIT/CUIL no es válido (dígito verificador incorrecto).')
+        
+        return cuit
     
     def clean(self):
         """

@@ -89,6 +89,11 @@ class Customer(BaseModel):
     )
     
     # Tax Information
+    def validate_cuit_checksum(value):
+        from common.utils import validate_cuit
+        if not validate_cuit(value):
+            raise ValidationError('El CUIT/CUIL no es válido (dígito verificador incorrecto).')
+
     cuit_cuil = models.CharField(
         max_length=13,
         unique=True,
@@ -97,6 +102,7 @@ class Customer(BaseModel):
                 regex=r'^\d{2}-\d{8}-\d{1}$',
                 message='El formato debe ser XX-XXXXXXXX-X',
             ),
+            validate_cuit_checksum
         ],
         verbose_name="CUIT/CUIL/DNI",
         help_text="Formato: XX-XXXXXXXX-X"
