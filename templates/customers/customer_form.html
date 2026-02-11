@@ -44,25 +44,39 @@
                 <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                     <div class="sm:col-span-2">
                         <label for="{{ form.customer_type.id_for_label }}" class="block text-sm font-medium text-gray-700">Tipo *</label>
-                        {{ form.customer_type|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                        {% if form.customer_type.errors %}
+                            {{ form.customer_type|add_class:"mt-1 block w-full rounded-md border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500 sm:text-sm" }}
+                            <p class="mt-2 text-sm text-red-600">{{ form.customer_type.errors.0 }}</p>
+                        {% else %}
+                            {{ form.customer_type|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                        {% endif %}
                     </div>
                     <div class="sm:col-span-2">
                         <label for="{{ form.cuit_cuil.id_for_label }}" class="block text-sm font-medium text-gray-700">CUIT/DNI *</label>
-                        {{ form.cuit_cuil|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
                         {% if form.cuit_cuil.errors %}
+                            {{ form.cuit_cuil|add_class:"mt-1 block w-full rounded-md border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500 sm:text-sm" }}
                             <p class="mt-2 text-sm text-red-600">{{ form.cuit_cuil.errors.0 }}</p>
+                        {% else %}
+                            {{ form.cuit_cuil|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
                         {% endif %}
                     </div>
                     <div class="sm:col-span-2">
                         <label for="{{ form.tax_condition.id_for_label }}" class="block text-sm font-medium text-gray-700">Condición IVA *</label>
-                        {{ form.tax_condition|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                        {% if form.tax_condition.errors %}
+                            {{ form.tax_condition|add_class:"mt-1 block w-full rounded-md border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500 sm:text-sm" }}
+                            <p class="mt-2 text-sm text-red-600">{{ form.tax_condition.errors.0 }}</p>
+                        {% else %}
+                            {{ form.tax_condition|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                        {% endif %}
                     </div>
 
                     <div class="sm:col-span-3">
                         <label for="{{ form.business_name.id_for_label }}" class="block text-sm font-medium text-gray-700">Razón Social *</label>
-                        {{ form.business_name|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
                         {% if form.business_name.errors %}
+                            {{ form.business_name|add_class:"mt-1 block w-full rounded-md border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500 sm:text-sm" }}
                             <p class="mt-2 text-sm text-red-600">{{ form.business_name.errors.0 }}</p>
+                        {% else %}
+                            {{ form.business_name|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
                         {% endif %}
                     </div>
                     <div class="sm:col-span-3">
@@ -78,7 +92,12 @@
                 <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                     <div class="sm:col-span-3">
                         <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700">Email</label>
-                        {{ form.email|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                        {% if form.email.errors %}
+                            {{ form.email|add_class:"mt-1 block w-full rounded-md border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500 sm:text-sm" }}
+                            <p class="mt-2 text-sm text-red-600">{{ form.email.errors.0 }}</p>
+                        {% else %}
+                            {{ form.email|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                        {% endif %}
                     </div>
                     <div class="sm:col-span-3">
                         <label for="{{ form.website.id_for_label }}" class="block text-sm font-medium text-gray-700">Sitio Web</label>
@@ -109,6 +128,16 @@
                         <label for="{{ form.billing_zip_code.id_for_label }}" class="block text-sm font-medium text-gray-700">Código Postal</label>
                         {{ form.billing_zip_code|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
                     </div>
+                    <!-- New required country field visualization just in case -->
+                    <div class="sm:col-span-2">
+                        <label for="{{ form.billing_country.id_for_label }}" class="block text-sm font-medium text-gray-700">País</label>
+                        {% if form.billing_country.errors %}
+                            {{ form.billing_country|add_class:"mt-1 block w-full rounded-md border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500 sm:text-sm" }}
+                            <p class="mt-2 text-sm text-red-600">{{ form.billing_country.errors.0 }}</p>
+                        {% else %}
+                            {{ form.billing_country|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
@@ -121,8 +150,13 @@
                         {{ form.customer_segment|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
                     </div>
                     <div class="sm:col-span-3">
-                        <label for="{{ form.payment_term.id_for_label }}" class="block text-sm font-medium text-gray-700">Plazo Pago (días)</label>
-                        {{ form.payment_term|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                        <label for="{{ form.payment_term.id_for_label }}" class="block text-sm font-medium text-gray-700">Plazo Pago</label>
+                        {% if form.payment_term.errors %}
+                             {{ form.payment_term|add_class:"mt-1 block w-full rounded-md border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500 sm:text-sm" }}
+                             <p class="mt-2 text-sm text-red-600">{{ form.payment_term.errors.0 }}</p>
+                        {% else %}
+                             {{ form.payment_term|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                        {% endif %}
                     </div>
                     
                     <div class="sm:col-span-6 bg-gray-50 p-4 rounded-md">
@@ -138,11 +172,21 @@
                         <div class="mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                              <div class="sm:col-span-3">
                                 <label for="{{ form.credit_limit.id_for_label }}" class="block text-sm font-medium text-gray-700">Límite de Crédito ($)</label>
-                                {{ form.credit_limit|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                                {% if form.credit_limit.errors %}
+                                    {{ form.credit_limit|add_class:"mt-1 block w-full rounded-md border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500 sm:text-sm" }}
+                                    <p class="mt-2 text-sm text-red-600">{{ form.credit_limit.errors.0 }}</p>
+                                {% else %}
+                                    {{ form.credit_limit|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                                {% endif %}
                             </div>
                              <div class="sm:col-span-3">
                                 <label for="{{ form.discount_percentage.id_for_label }}" class="block text-sm font-medium text-gray-700">Descuento Especial (%)</label>
-                                {{ form.discount_percentage|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                                {% if form.discount_percentage.errors %}
+                                    {{ form.discount_percentage|add_class:"mt-1 block w-full rounded-md border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500 sm:text-sm" }}
+                                    <p class="mt-2 text-sm text-red-600">{{ form.discount_percentage.errors.0 }}</p>
+                                {% else %}
+                                    {{ form.discount_percentage|add_class:"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                                {% endif %}
                             </div>
                         </div>
                     </div>

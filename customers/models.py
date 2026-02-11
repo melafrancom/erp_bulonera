@@ -105,7 +105,10 @@ class Customer(BaseModel):
             validate_cuit_checksum
         ],
         verbose_name="CUIT/CUIL/DNI",
-        help_text="Formato: XX-XXXXXXXX-X"
+        help_text="Formato: XX-XXXXXXXX-X",
+        error_messages={
+            'unique': 'Ya existe un cliente con este CUIT/CUIL/DNI.',
+        }
     )
     tax_condition = models.CharField(
         max_length=10,

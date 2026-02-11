@@ -104,7 +104,7 @@ class CustomerViewsTests(TestCase):
             'billing_city': 'Resistencia',
             'billing_state': 'Chaco',
             'billing_country': 'Argentina',
-            'payment_term': 'CASH',
+            'payment_term': 0,
             'credit_limit': 0,
             'discount_percentage': 0,
             'allow_credit': False
@@ -176,7 +176,7 @@ class CustomerViewsTests(TestCase):
             'tax_condition': 'RI',
             'customer_type': 'COMPANY',
             'billing_country': 'Argentina',
-            'payment_term': 'CASH',
+            'payment_term': 0,
             'credit_limit': 0,
             'discount_percentage': 0,
             'allow_credit': False
@@ -184,7 +184,11 @@ class CustomerViewsTests(TestCase):
         
         # No debe crear (status 200 = vuelve a form con error)
         self.assertEqual(response.status_code, 200)
-        self.assertFormError(response, 'form', 'cuit_cuil', 'Ya existe un cliente con este CUIT/CUIL/DNI.')
+        
+        # Manually check form errors to avoid TemplateResponse attribute error
+        form = response.context['form']
+        self.assertIn('cuit_cuil', form.errors)
+        self.assertIn('Ya existe un cliente', str(form.errors['cuit_cuil'][0]))
     
     # ========================================
     # TESTS DE EDICIÓN
@@ -210,7 +214,7 @@ class CustomerViewsTests(TestCase):
                 'customer_type': 'PERSON',
                 'email': 'nuevo@email.com',
                 'billing_country': 'Argentina',
-                'payment_term': 'CASH',
+                'payment_term': 0,
                 'credit_limit': 0,
                 'discount_percentage': 0,
                 'allow_credit': False

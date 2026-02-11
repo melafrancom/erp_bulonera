@@ -245,8 +245,29 @@ class CustomerExcelManager:
             # Replace NaN with None
             df = df.where(pd.notnull(df), None)
             
-            # Convert column names to lowercase and strip spaces
-            df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
+            # Clean column names
+            # Expected format: lower case, spaces to underscores
+            # Handling: "CUIT/CUIL *" -> "cuit_cuil"
+            
+            def clean_header(header):
+                if not header:
+                    return ''
+                h = str(header).lower().strip()
+                # Remove common symbols in templates
+                h = h.replace('*', '').strip()
+                # Handle specific mappings
+                if 'cuit' in h:
+                    return 'cuit_cuil'
+                if 'razón social' in h or 'razon social' in h:
+                    return 'business_name'
+                # Standard cleanup
+                h = h.replace(' ', '_').replace('/', '_')
+                return h
+
+            df.columns = [clean_header(c) for c in df.columns]
+            
+            # Remove empty rows (all NaNs)
+            df.dropna(how='all', inplace=True)
             
             return df.to_dict('records')
         
