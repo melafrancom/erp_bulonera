@@ -1,6 +1,6 @@
 """
 Django Admin Configuration - Bulonera Alvear ERP/CRM
-Configuración del panel de administración de Django para gestión de usuarios y solicitudes
+Configuracion del panel de administracion de Django para gestion de usuarios y solicitudes
 """
 
 from django.contrib import admin
@@ -18,7 +18,7 @@ from .models import User, RegistrationRequest, UserLog
 # ========================================
 
 def time_since(datetime_obj):
-    """Convierte un datetime a formato relativo (hace X días/horas)"""
+    """Convierte un datetime a formato relativo (hace X dias/horas)"""
     if not datetime_obj:
         return '-'
     
@@ -26,12 +26,12 @@ def time_since(datetime_obj):
     
     if delta.days > 365:
         years = delta.days // 365
-        return f'Hace {years} año{"s" if years > 1 else ""}'
+        return f'Hace {years} anio{"s" if years > 1 else ""}'
     elif delta.days > 30:
         months = delta.days // 30
         return f'Hace {months} mes{"es" if months > 1 else ""}'
     elif delta.days > 0:
-        return f'Hace {delta.days} día{"s" if delta.days > 1 else ""}'
+        return f'Hace {delta.days} dia{"s" if delta.days > 1 else ""}'
     elif delta.seconds > 3600:
         hours = delta.seconds // 3600
         return f'Hace {hours} hora{"s" if hours > 1 else ""}'
@@ -68,7 +68,7 @@ def get_status_color(status):
 # ========================================
 
 class UserAdmin(BaseUserAdmin):
-    """Configuración del Admin para el modelo User"""
+    """Configuracion del Admin para el modelo User"""
     
     # ==================
     # LIST DISPLAY
@@ -116,13 +116,13 @@ class UserAdmin(BaseUserAdmin):
     # FIELDSETS
     # ==================
     fieldsets = (
-        ('Información Personal', {
+        ('Informacion Personal', {
             'fields': ('username', 'email', 'password', 'first_name', 'last_name')
         }),
         ('Permisos y Rol', {
             'fields': ('role', 'is_active', 'is_staff', 'is_superuser')
         }),
-        ('Permisos Específicos del Negocio', {
+        ('Permisos Especificos del Negocio', {
             'fields': (
                 'can_manage_users',
                 'can_manage_products',
@@ -132,7 +132,7 @@ class UserAdmin(BaseUserAdmin):
                 'can_manage_purchases',
                 'can_manage_inventory',
             ),
-            'classes': ('collapse',),  # Colapsado por defecto
+            'classes': ('collapse',),
         }),
         ('Fechas Importantes', {
             'fields': (
@@ -145,7 +145,7 @@ class UserAdmin(BaseUserAdmin):
             ),
             'classes': ('collapse',),
         }),
-        ('Auditoría', {
+        ('Auditoria', {
             'fields': (
                 'created_by',
                 'updated_by',
@@ -159,13 +159,13 @@ class UserAdmin(BaseUserAdmin):
     # ADD FIELDSETS (para crear nuevo usuario)
     # ==================
     add_fieldsets = (
-        ('Información Personal', {
+        ('Informacion Personal', {
             'fields': ('username', 'email', 'password1', 'password2', 'first_name', 'last_name')
         }),
         ('Permisos y Rol', {
             'fields': ('role', 'is_active', 'is_staff', 'is_superuser')
         }),
-        ('Permisos Específicos del Negocio', {
+        ('Permisos Especificos del Negocio', {
             'fields': (
                 'can_manage_users',
                 'can_manage_products',
@@ -209,22 +209,18 @@ class UserAdmin(BaseUserAdmin):
     
     @admin.display(description='Estado', boolean=True, ordering='is_active')
     def active_status(self, obj):
-        """Muestra ✅ o ❌ según is_active"""
         return obj.is_active
     
-    @admin.display(description='Último Login', ordering='last_login')
+    @admin.display(description='Ultimo Login', ordering='last_login')
     def last_login_display(self, obj):
-        """Muestra el último login en formato relativo"""
         return time_since(obj.last_login)
     
-    @admin.display(description='Último Acceso', ordering='last_access')
+    @admin.display(description='Ultimo Acceso', ordering='last_access')
     def last_access_display(self, obj):
-        """Muestra el último acceso en formato relativo"""
         return time_since(obj.last_access)
     
-    @admin.display(description='Fecha de Creación', ordering='created_at')
+    @admin.display(description='Fecha de Creacion', ordering='created_at')
     def created_at_display(self, obj):
-        """Muestra la fecha de creación en formato DD/MM/YYYY"""
         if obj.created_at:
             return obj.created_at.strftime('%d/%m/%Y')
         return '-'
@@ -242,9 +238,8 @@ class UserAdmin(BaseUserAdmin):
         'set_role_viewer',
     ]
     
-    @admin.action(description='✅ Activar usuarios seleccionados')
+    @admin.action(description='Activar usuarios seleccionados')
     def activate_users(self, request, queryset):
-        """Activa los usuarios seleccionados"""
         updated = queryset.update(is_active=True, deleted_at=None, deleted_by=None)
         self.message_user(
             request,
@@ -252,18 +247,12 @@ class UserAdmin(BaseUserAdmin):
             messages.SUCCESS
         )
     
-    @admin.action(description='❌ Desactivar usuarios seleccionados')
+    @admin.action(description='Desactivar usuarios seleccionados')
     def deactivate_users(self, request, queryset):
-        """Desactiva los usuarios seleccionados (excepto el propio usuario)"""
-        # Evitar que el usuario se desactive a sí mismo
         queryset_without_self = queryset.exclude(id=request.user.id)
         
         if queryset.filter(id=request.user.id).exists():
-            self.message_user(
-                request,
-                '⚠️ No puedes desactivarte a ti mismo.',
-                messages.WARNING
-            )
+            self.message_user(request, 'No puedes desactivarte a ti mismo.', messages.WARNING)
         
         updated = queryset_without_self.update(is_active=False, deleted_at=now())
         
@@ -274,68 +263,43 @@ class UserAdmin(BaseUserAdmin):
                 messages.SUCCESS
             )
     
-    @admin.action(description='🔴 Cambiar rol a Admin')
+    @admin.action(description='Cambiar rol a Admin')
     def set_role_admin(self, request, queryset):
-        """Cambia el rol de los usuarios seleccionados a Admin"""
         updated = queryset.update(role='admin')
-        self.message_user(
-            request,
-            f'{updated} usuario{"s" if updated != 1 else ""} ahora {"son" if updated != 1 else "es"} Admin.',
-            messages.SUCCESS
-        )
+        self.message_user(request, f'{updated} usuario(s) ahora son Admin.', messages.SUCCESS)
     
-    @admin.action(description='🟣 Cambiar rol a Manager')
+    @admin.action(description='Cambiar rol a Manager')
     def set_role_manager(self, request, queryset):
-        """Cambia el rol de los usuarios seleccionados a Manager"""
         updated = queryset.update(role='manager')
-        self.message_user(
-            request,
-            f'{updated} usuario{"s" if updated != 1 else ""} ahora {"son" if updated != 1 else "es"} Manager.',
-            messages.SUCCESS
-        )
+        self.message_user(request, f'{updated} usuario(s) ahora son Manager.', messages.SUCCESS)
     
-    @admin.action(description='🟢 Cambiar rol a Operator')
+    @admin.action(description='Cambiar rol a Operator')
     def set_role_operator(self, request, queryset):
-        """Cambia el rol de los usuarios seleccionados a Operator"""
         updated = queryset.update(role='operator')
-        self.message_user(
-            request,
-            f'{updated} usuario{"s" if updated != 1 else ""} ahora {"son" if updated != 1 else "es"} Operator.',
-            messages.SUCCESS
-        )
+        self.message_user(request, f'{updated} usuario(s) ahora son Operator.', messages.SUCCESS)
     
-    @admin.action(description='🔵 Cambiar rol a Viewer')
+    @admin.action(description='Cambiar rol a Viewer')
     def set_role_viewer(self, request, queryset):
-        """Cambia el rol de los usuarios seleccionados a Viewer"""
         updated = queryset.update(role='viewer')
-        self.message_user(
-            request,
-            f'{updated} usuario{"s" if updated != 1 else ""} ahora {"son" if updated != 1 else "es"} Viewer.',
-            messages.SUCCESS
-        )
+        self.message_user(request, f'{updated} usuario(s) ahora son Viewer.', messages.SUCCESS)
     
     # ==================
     # PERMISOS
     # ==================
     
     def has_module_permission(self, request):
-        """Solo superusers pueden acceder al admin"""
         return request.user.is_superuser
     
     def has_view_permission(self, request, obj=None):
-        """Solo superusers pueden ver usuarios"""
         return request.user.is_superuser
     
     def has_add_permission(self, request):
-        """Solo superusers pueden agregar usuarios"""
         return request.user.is_superuser
     
     def has_change_permission(self, request, obj=None):
-        """Solo superusers pueden editar usuarios"""
         return request.user.is_superuser
     
     def has_delete_permission(self, request, obj=None):
-        """Solo superusers pueden eliminar usuarios"""
         return request.user.is_superuser
 
 
@@ -344,7 +308,7 @@ class UserAdmin(BaseUserAdmin):
 # ========================================
 
 class RegistrationRequestAdmin(admin.ModelAdmin):
-    """Configuración del Admin para el modelo RegistrationRequest"""
+    """Configuracion del Admin para el modelo RegistrationRequest"""
     
     # ==================
     # LIST DISPLAY
@@ -395,7 +359,7 @@ class RegistrationRequestAdmin(admin.ModelAdmin):
         ('Estado de la Solicitud', {
             'fields': ('status', 'reason', 'requested_role')
         }),
-        ('Revisión', {
+        ('Revision', {
             'fields': ('reviewed_by', 'reviewed_at', 'rejection_reason'),
             'classes': ('collapse',),
         }),
@@ -410,13 +374,28 @@ class RegistrationRequestAdmin(admin.ModelAdmin):
         'rejection_reason',
     )
     
+    def get_readonly_fields(self, request, obj=None):
+        """
+        Si la solicitud ya fue aprobada o rechazada, hacer todos los campos de solo lectura.
+        """
+        base_readonly = list(self.readonly_fields)
+        if obj and obj.status != 'pending':
+            base_readonly += ['username', 'email', 'first_name', 'last_name', 'phone',
+                              'status', 'reason', 'requested_role']
+        return base_readonly
+    
+    def has_delete_permission(self, request, obj=None):
+        """Solo superusers pueden eliminar solicitudes pendientes"""
+        if obj and obj.status != 'pending':
+            return False
+        return request.user.is_superuser
+    
     # ==================
     # CUSTOM DISPLAY METHODS
     # ==================
     
     @admin.display(description='Estado', ordering='status')
     def colored_status(self, obj):
-        """Muestra el status con color de fondo"""
         color = get_status_color(obj.status)
         icon = {
             'pending': '⏳',
@@ -433,26 +412,22 @@ class RegistrationRequestAdmin(admin.ModelAdmin):
     
     @admin.display(description='Rol Solicitado', ordering='requested_role')
     def requested_role_display(self, obj):
-        """Muestra el rol solicitado"""
         return obj.get_requested_role_display()
     
     @admin.display(description='Fecha de Solicitud', ordering='created_at')
     def created_at_display(self, obj):
-        """Muestra la fecha de creación en formato DD/MM/YYYY"""
         if obj.created_at:
             return obj.created_at.strftime('%d/%m/%Y %H:%M')
         return '-'
     
     @admin.display(description='Revisado Por', ordering='reviewed_by')
     def reviewed_by_display(self, obj):
-        """Muestra quién revisó la solicitud"""
         if obj.reviewed_by:
             return f'{obj.reviewed_by.first_name} {obj.reviewed_by.last_name}'.strip() or obj.reviewed_by.username
         return '-'
     
-    @admin.display(description='Fecha de Revisión', ordering='reviewed_at')
+    @admin.display(description='Fecha de Revision', ordering='reviewed_at')
     def reviewed_at_display(self, obj):
-        """Muestra cuándo fue revisada"""
         return time_since(obj.reviewed_at)
     
     # ==================
@@ -464,18 +439,12 @@ class RegistrationRequestAdmin(admin.ModelAdmin):
         'reject_requests',
     ]
     
-    @admin.action(description='✅ Aprobar solicitudes seleccionadas')
+    @admin.action(description='Aprobar solicitudes seleccionadas')
     def approve_requests(self, request, queryset):
-        """Aprueba las solicitudes seleccionadas"""
-        # Filtrar solo pendientes
         pending = queryset.filter(status='pending')
         
         if not pending.exists():
-            self.message_user(
-                request,
-                '⚠️ No hay solicitudes pendientes en la selección.',
-                messages.WARNING
-            )
+            self.message_user(request, 'No hay solicitudes pendientes en la seleccion.', messages.WARNING)
             return
         
         approved_count = 0
@@ -484,51 +453,37 @@ class RegistrationRequestAdmin(admin.ModelAdmin):
                 req.approve(approved_by=request.user)
                 approved_count += 1
             except Exception as e:
-                self.message_user(
-                    request,
-                    f'❌ Error al aprobar {req.username}: {str(e)}',
-                    messages.ERROR
-                )
+                self.message_user(request, f'Error al aprobar {req.username}: {str(e)}', messages.ERROR)
         
         if approved_count > 0:
             self.message_user(
                 request,
-                f'✅ {approved_count} solicitud{"es" if approved_count != 1 else ""} aprobada{"s" if approved_count != 1 else ""} correctamente.',
+                f'{approved_count} solicitud(es) aprobada(s) correctamente.',
                 messages.SUCCESS
             )
     
-    @admin.action(description='❌ Rechazar solicitudes seleccionadas')
+    @admin.action(description='Rechazar solicitudes seleccionadas')
     def reject_requests(self, request, queryset):
-        """Rechaza las solicitudes seleccionadas con un motivo genérico"""
-        # Filtrar solo pendientes
         pending = queryset.filter(status='pending')
         
         if not pending.exists():
-            self.message_user(
-                request,
-                '⚠️ No hay solicitudes pendientes en la selección.',
-                messages.WARNING
-            )
+            self.message_user(request, 'No hay solicitudes pendientes en la seleccion.', messages.WARNING)
             return
         
         rejected_count = 0
-        reason = 'Rechazado desde el panel de administración (sin motivo específico)'
+        reason = 'Rechazado desde el panel de administracion (sin motivo especifico)'
         
         for req in pending:
             try:
                 req.reject(rejected_by=request.user, reason=reason)
                 rejected_count += 1
             except Exception as e:
-                self.message_user(
-                    request,
-                    f'❌ Error al rechazar {req.username}: {str(e)}',
-                    messages.ERROR
-                )
+                self.message_user(request, f'Error al rechazar {req.username}: {str(e)}', messages.ERROR)
         
         if rejected_count > 0:
             self.message_user(
                 request,
-                f'❌ {rejected_count} solicitud{"es" if rejected_count != 1 else ""} rechazada{"s" if rejected_count != 1 else ""} correctamente.',
+                f'{rejected_count} solicitud(es) rechazada(s) correctamente.',
                 messages.SUCCESS
             )
     
@@ -537,23 +492,15 @@ class RegistrationRequestAdmin(admin.ModelAdmin):
     # ==================
     
     def has_module_permission(self, request):
-        """Solo superusers pueden acceder"""
         return request.user.is_superuser
     
     def has_view_permission(self, request, obj=None):
-        """Solo superusers pueden ver solicitudes"""
         return request.user.is_superuser
     
     def has_add_permission(self, request):
-        """Permitir crear solicitudes manualmente (opcional)"""
         return request.user.is_superuser
     
     def has_change_permission(self, request, obj=None):
-        """Solo superusers pueden editar solicitudes"""
-        return request.user.is_superuser
-    
-    def has_delete_permission(self, request, obj=None):
-        """Solo superusers pueden eliminar solicitudes"""
         return request.user.is_superuser
 
 
@@ -562,7 +509,7 @@ class RegistrationRequestAdmin(admin.ModelAdmin):
 # ========================================
 
 class UserLogAdmin(admin.ModelAdmin):
-    """Admin para visualizar logs de auditoría"""
+    """Admin para visualizar logs de auditoria"""
     
     list_display = ('user', 'action', 'created_at_display', 'details_short')
     list_filter = ('user', 'created_at')
@@ -578,17 +525,14 @@ class UserLogAdmin(admin.ModelAdmin):
     
     @admin.display(description='Detalles')
     def details_short(self, obj):
-        """Muestra primeros 50 caracteres de detalles"""
         if obj.details:
             return obj.details[:50] + '...' if len(obj.details) > 50 else obj.details
         return '-'
     
     def has_add_permission(self, request):
-        """No permitir crear logs manualmente"""
         return False
     
     def has_delete_permission(self, request, obj=None):
-        """Solo superusers pueden eliminar logs"""
         return request.user.is_superuser
 
 
@@ -600,7 +544,7 @@ admin.site.register(User, UserAdmin)
 admin.site.register(RegistrationRequest, RegistrationRequestAdmin)
 admin.site.register(UserLog, UserLogAdmin)
 
-# Personalización del título del Admin
-admin.site.site_header = 'ERP Bulonera Alvear - Administración'
+# Personalizacion del titulo del Admin
+admin.site.site_header = 'ERP Bulonera Alvear - Administracion'
 admin.site.site_title = 'Admin ERP'
-admin.site.index_title = 'Panel de Administración'
+admin.site.index_title = 'Panel de Administracion'

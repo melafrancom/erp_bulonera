@@ -1,6 +1,6 @@
 """
 AUTH VIEWS - Bulonera Alvear ERP/CRM
-Vistas relacionadas con autenticación de usuarios
+Vistas relacionadas con autenticacion de usuarios
 
 """
 from django.shortcuts import render, redirect
@@ -10,6 +10,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.conf import settings
 from django.core.mail import send_mail
+from django.db import models
 
 # from Local apps
 from core.models import User, RegistrationRequest
@@ -19,59 +20,67 @@ from core.forms import LoginForm, RegistrationRequestForm, UserEditForm
 # LOGIN / LOGOUT
 # ================================
 def login_view(request):
-    """Vista de inicio de sesión"""
+    """Vista de inicio de sesion"""
     if request.user.is_authenticated:
-        if user.password_change_required:
-            messages.warning(request, 'Por seguridad, debes cambiar tu contraseña.')
+        if getattr(request.user, 'password_change_required', False):
+            messages.warning(request, 'Por seguridad, debes cambiar tu contrasena.')
             return redirect('core:password_change')
         return redirect('core:home')
     
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
-            username = form.cleaned_data['username']
+            username_or_email = form.cleaned_data['username']
             password = form.cleaned_data['password']
-            user = authenticate(request, username=username, password=password)
+            
+            # MEJORA: Permitir login con email o username
+            user = authenticate(request, username=username_or_email, password=password)
+            
+            # Si no se encontro por username, intentar por email
+            if user is None:
+                try:
+                    user_by_email = User.objects.filter(email__iexact=username_or_email).first()
+                    if user_by_email:
+                        user = authenticate(request, username=user_by_email.username, password=password)
+                except Exception:
+                    pass
             
             if user is not None:
                 if user.is_active:
                     login(request, user)
                     
-                    # Verificar expiración de contraseña
+                    # Verificar si debe cambiar contrasena (primer login)
                     if getattr(user, 'password_change_required', False):
-                        messages.warning(request, 'Por seguridad, debes cambiar tu contraseña.')
+                        messages.warning(request, 'Por seguridad, debes cambiar tu contrasena.')
                         return redirect('core:password_change')
 
-                    # Actualizar último acceso
+                    # Actualizar ultimo acceso
                     user.last_access = timezone.now()
                     user.save(update_fields=['last_access'])
                     
-                    messages.success(request, f'¡Bienvenido, {user.first_name or user.username}!')
+                    messages.success(request, f'Bienvenido, {user.first_name or user.username}!')
                     
-                    # Redirigir a la página solicitada o al home
+                    # Redirigir a la pagina solicitada o al home
                     next_url = request.GET.get('next', 'core:home')
                     return redirect(next_url)
                 else:
-                    # Este bloque es redundante si authenticate retorna None para inactivos,
-                    # pero se mantiene por si el backend cambia.
-                    messages.error(request, 'Tu cuenta está desactivada. Contacta al administrador.')
+                    messages.error(request, 'Tu cuenta esta desactivada. Contacta al administrador.')
             else:
-                # Verificar si el usuario existe pero está inactivo
+                # Verificar si el usuario existe pero esta inactivo
                 try:
-                    # Usamos all_objects porque objects filtra los inactivos
-                    existing_user = User.all_objects.get(username=username)
+                    existing_user = User.all_objects.filter(
+                        models.Q(username=username_or_email) | models.Q(email__iexact=username_or_email)
+                    ).first()
                     
-                    if existing_user.check_password(password):
+                    if existing_user and existing_user.check_password(password):
                         if not existing_user.is_active:
-                            messages.error(request, 'Tu cuenta está desactivada. Contacta al administrador.')
+                            messages.error(request, 'Tu cuenta esta desactivada. Contacta al administrador.')
                         else:
-                            # Si es activo y password coincide, authenticate debió funcionar.
-                            # Si llegamos acá es raro, pero asumimos error genérico.
-                            messages.error(request, 'Usuario o contraseña incorrectos.')
+                            messages.error(request, 'Usuario o contrasena incorrectos.')
                     else:
-                        messages.error(request, 'Usuario o contraseña incorrectos.')
-                except User.DoesNotExist:
-                    messages.error(request, 'Usuario o contraseña incorrectos.')
+                        messages.error(request, 'Usuario o contrasena incorrectos.')
+                except Exception:
+                    messages.error(request, 'Usuario o contrasena incorrectos.')
     else:
         form = LoginForm()
     
@@ -83,20 +92,20 @@ def login_view(request):
 
 @login_required
 def logout_view(request):
-    """Vista de cierre de sesión"""
+    """Vista de cierre de sesion"""
     if request.method == 'POST':
         logout(request)
-        messages.info(request, 'Has cerrado sesión correctamente.')
+        messages.info(request, 'Has cerrado sesion correctamente.')
         return redirect('core:home')
     
-    # Si es GET, mostrar confirmación
+    # Si es GET, mostrar confirmacion
     return render(request, 'core/auth/logout_confirm.html')
 
 # ================================
 # REGISTRO DE USUARIOS
 # ================================
 def register_request_view(request):
-    """Solicitud de registro (no crea usuario, solo solicitud de aprobación)"""
+    """Solicitud de registro (no crea usuario, solo solicitud de aprobacion)"""
     if request.user.is_authenticated:
         return redirect('core:home')
     
@@ -110,7 +119,7 @@ def register_request_view(request):
             
             messages.success(
                 request,
-                '¡Solicitud enviada exitosamente! Un administrador la revisará pronto. '
+                'Solicitud enviada exitosamente! Un administrador la revisara pronto. '
                 'Te notificaremos por email cuando sea aprobada.'
             )
             return redirect('core:registration_status')
@@ -123,7 +132,7 @@ def register_request_view(request):
     return render(request, 'core/auth/register_request.html', context)
 
 def registration_status_view(request):
-    """Página de confirmación de solicitud enviada"""
+    """Pagina de confirmacion de solicitud enviada"""
     return render(request, 'core/auth/registration_status.html')
 
 # ================================
@@ -163,25 +172,29 @@ def edit_profile_view(request):
 
 
 # ================================
-# CAMBIO DE CONTRASEÑA PROPIO (Usuario logueado)
+# CAMBIO DE CONTRASENA PROPIO (Usuario logueado)
 # ================================
 @login_required
 def password_change_view(request):
-    """Cambiar la contraseña del usuario logueado"""
+    """Cambiar la contrasena del usuario logueado"""
     from django.contrib.auth.forms import PasswordChangeForm
+    from django.contrib.auth import update_session_auth_hash
     
     if request.method == 'POST':
         form = PasswordChangeForm(request.user, request.POST)
         if form.is_valid():
-            if user.password_change_required:
-                user.password_change_required = False
-                user.save(update_fields=['password_change_required'])
+            # Guardar la nueva contrasena
+            form.save()
             
-            # Actualizar la sesión para que no se cierre
-            from django.contrib.auth import update_session_auth_hash
-            update_session_auth_hash(request, user)
+            # Desmarcar flag de cambio obligatorio
+            if getattr(request.user, 'password_change_required', False):
+                request.user.password_change_required = False
+                request.user.save(update_fields=['password_change_required'])
             
-            messages.success(request, 'Tu contraseña ha sido actualizada exitosamente.')
+            # Actualizar la sesion para que no se cierre
+            update_session_auth_hash(request, request.user)
+            
+            messages.success(request, 'Tu contrasena ha sido actualizada exitosamente.')
             return redirect('core:profile')
     else:
         form = PasswordChangeForm(request.user)
@@ -193,17 +206,17 @@ def password_change_view(request):
 
 
 # ================================
-# RESET DE CONTRASEÑA (Usuario NO logueado)
+# RESET DE CONTRASENA (Usuario NO logueado)
 # ================================
 def password_reset_request_view(request):
-    """Solicitar recuperación de contraseña por email"""
+    """Solicitar recuperacion de contrasena por email"""
     # TODO: Implementar cuando tengamos email configurado
     messages.info(request, 'Funcionalidad en desarrollo. Contacta al administrador.')
     return redirect('core:login')
 
 def password_reset_confirm_view(request, uidb64, token):
-    """Confirmar y establecer nueva contraseña"""
-    # TODO: Implementar validación de token
+    """Confirmar y establecer nueva contrasena"""
+    # TODO: Implementar validacion de token
     messages.info(request, 'Funcionalidad en desarrollo.')
     return redirect('core:login')
 
@@ -222,7 +235,7 @@ Se ha recibido una nueva solicitud de registro en el sistema ERP/CRM:
 Usuario solicitado: {reg_request.username}
 Nombre completo: {reg_request.first_name} {reg_request.last_name}
 Email: {reg_request.email}
-Teléfono: {reg_request.phone or "No especificado"}
+Telefono: {reg_request.phone or "No especificado"}
 Rol solicitado: {reg_request.get_requested_role_display()}
 Motivo: {reg_request.reason or "No especificado"}
 Ingresa al sistema para aprobar o rechazar la solicitud.

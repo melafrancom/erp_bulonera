@@ -1,9 +1,9 @@
 """
 MANAGERS VIEWS - Bulonera Alvear ERP/CRM
-Vistas que únicamente puede acceder el usuario con rol MANAGER
+Vistas que unicamente puede acceder el usuario con rol MANAGER
 """
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
 from django.core.mail import send_mail
@@ -12,15 +12,16 @@ from django.utils import timezone
 
 # from local apps
 from core.models import User, RegistrationRequest
+from core.decorators import manager_required
+
 # ================================
 # DASHBOARD PARA MANAGERS
 # ================================
-@login_required
-@user_passes_test(lambda u: u.role == 'manager' or u.role == 'admin')
+@manager_required
 def managers_dashboard_view(request):
     """
     Dashboard completo para managers y admins
-    Muestra estadísticas del sistema, usuarios, solicitudes pendientes, etc.
+    Muestra estadisticas del sistema, usuarios, solicitudes pendientes, etc.
     """
     user = request.user
     
@@ -29,7 +30,7 @@ def managers_dashboard_view(request):
         'user': user,
         'current_time': timezone.now(),
         
-        # Estadísticas de usuarios
+        # Estadisticas de usuarios
         'total_users': User.objects.count(),
         'active_users': User.objects.filter(is_active=True).count(),
         'inactive_users': User.objects.filter(is_active=False).count(),
@@ -44,25 +45,19 @@ def managers_dashboard_view(request):
             status='approved',
             reviewed_at__month=timezone.now().month
         ).count(),
-        
-        # TODO: Agregar métricas de productos, ventas, etc. cuando estén disponibles
-        # 'total_products': Product.objects.count(),
-        # 'low_stock_products': Product.objects.filter(stock__lt=10).count(),
-        # 'total_sales_today': Sale.objects.filter(created_at__date=timezone.now().date()).count(),
-        # 'pending_invoices': Invoice.objects.filter(status='pending').count(),
     }
     
     return render(request, 'core/managers/managers_dashboard.html', context)
+
 # ================================
-# INVITACIÓN DE USUARIOS (Nuevo)
+# INVITACION DE USUARIOS (Nuevo)
 # ================================
 
 
 # ================================
-# GESTIÓN DE SOLICITUDES DE REGISTRO
+# GESTION DE SOLICITUDES DE REGISTRO
 # ================================
-@login_required
-@user_passes_test(lambda u: u.role == 'manager' or u.role == 'admin')
+@manager_required
 def pending_requests_view(request):
     """Lista de solicitudes pendientes (solo managers)"""
     pending = RegistrationRequest.objects.filter(status='pending').order_by('-created_at')
@@ -77,8 +72,7 @@ def pending_requests_view(request):
     }
     return render(request, 'core/managers/registration_requests.html', context)
 
-@login_required
-@user_passes_test(lambda u: u.role == 'manager' or u.role == 'admin')
+@manager_required
 def approve_request_view(request, request_id):
     """Aprobar solicitud de registro"""
     reg_request = get_object_or_404(RegistrationRequest, id=request_id, status='pending')
@@ -92,9 +86,9 @@ def approve_request_view(request, request_id):
             
             messages.success(
                 request,
-                f'✅ Usuario {user.username} creado exitosamente. '
-                f'Contraseña temporal: <strong>{temp_password}</strong> '
-                f'(Copiala ahora, no se podrá ver de nuevo)',
+                f'Usuario {user.username} creado exitosamente. '
+                f'Contrasena temporal: <strong>{temp_password}</strong> '
+                f'(Copiala ahora, no se podra ver de nuevo)',
                 extra_tags='safe'
             )
             return redirect('core:pending_requests')
@@ -107,8 +101,7 @@ def approve_request_view(request, request_id):
     }
     return render(request, 'core/managers/approve_request.html', context)
 
-@login_required
-@user_passes_test(lambda u: u.role == 'manager' or u.role == 'admin')
+@manager_required
 def reject_request_view(request, request_id):
     """Rechazar solicitud de registro"""
     reg_request = get_object_or_404(RegistrationRequest, id=request_id, status='pending')
@@ -126,7 +119,7 @@ def reject_request_view(request, request_id):
             # Notificar al solicitante
             _notify_user_rejected(reg_request, reason)
             
-            messages.success(request, f'❌ Solicitud de {reg_request.username} rechazada.')
+            messages.success(request, f'Solicitud de {reg_request.username} rechazada.')
             return redirect('core:pending_requests')
         except Exception as e:
             messages.error(request, f'Error al rechazar solicitud: {str(e)}')
@@ -136,14 +129,13 @@ def reject_request_view(request, request_id):
         'reg_request': reg_request,
     }
     return render(request, 'core/managers/reject_request.html', context)
+
 # ================================
 # GESTION DE USUARIOS: LISTA DE ROLES A CREAR / EDITAR / ELIMINAR (Admin)
 # ================================
-@login_required
-@user_passes_test(lambda u: u.role == 'manager' or u.role == 'admin')
+@manager_required
 def users_list_view(request):
     """Lista de todos los usuarios del sistema"""
-    # TODO: Implementar filtros (activos, inactivos, por rol, etc.)
     users = User.objects.all().order_by('-created_at')
     
     context = {
@@ -153,24 +145,22 @@ def users_list_view(request):
     }
     return render(request, 'core/managers/users_list.html', context)
 
-@login_required
-@user_passes_test(lambda u: u.role == 'manager' or u.role == 'admin')
+@manager_required
 def user_detail_view(request, user_id):
     """Ver detalles de un usuario"""
     user = get_object_or_404(User, id=user_id)
     
     context = {
-        'user_detail': user,  # Usamos user_detail para no sobrescribir request.user
+        'user_detail': user,
     }
     return render(request, 'core/managers/user_detail.html', context)
 
-@login_required
-@user_passes_test(lambda u: u.role == 'manager' or u.role == 'admin')
+@manager_required
 def user_toggle_active_view(request, user_id):
     """Activar/Desactivar un usuario"""
     user = get_object_or_404(User, id=user_id)
     
-    # Evitar que se desactive a sí mismo
+    # Evitar que se desactive a si mismo
     if user == request.user:
         messages.error(request, 'No puedes desactivar tu propia cuenta.')
         return redirect('core:users_list')
@@ -197,16 +187,16 @@ def user_toggle_active_view(request, user_id):
 # ================================
 def _notify_user_approved(reg_request, temp_password):
     """Notifica al usuario que su solicitud fue aprobada"""
-    subject = f'¡Tu cuenta en {settings.COMPANY_NAME} ha sido aprobada!'
+    subject = f'Tu cuenta en {settings.COMPANY_NAME} ha sido aprobada!'
     message = f'''
 Hola {reg_request.first_name},
-¡Buenas noticias! Tu solicitud de acceso al sistema ERP/CRM ha sido aprobada.
+Buenas noticias! Tu solicitud de acceso al sistema ERP/CRM ha sido aprobada.
 Credenciales de acceso:
 - Usuario: {reg_request.username}
-- Contraseña temporal: {temp_password}
-Por seguridad, te recomendamos cambiar tu contraseña después del primer inicio de sesión.
+- Contrasena temporal: {temp_password}
+Por seguridad, te recomendamos cambiar tu contrasena despues del primer inicio de sesion.
 Puedes acceder al sistema en: [URL del sistema]
-¡Bienvenido!
+Bienvenido!
 {settings.COMPANY_NAME}
     '''
     
@@ -219,11 +209,11 @@ Puedes acceder al sistema en: [URL del sistema]
             fail_silently=False,
         )
     except Exception as e:
-        print(f"Error enviando email de aprobación: {e}")
+        print(f"Error enviando email de aprobacion: {e}")
 
 def _notify_user_rejected(reg_request, reason):
     """Notifica al usuario que su solicitud fue rechazada"""
-    subject = f'Actualización sobre tu solicitud en {settings.COMPANY_NAME}'
+    subject = f'Actualizacion sobre tu solicitud en {settings.COMPANY_NAME}'
     message = f'''
 Hola {reg_request.first_name},
 Lamentamos informarte que tu solicitud de acceso al sistema ERP/CRM no ha sido aprobada.

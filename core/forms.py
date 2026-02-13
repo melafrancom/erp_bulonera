@@ -7,9 +7,10 @@ from .models import RegistrationRequest, User  # Agregado User
 class LoginForm(forms.Form):
     username = forms.CharField(
         max_length=150,
+        label='Usuario o Email',
         widget=forms.TextInput(attrs={
             'class': 'form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition',
-            'placeholder': 'Usuario',
+            'placeholder': 'Usuario o Email',
             'autofocus': True
         })
     )
@@ -64,6 +65,26 @@ class RegistrationRequestForm(forms.ModelForm):
             'reason': 'Motivo de solicitud',
             'requested_role': 'Rol solicitado',
         }
+    
+    def clean_username(self):
+        username = self.cleaned_data['username']
+        # Verificar si ya existe un usuario activo (no eliminado) con este username
+        if User.all_objects.filter(username=username, deleted_at__isnull=True).exists():
+            raise forms.ValidationError('Este nombre de usuario ya está en uso.')
+        # Verificar si ya hay una solicitud pendiente con este username
+        if RegistrationRequest.objects.filter(username=username, status='pending').exists():
+            raise forms.ValidationError('Ya existe una solicitud pendiente con este nombre de usuario.')
+        return username
+    
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        # Verificar si ya existe un usuario activo (no eliminado) con este email
+        if User.all_objects.filter(email__iexact=email, deleted_at__isnull=True).exists():
+            raise forms.ValidationError('Este email ya está en uso por un usuario activo.')
+        # Verificar si ya hay una solicitud pendiente con este email
+        if RegistrationRequest.objects.filter(email__iexact=email, status='pending').exists():
+            raise forms.ValidationError('Ya existe una solicitud pendiente con este email.')
+        return email
 
 
 class UserEditForm(forms.ModelForm):

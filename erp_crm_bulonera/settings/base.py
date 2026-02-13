@@ -44,6 +44,8 @@ THIRD_PARTY_APPS = [
     'corsheaders',
     'widget_tweaks',
     'django_filters',
+    'django_celery_beat',
+
 ]
 SHARED_APPS = [
     'erp_crm_bulonera',
@@ -206,3 +208,5 @@ CACHES = {
 
 # Cache por vista
 CACHE_MIDDLEWARE_SECONDS = 3600
+
+COMPANY_NAME = env('COMPANY_NAME')
