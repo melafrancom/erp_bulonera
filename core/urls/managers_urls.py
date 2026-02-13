@@ -17,9 +17,9 @@ urlpatterns = [
     path('requests/<int:request_id>/reject/', managers_views.reject_request_view, name='reject_request'),
     
     # Gestión de usuarios (futuro)
-    # path('users/', managers_views.users_list_view, name='users_list'),
-    # path('users/<int:user_id>/', managers_views.user_detail_view, name='user_detail'),
-    # path('users/<int:user_id>/toggle/', managers_views.user_toggle_active_view, name='user_toggle_active'),
+    path('users/', managers_views.users_list_view, name='users_list'),
+    path('users/<int:user_id>/', managers_views.user_detail_view, name='user_detail'),
+    path('users/<int:user_id>/toggle/', managers_views.user_toggle_active_view, name='user_toggle_active'),
     
     # Gestión de roles y permisos (futuro)
     # path('roles/', managers_views.roles_list_view, name='roles_list'),
