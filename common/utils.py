@@ -115,3 +115,34 @@ def truncate_text(text: str, max_length: int = 50, suffix: str = "...") -> str:
         return text or ""
     
     return text[:max_length - len(suffix)].rstrip() + suffix
+
+
+def generate_document_number(model_class, prefix: str) -> str:
+    """
+    Genera un número de documento secuencial único.
+    Formato: PREFIX-YYYYMMDD-XXXXX
+    Ejemplo: VTA-20240315-00001
+    """
+    from django.utils import timezone
+    import random
+    
+    today = timezone.now().strftime('%Y%m%d')
+    base = f"{prefix}-{today}-"
+    
+    # Buscar el último número generado hoy
+    last_obj = model_class.objects.filter(
+        number__startswith=base
+    ).order_by('-number').first()
+    
+    if last_obj:
+        # Extraer secuencia y sumar 1
+        try:
+            last_sequence = int(last_obj.number.split('-')[-1])
+            new_sequence = last_sequence + 1
+        except ValueError:
+            new_sequence = 1
+    else:
+        new_sequence = 1
+        
+    # Formatear: 5 dígitos (00001)
+    return f"{base}{new_sequence:05d}"

@@ -54,6 +54,10 @@ SHARED_APPS = [
     'common',
     'customers',
     'sales',
+    'products',
+    'inventory',
+    'payments',
+    'bills',
 ]
 
 # ALL APPS
