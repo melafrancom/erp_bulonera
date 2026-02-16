@@ -24,160 +24,162 @@
   <!-- Navegación Principal -->
   <nav class="flex-1 px-3 py-6 overflow-y-auto">
     {% block nav_items %}
-    <!-- Dashboard -->
-    <div class="mb-6">
-      <a
-        href="{% url 'core:dashboard' %}"
-        class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
-      >
-        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-        <span>Dashboard</span>
-      </a>
-    </div>
-
-    <!-- Sección: Operaciones -->
-    <div class="mb-6">
-      <p
-        class="text-blue-200 text-xs font-medium uppercase tracking-wide mb-3 px-3"
-      >
-        Operaciones
-      </p>
-
-      {% if user.can_manage_sales %}
-      <a href="#" class="nav-item">
-        <i data-lucide="shopping-cart" class="w-5 h-5"></i>
-        <span>Ventas</span>
-        <span
-          class="ml-auto bg-green-500 text-white text-xs px-2 py-0.5 rounded-full"
-          >3</span
+      <!-- Dashboard -->
+      <div class="mb-6">
+        <a
+          href="{% url 'core:dashboard' %}"
+          class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
         >
-      </a>
+          <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+          <span>Dashboard del Sistema</span>
+        </a>
+      </div>
 
-      <a href="#" class="nav-item">
-        <i data-lucide="file-text" class="w-5 h-5"></i>
-        <span>Presupuestos</span>
-      </a>
-
-      <a href="#" class="nav-item">
-        <i data-lucide="receipt" class="w-5 h-5"></i>
-        <span>Facturas</span>
-      </a>
-      {% endif %} {% if user.can_manage_customers %}
-      <a href="{% url 'customers:customer_list' %}" class="nav-item">
-        <i data-lucide="users" class="w-5 h-5"></i>
-        <span>Clientes</span>
-      </a>
-      {% endif %}
-    </div>
-
-    <!-- Sección: Inventario -->
-    <div class="mb-6">
-      <p
-        class="text-blue-200 text-xs font-medium uppercase tracking-wide mb-3 px-3"
-      >
-        Inventario
-      </p>
-
-      {% if user.can_manage_products %}
-      <a
-        href="#"
-        class="nav-item {% if 'products' in request.path %}active{% endif %}"
-      >
-        <i data-lucide="package" class="w-5 h-5"></i>
-        <span>Productos</span>
-      </a>
-
-      <a href="#" class="nav-item">
-        <i data-lucide="tags" class="w-5 h-5"></i>
-        <span>Categorías</span>
-      </a>
-
-      <a href="#" class="nav-item">
-        <i data-lucide="list" class="w-5 h-5"></i>
-        <span>Listas de Precios</span>
-      </a>
-
-      <a href="#" class="nav-item">
-        <i data-lucide="truck" class="w-5 h-5"></i>
-        <span>Proveedores</span>
-      </a>
-
-      <a href="#" class="nav-item">
-        <i data-lucide="archive" class="w-5 h-5"></i>
-        <span>Stock</span>
-        <span
-          class="ml-auto bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full"
+      <!-- Sección: Operaciones -->
+      <div class="mb-6">
+        <p
+          class="text-blue-200 text-xs font-medium uppercase tracking-wide mb-3 px-3"
         >
-          <i data-lucide="alert-triangle" class="w-3 h-3 inline"></i>
+          Operaciones
+        </p>
+
+        {% if user.can_manage_sales %}
+        <a href="#" class="nav-item">
+          <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+          <span>Ventas</span>
+          <span
+            class="ml-auto bg-green-500 text-white text-xs px-2 py-0.5 rounded-full"
+            >3</span
+          >
+        </a>
+
+        <a href="#" class="nav-item">
+          <i data-lucide="file-text" class="w-5 h-5"></i>
+          <span>Presupuestos</span>
+        </a>
+
+        <a href="#" class="nav-item">
+          <i data-lucide="receipt" class="w-5 h-5"></i>
+          <span>Facturas</span>
+        </a>
+        {% endif %} {% if user.can_manage_customers %}
+        <a href="{% url 'customers:customer_list' %}" class="nav-item">
+          <i data-lucide="users" class="w-5 h-5"></i>
+          <span>Clientes</span>
+        </a>
+        {% endif %}
+      </div>
+
+      <!-- Sección: Inventario -->
+      <div class="mb-6">
+        <p
+          class="text-blue-200 text-xs font-medium uppercase tracking-wide mb-3 px-3"
+        >
+          Inventario
+        </p>
+
+        {% if user.can_manage_products %}
+        <a
+          href="#"
+          class="nav-item {% if 'products' in request.path %}active{% endif %}"
+        >
+          <i data-lucide="package" class="w-5 h-5"></i>
+          <span>Productos</span>
+        </a>
+
+        <a href="#" class="nav-item">
+          <i data-lucide="tags" class="w-5 h-5"></i>
+          <span>Categorías</span>
+        </a>
+
+        <a href="#" class="nav-item">
+          <i data-lucide="list" class="w-5 h-5"></i>
+          <span>Listas de Precios</span>
+        </a>
+
+        <a href="#" class="nav-item">
+          <i data-lucide="truck" class="w-5 h-5"></i>
+          <span>Proveedores</span>
+        </a>
+
+        <a href="#" class="nav-item">
+          <i data-lucide="archive" class="w-5 h-5"></i>
+          <span>Stock</span>
+          <span
+            class="ml-auto bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full"
+          >
+            <i data-lucide="alert-triangle" class="w-3 h-3 inline"></i>
+          </span>
+        </a>
+        {% endif %}
+      </div>
+
+      <!-- Sección: Finanzas -->
+      <div class="mb-6">
+        <p
+          class="text-blue-200 text-xs font-medium uppercase tracking-wide mb-3 px-3"
+        >
+          Finanzas
+        </p>
+
+        <a href="#" class="nav-item">
+          <i data-lucide="dollar-sign" class="w-5 h-5"></i>
+          <span>Caja</span>
+        </a>
+
+        <a href="#" class="nav-item">
+          <i data-lucide="credit-card" class="w-5 h-5"></i>
+          <span>Movimientos</span>
+        </a>
+
+        {% if tenant_permissions.can_view_reports %}
+        <a href="#" class="nav-item">
+          <i data-lucide="trending-up" class="w-5 h-5"></i>
+          <span>Reportes</span>
+        </a>
+        {% endif %}
+      </div>
+      <!-- Sección: Notificaciones -->
+      <a href="#" class="nav-item">
+        <i data-lucide="bell" class="w-5 h-5"></i>
+        <span>Notificaciones</span>
+        <span class="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+          3
         </span>
       </a>
-      {% endif %}
-    </div>
+      <!-- Sección: Administración (Solo Admins) -->
+      {% if user.is_admin or user.is_manager %}
+      <div class="pt-6 mt-6 border-t border-white/10">
+        <p
+          class="text-blue-200 text-xs font-medium uppercase tracking-wide mb-3 px-3"
+        >
+          Administración
+        </p>
+        <!-- Dashboard -->
+        <div class="mb-6">
+          <a
+            href="{% url 'core:managers_dashboard' %}"
+            class="nav-item {% if request.resolver_match.url_name == 'managers_dashboard' %}active{% endif %}"
+          >
+            <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+            <span>Dashboard Administrador</span>
+          </a>
+        </div>
+        <a
+          href="{% url 'core:users_list' %}"
+          class="nav-item {% if request.resolver_match.url_name == 'users' %}active{% endif %}"
+        >
+          <i data-lucide="user-plus" class="w-5 h-5"></i>
+          <span>Usuarios</span>
+        </a>
 
-    <!-- Sección: Finanzas -->
-    <div class="mb-6">
-      <p
-        class="text-blue-200 text-xs font-medium uppercase tracking-wide mb-3 px-3"
-      >
-        Finanzas
-      </p>
-
-      <a href="#" class="nav-item">
-        <i data-lucide="dollar-sign" class="w-5 h-5"></i>
-        <span>Caja</span>
-      </a>
-
-      <a href="#" class="nav-item">
-        <i data-lucide="credit-card" class="w-5 h-5"></i>
-        <span>Movimientos</span>
-      </a>
-
-      {% if tenant_permissions.can_view_reports %}
-      <a href="#" class="nav-item">
-        <i data-lucide="trending-up" class="w-5 h-5"></i>
-        <span>Reportes</span>
-      </a>
-      {% endif %}
-    </div>
-    <!-- Sección: Notificaciones -->
-    <a href="#" class="nav-item">
-      <i data-lucide="bell" class="w-5 h-5"></i>
-      <span>Notificaciones</span>
-      <span class="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-        3
-      </span>
-    </a>
-    <!-- Sección: Administración (Solo Admins) -->
-    {% if user.is_admin %}
-    <div class="pt-6 mt-6 border-t border-white/10">
-      <p
-        class="text-blue-200 text-xs font-medium uppercase tracking-wide mb-3 px-3"
-      >
-        Administración
-      </p>
-
-      <a
-        href="{% url 'user:users' %}"
-        class="nav-item {% if request.resolver_match.url_name == 'users' %}active{% endif %}"
-      >
-        <i data-lucide="user-plus" class="w-5 h-5"></i>
-        <span>Usuarios</span>
-      </a>
-
-      <a
-        href="{% url 'user:settings' %}"
-        class="nav-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}"
-      >
-        <i data-lucide="settings" class="w-5 h-5"></i>
-        <span>Configuración</span>
-      </a>
-
-      <a href="#" class="nav-item">
-        <i data-lucide="shield" class="w-5 h-5"></i>
-        <span>Seguridad</span>
-      </a>
-    </div>
-    {% endif %} {% endblock %}
+        <a href="#" class="nav-item">
+          <i data-lucide="shield" class="w-5 h-5"></i>
+          <span>Seguridad</span>
+        </a>
+      </div>
+      {% endif %} 
+    {% endblock %}
   </nav>
   {% include 'includes/footer.html' %}
 </aside>

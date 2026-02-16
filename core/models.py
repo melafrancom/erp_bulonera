@@ -48,6 +48,22 @@ class User(BaseModel, AbstractUser):
     def __str__(self):
         return f"{self.username} @ ({self.role})"
     
+    @property
+    def is_admin(self):
+        return self.role == 'admin' or self.is_superuser
+
+    @property
+    def is_manager(self):
+        return self.role == 'manager' or self.is_admin
+
+    @property
+    def is_operator(self):
+        return self.role == 'operator' or self.is_manager
+
+    @property
+    def is_viewer(self):
+        return self.role == 'viewer' or self.is_operator
+    
     def clean(self):
         """Validar unicidad de email entre usuarios no eliminados."""
         from django.core.exceptions import ValidationError
