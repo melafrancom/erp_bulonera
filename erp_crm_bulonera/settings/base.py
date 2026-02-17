@@ -22,12 +22,17 @@ env = environ.Env(
     ALLOWED_HOSTS=(list, ['localhost', '127.0.0.1']),
 )
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('SECRET_KEY')
+
+# DEBUG setting con validación
+DEBUG = env.bool('DEBUG', default=True)  # Now in development. Change to False in production
+
+ALLOWED_HOSTS = env('ALLOWED_HOSTS')
+SITE_URL = env('SITE_URL')
 
 # Application definition
 
@@ -66,21 +71,73 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + SHARED_APPS
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware', # Agregado para CORS
+    'corsheaders.middleware.CorsMiddleware',  # CORS - antes que CommonMiddleware
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'common.middleware.TokenExpirationMiddleware',  # Token expiration check
+    'common.middleware.AuditLoggingMiddleware',  # Audit trail logging
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# ============================================================================
+# CORS Configuration - Cross-Origin Resource Sharing
+# ============================================================================
+CORS_ALLOWED_ORIGINS = env(
+    'CORS_ALLOWED_ORIGINS',
+    default='http://localhost:3000,http://127.0.0.1:3000' if DEBUG else 'https://bulonera.app'
+).split(',')
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS if origin.strip()]
+
+# Permitir credenciales en CORS (cookies, headers Authorization)
+CORS_ALLOW_CREDENTIALS = True
+
+# Headers permitidos en CORS
+CORS_ALLOW_HEADERS = (
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+)
+
+# ============================================================================
+# Security Settings (Producción)
+# ============================================================================
+if not DEBUG:
+    # HTTPS/SSL
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # HSTS (HTTP Strict Transport Security)
+    SECURE_HSTS_SECONDS = 31536000  # 1 año
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+else:
+    # Desarrollo: deshabilitar HTTPS
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+
 ROOT_URLCONF = 'erp_crm_bulonera.urls'
+
+# Templates configuration - only include templates dir if it exists
+templates_dirs = []
+templates_dir = BASE_DIR / 'templates'
+if templates_dir.exists():
+    templates_dirs.append(templates_dir)
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'], # Agregamos carpeta templates global
-        'APP_DIRS': True,
+        'DIRS': templates_dirs or [],  # Empty list if templates dir doesn't exist
+        'APP_DIRS': True,  # Will search for templates in each app's templates/ folder
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -168,32 +225,160 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Custom User Model
 AUTH_USER_MODEL = 'core.User'
 
-# Celery Configuration
-# CELERY
+# ============================================================================
+# REST Framework Configuration (DRF) - Production Ready
+# ============================================================================
+
+REST_FRAMEWORK = {
+    # ─────────────────────────────────────────────────────────────────────
+    # PAGINATION
+    # ─────────────────────────────────────────────────────────────────────
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 50,                    # Default items per page
+    'MAX_PAGE_SIZE': 200,               # Max items per page request
+    
+    # ─────────────────────────────────────────────────────────────────────
+    # AUTHENTICATION
+    # ─────────────────────────────────────────────────────────────────────
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',  # PWA/Mobile apps
+        'rest_framework.authentication.SessionAuthentication',  # Web admin
+    ],
+    
+    # ─────────────────────────────────────────────────────────────────────
+    # PERMISSIONS (default: IsAuthenticated)
+    # ─────────────────────────────────────────────────────────────────────
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    
+    # ─────────────────────────────────────────────────────────────────────
+    # THROTTLING (Rate Limiting) - Previene DoS y abuso
+    # ─────────────────────────────────────────────────────────────────────
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '10/hour',              # Endpoints públicos (si existen)
+        'user': '1000/hour',            # Usuarios autenticados normales
+        'sync': '50/hour',              # PWA sync endpoint (custom throttle)
+    },
+    
+    # ─────────────────────────────────────────────────────────────────────
+    # API VERSIONING - URLPathVersioning para URLs /api/v1/, /api/v2/
+    # ─────────────────────────────────────────────────────────────────────
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
+    'ALLOWED_VERSIONS': ['v1'],         # Versiones permitidas
+    'DEFAULT_VERSION': 'v1',            # Version por defecto
+    'VERSION_PARAM': 'api_version',     # Parámetro de versión en URL
+    
+    # ─────────────────────────────────────────────────────────────────────
+    # FILTERING & SEARCH
+    # ─────────────────────────────────────────────────────────────────────
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+    'SEARCH_PARAM': 'search',
+    'ORDERING_PARAM': 'ordering',
+    
+    # ─────────────────────────────────────────────────────────────────────
+    # RENDERERS (Content-Type: application/json, text/html)
+    # ─────────────────────────────────────────────────────────────────────
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer' if DEBUG else 'rest_framework.renderers.JSONRenderer',
+    ],
+    
+    # ─────────────────────────────────────────────────────────────────────
+    # EXCEPTION HANDLER - Respuestas de error personalizadas
+    # ─────────────────────────────────────────────────────────────────────
+    'EXCEPTION_HANDLER': 'common.exceptions.custom_exception_handler',
+    
+    # ─────────────────────────────────────────────────────────────────────
+    # DATETIME FORMAT - ISO 8601 con timezone (RFC 3339)
+    # ─────────────────────────────────────────────────────────────────────
+    'DATETIME_FORMAT': 'iso-8601',
+    'DATE_FORMAT': 'iso-8601',
+    'TIME_FORMAT': 'iso-8601',
+    
+    # ─────────────────────────────────────────────────────────────────────
+    # JSON ENCODING
+    # ─────────────────────────────────────────────────────────────────────
+    'UNICODE_JSON': True,
+    'COERCE_DECIMAL_TO_STRING': True,
+    
+    # ─────────────────────────────────────────────────────────────────────
+    # METADATA
+    # ─────────────────────────────────────────────────────────────────────
+    'DEFAULT_METADATA_CLASS': 'rest_framework.metadata.SimpleMetadata',
+    
+    # ─────────────────────────────────────────────────────────────────────
+    # TEST SETTINGS
+    # ─────────────────────────────────────────────────────────────────────
+    'TEST_REQUEST_DEFAULT_FORMAT': 'json',
+}
+
+# ============================================================================
+# Token Authentication Settings
+# ============================================================================
+# Token expiration: 7 días (168 horas)
+# Validado por: common.middleware.TokenExpirationMiddleware
+REST_FRAMEWORK_TOKEN_EXPIRE_HOURS = 24 * 7  # 1 semana
+
+# ============================================================================
+# API Documentation (Swagger/OpenAPI)
+# ============================================================================
+# Descomomentar cuando instale: pip install drf-spectacular
+REFINED_OPENAPI_SETTINGS = {
+    'TITLE': 'BULONERA ERP API',
+    'DESCRIPTION': 'API REST para ERP + CRM de buloneria',
+    'VERSION': '1.0.0',
+    'CONTACT': {
+        'name': 'API Support',
+        'email': 'support@bulonera.app',
+    },
+    'LICENSE': {
+        'name': 'Proprietary',
+    },
+}
+
+# ============================================================================
+# Celery Configuration (Async Task Queue)
+# ============================================================================
 CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://redis:6379/0')
 CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://redis:6379/0')
 
+# Serialization
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
-# Retry configuration
-CELERY_TASK_MAX_RETRIES = 3
-CELERY_TASK_DEFAULT_RETRY_DELAY = 60  # 1 minuto
+# Task Configuration
+CELERY_TASK_MAX_RETRIES = 3                    # Max retry attempts
+CELERY_TASK_DEFAULT_RETRY_DELAY = 60           # 1 minuto entre reintentos
+CELERY_TASK_TIME_LIMIT = 30 * 60               # 30 minutos timeout
+CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60          # 25 minutos soft timeout
 
-# Task routing (mapear tasks a colas específicas)
+# Queue Configuration
+CELERY_DEFAULT_QUEUE = 'default'
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1          # 1 task at a time
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000       # Reciclar worker process
+
+# Task Routing
 CELERY_TASK_ROUTES = {
+    'sales.tasks.*': {'queue': 'sales'},
     'notifications.tasks.*': {'queue': 'notifications'},
     'services.afip.tasks.*': {'queue': 'afip'},
     'common.tasks.generate_pdf': {'queue': 'heavy'},
 }
 
-# Worker configuration
-CELERY_WORKER_PREFETCH_MULTIPLIER = 1
-CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000
-
-# REDIS (cache + broker)
+# ============================================================================
+# REDIS Cache Configuration
+# ============================================================================
 REDIS_HOST = env('REDIS_HOST', default='redis')
 REDIS_PORT = env('REDIS_PORT', default=6379)
 REDIS_DB = env('REDIS_DB', default=0)
@@ -204,14 +389,212 @@ CACHES = {
         'LOCATION': f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}',
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            'CONNECTION_POOL_KWARGS': {'max_connections': 50},
+            'CONNECTION_POOL_KWARGS': {
+                'max_connections': 50,
+                'socket_keepalive': True,
+                'socket_keepalive_options': {1: (1, 3)},
+            },
+            'IGNORE_EXCEPTIONS': not DEBUG,
         },
         'KEY_PREFIX': 'bulonera',
-        'TIMEOUT': 3600,  # 1 hora por defecto
+        'TIMEOUT': 3600,
     }
 }
 
-# Cache por vista
+# Cache middleware
 CACHE_MIDDLEWARE_SECONDS = 3600
+CACHE_MIDDLEWARE_KEY_PREFIX = 'bulonera_cache'
 
 COMPANY_NAME = env('COMPANY_NAME')
+
+# ============================================================================
+# Logging Configuration
+# ============================================================================
+import logging.handlers
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {funcName} {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs' / 'django.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+        'sales_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs' / 'sales.log',
+            'maxBytes': 1024 * 1024 * 10,
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+        'sync_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs' / 'sync.log',
+            'maxBytes': 1024 * 1024 * 5,
+            'backupCount': 3,
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'sales': {
+            'handlers': ['sales_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'sync': {
+            'handlers': ['sync_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
+
+# Crear directorio de logs si no existe
+import os
+logs_dir = BASE_DIR / 'logs'
+os.makedirs(logs_dir, exist_ok=True)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SETTINGS VALIDATION & PRODUCTION ENVIRONMENT CHECKS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def validate_production_settings():
+    """
+    Validate critical settings for production environment.
+    Raises: ValueError if production configuration is invalid.
+    """
+    if not DEBUG:
+        # SECRET_KEY validation
+        if not SECRET_KEY or len(SECRET_KEY) < 50:
+            raise ValueError(
+                "❌ PRODUCTION SECRET_KEY is too short or missing. "
+                "Set SECRET_KEY in .env with at least 50 characters."
+            )
+        
+        # Database configuration validation
+        required_db_vars = ['DB_NAME', 'DB_USER', 'DB_PASSWORD', 'DB_HOST']
+        for var in required_db_vars:
+            if not env(var, default=None):
+                raise ValueError(
+                    f"❌ PRODUCTION database variable {var} is missing. "
+                    f"Set {var} in .env file."
+                )
+        
+        # Redis/Cache configuration validation
+        if not env('REDIS_HOST', default=None):
+            raise ValueError(
+                "❌ PRODUCTION REDIS_HOST is missing. "
+                "Set REDIS_HOST in .env file."
+            )
+        
+        # SSL/HTTPS validation
+        if not SECURE_SSL_REDIRECT:
+            raise ValueError(
+                "❌ PRODUCTION SECURE_SSL_REDIRECT should be True. "
+                "Set SECURE_SSL_REDIRECT=true in .env"
+            )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PRODUCTION WARNINGS & INITIALIZATION LOGGING
+# ═══════════════════════════════════════════════════════════════════════════════
+
+logger = logging.getLogger('django')
+
+# Validate production settings
+try:
+    if not DEBUG:
+        validate_production_settings()
+except ValueError as e:
+    logger.critical(str(e))
+    raise
+
+# Django initialization logging
+if DEBUG:
+    logger.info(
+        "🔧 Django initialized (DEVELOPMENT mode)"
+        f" | DEBUG={DEBUG}"
+        f" | ALLOWED_HOSTS={ALLOWED_HOSTS}"
+        f" | Database={DATABASES['default']['NAME']}"
+    )
+else:
+    logger.warning(
+        "⚠️  Django initialized (PRODUCTION mode)"
+        f" | DEBUG={DEBUG}"
+        f" | ALLOWED_HOSTS={ALLOWED_HOSTS}"
+        f" | SECURE_SSL_REDIRECT={SECURE_SSL_REDIRECT}"
+        f" | Database={DATABASES['default']['NAME']}"
+    )
+
+# Cache backend initialization
+ignore_exceptions = CACHES['default'].get('OPTIONS', {}).get('IGNORE_EXCEPTIONS', DEBUG)
+key_prefix = CACHES['default'].get('KEY_PREFIX', 'N/A')
+
+if ignore_exceptions:
+    logger.info(
+        f"✓ Cache backend: Redis"
+        f" | IGNORE_EXCEPTIONS={ignore_exceptions}"
+        f" | KEY_PREFIX={key_prefix}"
+    )
+else:
+    logger.warning(
+        f"✓ Cache backend: Redis (STRICT MODE)"
+        f" | IGNORE_EXCEPTIONS={ignore_exceptions}"
+        f" | Will raise exceptions on cache failures"
+    )
+
+# Celery configuration
+logger.info(
+    f"✓ Celery broker: Redis"
+    f" | Queues: {list(set(route.get('queue', 'default') for route in CELERY_TASK_ROUTES.values()))}"
+    f" | Time limit: {CELERY_TASK_TIME_LIMIT // 60}m"
+)
+
+# REST Framework configuration
+logger.info(
+    f"✓ REST Framework"
+    f" | Authentication: {REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES']}"
+    f" | Throttling: Anon=10/h, User=1000/h, Sync=50/h"
+    f" | Token expiry: {REST_FRAMEWORK_TOKEN_EXPIRE_HOURS}h"
+)
+
+# Logging infrastructure
+logger.info(
+    f"✓ Logging configured"
+    f" | Handlers: {list(LOGGING['handlers'].keys())}"
+    f" | Loggers: {list(LOGGING['loggers'].keys())}"
+    f" | Log files directory: {logs_dir}"
+)

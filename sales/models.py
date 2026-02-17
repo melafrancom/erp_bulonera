@@ -100,7 +100,7 @@ class QuoteItem(BaseModel):
     notes = models.TextField(blank=True)
     line_order = models.PositiveIntegerField(default=0)
     
-    # CÁLCULO BIDIRECCIONAL MEJORADO
+    # CÁLCULO BIDIRECCIONAL
     calculation_mode = models.CharField(
         max_length=20,
         choices=[
@@ -125,7 +125,7 @@ class QuoteItem(BaseModel):
             models.Index(fields=['quote', 'line_order']),
         ]
     
-    # === PROPERTIES (sin cambios) ===
+    # === PROPERTIES ===
     @property
     def line_subtotal(self):
         return self.unit_price * self.quantity
@@ -150,7 +150,7 @@ class QuoteItem(BaseModel):
     def total(self):
         return self.subtotal_with_discount + self.tax_amount
     
-    # === MÉTODOS DE CÁLCULO MEJORADOS ===
+    # === MÉTODOS DE CÁLCULO ===
     def recalculate_from_price(self):
         """
         Modo A: Precio unitario → Total

@@ -2,7 +2,7 @@ from django.test import TestCase
 from decimal import Decimal
 
 # from local apps
-from .models import QuoteItem
+from sales.models import QuoteItem
 
 # Create your tests here.
 # tests/test_quote_calculation.py

@@ -22,10 +22,33 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('core.urls')),
-    path('customers/', include('customers.urls')),
-    path('sales/', include('sales.urls')),
-    # path('products/', include('products.urls')),  # Descomentar cuando esté listo
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # VISTAS WEB - Rutas Tradicionales (Templates HTML)
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    path('', include('core.urls')),              # Home, login, etc.
+    path('customers/', include('customers.urls')),  # Gestión de clientes (web)
+    
+    # Vistas web por módulo (cuando estén disponibles)
+    path('sales/', include('sales.urls_web')),      # Stock, quotes, sales dashboards
+    path('products/', include('products.urls_web')),  # Product management UI
+    path('bills/', include('bills.urls_web')),        # Billing/invoicing UI
+    path('inventory/', include('inventory.urls_web')), # Inventory management UI
+    path('payments/', include('payments.urls_web')),   # Payments/collections UI
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # REST API v1 - Versioned API Endpoints
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    # Formato: /api/v1/{modulo}/{recurso}
+    # Ejemplo: GET /api/v1/sales/sales/ → lista de ventas
+    
+    path('api/v1/sales/', include('sales.urls')),        # Sales API
+    path('api/v1/products/', include('products.urls')),   # Products API
+    path('api/v1/bills/', include('bills.urls')),         # Bills API
+    path('api/v1/inventory/', include('inventory.urls')), # Inventory API
+    path('api/v1/payments/', include('payments.urls')),   # Payments API
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
