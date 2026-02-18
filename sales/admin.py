@@ -1,4 +1,6 @@
 from django.contrib import admin
+
+#from local apps
 from .models import Quote, QuoteItem, Sale, SaleItem, QuoteConversion
 
 class QuoteItemInline(admin.TabularInline):

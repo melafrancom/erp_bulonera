@@ -31,11 +31,11 @@ urlpatterns = [
     path('customers/', include('customers.urls')),  # Gestión de clientes (web)
     
     # Vistas web por módulo (cuando estén disponibles)
-    path('sales/', include('sales.urls_web')),      # Stock, quotes, sales dashboards
-    path('products/', include('products.urls_web')),  # Product management UI
-    path('bills/', include('bills.urls_web')),        # Billing/invoicing UI
-    path('inventory/', include('inventory.urls_web')), # Inventory management UI
-    path('payments/', include('payments.urls_web')),   # Payments/collections UI
+    path('sales/', include('sales.urls.urls_web')),      # Stock, quotes, sales dashboards
+    path('products/', include('products.urls.urls_web')),  # Product management UI
+    path('bills/', include('bills.urls.urls_web')),        # Billing/invoicing UI
+    path('inventory/', include('inventory.urls.urls_web')), # Inventory management UI
+    path('payments/', include('payments.urls.urls_web')),   # Payments/collections UI
     
     # ═══════════════════════════════════════════════════════════════════════════
     # REST API v1 - Versioned API Endpoints

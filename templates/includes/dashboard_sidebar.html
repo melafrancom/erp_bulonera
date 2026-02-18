@@ -44,7 +44,7 @@
         </p>
 
         {% if user.can_manage_sales %}
-        <a href="#" class="nav-item">
+        <a href="{% url 'sales_web:dashboard' %}" class="nav-item">
           <i data-lucide="shopping-cart" class="w-5 h-5"></i>
           <span>Ventas</span>
           <span
@@ -53,14 +53,14 @@
           >
         </a>
 
-        <a href="#" class="nav-item">
+        <a href="{% url 'sales_web:quote_list' %}" class="nav-item">
           <i data-lucide="file-text" class="w-5 h-5"></i>
           <span>Presupuestos</span>
         </a>
 
-        <a href="#" class="nav-item">
+        <a href="{% url 'sales_web:sale_list' %}" class="nav-item">
           <i data-lucide="receipt" class="w-5 h-5"></i>
-          <span>Facturas</span>
+          <span>Lista de Ventas</span>
         </a>
         {% endif %} {% if user.can_manage_customers %}
         <a href="{% url 'customers:customer_list' %}" class="nav-item">
@@ -132,7 +132,7 @@
           <span>Movimientos</span>
         </a>
 
-        {% if tenant_permissions.can_view_reports %}
+        {% if users.can_view_reports %}
         <a href="#" class="nav-item">
           <i data-lucide="trending-up" class="w-5 h-5"></i>
           <span>Reportes</span>
