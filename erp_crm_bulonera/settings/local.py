@@ -4,6 +4,11 @@ from .base import *
 DEBUG = env('DEBUG', default=True)  # Now in development. Change to False in production
 
 ALLOWED_HOSTS = env('ALLOWED_HOSTS')
+# Agregar 'testserver' para permitir tests con Django test client
+if isinstance(ALLOWED_HOSTS, list):
+    if 'testserver' not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append('testserver')
+
 SITE_URL = env('SITE_URL')
 
 # Email backend for development (imprime en consola en lugar de enviar)

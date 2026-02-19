@@ -32,7 +32,7 @@ SECRET_KEY = env('SECRET_KEY')
 DEBUG = env.bool('DEBUG', default=True)  # Now in development. Change to False in production
 
 ALLOWED_HOSTS = env('ALLOWED_HOSTS')
-SITE_URL = env('SITE_URL')
+SITE_URL = env('SITE_URL', default='http://localhost:8000' if DEBUG else 'https://api.bulonera.app')
 
 # Application definition
 
@@ -392,7 +392,8 @@ CACHES = {
             'CONNECTION_POOL_KWARGS': {
                 'max_connections': 50,
                 'socket_keepalive': True,
-                'socket_keepalive_options': {1: (1, 3)},
+                # Remover socket_keepalive_options que causa error en Redis
+                # La configuración socket_keepalive: True es suficiente
             },
             'IGNORE_EXCEPTIONS': not DEBUG,
         },
