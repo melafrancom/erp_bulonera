@@ -66,6 +66,7 @@ class SaleSyncViewSet(viewsets.ViewSet):
     - Validación exhaustiva de datos de entrada
     """
     
+    queryset = Sale.objects.none()  # QuerySet vacío para ViewSet sin CRUD
     permission_classes = [IsAuthenticated]
     throttle_classes = [SyncThrottle]  # Rate limiter: 50 syncs/hora
     

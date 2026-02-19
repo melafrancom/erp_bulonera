@@ -1,10 +1,344 @@
 {% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Presupuestos - ERP Bulonera Alvear{% endblock %}
+
+{% block breadcrumb_items %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <a href="{% url 'sales_web:dashboard' %}" class="text-gray-600 hover:text-gray-900">Ventas</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <span class="text-gray-900 font-medium">Presupuestos</span>
+{% endblock %}
+
+{% block mobile_title %}Presupuestos{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-6">Listado de Presupuestos</h1>
-    <div class="bg-white rounded-lg shadow p-6">
-        <p class="text-gray-600">Aquí se mostrarán los presupuestos.</p>
+<div class="max-w-7xl mx-auto">
+  
+  <!-- Header con estadísticas -->
+  <div class="mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Presupuestos</h1>
+        <p class="text-gray-600">Gestiona todos tus presupuestos</p>
+      </div>
+      
+      <!-- Botón Crear Presupuesto -->
+      <a href="#" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+        <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+        Crear Presupuesto
+      </a>
     </div>
+
+    <!-- Stats Cards Mini -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-600">Total</p>
+            <p class="text-2xl font-bold text-gray-900 mt-1">{{ total_quotes }}</p>
+          </div>
+          <div class="p-2 bg-blue-100 rounded-lg">
+            <i data-lucide="file-text" class="w-5 h-5 text-blue-600"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-600">Enviados</p>
+            <p class="text-2xl font-bold text-orange-600 mt-1">{{ quotes_sent }}</p>
+          </div>
+          <div class="p-2 bg-orange-100 rounded-lg">
+            <i data-lucide="send" class="w-5 h-5 text-orange-600"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-600">Aceptados</p>
+            <p class="text-2xl font-bold text-green-600 mt-1">{{ quotes_accepted }}</p>
+          </div>
+          <div class="p-2 bg-green-100 rounded-lg">
+            <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-600">Borradores</p>
+            <p class="text-2xl font-bold text-yellow-600 mt-1">{{ quotes_draft }}</p>
+          </div>
+          <div class="p-2 bg-yellow-100 rounded-lg">
+            <i data-lucide="edit" class="w-5 h-5 text-yellow-600"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra de búsqueda y filtros -->
+  <div class="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-4" x-data="{ search: '', statusFilter: '{{ status_filter|default:'' }}' }">
+    <div class="flex flex-col md:flex-row gap-3">
+      <!-- Búsqueda -->
+      <div class="flex-1 relative">
+        <i data-lucide="search" class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2"></i>
+        <input 
+          type="text" 
+          x-model="search"
+          placeholder="Buscar por número o cliente..."
+          class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+      </div>
+      
+      <!-- Filtro por Estado -->
+      <select x-model="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        <option value="">Todos los estados</option>
+        <option value="draft">Borrador</option>
+        <option value="sent">Enviado</option>
+        <option value="accepted">Aceptado</option>
+        <option value="rejected">Rechazado</option>
+        <option value="expired">Vencido</option>
+        <option value="converted">Convertido</option>
+        <option value="cancelled">Cancelado</option>
+      </select>
+
+      <!-- Botón Limpiar Filtros -->
+      <button @click="search = ''; statusFilter = ''" 
+              class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-gray-700">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabla de Presupuestos -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Número
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+              Fecha
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Cliente
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Estado
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+              Válido Hasta
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+              Total
+            </th>
+            <th scope="col" class="relative px-6 py-3">
+              <span class="sr-only">Acciones</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          {% for quote in quotes %}
+          <tr class="hover:bg-gray-50 transition">
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm font-medium text-gray-900">{{ quote.number }}</div>
+            </td>
+            
+            <td class="px-6 py-4 whitespace-nowrap hidden md:table-cell">
+              <div class="text-sm text-gray-900">{{ quote.date|date:"d/m/Y" }}</div>
+            </td>
+            
+            <td class="px-6 py-4">
+              <div class="text-sm font-medium text-gray-900">
+                {{ quote.customer.business_name|truncatewords:4 }}
+              </div>
+              <div class="text-sm text-gray-500">{{ quote.customer.cuit_cuil }}</div>
+            </td>
+            
+            <td class="px-6 py-4 whitespace-nowrap">
+              {% if quote.status == 'draft' %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                  <i data-lucide="edit" class="w-3 h-3 mr-1"></i>
+                  Borrador
+                </span>
+              {% elif quote.status == 'sent' %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                  <i data-lucide="send" class="w-3 h-3 mr-1"></i>
+                  Enviado
+                </span>
+              {% elif quote.status == 'accepted' %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  <i data-lucide="check-circle" class="w-3 h-3 mr-1"></i>
+                  Aceptado
+                </span>
+              {% elif quote.status == 'rejected' %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                  <i data-lucide="x-circle" class="w-3 h-3 mr-1"></i>
+                  Rechazado
+                </span>
+              {% elif quote.status == 'expired' %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                  <i data-lucide="calendar-x" class="w-3 h-3 mr-1"></i>
+                  Vencido
+                </span>
+              {% elif quote.status == 'converted' %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  <i data-lucide="check-square" class="w-3 h-3 mr-1"></i>
+                  Convertido
+                </span>
+              {% elif quote.status == 'cancelled' %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-200 text-red-900">
+                  <i data-lucide="ban" class="w-3 h-3 mr-1"></i>
+                  Cancelado
+                </span>
+              {% else %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                  {{ quote.get_status_display }}
+                </span>
+              {% endif %}
+            </td>
+            
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
+              {{ quote.valid_until|date:"d/m/Y" }}
+            </td>
+            
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 hidden sm:table-cell">
+              ${{ quote.total|floatformat:2 }}
+            </td>
+            
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <div class="flex items-center justify-end gap-2">
+                <!-- Ver -->
+                <a href="#" 
+                   class="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded-lg transition"
+                   title="Ver detalle">
+                  <i data-lucide="eye" class="w-4 h-4"></i>
+                </a>
+                
+                <!-- Enviar (solo si draft) -->
+                {% if quote.status == 'draft' %}
+                <a href="#" 
+                   class="text-orange-600 hover:text-orange-900 p-2 hover:bg-orange-50 rounded-lg transition"
+                   title="Enviar">
+                  <i data-lucide="send" class="w-4 h-4"></i>
+                </a>
+                {% endif %}
+                
+                <!-- Convertir a venta (solo si accepted) -->
+                {% if quote.status == 'accepted' %}
+                <a href="#" 
+                   class="text-green-600 hover:text-green-900 p-2 hover:bg-green-50 rounded-lg transition"
+                   title="Convertir a venta">
+                  <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                </a>
+                {% endif %}
+                
+                <!-- Eliminar (solo si draft) -->
+                {% if quote.status == 'draft' %}
+                <a href="#" 
+                   class="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-lg transition"
+                   title="Eliminar">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="px-6 py-12 text-center">
+              <div class="flex flex-col items-center justify-center">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                  <i data-lucide="file-text" class="w-8 h-8 text-gray-400"></i>
+                </div>
+                <p class="text-gray-500 font-medium">No se encontraron presupuestos</p>
+                <p class="text-sm text-gray-400 mt-1">Crea tu primer presupuesto para comenzar</p>
+                <a href="#" class="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium">
+                  <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                  Crear Presupuesto
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación -->
+    {% if quotes.has_other_pages %}
+    <div class="px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="text-sm text-gray-700">
+        Mostrando <span class="font-medium">{{ quotes.start_index }}</span> a 
+        <span class="font-medium">{{ quotes.end_index }}</span> de 
+        <span class="font-medium">{{ quotes.paginator.count }}</span> resultados
+      </div>
+      <div class="flex gap-2">
+        {% if quotes.has_previous %}
+        <a href="?page={{ quotes.previous_page_number }}" 
+           class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+          <i data-lucide="chevron-left" class="w-4 h-4"></i>
+        </a>
+        {% else %}
+        <button disabled class="px-4 py-2 border border-gray-300 rounded-lg text-gray-400 cursor-not-allowed">
+          <i data-lucide="chevron-left" class="w-4 h-4"></i>
+        </button>
+        {% endif %}
+
+        <span class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium">
+          {{ quotes.number }}
+        </span>
+
+        {% if quotes.has_next %}
+        <a href="?page={{ quotes.next_page_number }}" 
+           class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+          <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </a>
+        {% else %}
+        <button disabled class="px-4 py-2 border border-gray-300 rounded-lg text-gray-400 cursor-not-allowed">
+          <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </button>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Info adicional -->
+  <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+    <div class="flex items-start gap-3">
+      <i data-lucide="info" class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"></i>
+      <div>
+        <p class="text-sm font-medium text-blue-900">Gestión de Presupuestos</p>
+        <ul class="text-sm text-blue-700 mt-2 space-y-1">
+          <li>• Los presupuestos en borrador pueden ser editados y eliminados</li>
+          <li>• Los presupuestos enviados están pendientes de aprobación del cliente</li>
+          <li>• Los presupuestos aceptados pueden convertirse en ventas</li>
+          <li>• Revisa la fecha de validez para evitar presupuestos vencidos</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Filtrado simple de tabla con Alpine.js
+  document.addEventListener('alpine:init', () => {
+    Alpine.data('quoteFilters', () => ({
+      search: '',
+      statusFilter: ''
+    }));
+  });
+</script>
 {% endblock %}

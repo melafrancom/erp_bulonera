@@ -466,13 +466,21 @@ class Sale(BaseModel):
     @property
     def total_paid(self):
         """Total pagado (suma de allocations confirmados)"""
-        from payments.models import PaymentAllocation
-        return PaymentAllocation.objects.filter(
-            sale=self,
-            payment__status='confirmed'
-        ).aggregate(
-            total=models.Sum('allocated_amount')
-        )['total'] or Decimal('0')
+        try:
+            from payments.models import PaymentAllocation
+            result = PaymentAllocation.objects.filter(
+                sale=self,
+                payment__status='confirmed'
+            ).aggregate(
+                total=models.Sum('allocated_amount')
+            )
+            return result.get('total') or Decimal('0')
+        except Exception as e:
+            # Si hay error al calcular (ej: durante makemigrations), retornar 0
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.debug(f'Error calculating total_paid for sale {self.id}: {str(e)}')
+            return Decimal('0')
     
     @property
     def balance_due(self):
@@ -595,12 +603,15 @@ class QuoteConversion(BaseModel):
     
     # Snapshot del presupuesto original
     original_quote_data = models.JSONField(
+        default=dict,
+        blank=True,
         help_text='Datos completos del presupuesto al momento de conversión'
     )
     
     # Modificaciones aplicadas
     modifications = models.JSONField(
         default=dict,
+        blank=True,
         help_text='Cambios realizados durante conversión (precios, descuentos, etc.)'
     )
     
