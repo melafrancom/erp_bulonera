@@ -5,7 +5,7 @@
 
 {% block breadcrumb_items %}
   <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <a href="{% url 'core:pending_requests' %}" class="text-gray-600 hover:text-gray-900">Solicitudes</a>
+  <a href="{% url 'core_web:pending_requests' %}" class="text-gray-600 hover:text-gray-900">Solicitudes</a>
   <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
   <span class="text-gray-900 font-medium">Aprobar Solicitud</span>
 {% endblock %}
@@ -185,7 +185,7 @@
 
       <!-- Botones -->
       <div class="flex flex-col-reverse sm:flex-row gap-3">
-        <a href="{% url 'core:pending_requests' %}" 
+        <a href="{% url 'core_web:pending_requests' %}" 
            class="w-full sm:w-auto px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-center font-medium">
           Cancelar
         </a>

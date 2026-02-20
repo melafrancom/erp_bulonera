@@ -16,6 +16,7 @@ def custom_exception_handler(exc, context):
     Handles both DRF exceptions and custom application exceptions.
     Logs errors for debugging and aggregates error details.
     """
+    import traceback
     
     # Get the standard DRF exception response
     response = exception_handler(exc, context)
@@ -26,23 +27,33 @@ def custom_exception_handler(exc, context):
     
     if response is None:
         # This is an unhandled exception, log it with full details
+        tb_str = traceback.format_exc()
         logger.error(
-            f'Unhandled exception in {view.__class__.__name__}: {str(exc)}',
+            f'Unhandled exception in {view.__class__.__name__ if view else "unknown"}: {str(exc)}\n{tb_str}',
             exc_info=True,
             extra={
                 'user_id': request.user.id if request and request.user.is_authenticated else None,
                 'path': request.path if request else None,
                 'method': request.method if request else None,
                 'exception_type': type(exc).__name__,
+                'traceback': tb_str,
             }
         )
         
         # Return a generic 500 response without exposing internal error details
+        response_data = {
+            'detail': 'Internal server error. Please contact support.',
+            'error_code': 'INTERNAL_ERROR',
+        }
+        
+        # In DEBUG mode, include the actual error for development
+        from django.conf import settings
+        if settings.DEBUG:
+            response_data['debug_error'] = str(exc)
+            response_data['exception_type'] = type(exc).__name__
+        
         return Response(
-            {
-                'detail': 'Internal server error. Please contact support.',
-                'error_code': 'INTERNAL_ERROR',
-            },
+            response_data,
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
     

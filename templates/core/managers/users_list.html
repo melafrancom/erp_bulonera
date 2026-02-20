@@ -203,7 +203,7 @@
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
               <div class="flex items-center justify-end gap-2">
                 <!-- Ver detalle -->
-                <a href="{% url 'core:user_detail' user_item.id %}" 
+                <a href="{% url 'core_web:user_detail' user_item.id %}" 
                    class="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded-lg transition"
                    title="Ver detalles">
                   <i data-lucide="eye" class="w-4 h-4"></i>
@@ -211,7 +211,7 @@
                 
                 <!-- Activar/Desactivar (solo si no es el usuario actual) -->
                 {% if user_item.id != user.id %}
-                <a href="{% url 'core:user_toggle_active' user_item.id %}" 
+                <a href="{% url 'core_web:user_toggle_active' user_item.id %}" 
                    class="{% if user_item.is_active %}text-red-600 hover:text-red-900 hover:bg-red-50{% else %}text-green-600 hover:text-green-900 hover:bg-green-50{% endif %} p-2 rounded-lg transition"
                    title="{% if user_item.is_active %}Desactivar{% else %}Activar{% endif %}">
                   {% if user_item.is_active %}

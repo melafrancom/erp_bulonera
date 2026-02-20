@@ -51,3 +51,5 @@ whitenoise>=6.6.0
 
 # Desarrollo (comentar en producción)
 django-debug-toolbar>=4.2.0
+
+drf-spectacular>=0.28.0

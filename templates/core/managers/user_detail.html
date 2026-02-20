@@ -5,7 +5,7 @@
 
 {% block breadcrumb_items %}
   <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <a href="{% url 'core:users_list' %}" class="text-gray-600 hover:text-gray-900">Usuarios</a>
+  <a href="{% url 'core_web:users_list' %}" class="text-gray-600 hover:text-gray-900">Usuarios</a>
   <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
   <span class="text-gray-900 font-medium">{{ user_detail.username }}</span>
 {% endblock %}
@@ -17,7 +17,7 @@
   
   <!-- Boton Volver -->
   <div class="mb-6">
-    <a href="{% url 'core:users_list' %}" 
+    <a href="{% url 'core_web:users_list' %}" 
        class="inline-flex items-center text-gray-600 hover:text-gray-900 transition">
       <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
       Volver a la lista
@@ -109,7 +109,7 @@
         <div class="w-full sm:w-auto flex flex-col sm:flex-row gap-2 mb-1">
           <!-- Activar/Desactivar (solo si no es el usuario actual) -->
           {% if user_detail.id != user.id %}
-          <a href="{% url 'core:user_toggle_active' user_detail.id %}" 
+          <a href="{% url 'core_web:user_toggle_active' user_detail.id %}" 
              class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 {% if user_detail.is_active %}bg-red-600 hover:bg-red-700{% else %}bg-green-600 hover:bg-green-700{% endif %} text-white rounded-lg transition font-medium">
             <i data-lucide="{% if user_detail.is_active %}user-x{% else %}user-check{% endif %}" class="w-4 h-4 mr-2"></i>
             {% if user_detail.is_active %}Desactivar{% else %}Activar{% endif %}

@@ -30,7 +30,7 @@ RUN pip install --upgrade pip && \
 # Copiar el proyecto
 COPY . /app/
 
-# Crear usuario no-root para seguridad
+# Crear usuario no-root para seguridad (pero con permisos)
 RUN useradd -m -u 1000 appuser && \
     chown -R appuser:appuser /app
 

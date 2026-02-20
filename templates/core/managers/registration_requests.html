@@ -64,10 +64,10 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div class="flex justify-end gap-2">
-                                <a href="{% url 'core:approve_request' req.id %}" class="text-green-600 hover:text-green-900 bg-green-50 px-3 py-1 rounded-lg hover:bg-green-100 transition">
+                                <a href="{% url 'core_web:approve_request' req.id %}" class="text-green-600 hover:text-green-900 bg-green-50 px-3 py-1 rounded-lg hover:bg-green-100 transition">
                                     Aprobar
                                 </a>
-                                <a href="{% url 'core:reject_request' req.id %}" class="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded-lg hover:bg-red-100 transition">
+                                <a href="{% url 'core_web:reject_request' req.id %}" class="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded-lg hover:bg-red-100 transition">
                                     Rechazar
                                 </a>
                             </div>

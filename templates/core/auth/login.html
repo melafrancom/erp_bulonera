@@ -51,7 +51,7 @@
             {% endif %}
 
             <!-- Formulario -->
-            <form method="POST" action="{% url 'core:login' %}" id="loginForm">
+            <form method="POST" action="{% url 'core_web:login' %}" id="loginForm">
                 {% csrf_token %}
 
                 <!-- Campo Usuario -->
@@ -92,13 +92,13 @@
 
             <!-- Enlaces -->
             <div class="mt-6 space-y-3 text-center">
-                <a href="{% url 'core:password_reset_request' %}" class="block text-sm text-blue-600 hover:text-blue-800 transition">
+                <a href="{% url 'core_web:password_reset_request' %}" class="block text-sm text-blue-600 hover:text-blue-800 transition">
                     ¿Olvidaste tu contraseña?
                 </a>
                 <div class="border-t pt-3">
                     <p class="text-sm text-gray-600">
                         ¿No tienes cuenta? 
-                        <a href="{% url 'core:register_request' %}" class="text-blue-600 hover:text-blue-800 font-medium transition">
+                        <a href="{% url 'core_web:register_request' %}" class="text-blue-600 hover:text-blue-800 font-medium transition">
                             Solicitar acceso
                         </a>
                     </p>

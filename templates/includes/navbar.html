@@ -13,14 +13,14 @@
       </button>
 
       <!-- Logo Mobile (center) -->
-      <a href="{% url 'core:dashboard' %}" class="flex items-center">
+      <a href="{% url 'core_web:dashboard' %}" class="flex items-center">
         <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
           <img src="{% static 'img/transpLOGO BULONERA.svg' %}" alt="Logo" class="h-8">
         </div>
       </a>
 
       <!-- User Avatar Mobile -->
-      <a href="{% url 'core:profile' %}" 
+      <a href="{% url 'core_web:profile' %}" 
          class="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-md">
         {{ user.first_name|slice:":1"|upper|default:"U" }}
       </a>
@@ -85,12 +85,12 @@
 
             <!-- Menu Items -->
             <div class="py-2">
-              <a href="{% url 'core:profile' %}"
+              <a href="{% url 'core_web:profile' %}"
                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
                 <i data-lucide="user" class="w-4 h-4 mr-3"></i>
                 Mi Perfil
               </a>
-              <a href="{% url 'core:password_change' %}"
+              <a href="{% url 'core_web:password_change' %}"
                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
                 <i data-lucide="key" class="w-4 h-4 mr-3"></i>
                 Cambiar Contraseña
@@ -99,7 +99,7 @@
               <!-- Divider -->
               <div class="border-t border-gray-100 my-2"></div>
 
-              <a href="{% url 'core:settings' %}"
+              <a href="{% url 'core_web:settings' %}"
                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
                 <i data-lucide="settings" class="w-4 h-4 mr-3"></i>
                 Configuración
@@ -109,7 +109,7 @@
               <div class="border-t border-gray-100 my-2"></div>
 
               <!-- Logout -->
-              <form action="{% url 'core:logout' %}" method="post" class="block">
+              <form action="{% url 'core_web:logout' %}" method="post" class="block">
                 {% csrf_token %}
                 <button type="submit"
                         class="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition text-left">

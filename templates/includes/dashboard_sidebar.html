@@ -4,7 +4,7 @@
 <aside class="sidebar flex flex-col">
   <!-- Logo y Nombre de Empresa -->
   <div class="p-6 border-b border-white/10">
-    <a href="{% url 'core:dashboard' %}" class="flex items-center space-x-3">
+    <a href="{% url 'core_web:dashboard' %}" class="flex items-center space-x-3">
       <!-- Logo -->
       <div
         class="w-10 h-10 bg-blue rounded-lg flex items-center justify-center"
@@ -27,7 +27,7 @@
       <!-- Dashboard -->
       <div class="mb-6">
         <a
-          href="{% url 'core:dashboard' %}"
+          href="{% url 'core_web:dashboard' %}"
           class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
         >
           <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
@@ -158,7 +158,7 @@
         <!-- Dashboard -->
         <div class="mb-6">
           <a
-            href="{% url 'core:managers_dashboard' %}"
+            href="{% url 'core_web:managers_dashboard' %}"
             class="nav-item {% if request.resolver_match.url_name == 'managers_dashboard' %}active{% endif %}"
           >
             <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
@@ -166,7 +166,7 @@
           </a>
         </div>
         <a
-          href="{% url 'core:users_list' %}"
+          href="{% url 'core_web:users_list' %}"
           class="nav-item {% if request.resolver_match.url_name == 'users' %}active{% endif %}"
         >
           <i data-lucide="user-plus" class="w-5 h-5"></i>

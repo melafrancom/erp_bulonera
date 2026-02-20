@@ -60,7 +60,7 @@
             {% endif %}
 
             <!-- Formulario -->
-            <form method="POST" action="{% url 'core:register_request' %}" id="registerForm">
+            <form method="POST" action="{% url 'core_web:register_request' %}" id="registerForm">
                 {% csrf_token %}
 
                 <!-- Grid de 2 columnas en desktop, 1 en mobile -->
@@ -159,7 +159,7 @@
             <div class="mt-6 text-center border-t pt-4">
                 <p class="text-sm text-gray-600">
                     ¿Ya tienes cuenta? 
-                    <a href="{% url 'core:login' %}" class="text-blue-600 hover:text-blue-800 font-medium transition">
+                    <a href="{% url 'core_web:login' %}" class="text-blue-600 hover:text-blue-800 font-medium transition">
                         Inicia sesión aquí
                     </a>
                 </p>

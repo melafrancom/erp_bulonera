@@ -406,7 +406,7 @@ CACHES = {
 CACHE_MIDDLEWARE_SECONDS = 3600
 CACHE_MIDDLEWARE_KEY_PREFIX = 'bulonera_cache'
 
-COMPANY_NAME = env('COMPANY_NAME')
+COMPANY_NAME = env('COMPANY_NAME', default = 'Tu Empresa de prueba')
 
 # ============================================================================
 # Logging Configuration

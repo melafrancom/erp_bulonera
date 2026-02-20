@@ -18,7 +18,7 @@ class AuthViewsTests(TestCase):
     
     def test_login_exitoso(self):
         """TC-010: Login con credenciales válidas"""
-        response = self.client.post(reverse('core:login'), {
+        response = self.client.post(reverse('core_web:login'), {
             'username': 'testuser',
             'password': 'testpass123'
         })
@@ -31,7 +31,7 @@ class AuthViewsTests(TestCase):
     
     def test_login_credenciales_invalidas(self):
         """TC-011: Login con credenciales inválidas falla"""
-        response = self.client.post(reverse('core:login'), {
+        response = self.client.post(reverse('core_web:login'), {
             'username': 'testuser',
             'password': 'wrongpassword'
         })
@@ -53,7 +53,7 @@ class AuthViewsTests(TestCase):
             is_active=False
         )
         
-        response = self.client.post(reverse('core:login'), {
+        response = self.client.post(reverse('core_web:login'), {
             'username': 'inactive',
             'password': 'test123'
         })
@@ -68,13 +68,13 @@ class AuthViewsTests(TestCase):
         self.client.login(username='testuser', password='testpass123')
         
         # Logout
-        response = self.client.post(reverse('core:logout'))
+        response = self.client.post(reverse('core_web:logout'))
         
         # Debe redirigir
         self.assertEqual(response.status_code, 302)
         
         # Verificar que la sesión está limpia
-        response = self.client.get(reverse('core:dashboard'))
+        response = self.client.get(reverse('core_web:dashboard'))
         # Debe redirigir a login (no autenticado)
         self.assertEqual(response.status_code, 302)
 
@@ -99,7 +99,7 @@ class ManagerViewsTests(TestCase):
         """TC-014: CRÍTICO - Operator no puede acceder a gestión"""
         self.client.login(username='operator', password='test123')
         
-        response = self.client.get(reverse('core:pending_requests'))
+        response = self.client.get(reverse('core_web:pending_requests'))
         
         # Debe ser redirigido o recibir 403
         self.assertIn(response.status_code, [302, 403])
@@ -117,7 +117,7 @@ class ManagerViewsTests(TestCase):
             requested_role='operator'
         )
         
-        response = self.client.get(reverse('core:pending_requests'))
+        response = self.client.get(reverse('core_web:pending_requests'))
         
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'pending')

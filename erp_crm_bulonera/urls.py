@@ -14,42 +14,48 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+# erp_crm_bulonera/urls.py
+
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    
-    # ═══════════════════════════════════════════════════════════════════════════
-    # VISTAS WEB - Rutas Tradicionales (Templates HTML)
-    # ═══════════════════════════════════════════════════════════════════════════
-    
-    path('', include('core.urls')),              # Home, login, etc.
-    path('customers/', include('customers.urls')),  # Gestión de clientes (web)
-    
-    # Vistas web por módulo (cuando estén disponibles)
-    path('sales/', include('sales.urls.urls_web')),      # Stock, quotes, sales dashboards
-    path('products/', include('products.urls.urls_web')),  # Product management UI
-    path('bills/', include('bills.urls.urls_web')),        # Billing/invoicing UI
-    path('inventory/', include('inventory.urls.urls_web')), # Inventory management UI
-    path('payments/', include('payments.urls.urls_web')),   # Payments/collections UI
-    
-    # ═══════════════════════════════════════════════════════════════════════════
-    # REST API v1 - Versioned API Endpoints
-    # ═══════════════════════════════════════════════════════════════════════════
-    
-    # Formato: /api/v1/{modulo}/{recurso}
-    # Ejemplo: GET /api/v1/sales/sales/ → lista de ventas
-    
-    path('api/v1/sales/', include('sales.urls')),        # Sales API
-    path('api/v1/products/', include('products.urls')),   # Products API
-    path('api/v1/bills/', include('bills.urls')),         # Bills API
-    path('api/v1/inventory/', include('inventory.urls')), # Inventory API
-    path('api/v1/payments/', include('payments.urls')),   # Payments API
+
+    # =========================================================================
+    # VISTAS WEB — Templates HTML
+    # Convención: /{módulo}/  → {app}.web.urls
+    # =========================================================================
+    path('', include('core.web.urls')),
+    path('customers/', include('customers.web.urls.urls', namespace='customers')),
+    path('sales/', include('sales.web.urls.urls_web', namespace='sales_web')),
+    path('products/', include('products.web.urls')),
+    path('inventory/', include('inventory.web.urls')),
+    path('payments/', include('payments.web.urls')),
+    path('bills/', include('bills.web.urls')),
+
+    # =========================================================================
+    # API REST v1 — JSON
+    # Convención: /api/v1/{módulo}/  → {app}.api.urls
+    # =========================================================================
+    path('api/v1/auth/', include('core.api.urls')),
+    path('api/v1/customers/', include('customers.api.urls')),
+    path('api/v1/sales/', include('sales.api.urls')),
+    path('api/v1/products/', include('products.api.urls')),
+    path('api/v1/inventory/', include('inventory.api.urls')),
+    path('api/v1/payments/', include('payments.api.urls')),
+    path('api/v1/bills/', include('bills.api.urls')),
+
+    # =========================================================================
+    # DOCUMENTACIÓN OPENAPI
+    # =========================================================================
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='docs'),
 ]
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
