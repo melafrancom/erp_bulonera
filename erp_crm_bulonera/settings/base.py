@@ -75,6 +75,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'api.middleware.APILoggingMiddleware',  # API request/response logging
     'common.middleware.TokenExpirationMiddleware',  # Token expiration check
     'common.middleware.AuditLoggingMiddleware',  # Audit trail logging
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -233,9 +234,8 @@ REST_FRAMEWORK = {
     # ─────────────────────────────────────────────────────────────────────
     # PAGINATION
     # ─────────────────────────────────────────────────────────────────────
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_PAGINATION_CLASS': 'api.pagination.ERPPageNumberPagination',
     'PAGE_SIZE': 50,                    # Default items per page
-    'MAX_PAGE_SIZE': 200,               # Max items per page request
     
     # ─────────────────────────────────────────────────────────────────────
     # AUTHENTICATION
@@ -262,7 +262,8 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '10/hour',              # Endpoints públicos (si existen)
         'user': '1000/hour',            # Usuarios autenticados normales
-        'sync': '50/hour',              # PWA sync endpoint (custom throttle)
+        'sync': '50/hour',              # PWA sync endpoint (api.throttling.SyncThrottle)
+        'burst': '10/hour',             # Reports/exports (api.throttling.BurstThrottle)
     },
     
     # ─────────────────────────────────────────────────────────────────────
@@ -288,14 +289,14 @@ REST_FRAMEWORK = {
     # RENDERERS (Content-Type: application/json, text/html)
     # ─────────────────────────────────────────────────────────────────────
     'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer' if DEBUG else 'rest_framework.renderers.JSONRenderer',
+        'api.renderers.EnvelopeRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer' if DEBUG else 'api.renderers.EnvelopeRenderer',
     ],
     
     # ─────────────────────────────────────────────────────────────────────
     # EXCEPTION HANDLER - Respuestas de error personalizadas
     # ─────────────────────────────────────────────────────────────────────
-    'EXCEPTION_HANDLER': 'common.exceptions.custom_exception_handler',
+    'EXCEPTION_HANDLER': 'api.exceptions.custom_exception_handler',
     
     # ─────────────────────────────────────────────────────────────────────
     # DATETIME FORMAT - ISO 8601 con timezone (RFC 3339)
