@@ -237,7 +237,7 @@ REST_FRAMEWORK = {
     # ─────────────────────────────────────────────────────────────────────
     # PAGINATION
     # ─────────────────────────────────────────────────────────────────────
-    'DEFAULT_PAGINATION_CLASS': 'api.pagination.ERPPageNumberPagination',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 100,                    # Default items per page
     
     # ─────────────────────────────────────────────────────────────────────
@@ -292,10 +292,11 @@ REST_FRAMEWORK = {
     # RENDERERS (Content-Type: application/json, text/html)
     # ─────────────────────────────────────────────────────────────────────
     'DEFAULT_RENDERER_CLASSES': [
-        'api.renderers.EnvelopeRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer' if DEBUG else 'api.renderers.EnvelopeRenderer',
+        'rest_framework.renderers.JSONRenderer',
     ],
-    
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+    ],
     # ─────────────────────────────────────────────────────────────────────
     # EXCEPTION HANDLER - Respuestas de error personalizadas
     # ─────────────────────────────────────────────────────────────────────

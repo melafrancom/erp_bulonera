@@ -1,95 +1,106 @@
 """
-Tests de integración para validar matriz de permisos.
+Tests de matriz de permisos.
 """
 import pytest
-from django.urls import reverse
 from rest_framework import status
-from rest_framework_simplejwt.tokens import RefreshToken
-from tests.factories import (
-    AdminUserFactory, ManagerUserFactory, OperatorUserFactory, ViewerUserFactory
-)
+from tests.conftest import generate_valid_cuit
 
 pytestmark = pytest.mark.django_db
 
 
 class TestPermissionsMatrix:
-    """Tests para matriz de permisos por rol."""
+    """Tests de matriz de permisos por rol."""
     
-    def test_admin_can_create_customer(self, api_client):
-        """Admin puede crear cliente."""
-        admin = AdminUserFactory()
-        refresh = RefreshToken.for_user(admin)
+    def test_admin_can_create_customer(self, authenticated_client, customer_segment):
+        """Test que admin puede crear cliente."""
+        url = '/api/v1/customers/'
+        data = {
+            'customer_type': 'COMPANY',
+            'business_name': 'Admin Created Customer',
+            'cuit_cuil': generate_valid_cuit(10000001),
+            'tax_condition': 'RI',
+            'email': 'admin.customer@test.com',
+            'customer_segment': customer_segment.id,
+            'is_active': True
+        }
+        response = authenticated_client.post(url, data, format='json')
+        
+        assert response.status_code == status.HTTP_201_CREATED, f"Error: {response.data}"
+        assert response.data['business_name'] == 'Admin Created Customer'
+    
+    def test_operator_without_permission_cannot_create_customer(self, api_client, operator_user, customer_segment):
+        """Test que operator sin permisos no puede crear cliente."""
+        from rest_framework_simplejwt.tokens import RefreshToken
+        
+        refresh = RefreshToken.for_user(operator_user)
         api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
         
-        url = reverse('customers_api:customer-list')
+        url = '/api/v1/customers/'
         data = {
-            'business_name': 'Admin Create',
-            'cuit_cuil': '20-30000000-4', # Válido
-            'customer_type': 'COMPANY'
+            'customer_type': 'COMPANY',
+            'business_name': 'Operator Customer',
+            'cuit_cuil': generate_valid_cuit(10000002),
+            'tax_condition': 'RI',
+            'email': 'operator.customer@test.com',
+            'customer_segment': customer_segment.id
         }
-        response = api_client.post(url, data)
-        
-        assert response.status_code == status.HTTP_201_CREATED
-    
-    def test_operator_without_permission_cannot_create_customer(self, api_client):
-        """Operator sin permiso no puede crear cliente."""
-        operator = OperatorUserFactory()
-        operator.can_manage_customers = False
-        operator.save()
-        refresh = RefreshToken.for_user(operator)
-        api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
-        
-        url = reverse('customers_api:customer-list')
-        data = {
-            'business_name': 'Denied Create',
-            'cuit_cuil': '20-30000001-2', # Válido
-            'customer_type': 'COMPANY'
-        }
-        response = api_client.post(url, data)
+        response = api_client.post(url, data, format='json')
         
         assert response.status_code == status.HTTP_403_FORBIDDEN
     
-    def test_operator_with_permission_can_create_customer(self, api_client):
-        """Operator con permiso puede crear cliente."""
-        operator = OperatorUserFactory()
-        operator.can_manage_customers = True
-        operator.save()
-        refresh = RefreshToken.for_user(operator)
+    def test_operator_with_permission_can_create_customer(self, api_client, operator_user, customer_segment):
+        """Test que operator con permisos puede crear cliente."""
+        from rest_framework_simplejwt.tokens import RefreshToken
+        
+        # Otorgar permisos
+        operator_user.can_manage_customers = True
+        operator_user.save()
+        
+        refresh = RefreshToken.for_user(operator_user)
         api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
         
-        url = reverse('customers_api:customer-list')
+        url = '/api/v1/customers/'
         data = {
-            'business_name': 'Allowed Operator',
-            'cuit_cuil': '20-30000002-0', # Válido
-            'customer_type': 'COMPANY'
+            'customer_type': 'COMPANY',
+            'business_name': 'Operator With Permission',
+            'cuit_cuil': generate_valid_cuit(10000003),
+            'tax_condition': 'RI',
+            'email': 'operator.perm@test.com',
+            'customer_segment': customer_segment.id,
+            'is_active': True
         }
-        response = api_client.post(url, data)
+        response = api_client.post(url, data, format='json')
         
-        assert response.status_code == status.HTTP_201_CREATED
+        assert response.status_code == status.HTTP_201_CREATED, f"Error: {response.data}"
+        assert response.data['business_name'] == 'Operator With Permission'
     
-    def test_viewer_can_only_list(self, api_client):
-        """Viewer puede ver pero no crear."""
-        viewer = ViewerUserFactory()
-        refresh = RefreshToken.for_user(viewer)
+    def test_viewer_can_only_list(self, api_client, viewer_user, customer):
+        """Test que viewer solo puede listar, no crear."""
+        from rest_framework_simplejwt.tokens import RefreshToken
+        
+        refresh = RefreshToken.for_user(viewer_user)
         api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
         
-        # Puede listar
-        url = reverse('customers_api:customer-list')
+        # GET debe funcionar
+        url = '/api/v1/customers/'
         response = api_client.get(url)
         assert response.status_code == status.HTTP_200_OK
         
-        # No puede crear
+        # POST debe fallar
         data = {
-            'business_name': 'Viewer Denied',
-            'cuit_cuil': '20-30000003-9', # Válido
-            'customer_type': 'COMPANY'
+            'customer_type': 'COMPANY',
+            'business_name': 'Viewer Customer',
+            'cuit_cuil': generate_valid_cuit(10000004),
+            'tax_condition': 'RI',
+            'email': 'viewer.customer@test.com',
+            'customer_segment': customer.customer_segment.id
         }
-        response = api_client.post(url, data)
+        response = api_client.post(url, data, format='json')
         assert response.status_code == status.HTTP_403_FORBIDDEN
     
     def test_unauthenticated_cannot_access(self, api_client):
-        """Usuario no autenticado no puede acceder."""
-        url = reverse('customers_api:customer-list')
+        """Test que usuario sin autenticar no puede acceder."""
+        url = '/api/v1/customers/'
         response = api_client.get(url)
         
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
