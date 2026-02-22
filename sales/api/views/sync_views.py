@@ -16,7 +16,10 @@ import json
 
 # Local imports
 from sales.models import Sale, SaleItem
-from sales.api.serializers import SaleSerializer, SaleDetailSerializer
+from sales.api.serializers import SaleSerializer
+from common.permissions import ModulePermission
+from common.mixins import AuditMixin
+from common.decorators import audit_log
 from customers.models import Customer
 from products.models import Product
 from core.permissions import HasPermission
@@ -40,9 +43,9 @@ class SyncThrottle(UserRateThrottle):
     scope = 'sync'
 
 
-class SaleSyncViewSet(viewsets.ViewSet):
+class SyncViewSet(AuditMixin, viewsets.ViewSet):
     """
-    ViewSet especializado para sincronización PWA offline-first.
+    ViewSet para sincronización masiva desde PWA (Offline-First).
     
     Características de Producción:
     ✅ Throttling: 50 syncs/hora (scope='sync') - previene DoS

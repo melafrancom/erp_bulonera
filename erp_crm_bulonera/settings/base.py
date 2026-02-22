@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 import environ
 import os
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -48,8 +49,11 @@ DJANGO_APPS = [
 ]
 THIRD_PARTY_APPS = [
     'rest_framework',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'widget_tweaks',
+    'drf_spectacular',
 
 
 ]
@@ -70,16 +74,15 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + SHARED_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Para archivos estáticos
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # CORS - antes que CommonMiddleware
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'api.middleware.APILoggingMiddleware',  # API request/response logging
-    'common.middleware.TokenExpirationMiddleware',  # Token expiration check
-    'common.middleware.AuditLoggingMiddleware',  # Audit trail logging
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # CORS antes de CommonMiddleware
+    'common.middleware.RequestLoggingMiddleware',  # Logging personalizado
 ]
 
 # ============================================================================
@@ -235,13 +238,13 @@ REST_FRAMEWORK = {
     # PAGINATION
     # ─────────────────────────────────────────────────────────────────────
     'DEFAULT_PAGINATION_CLASS': 'api.pagination.ERPPageNumberPagination',
-    'PAGE_SIZE': 50,                    # Default items per page
+    'PAGE_SIZE': 100,                    # Default items per page
     
     # ─────────────────────────────────────────────────────────────────────
     # AUTHENTICATION
     # ─────────────────────────────────────────────────────────────────────
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',  # PWA/Mobile apps
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',  # Web admin
     ],
     
@@ -320,30 +323,75 @@ REST_FRAMEWORK = {
     # TEST SETTINGS
     # ─────────────────────────────────────────────────────────────────────
     'TEST_REQUEST_DEFAULT_FORMAT': 'json',
+
+    # ─────────────────────────────────────────────────────────────────────
+    # OPENAPI SCHEMA
+    # ─────────────────────────────────────────────────────────────────────
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 # ============================================================================
-# Token Authentication Settings
+# JWT Authentication Settings (SimpleJWT)
 # ============================================================================
-# Token expiration: 7 días (168 horas)
-# Validado por: common.middleware.TokenExpirationMiddleware
-REST_FRAMEWORK_TOKEN_EXPIRE_HOURS = 24 * 7  # 1 semana
+REST_FRAMEWORK_TOKEN_EXPIRE_HOURS = 168  # Legacy (for diagnostic logs)
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'TOKEN_OBTAIN_SERIALIZER': 'core.api.serializers.CustomTokenObtainSerializer',
+}
 
 # ============================================================================
 # API Documentation (Swagger/OpenAPI)
 # ============================================================================
-# Descomomentar cuando instale: pip install drf-spectacular
-REFINED_OPENAPI_SETTINGS = {
+SPECTACULAR_SETTINGS = {
     'TITLE': 'BULONERA ERP API',
-    'DESCRIPTION': 'API REST para ERP + CRM de buloneria',
+    'DESCRIPTION': 'API REST para gestión integral de la empresa BULONERA',
     'VERSION': '1.0.0',
+    'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAuthenticated'],
+    'SERVE_INCLUDE_SCHEMA': True,
+    
+    # Esquema y documentación
+    'SCHEMA_PATH_PREFIX': r'/api/v\d+',
+    'DEFAULT_GENERATOR_CLASS': 'drf_spectacular.generators.SchemaGenerator',
+    'SCHEMA_MOUNT_PATH': '/api/schema/',
+    
+    # Autenticación
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'http',
+            'scheme': 'bearer',
+            'bearerFormat': 'JWT',
+        }
+    },
+    'DEFAULT_SECURITY': [{'Bearer': []}],
+    
+    # Operaciones
+    'OPERATION_ID_BASE': 'drf_spectacular.openapi.AutoSchema',
+    'TITLE_CASE_OPERATION_ID': True,
     'CONTACT': {
-        'name': 'API Support',
-        'email': 'support@bulonera.app',
+        'name': 'Soporte BULONERA',
+        'email': 'soporte@bulonera.app',
+        'url': 'https://bulonera.app',
     },
     'LICENSE': {
-        'name': 'Proprietary',
+        'name': 'MIT',
     },
+    
+    # Componentes
+    'COMPONENT_SPLIT_REQUEST': True,
+    'COMPONENT_NO_READ_ONLY_REQUIRED': True,
+    
+    # Enum handling
+    'ENUM_ADD_EXPLODE_TRUE_TO_DEFAULTS': False,
+    'TARGET_RESOLVER_CLASS': 'drf_spectacular.target.TargetClassResolver',
 }
 
 # ============================================================================
@@ -412,191 +460,127 @@ COMPANY_NAME = env('COMPANY_NAME', default = 'Tu Empresa de prueba')
 # ============================================================================
 # Logging Configuration
 # ============================================================================
-import logging.handlers
+import logging.config
+from pathlib import Path
+
+# Crear directorio de logs si no existe
+LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR.mkdir(exist_ok=True)
 
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {module} {funcName} {message}',
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
             'style': '{',
             'datefmt': '%Y-%m-%d %H:%M:%S',
         },
         'simple': {
-            'format': '{levelname} {message}',
+            'format': '{levelname} {asctime} {name} {message}',
             'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+        'json': {
+            '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
+            'format': '%(asctime)s %(name)s %(levelname)s %(message)s',
+        },
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
         },
     },
     'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR / 'logs' / 'django.log',
-            'maxBytes': 1024 * 1024 * 10,  # 10MB
-            'backupCount': 5,
-            'formatter': 'verbose',
-        },
-        'sales_file': {
-            'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR / 'logs' / 'sales.log',
-            'maxBytes': 1024 * 1024 * 10,
-            'backupCount': 5,
-            'formatter': 'verbose',
-        },
-        'sync_file': {
-            'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR / 'logs' / 'sync.log',
-            'maxBytes': 1024 * 1024 * 5,
-            'backupCount': 3,
-            'formatter': 'verbose',
-        },
         'console': {
             'level': 'DEBUG' if DEBUG else 'INFO',
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
         },
+        'api_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'api.log',
+            'maxBytes': 10_485_760,  # 10MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+            'encoding': 'utf-8',
+        },
+        'error_file': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'errors.log',
+            'maxBytes': 10_485_760,  # 10MB
+            'backupCount': 10,
+            'formatter': 'verbose',
+            'encoding': 'utf-8',
+        },
+        'audit_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'audit.log',
+            'maxBytes': 10_485_760,  # 10MB
+            'backupCount': 10,
+            'formatter': 'json',
+            'encoding': 'utf-8',
+        },
+        'database_file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'database.log',
+            'maxBytes': 10_485_760,  # 10MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+            'encoding': 'utf-8',
+        },
+        'mail_admins': {
+            'level': 'ERROR',
+            'filters': ['require_debug_false'],
+            'class': 'django.utils.log.AdminEmailHandler',
+            'include_html': True,
+        },
     },
     'loggers': {
-        'sales': {
-            'handlers': ['sales_file', 'console'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-        'sync': {
-            'handlers': ['sync_file', 'console'],
-            'level': 'INFO',
-            'propagate': False,
-        },
         'django': {
-            'handlers': ['file', 'console'],
+            'handlers': ['console', 'error_file'],
             'level': 'INFO',
             'propagate': False,
         },
         'django.request': {
-            'handlers': ['file'],
+            'handlers': ['error_file', 'mail_admins'],
             'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['database_file'] if DEBUG else [],
+            'level': 'DEBUG' if DEBUG else 'ERROR',
+            'propagate': False,
+        },
+        'api': {
+            'handlers': ['api_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'api.errors': {
+            'handlers': ['error_file', 'mail_admins'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'audit': {
+            'handlers': ['audit_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'celery': {
+            'handlers': ['api_file', 'console'],
+            'level': 'INFO',
             'propagate': False,
         },
     },
 }
 
-# Crear directorio de logs si no existe
-import os
-logs_dir = BASE_DIR / 'logs'
-os.makedirs(logs_dir, exist_ok=True)
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# SETTINGS VALIDATION & PRODUCTION ENVIRONMENT CHECKS
-# ═══════════════════════════════════════════════════════════════════════════════
-
-def validate_production_settings():
-    """
-    Validate critical settings for production environment.
-    Raises: ValueError if production configuration is invalid.
-    """
-    if not DEBUG:
-        # SECRET_KEY validation
-        if not SECRET_KEY or len(SECRET_KEY) < 50:
-            raise ValueError(
-                "❌ PRODUCTION SECRET_KEY is too short or missing. "
-                "Set SECRET_KEY in .env with at least 50 characters."
-            )
-        
-        # Database configuration validation
-        required_db_vars = ['DB_NAME', 'DB_USER', 'DB_PASSWORD', 'DB_HOST']
-        for var in required_db_vars:
-            if not env(var, default=None):
-                raise ValueError(
-                    f"❌ PRODUCTION database variable {var} is missing. "
-                    f"Set {var} in .env file."
-                )
-        
-        # Redis/Cache configuration validation
-        if not env('REDIS_HOST', default=None):
-            raise ValueError(
-                "❌ PRODUCTION REDIS_HOST is missing. "
-                "Set REDIS_HOST in .env file."
-            )
-        
-        # SSL/HTTPS validation
-        if not SECURE_SSL_REDIRECT:
-            raise ValueError(
-                "❌ PRODUCTION SECURE_SSL_REDIRECT should be True. "
-                "Set SECURE_SSL_REDIRECT=true in .env"
-            )
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# PRODUCTION WARNINGS & INITIALIZATION LOGGING
-# ═══════════════════════════════════════════════════════════════════════════════
-
-logger = logging.getLogger('django')
-
-# Validate production settings
-try:
-    if not DEBUG:
-        validate_production_settings()
-except ValueError as e:
-    logger.critical(str(e))
-    raise
-
-# Django initialization logging
-if DEBUG:
-    logger.info(
-        "🔧 Django initialized (DEVELOPMENT mode)"
-        f" | DEBUG={DEBUG}"
-        f" | ALLOWED_HOSTS={ALLOWED_HOSTS}"
-        f" | Database={DATABASES['default']['NAME']}"
-    )
-else:
-    logger.warning(
-        "⚠️  Django initialized (PRODUCTION mode)"
-        f" | DEBUG={DEBUG}"
-        f" | ALLOWED_HOSTS={ALLOWED_HOSTS}"
-        f" | SECURE_SSL_REDIRECT={SECURE_SSL_REDIRECT}"
-        f" | Database={DATABASES['default']['NAME']}"
-    )
-
-# Cache backend initialization
-ignore_exceptions = CACHES['default'].get('OPTIONS', {}).get('IGNORE_EXCEPTIONS', DEBUG)
-key_prefix = CACHES['default'].get('KEY_PREFIX', 'N/A')
-
-if ignore_exceptions:
-    logger.info(
-        f"✓ Cache backend: Redis"
-        f" | IGNORE_EXCEPTIONS={ignore_exceptions}"
-        f" | KEY_PREFIX={key_prefix}"
-    )
-else:
-    logger.warning(
-        f"✓ Cache backend: Redis (STRICT MODE)"
-        f" | IGNORE_EXCEPTIONS={ignore_exceptions}"
-        f" | Will raise exceptions on cache failures"
-    )
-
-# Celery configuration
-logger.info(
-    f"✓ Celery broker: Redis"
-    f" | Queues: {list(set(route.get('queue', 'default') for route in CELERY_TASK_ROUTES.values()))}"
-    f" | Time limit: {CELERY_TASK_TIME_LIMIT // 60}m"
-)
-
-# REST Framework configuration
-logger.info(
-    f"✓ REST Framework"
-    f" | Authentication: {REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES']}"
-    f" | Throttling: Anon=10/h, User=1000/h, Sync=50/h"
-    f" | Token expiry: {REST_FRAMEWORK_TOKEN_EXPIRE_HOURS}h"
-)
-
-# Logging infrastructure
-logger.info(
-    f"✓ Logging configured"
-    f" | Handlers: {list(LOGGING['handlers'].keys())}"
-    f" | Loggers: {list(LOGGING['loggers'].keys())}"
-    f" | Log files directory: {logs_dir}"
-)
+# Aplicar configuración de logging
+logging.config.dictConfig(LOGGING)

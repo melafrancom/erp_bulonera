@@ -4,13 +4,13 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 # Importar ViewSets modulares
-from sales.api.views import QuoteViewSet, SaleViewSet, SaleSyncViewSet
+from sales.api.views import QuoteViewSet, SaleViewSet, SyncViewSet
 
 # Crear router y registrar ViewSets
 router = DefaultRouter()
 router.register(r'quotes', QuoteViewSet, basename='quote')
 router.register(r'sales', SaleViewSet, basename='sale')
-router.register(r'sync', SaleSyncViewSet, basename='sale-sync')
+router.register(r'sync', SyncViewSet, basename='sale-sync')
 
 # URLpatterns generados automáticamente por router
 urlpatterns = router.urls

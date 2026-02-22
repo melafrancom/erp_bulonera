@@ -1,5 +1,3 @@
-# products/urls/__init__.py
+from .product_urls import urlpatterns, app_name
 
-from .products_urls import *
-
-__all__ = ['urlpatterns']
+__all__ = ['urlpatterns', 'app_name']

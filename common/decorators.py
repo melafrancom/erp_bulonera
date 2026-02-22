@@ -1,212 +1,111 @@
 """
-common/decorators.py
-
-Decoradores funcionales para operaciones específicas del negocio.
-Incluye audit logging, transacciones, y validaciones.
+Decoradores personalizados para vistas y funciones.
 """
-
-from functools import wraps
 import logging
-from django.db import transaction
-from django.utils import timezone
-from common.models import AuditLog
-from django.contrib.contenttypes.models import ContentType
+import json
+from functools import wraps
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('api')
+audit_logger = logging.getLogger('audit')
 
 
-def audit_log(action, model=None):
+def audit_log(action_or_func=None, **kwargs):
     """
-    Decorador para registrar acciones críticas en AuditLog.
-    
-    Uso:
-        @audit_log(action='quote_created')
-        def perform_create(self, serializer):
-            serializer.save(created_by=self.request.user)
-    
-    Args:
-        action: Tipo de evento (ej: 'quote_created', 'sale_confirmed')
-        model: Modelo afectado (opcional, se intenta inferir)
-    
-    Registra:
-        - Usuario que realizó la acción
-        - IP del cliente
-        - Modelo y objeto afectado
-        - Timestamp exacto
+    Decorador para registrar acciones en auditoría.
+    Soporta:
+    @audit_log
+    @audit_log('nombre_accion')
+    @audit_log(action='nombre_accion')
     """
+    action = kwargs.get('action')
+
     def decorator(func):
         @wraps(func)
-        def wrapper(self, *args, **kwargs):
-            request = self.request if hasattr(self, 'request') else None
-            user = request.user if request else None
-            ip_address = None
+        def wrapper(self, *args, **kwargs_inner):
+            # 1. Determinar el nombre de la acción
+            nonlocal action
+            if not action:
+                if isinstance(action_or_func, str):
+                    action = action_or_func
+                else:
+                    action = func.__name__
             
-            # Obtener IP del cliente
-            if request:
-                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-                ip_address = (
-                    x_forwarded_for.split(',')[0].strip()
-                    if x_forwarded_for
-                    else request.META.get('REMOTE_ADDR')
-                )
+            # 2. Obtener el objeto request
+            request = None
+            if hasattr(self, 'request'):
+                request = self.request
+            elif args and hasattr(args[0], 'user'):
+                request = args[0]
+            elif 'request' in kwargs_inner:
+                request = kwargs_inner['request']
+
+            if not request:
+                return func(self, *args, **kwargs_inner)
+
+            user = request.user
+            method = request.method
+            path = request.path
             
-            # Ejecutar la función original
-            result = func(self, *args, **kwargs)
+            # 3. Registrar solicitud
+            audit_logger.info(
+                json.dumps({
+                    'event': 'api_request',
+                    'action': action,
+                    'user_id': user.id if user.is_authenticated else None,
+                    'username': str(user) if user.is_authenticated else 'anonymous',
+                    'method': method,
+                    'path': path,
+                    'ip_address': get_client_ip(request),
+                })
+            )
             
-            # Registrar en AuditLog
             try:
-                # Intentar obtener el objeto afectado
-                affected_object = None
-                object_repr = ''
-                content_type = None
-                object_id = None
+                response = func(self, *args, **kwargs_inner)
                 
-                # Para ViewSets, el objeto puede venir del serializer
-                if hasattr(self, 'get_object'):
-                    try:
-                        affected_object = self.get_object()
-                        content_type = ContentType.objects.get_for_model(affected_object)
-                        object_id = str(affected_object.pk)
-                        object_repr = str(affected_object)
-                    except Exception:
-                        pass
-                
-                # Crear registro de auditoría
-                AuditLog.objects.create(
-                    event_type=action,
-                    user=user,
-                    content_type=content_type,
-                    object_id=object_id,
-                    object_repr=object_repr,
-                    ip_address=ip_address,
-                    changes={}  # Podrías expandir esto para capturar diferencias
+                status_code = getattr(response, 'status_code', 200)
+                audit_logger.info(
+                    json.dumps({
+                        'event': 'api_response',
+                        'action': action,
+                        'user_id': user.id if user.is_authenticated else None,
+                        'method': method,
+                        'path': path,
+                        'status_code': status_code,
+                        'ip_address': get_client_ip(request),
+                    })
                 )
                 
-                logger.info(
-                    f"[AUDIT] {action} by {user} | {object_repr} | IP: {ip_address}"
-                )
+                return response
+            
             except Exception as e:
-                logger.error(
-                    f"[AUDIT ERROR] Failed to log {action}: {str(e)}"
+                audit_logger.error(
+                    json.dumps({
+                        'event': 'api_error',
+                        'action': action,
+                        'user_id': user.id if user.is_authenticated else None,
+                        'method': method,
+                        'path': path,
+                        'error': str(e),
+                        'ip_address': get_client_ip(request),
+                    })
                 )
-            
-            return result
+                raise
         
         return wrapper
+
+    # Si se usó como @audit_log (sin paréntesis)
+    if callable(action_or_func):
+        # En este caso action_or_func es la función decorada
+        return decorator(action_or_func)
+    
     return decorator
 
 
-def with_transaction(func):
-    """
-    Decorador para envolver operaciones en una transacción atómica.
-    
-    Uso:
-        @with_transaction
-        def perform_create(self, serializer):
-            serializer.save()
-    
-    Si ocurre una excepción, todo se revierte automáticamente.
-    """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        with transaction.atomic():
-            return func(*args, **kwargs)
-    return wrapper
-
-
-def rate_limit(max_calls, time_window_seconds=60):
-    """
-    Decorador para limitar la frecuencia de llamadas a una función.
-    
-    Uso:
-        @rate_limit(max_calls=5, time_window_seconds=60)
-        def my_view(request):
-            ...
-    
-    Args:
-        max_calls: Número máximo de llamadas permitidas
-        time_window_seconds: Ventana de tiempo en segundos
-    
-    Nota: Para APIs REST, usar throttling de DRF en su lugar.
-    """
-    def decorator(func):
-        # Cache simple en memoria (usar Redis en producción)
-        call_times = {}
-        
-        @wraps(func)
-        def wrapper(request, *args, **kwargs):
-            # Identificar usuario
-            if request.user.is_authenticated:
-                key = f"user_{request.user.id}_{func.__name__}"
-            else:
-                ip = (
-                    request.META['HTTP_X_FORWARDED_FOR'].split(',')[0]
-                    if 'HTTP_X_FORWARDED_FOR' in request.META
-                    else request.META.get('REMOTE_ADDR', 'unknown')
-                )
-                key = f"anon_{ip}_{func.__name__}"
-            
-            # Verificar ventana de tiempo
-            now = timezone.now()
-            if key in call_times:
-                call_times[key] = [
-                    t for t in call_times[key]
-                    if (now - t).total_seconds() < time_window_seconds
-                ]
-            else:
-                call_times[key] = []
-            
-            # Comprobar límite
-            if len(call_times[key]) >= max_calls:
-                from django.http import JsonResponse
-                return JsonResponse(
-                    {'error': 'Rate limit exceeded'},
-                    status=429
-                )
-            
-            # Registrar llamada y ejecutar
-            call_times[key].append(now)
-            return func(request, *args, **kwargs)
-        
-        return wrapper
-    return decorator
-
-
-def validate_model_exists(model_class, param_name='pk'):
-    """
-    Decorador para validar que un modelo existe antes de procesar.
-    
-    Uso:
-        @validate_model_exists(Quote, param_name='quote_id')
-        def my_view(request, quote_id):
-            ...
-    
-    Args:
-        model_class: Clase del modelo Django
-        param_name: Nombre del parámetro en kwargs
-    """
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            pk = kwargs.get(param_name)
-            if not pk:
-                from django.http import JsonResponse
-                return JsonResponse(
-                    {'error': f'{param_name} is required'},
-                    status=400
-                )
-            
-            try:
-                obj = model_class.objects.get(pk=pk)
-                kwargs['_object'] = obj  # Pasar objeto al view
-            except model_class.DoesNotExist:
-                from django.http import JsonResponse
-                return JsonResponse(
-                    {'error': f'{model_class.__name__} not found'},
-                    status=404
-                )
-            
-            return func(*args, **kwargs)
-        
-        return wrapper
-    return decorator
+def get_client_ip(request):
+    """Obtiene la dirección IP del cliente."""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip

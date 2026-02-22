@@ -26,20 +26,24 @@ class User(BaseModel, AbstractUser):
         ('admin', 'Administrador'),
         ('manager', 'Gerente'),
         ('operator', 'Operador'),
-        ('viewer', 'Solo Lectura')
+        ('viewer', 'Visualizador'),
+        ('user', 'Usuario'),
     )
     password_change_required = models.BooleanField(default=False, verbose_name="Requiere Cambio de Contraseña")
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='manager')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='user')
     # Status ---> is_active it's on basemodel
     last_access = models.DateTimeField(null=True, blank=True, verbose_name="Último Acceso")
+    
     # Specific permits
     can_manage_users = models.BooleanField(default=False)
-    can_manage_products = models.BooleanField(default=True)
-    can_manage_customers = models.BooleanField(default=True)
-    can_view_reports = models.BooleanField(default=True)
-    can_manage_sales = models.BooleanField(default=True)
-    can_manage_purchases = models.BooleanField(default=True)
-    can_manage_inventory = models.BooleanField(default=True)
+    can_manage_products = models.BooleanField(default=False)
+    can_manage_customers = models.BooleanField(default=False)
+    can_manage_sales = models.BooleanField(default=False)
+    can_manage_quotes = models.BooleanField(default=False)
+    can_manage_inventory = models.BooleanField(default=False)
+    can_manage_payments = models.BooleanField(default=False)
+    can_manage_bills = models.BooleanField(default=False)
+    can_view_reports = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['-created_at']

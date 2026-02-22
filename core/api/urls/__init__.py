@@ -1,4 +1,3 @@
+from .urls_core import urlpatterns, app_name
 
-from .urls_core import *
-
-__all__ = ['urlpatterns']
+__all__ = ['urlpatterns', 'app_name']

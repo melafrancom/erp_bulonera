@@ -1,5 +1,3 @@
-# payments/urls/__init__.py
+from .payment_urls import urlpatterns, app_name
 
-from .payments_urls import *
-
-__all__ = ['urlpatterns']
+__all__ = ['urlpatterns', 'app_name']

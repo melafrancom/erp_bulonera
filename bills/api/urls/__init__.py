@@ -1,5 +1,3 @@
-# bills/urls/__init__.py
+from .bill_urls import urlpatterns, app_name
 
-from .bills_urls import *
-
-__all__ = ['urlpatterns']
+__all__ = ['urlpatterns', 'app_name']

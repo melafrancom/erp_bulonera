@@ -1,4 +1,4 @@
-# sales/views/quote_views.py
+# sales/api/views/quote_views.py
 
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -9,84 +9,61 @@ from django.db import models as django_models, transaction
 from django.utils import timezone
 from decimal import Decimal
 
+from rest_framework.filters import SearchFilter, OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
+
 # Local imports
 from sales.models import Quote, QuoteItem
 from sales.api.serializers import (
     QuoteSerializer, QuoteDetailSerializer, QuoteCreateSerializer
 )
+from sales.api.filters import QuoteFilter
 from sales.services import convert_quote_to_sale
-from core.permissions import HasPermission
+from common.permissions import ModulePermission
+from common.mixins import AuditMixin, OwnerQuerysetMixin
 from common.decorators import audit_log
 
-
-class QuoteViewSet(viewsets.ModelViewSet):
+class QuoteViewSet(AuditMixin, OwnerQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestión de presupuestos (Quotes).
-    
-    Soporta filtrado por: status, customer, fecha, usuario creador.
-    Incluye acciones custom para workflow: send, accept, reject, convert.
     """
     
     queryset = Quote.objects.select_related('customer', 'created_by').prefetch_related('items__product')
-    permission_classes = [IsAuthenticated, HasPermission]
+    serializer_class = QuoteSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = QuoteFilter
+    search_fields = ['number', 'customer__business_name']
+    ordering_fields = ['date', '_cached_total', 'status', '-date']
+    ordering = ['-date']
+    
+    permission_classes = [IsAuthenticated, ModulePermission]
+    required_permission = 'can_manage_quotes'
     
     def get_serializer_class(self):
-        """Serializer dinámico según acción"""
-        if self.action == 'list':
-            return QuoteSerializer  # Ligero, sin items
-        elif self.action == 'create':
-            return QuoteCreateSerializer  # Con validaciones básicas
-        else:
-            return QuoteDetailSerializer  # Completo con items
+        """Selector dinámico de serializador."""
+        if self.action == 'retrieve':
+            return QuoteDetailSerializer
+        elif self.action in ['create', 'update', 'partial_update']:
+            return QuoteCreateSerializer
+        return QuoteSerializer  # Default (list)
     
     def get_queryset(self):
-        """Filtros dinámicos para múltiples escenarios"""
-        queryset = super().get_queryset()
-        
-        # Filtro por usuario (solo sus presupuestos si no es admin)
-        if not self.request.user.is_superuser:
-            queryset = queryset.filter(created_by=self.request.user)
-        
-        # Filtros por query params
-        status_filter = self.request.query_params.get('status')
-        if status_filter:
-            queryset = queryset.filter(status=status_filter)
-        
-        customer_id = self.request.query_params.get('customer')
-        if customer_id:
-            queryset = queryset.filter(customer_id=customer_id)
-        
-        # Filtro por rango de fechas
-        date_from = self.request.query_params.get('date_from')
-        date_to = self.request.query_params.get('date_to')
-        if date_from:
-            queryset = queryset.filter(date__gte=date_from)
-        if date_to:
-            queryset = queryset.filter(date__lte=date_to)
-        
-        # Búsqueda por número de presupuesto
-        search = self.request.query_params.get('search')
-        if search:
-            queryset = queryset.filter(
-                django_models.Q(number__icontains=search) |
-                django_models.Q(customer__business_name__icontains=search)
-            )
-        
-        return queryset.order_by('-date')
+        """Filtros base (la lógica compleja se delega a QuoteFilter)"""
+        return super().get_queryset()
     
-    @audit_log(action='quote_created')
+    @audit_log(action_or_func='quote_created')
     def perform_create(self, serializer):
-        """Asigna usuario creador automáticamente"""
-        serializer.save(created_by=self.request.user)
+        """Asigna usuario creador automáticamente vía AuditMixin"""
+        super().perform_create(serializer)
     
     def perform_update(self, serializer):
-        """Solo permite editar drafts y sent"""
+        """AuditMixin se encarga de updated_by. Solo permite editar drafts y sent."""
         instance = self.get_object()
         if not instance.is_editable():
             raise PermissionDenied(
                 f'No puedes editar presupuesto en estado "{instance.get_status_display()}"'
             )
-        serializer.save()
+        super().perform_update(serializer)
     
     def perform_destroy(self, instance):
         """Solo permite eliminar drafts"""
@@ -99,7 +76,7 @@ class QuoteViewSet(viewsets.ModelViewSet):
     # ========================================================================
     
     @action(detail=True, methods=['post'])
-    @audit_log(action='quote_sent')
+    @audit_log(action_or_func='quote_sent')
     def send(self, request, pk=None):
         """
         Marca presupuesto como enviado al cliente.
@@ -134,7 +111,7 @@ class QuoteViewSet(viewsets.ModelViewSet):
         })
     
     @action(detail=True, methods=['post'])
-    @audit_log(action='quote_accepted')
+    @audit_log(action_or_func='quote_accepted')
     def accept(self, request, pk=None):
         """
         Marca presupuesto como aceptado por el cliente.
@@ -159,7 +136,7 @@ class QuoteViewSet(viewsets.ModelViewSet):
         })
     
     @action(detail=True, methods=['post'])
-    @audit_log(action='quote_rejected')
+    @audit_log(action_or_func='quote_rejected')
     def reject(self, request, pk=None):
         """
         Marca presupuesto como rechazado por el cliente.
@@ -191,7 +168,7 @@ class QuoteViewSet(viewsets.ModelViewSet):
         })
     
     @action(detail=True, methods=['post'])
-    @audit_log(action='quote_converted')
+    @audit_log(action_or_func='quote_converted')
     def convert(self, request, pk=None):
         """
         Convierte presupuesto aceptado a venta (Sale).
