@@ -129,7 +129,7 @@ class UserAdmin(BaseUserAdmin):
                 'can_manage_customers',
                 'can_view_reports',
                 'can_manage_sales',
-                'can_manage_purchases',
+                #'can_manage_purchases',
                 'can_manage_inventory',
             ),
             'classes': ('collapse',),
@@ -172,7 +172,7 @@ class UserAdmin(BaseUserAdmin):
                 'can_manage_customers',
                 'can_view_reports',
                 'can_manage_sales',
-                'can_manage_purchases',
+                #'can_manage_purchases',
                 'can_manage_inventory',
             ),
         }),
@@ -381,7 +381,7 @@ class RegistrationRequestAdmin(admin.ModelAdmin):
         base_readonly = list(self.readonly_fields)
         if obj and obj.status != 'pending':
             base_readonly += ['username', 'email', 'first_name', 'last_name', 'phone',
-                              'status', 'reason', 'requested_role']
+                            'status', 'reason', 'requested_role']
         return base_readonly
     
     def has_delete_permission(self, request, obj=None):
