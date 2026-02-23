@@ -24,7 +24,7 @@
       </div>
       
       <!-- Botón Crear Presupuesto -->
-      <a href="#" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+      <a href="{% url 'sales_web:quote_create' %}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
         <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
         Crear Presupuesto
       </a>
@@ -216,7 +216,7 @@
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
               <div class="flex items-center justify-end gap-2">
                 <!-- Ver -->
-                <a href="#" 
+                <a href="{% url 'sales_web:quote_detail' quote.id %}" 
                    class="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded-lg transition"
                    title="Ver detalle">
                   <i data-lucide="eye" class="w-4 h-4"></i>
@@ -224,7 +224,7 @@
                 
                 <!-- Enviar (solo si draft) -->
                 {% if quote.status == 'draft' %}
-                <a href="#" 
+                <a href="{% url 'sales_web:quote_send' quote.id %}" 
                    class="text-orange-600 hover:text-orange-900 p-2 hover:bg-orange-50 rounded-lg transition"
                    title="Enviar">
                   <i data-lucide="send" class="w-4 h-4"></i>
@@ -233,7 +233,7 @@
                 
                 <!-- Convertir a venta (solo si accepted) -->
                 {% if quote.status == 'accepted' %}
-                <a href="#" 
+                <a href="{% url 'sales_web:quote_convert' quote.id %}" 
                    class="text-green-600 hover:text-green-900 p-2 hover:bg-green-50 rounded-lg transition"
                    title="Convertir a venta">
                   <i data-lucide="shopping-cart" class="w-4 h-4"></i>
@@ -242,7 +242,7 @@
                 
                 <!-- Eliminar (solo si draft) -->
                 {% if quote.status == 'draft' %}
-                <a href="#" 
+                <a href="{% url 'sales_web:quote_delete' quote.id %}" 
                    class="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-lg transition"
                    title="Eliminar">
                   <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -260,7 +260,7 @@
                 </div>
                 <p class="text-gray-500 font-medium">No se encontraron presupuestos</p>
                 <p class="text-sm text-gray-400 mt-1">Crea tu primer presupuesto para comenzar</p>
-                <a href="#" class="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium">
+                <a href="{% url 'sales_web:quote_create' %}" class="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium">
                   <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
                   Crear Presupuesto
                 </a>

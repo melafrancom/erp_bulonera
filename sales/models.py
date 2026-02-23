@@ -24,8 +24,17 @@ class Quote(BaseModel):
     customer = models.ForeignKey(
         Customer,
         on_delete=models.PROTECT,  # ← PROTECT en vez de CASCADE
+        null=True,
+        blank=True,
         related_name='quotes'
     )
+
+    # Campos para cliente no registrado (walk-in)
+    customer_name  = models.CharField(max_length=200, blank=True)
+    customer_phone = models.CharField(max_length=20, blank=True)
+    customer_email = models.EmailField(blank=True)
+    # CUIT solo se requiere al generar factura, no en la venta
+    customer_cuit  = models.CharField(max_length=13, blank=True)
     
     # Estados
     status = models.CharField(max_length=20, choices=[
@@ -62,6 +71,14 @@ class Quote(BaseModel):
             models.Index(fields=['customer', 'status']),
             models.Index(fields=['date']),
         ]
+    @property
+    def customer_display(self):
+        """Nombre a mostrar independientemente del modo."""
+        if self.customer:
+            return self.customer.business_name
+        if self.customer_name:
+            return self.customer_name
+        return 'Consumidor Final'
     
     @property
     def subtotal(self):
@@ -264,8 +281,16 @@ class Sale(BaseModel):
     customer = models.ForeignKey(
         Customer,
         on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name='sales'
     )
+    # Campos para cliente no registrado (walk-in)
+    customer_name  = models.CharField(max_length=200, blank=True)
+    customer_phone = models.CharField(max_length=20, blank=True)
+    customer_email = models.EmailField(blank=True)
+    # CUIT solo se requiere al generar factura, no en la venta
+    customer_cuit  = models.CharField(max_length=13, blank=True)
     # (solo una dirección)
     quote = models.OneToOneField(
         Quote,
@@ -492,12 +517,16 @@ class Sale(BaseModel):
         return self.status == 'draft'
     
     def can_be_invoiced(self):
-        """Puede facturarse si está confirmada/entregada y no tiene factura"""
-        return (
-            self.status in ['confirmed', 'delivered'] and
-            self.fiscal_status in ['not_required', 'pending']
+        """Puede facturarse si está confirmada/entregada, sin factura, y tiene CUIT."""
+        cuit = (
+            (self.customer and getattr(self.customer, 'cuit_cuil', None))
+            or self.customer_cuit
         )
-
+        return (
+            self.status in ['confirmed', 'delivered']
+            and self.fiscal_status in ['not_required', 'pending']
+            and bool(cuit)  # ← CUIT requerido solo en este punto
+        )
 
 class SaleItem(BaseModel):
     """Items de venta - Igual estructura que QuoteItem"""

@@ -65,21 +65,22 @@ class QuoteItemSerializer(serializers.ModelSerializer):
 
 class QuoteSerializer(serializers.ModelSerializer):
     """Serializer ligero para listados"""
-    
-    customer_name = serializers.CharField(source='customer.business_name', read_only=True)
+    customer_display = serializers.CharField(read_only=True)  # usa la @property del modelo
     created_by_username = serializers.CharField(source='created_by.username', read_only=True)
     
     class Meta:
         model = Quote
         fields = [
             'id', 'number', 'date', 'valid_until', 'status',
-            'customer', 'customer_name',
+            'customer', 'customer_display',         # ← reemplaza customer_name
+            'customer_name', 'customer_phone',      # ← campos walk-in
+            'customer_email', 'customer_cuit',
             'created_by', 'created_by_username',
             '_cached_subtotal', '_cached_discount', '_cached_tax', '_cached_total',
             'created_at', 'updated_at'
         ]
         read_only_fields = [
-            'id', 'number', 'created_at', 'updated_at',
+            'id', 'number', 'customer_display', 'created_at', 'updated_at',
             '_cached_subtotal', '_cached_discount', '_cached_tax', '_cached_total'
         ]
 
@@ -138,19 +139,30 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
 
 
 class QuoteCreateSerializer(serializers.ModelSerializer):
-    """Serializer para crear presupuestos"""
-    
+
     class Meta:
         model = Quote
         fields = [
-            'customer', 'valid_until',
-            'notes', 'internal_notes'
+            'customer',                             # FK opcional
+            'customer_name', 'customer_phone',      # walk-in
+            'customer_email', 'customer_cuit',
+            'valid_until', 'notes', 'internal_notes'
         ]
-    
+
+    def validate(self, data):
+        """Debe tener FK de cliente O nombre del cliente, nunca ninguno."""
+        customer    = data.get('customer')
+        customer_name = data.get('customer_name', '').strip()
+
+        if not customer and not customer_name:
+            raise serializers.ValidationError(
+                'Indicá un cliente existente o al menos un nombre para el presupuesto.'
+            )
+        return data
+
     def validate_valid_until(self, value):
-        """Validar que valid_until sea en el futuro"""
         if value < timezone.now().date():
-            raise serializers.ValidationError('La fecha de vencimiento debe ser en el futuro')
+            raise serializers.ValidationError('La fecha de vencimiento debe ser futura.')
         return value
 
 
@@ -222,20 +234,21 @@ class SaleItemSerializer(serializers.ModelSerializer):
 class SaleSerializer(serializers.ModelSerializer):
     """Serializer ligero para listados"""
     
-    customer_name = serializers.CharField(source='customer.business_name', read_only=True)
+    customer_display = serializers.CharField(read_only=True)  # @property del modelo
     created_by_username = serializers.CharField(source='created_by.username', read_only=True)
-    
+
     class Meta:
         model = Sale
         fields = [
             'id', 'number', 'date', 'status', 'payment_status', 'fiscal_status',
-            'customer', 'customer_name',
+            'customer', 'customer_display',
+            'customer_name', 'customer_phone', 'customer_email', 'customer_cuit',
             'created_by', 'created_by_username',
             '_cached_subtotal', '_cached_discount', '_cached_tax', '_cached_total',
             'created_at', 'updated_at'
         ]
         read_only_fields = [
-            'id', 'number', 'created_at', 'updated_at',
+            'id', 'number', 'customer_display', 'created_at', 'updated_at',
             '_cached_subtotal', '_cached_discount', '_cached_tax', '_cached_total'
         ]
 
@@ -243,8 +256,9 @@ class SaleSerializer(serializers.ModelSerializer):
 class SaleDetailSerializer(serializers.ModelSerializer):
     """Serializer detallado con items"""
     
-    customer_name = serializers.CharField(source='customer.business_name', read_only=True)
-    customer_tax_condition = serializers.CharField(source='customer.tax_condition', read_only=True)
+    customer_display = serializers.CharField(read_only=True)
+    # customer_tax_condition: solo si hay FK, con allow_null
+    customer_tax_condition = serializers.SerializerMethodField()
     created_by_username = serializers.CharField(source='created_by.username', read_only=True)
     quote_number = serializers.CharField(source='quote.number', read_only=True, allow_null=True)
     
@@ -286,7 +300,9 @@ class SaleDetailSerializer(serializers.ModelSerializer):
             'is_editable', 'can_be_invoiced', 'is_stock_reserved',
             'sync_status', 'version'
         ]
-    
+    def get_customer_tax_condition(self, obj):
+        return obj.customer.tax_condition if obj.customer else None
+
     def get_subtotal(self, obj):
         return str(obj.subtotal)
     
@@ -310,21 +326,33 @@ class SaleDetailSerializer(serializers.ModelSerializer):
 
 
 class SaleCreateSerializer(serializers.ModelSerializer):
-    """Serializer para crear ventas"""
-    
+
     class Meta:
         model = Sale
         fields = [
-            'customer', 'quote',
+            'customer',                             # FK opcional
+            'customer_name', 'customer_phone',      # walk-in
+            'customer_email', 'customer_cuit',
+            'quote',
             'notes', 'internal_notes',
             'delivery_address', 'delivery_date'
         ]
-    
+
+    def validate(self, data):
+        """Igual que Quote: necesita FK o nombre."""
+        customer      = data.get('customer')
+        customer_name = data.get('customer_name', '').strip()
+
+        if not customer and not customer_name:
+            raise serializers.ValidationError(
+                'Indicá un cliente existente o al menos un nombre para la venta.'
+            )
+        return data
+
     def validate_quote(self, value):
-        """Validar que si se proporciona quote, esté aceptado"""
         if value and not value.can_be_converted():
             raise serializers.ValidationError(
-                f'Presupuesto no puede convertirse. Estado: {value.status}'
+                f'El presupuesto no puede convertirse. Estado: {value.status}'
             )
         return value
 

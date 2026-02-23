@@ -243,21 +243,15 @@ def quote_create(request):
     Esta vista solo renderiza el formulario vacío con los datos maestros
     (clientes, productos) necesarios para los selects.
     """
-    if not _can_manage_quotes(request.user):
+    if not _can_manage_quotes(request.user):  # ← no lo elimines
         messages.error(request, 'No tenés permisos para crear presupuestos.')
         return redirect('sales_web:quote_list')
 
-    # Lazy imports: products y customers pueden no estar disponibles aún
-    customers = _get_customers_queryset()
-    products  = _get_products_queryset()
-
     context = {
-        'customers': customers,
-        'products':  products,
-        'today':     timezone.now().date(),
-        'mode':      'create',
+        'products': _get_products_queryset(),
+        'today':    timezone.now().date(),
+        'mode':     'create',
     }
-
     return render(request, 'sales/quote_form.html', context)
 
 
@@ -443,7 +437,6 @@ def sale_detail(request, pk):
 # ─────────────────────────────────────────────────────────────────────────────
 # VENTAS — CREAR (Venta directa / Mostrador)
 # ─────────────────────────────────────────────────────────────────────────────
-
 @login_required
 def sale_create(request):
     """
@@ -452,20 +445,15 @@ def sale_create(request):
     El template usa Alpine.js + fetch() hacia /api/sales/sales/ para
     enviar los datos. Esta vista solo renderiza el formulario con maestros.
     """
-    if not _can_manage_sales(request.user):
-        messages.error(request, 'No tenés permisos para crear ventas.')
-        return redirect('sales_web:sale_list')
-
-    customers = _get_customers_queryset()
-    products  = _get_products_queryset()
+    if not _can_manage_quotes(request.user):  # ← no lo elimines
+        messages.error(request, 'No tenés permisos para crear presupuestos.')
+        return redirect('sales_web:quote_list')
 
     context = {
-        'customers': customers,
-        'products':  products,
-        'today':     timezone.now().date(),
-        'mode':      'create',
+        'products': _get_products_queryset(),
+        'today':    timezone.now().date(),
+        'mode':     'create',
     }
-
     return render(request, 'sales/sale_form.html', context)
 
 

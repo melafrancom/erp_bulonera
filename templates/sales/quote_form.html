@@ -1,0 +1,785 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{% if is_update %}Editar Presupuesto {{ quote.number }}{% else %}Nuevo Presupuesto{% endif %} - ERP Bulonera Alvear{% endblock %}
+
+{% block breadcrumb_items %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <a href="{% url 'sales_web:quote_list' %}" class="text-gray-600 hover:text-gray-900">Presupuestos</a>
+  {% if is_update %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <a href="{% url 'sales_web:quote_detail' quote.id %}" class="text-gray-600 hover:text-gray-900">{{ quote.number }}</a>
+  {% endif %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <span class="text-gray-900 font-medium">{% if is_update %}Editar{% else %}Nuevo Presupuesto{% endif %}</span>
+{% endblock %}
+
+{% block mobile_title %}{% if is_update %}Editar {{ quote.number }}{% else %}Nuevo Presupuesto{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto" x-data="quoteForm()" x-init="init()">
+
+  <!-- Header -->
+  <div class="mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-1">
+          {% if is_update %}
+            Editar Presupuesto <span class="text-blue-600">{{ quote.number }}</span>
+          {% else %}
+            <span class="flex items-center gap-3">
+              <span class="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl">
+                <i data-lucide="file-plus" class="w-5 h-5 text-white"></i>
+              </span>
+              Nuevo Presupuesto
+            </span>
+          {% endif %}
+        </h1>
+        <p class="text-sm text-gray-500">
+          {% if is_update %}Modificá los datos del presupuesto{% else %}Completá los datos para crear un nuevo presupuesto{% endif %}
+        </p>
+      </div>
+      <a href="{% if is_update %}{% url 'sales_web:quote_detail' quote.id %}{% else %}{% url 'sales_web:quote_list' %}{% endif %}"
+         class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-gray-700 font-medium">
+        <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
+        Cancelar
+      </a>
+    </div>
+  </div>
+
+  <!-- Mensajes de error de Django -->
+  {% if form.non_field_errors %}
+  <div class="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
+    <div class="flex items-start gap-3">
+      <i data-lucide="alert-circle" class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"></i>
+      <div>
+        <p class="text-sm font-medium text-red-800">Hay errores en el formulario:</p>
+        <ul class="mt-1 text-sm text-red-700 list-disc list-inside">
+          {% for error in form.non_field_errors %}
+          <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <form method="post" id="quoteMainForm">
+    {% csrf_token %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Contenido Principal (2/3) -->
+      <div class="lg:col-span-2 space-y-6">
+
+        <!-- ===== SECCIÓN: Información General ===== -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+            <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+              <span class="inline-flex items-center justify-center w-7 h-7 bg-blue-100 rounded-lg">
+                <i data-lucide="info" class="w-4 h-4 text-blue-600"></i>
+              </span>
+              Información General
+            </h3>
+          </div>
+          <div class="p-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+              <!-- Cliente -->
+              <div class="sm:col-span-2">
+                <label for="{{ form.customer.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                  Cliente <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                  {{ form.customer }}
+                </div>
+                {% if form.customer.errors %}
+                <p class="mt-1 text-sm text-red-600 flex items-center gap-1">
+                  <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                  {{ form.customer.errors|join:", " }}
+                </p>
+                {% endif %}
+              </div>
+
+              <!-- Fecha de validez -->
+              <div>
+                <label for="{{ form.valid_until.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                  Válido hasta <span class="text-red-500">*</span>
+                </label>
+                {{ form.valid_until }}
+                {% if form.valid_until.errors %}
+                <p class="mt-1 text-sm text-red-600 flex items-center gap-1">
+                  <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                  {{ form.valid_until.errors|join:", " }}
+                </p>
+                {% endif %}
+              </div>
+
+              <!-- Estado (solo en edición) -->
+              {% if is_update %}
+              <div>
+                <label for="{{ form.status.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                  Estado
+                </label>
+                {{ form.status }}
+                {% if form.status.errors %}
+                <p class="mt-1 text-sm text-red-600 flex items-center gap-1">
+                  <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                  {{ form.status.errors|join:", " }}
+                </p>
+                {% endif %}
+              </div>
+              {% endif %}
+
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== SECCIÓN: Items del Presupuesto ===== -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+            <div class="flex items-center justify-between">
+              <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+                <span class="inline-flex items-center justify-center w-7 h-7 bg-purple-100 rounded-lg">
+                  <i data-lucide="package" class="w-4 h-4 text-purple-600"></i>
+                </span>
+                Items del Presupuesto
+                <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full" x-text="items.length"></span>
+              </h3>
+              <button type="button" @click="addItem()"
+                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                Agregar Item
+              </button>
+            </div>
+          </div>
+
+          <!-- Tabla de Items (Desktop) -->
+          <div class="hidden md:block overflow-x-auto">
+            <table class="min-w-full">
+              <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width:200px">Producto</th>
+                  <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" style="width:80px">Cantidad</th>
+                  <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" style="width:110px">Precio Unit.</th>
+                  <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style="width:120px">Tipo Desc.</th>
+                  <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" style="width:90px">Descuento</th>
+                  <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" style="width:80px">IVA %</th>
+                  <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" style="width:110px">Total</th>
+                  <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style="width:50px"></th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <template x-for="(item, index) in items" :key="item._id">
+                  <tr class="hover:bg-gray-50/50 group">
+                    <!-- Producto -->
+                    <td class="px-4 py-3">
+                      <select :name="'items[' + index + '][product_id]'"
+                              x-model="item.product_id"
+                              @change="onProductChange(index)"
+                              class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-white"
+                              :class="{'border-red-400 bg-red-50': item._errors.product}">
+                        <option value="">Seleccionar producto...</option>
+                        {% for product in products %}
+                        <option value="{{ product.id }}" data-price="{{ product.price }}" data-sku="{{ product.sku }}">
+                          [{{ product.sku }}] {{ product.name }}
+                        </option>
+                        {% endfor %}
+                      </select>
+                      <p x-show="item._errors.product" class="mt-1 text-xs text-red-500" x-text="item._errors.product"></p>
+                    </td>
+                    <!-- Cantidad -->
+                    <td class="px-4 py-3">
+                      <input type="number" :name="'items[' + index + '][quantity]'"
+                             x-model.number="item.quantity"
+                             @input="calculateLine(index)"
+                             min="0.01" step="0.01"
+                             class="w-full text-sm text-right border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                             :class="{'border-red-400 bg-red-50': item._errors.quantity}"
+                             placeholder="1">
+                    </td>
+                    <!-- Precio -->
+                    <td class="px-4 py-3">
+                      <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                        <input type="number" :name="'items[' + index + '][unit_price]'"
+                               x-model.number="item.unit_price"
+                               @input="calculateLine(index)"
+                               min="0" step="0.01"
+                               class="w-full text-sm text-right pl-7 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                               :class="{'border-red-400 bg-red-50': item._errors.unit_price}"
+                               placeholder="0.00">
+                      </div>
+                    </td>
+                    <!-- Tipo Descuento -->
+                    <td class="px-4 py-3">
+                      <select :name="'items[' + index + '][discount_type]'"
+                              x-model="item.discount_type"
+                              @change="calculateLine(index)"
+                              class="w-full text-sm border border-gray-200 rounded-lg px-2 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-white">
+                        <option value="none">Sin desc.</option>
+                        <option value="percentage">%</option>
+                        <option value="fixed">Fijo $</option>
+                      </select>
+                    </td>
+                    <!-- Valor Descuento -->
+                    <td class="px-4 py-3">
+                      <input type="number" :name="'items[' + index + '][discount_value]'"
+                             x-model.number="item.discount_value"
+                             @input="calculateLine(index)"
+                             min="0" step="0.01"
+                             :disabled="item.discount_type === 'none'"
+                             class="w-full text-sm text-right border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:text-gray-400"
+                             placeholder="0">
+                    </td>
+                    <!-- IVA -->
+                    <td class="px-4 py-3">
+                      <div class="relative">
+                        <input type="number" :name="'items[' + index + '][tax_percentage]'"
+                               x-model.number="item.tax_percentage"
+                               @input="calculateLine(index)"
+                               min="0" max="100" step="0.01"
+                               class="w-full text-sm text-right border border-gray-200 rounded-lg px-3 py-2 pr-6 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                               placeholder="21">
+                        <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">%</span>
+                      </div>
+                    </td>
+                    <!-- Total -->
+                    <td class="px-4 py-3 text-right">
+                      <div class="text-sm font-semibold text-gray-900" x-text="'$' + formatNumber(item._total)"></div>
+                      <div x-show="item.discount_type !== 'none' && item._discount > 0" class="text-xs text-red-500 mt-0.5" x-text="'-$' + formatNumber(item._discount)"></div>
+                    </td>
+                    <!-- Eliminar -->
+                    <td class="px-4 py-3 text-center">
+                      <button type="button" @click="removeItem(index)"
+                              class="text-gray-300 hover:text-red-500 transition p-1 rounded opacity-0 group-hover:opacity-100"
+                              title="Eliminar item">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  <!-- Notas del item -->
+                  <tr class="bg-gray-50/30" x-show="item.showNotes || item.notes">
+                    <td colspan="8" class="px-4 pb-3 pt-0">
+                      <input type="text" :name="'items[' + index + '][notes]'"
+                             x-model="item.notes"
+                             class="w-full text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-white"
+                             placeholder="Notas del item (opcional)...">
+                    </td>
+                  </tr>
+                </template>
+
+                <!-- Estado vacío -->
+                <tr x-show="items.length === 0">
+                  <td colspan="8" class="px-4 py-12 text-center">
+                    <div class="flex flex-col items-center gap-3 text-gray-400">
+                      <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <i data-lucide="package" class="w-6 h-6"></i>
+                      </div>
+                      <div>
+                        <p class="text-sm font-medium text-gray-500">Sin items</p>
+                        <p class="text-xs text-gray-400">Hacé click en "Agregar Item" para comenzar</p>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Items Mobile (Cards) -->
+          <div class="md:hidden p-4 space-y-4">
+            <template x-for="(item, index) in items" :key="item._id">
+              <div class="border border-gray-200 rounded-xl p-4 space-y-3 bg-gray-50/50">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-medium text-gray-500 uppercase">Item <span x-text="index + 1"></span></span>
+                  <button type="button" @click="removeItem(index)" class="text-gray-400 hover:text-red-500 transition">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  </button>
+                </div>
+                <select :name="'items[' + index + '][product_id]'"
+                        x-model="item.product_id"
+                        @change="onProductChange(index)"
+                        class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none bg-white">
+                  <option value="">Seleccionar producto...</option>
+                  {% for product in products %}
+                  <option value="{{ product.id }}" data-price="{{ product.price }}">
+                    [{{ product.sku }}] {{ product.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Cantidad</label>
+                    <input type="number" x-model.number="item.quantity" @input="calculateLine(index)"
+                           class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-purple-500"
+                           min="0.01" step="0.01" placeholder="1">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Precio Unit.</label>
+                    <input type="number" x-model.number="item.unit_price" @input="calculateLine(index)"
+                           class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-purple-500"
+                           min="0" step="0.01" placeholder="0.00">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Tipo Desc.</label>
+                    <select x-model="item.discount_type" @change="calculateLine(index)"
+                            class="w-full text-sm border border-gray-200 rounded-lg px-2 py-2 outline-none focus:ring-2 focus:ring-purple-500 bg-white">
+                      <option value="none">Sin desc.</option>
+                      <option value="percentage">%</option>
+                      <option value="fixed">Fijo $</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Desc. Valor</label>
+                    <input type="number" x-model.number="item.discount_value" @input="calculateLine(index)"
+                           :disabled="item.discount_type === 'none'"
+                           class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100"
+                           min="0" step="0.01" placeholder="0">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">IVA %</label>
+                    <input type="number" x-model.number="item.tax_percentage" @input="calculateLine(index)"
+                           class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-purple-500"
+                           min="0" max="100" step="0.01" placeholder="21">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Total</label>
+                    <div class="text-sm font-bold text-gray-900 py-2 text-right" x-text="'$' + formatNumber(item._total)"></div>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <!-- Botón agregar mobile -->
+            <button type="button" @click="addItem()"
+                    class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 hover:border-purple-400 hover:bg-purple-50 rounded-xl text-sm font-medium text-gray-500 hover:text-purple-700 transition">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              Agregar Item
+            </button>
+          </div>
+
+          <!-- Totales rápidos dentro del card de items -->
+          <div class="px-6 py-4 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-white" x-show="items.length > 0">
+            <div class="flex flex-wrap gap-6 justify-end text-sm">
+              <div class="flex items-center gap-2">
+                <span class="text-gray-500">Subtotal:</span>
+                <span class="font-medium text-gray-900" x-text="'$' + formatNumber(totals.subtotal)"></span>
+              </div>
+              <div class="flex items-center gap-2" x-show="totals.discount > 0">
+                <span class="text-gray-500">Descuentos:</span>
+                <span class="font-medium text-red-600" x-text="'-$' + formatNumber(totals.discount)"></span>
+              </div>
+              <div class="flex items-center gap-2" x-show="totals.tax > 0">
+                <span class="text-gray-500">IVA:</span>
+                <span class="font-medium text-gray-900" x-text="'$' + formatNumber(totals.tax)"></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="font-semibold text-gray-900">Total:</span>
+                <span class="text-lg font-bold text-blue-600" x-text="'$' + formatNumber(totals.total)"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Validación: items requeridos -->
+        <div x-show="showItemsError"
+             class="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0"></i>
+          Debés agregar al menos un item al presupuesto.
+        </div>
+
+        <!-- ===== SECCIÓN: Notas ===== -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+            <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+              <span class="inline-flex items-center justify-center w-7 h-7 bg-green-100 rounded-lg">
+                <i data-lucide="message-square" class="w-4 h-4 text-green-600"></i>
+              </span>
+              Notas
+            </h3>
+          </div>
+          <div class="p-6 space-y-5">
+
+            <!-- Notas para el cliente -->
+            <div>
+              <label for="{{ form.notes.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                Notas para el Cliente
+                <span class="text-gray-400 font-normal ml-1">(opcional)</span>
+              </label>
+              <p class="text-xs text-gray-500 mb-2">Estas notas serán visibles en el presupuesto.</p>
+              {{ form.notes }}
+              {% if form.notes.errors %}
+              <p class="mt-1 text-sm text-red-600 flex items-center gap-1">
+                <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                {{ form.notes.errors|join:", " }}
+              </p>
+              {% endif %}
+            </div>
+
+            <!-- Notas Internas (solo managers/admin) -->
+            {% if user.is_manager or user.is_admin or user.is_superuser %}
+            <div class="pt-4 border-t border-gray-100">
+              <label for="{{ form.internal_notes.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                <span class="inline-flex items-center gap-1.5">
+                  <i data-lucide="lock" class="w-4 h-4 text-yellow-600"></i>
+                  Notas Internas (Privadas)
+                </span>
+                <span class="text-gray-400 font-normal ml-1">(opcional)</span>
+              </label>
+              <p class="text-xs text-gray-500 mb-2">Solo visible para managers y administradores. No aparece en el presupuesto.</p>
+              {{ form.internal_notes }}
+              {% if form.internal_notes.errors %}
+              <p class="mt-1 text-sm text-red-600 flex items-center gap-1">
+                <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                {{ form.internal_notes.errors|join:", " }}
+              </p>
+              {% endif %}
+            </div>
+            {% endif %}
+
+          </div>
+        </div>
+
+      </div><!-- /Contenido Principal -->
+
+      <!-- ===== Sidebar (1/3) ===== -->
+      <div class="space-y-6">
+
+        <!-- Card Totales -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
+          <h3 class="text-base font-semibold text-gray-900 mb-5 flex items-center gap-2">
+            <i data-lucide="calculator" class="w-5 h-5 text-gray-500"></i>
+            Resumen
+          </h3>
+
+          <dl class="space-y-3">
+            <div class="flex justify-between text-sm">
+              <dt class="text-gray-500">Subtotal:</dt>
+              <dd class="font-medium text-gray-900" x-text="'$' + formatNumber(totals.subtotal)">$0,00</dd>
+            </div>
+            <div class="flex justify-between text-sm" x-show="totals.discount > 0">
+              <dt class="text-gray-500">Descuentos:</dt>
+              <dd class="font-medium text-red-600" x-text="'-$' + formatNumber(totals.discount)"></dd>
+            </div>
+            <div class="flex justify-between text-sm">
+              <dt class="text-gray-500">Neto:</dt>
+              <dd class="font-medium text-gray-900" x-text="'$' + formatNumber(totals.net)">$0,00</dd>
+            </div>
+            <div class="flex justify-between text-sm" x-show="totals.tax > 0">
+              <dt class="text-gray-500">Impuestos:</dt>
+              <dd class="font-medium text-gray-900" x-text="'$' + formatNumber(totals.tax)"></dd>
+            </div>
+            <div class="flex justify-between text-lg font-bold border-t pt-4 mt-2">
+              <dt class="text-gray-900">Total:</dt>
+              <dd class="text-blue-600" x-text="'$' + formatNumber(totals.total)">$0,00</dd>
+            </div>
+          </dl>
+
+          <div class="mt-4 pt-4 border-t border-gray-100">
+            <div class="flex items-center justify-between text-xs text-gray-400">
+              <span>Items</span>
+              <span x-text="items.length + ' producto' + (items.length !== 1 ? 's' : '')">0 productos</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card Botones de Acción -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 class="text-base font-semibold text-gray-900 mb-4">Guardar</h3>
+
+          <!-- Botón Guardar principal -->
+          <button type="button" @click="submitForm('save')"
+                  :disabled="isSubmitting"
+                  class="w-full inline-flex items-center justify-center px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition font-semibold shadow-sm disabled:opacity-60 disabled:cursor-not-allowed mb-3">
+            <span x-show="!isSubmitting" class="flex items-center gap-2">
+              <i data-lucide="save" class="w-4 h-4"></i>
+              {% if is_update %}Guardar Cambios{% else %}Guardar Presupuesto{% endif %}
+            </span>
+            <span x-show="isSubmitting" class="flex items-center gap-2">
+              <svg class="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              </svg>
+              Guardando...
+            </span>
+          </button>
+
+          <!-- Guardar y Enviar (solo en creación) -->
+          {% if not is_update %}
+          <button type="button" @click="submitForm('save_and_send')"
+                  :disabled="isSubmitting"
+                  class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-700 border border-green-200 rounded-xl hover:bg-green-100 transition font-medium mb-3">
+            <i data-lucide="send" class="w-4 h-4"></i>
+            Guardar y Enviar
+          </button>
+          {% endif %}
+
+          <!-- Cancelar -->
+          <a href="{% if is_update %}{% url 'sales_web:quote_detail' quote.id %}{% else %}{% url 'sales_web:quote_list' %}{% endif %}"
+             class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-600 rounded-xl hover:bg-gray-50 transition font-medium text-sm">
+            <i data-lucide="x" class="w-4 h-4"></i>
+            Cancelar
+          </a>
+        </div>
+
+        <!-- Info / Ayuda -->
+        <div class="bg-blue-50 border border-blue-100 rounded-xl p-4">
+          <h4 class="text-sm font-semibold text-blue-800 mb-2 flex items-center gap-2">
+            <i data-lucide="lightbulb" class="w-4 h-4"></i>
+            Consejos
+          </h4>
+          <ul class="text-xs text-blue-700 space-y-1.5">
+            <li class="flex items-start gap-1.5">
+              <i data-lucide="check" class="w-3.5 h-3.5 mt-0.5 flex-shrink-0"></i>
+              El número se genera automáticamente al guardar.
+            </li>
+            <li class="flex items-start gap-1.5">
+              <i data-lucide="check" class="w-3.5 h-3.5 mt-0.5 flex-shrink-0"></i>
+              Los totales se actualizan en tiempo real.
+            </li>
+            <li class="flex items-start gap-1.5">
+              <i data-lucide="check" class="w-3.5 h-3.5 mt-0.5 flex-shrink-0"></i>
+              Al hacer "Enviar" el cliente recibirá el presupuesto por email.
+            </li>
+          </ul>
+        </div>
+
+      </div><!-- /Sidebar -->
+
+    </div><!-- /Grid -->
+
+    <!-- Hidden inputs para enviar items como JSON -->
+    <input type="hidden" name="items_json" :value="JSON.stringify(items)">
+    <input type="hidden" name="action" x-model="formAction">
+
+  </form>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function quoteForm() {
+  return {
+    items: [],
+    totals: { subtotal: 0, discount: 0, net: 0, tax: 0, total: 0 },
+    isSubmitting: false,
+    formAction: 'save',
+    showItemsError: false,
+    _nextId: 0,
+
+    // ─── Inicialización ───────────────────────────────────────────
+    init() {
+      // En edición, cargar items existentes desde Django context
+      {% if is_update and quote %}
+      const existingItems = [
+        {% for item in quote.items.all %}
+        {
+          _id: {{ forloop.counter }},
+          product_id: "{{ item.product.id }}",
+          quantity: {{ item.quantity }},
+          unit_price: {{ item.unit_price }},
+          discount_type: "{{ item.discount_type }}",
+          discount_value: {{ item.discount_value }},
+          tax_percentage: {{ item.tax_percentage }},
+          notes: "{{ item.notes|escapejs }}",
+          showNotes: {% if item.notes %}"true"{% else %}false{% endif %},
+          _total: {{ item.total }},
+          _discount: {{ item.discount_amount }},
+          _errors: {}
+        },
+        {% endfor %}
+      ];
+      this._nextId = existingItems.length + 1;
+      this.items = existingItems;
+      {% else %}
+      // Comenzar con un item vacío
+      this.addItem();
+      {% endif %}
+      this.calculateTotal();
+    },
+
+    // ─── Agregar Item ────────────────────────────────────────────
+    addItem() {
+      this.items.push({
+        _id: ++this._nextId,
+        product_id: '',
+        quantity: 1,
+        unit_price: 0,
+        discount_type: 'none',
+        discount_value: 0,
+        tax_percentage: 21, // IVA por defecto en Argentina
+        notes: '',
+        showNotes: false,
+        _total: 0,
+        _discount: 0,
+        _errors: {}
+      });
+    },
+
+    // ─── Eliminar Item ───────────────────────────────────────────
+    removeItem(index) {
+      if (this.items.length === 1) {
+        // Limpiar en lugar de eliminar si es el último
+        this.items[index] = {
+          ...this.items[index],
+          product_id: '',
+          quantity: 1,
+          unit_price: 0,
+          discount_type: 'none',
+          discount_value: 0,
+          _total: 0,
+          _discount: 0,
+        };
+        this.calculateLine(index);
+        return;
+      }
+      this.items.splice(index, 1);
+      this.calculateTotal();
+    },
+
+    // ─── Al cambiar producto: autocompletar precio ────────────────
+    onProductChange(index) {
+      const select = document.querySelectorAll('select[x-model="item.product_id"]')[index]
+                  || event.target;
+      const selectedOption = event.target.selectedOptions[0];
+      if (selectedOption && selectedOption.dataset.price) {
+        this.items[index].unit_price = parseFloat(selectedOption.dataset.price) || 0;
+      }
+      this.calculateLine(index);
+    },
+
+    // ─── Calcular totales de una línea ───────────────────────────
+    calculateLine(index) {
+      const item = this.items[index];
+      const qty = parseFloat(item.quantity) || 0;
+      const price = parseFloat(item.unit_price) || 0;
+      const discVal = parseFloat(item.discount_value) || 0;
+      const taxPct = parseFloat(item.tax_percentage) || 0;
+
+      const lineSubtotal = qty * price;
+
+      let discAmount = 0;
+      if (item.discount_type === 'percentage') {
+        discAmount = lineSubtotal * (discVal / 100);
+      } else if (item.discount_type === 'fixed') {
+        discAmount = Math.min(discVal, lineSubtotal);
+      }
+
+      const netLine = lineSubtotal - discAmount;
+      const taxAmount = netLine * (taxPct / 100);
+      const lineTotal = netLine + taxAmount;
+
+      // Actualización reactiva
+      this.items[index]._discount = discAmount;
+      this.items[index]._total = lineTotal;
+
+      this.calculateTotal();
+    },
+
+    // ─── Calcular totales globales ────────────────────────────────
+    calculateTotal() {
+      let subtotal = 0;
+      let discount = 0;
+      let tax = 0;
+
+      this.items.forEach(item => {
+        const qty = parseFloat(item.quantity) || 0;
+        const price = parseFloat(item.unit_price) || 0;
+        const discVal = parseFloat(item.discount_value) || 0;
+        const taxPct = parseFloat(item.tax_percentage) || 0;
+
+        const lineSub = qty * price;
+        let disc = 0;
+        if (item.discount_type === 'percentage') {
+          disc = lineSub * (discVal / 100);
+        } else if (item.discount_type === 'fixed') {
+          disc = Math.min(discVal, lineSub);
+        }
+        const net = lineSub - disc;
+        const taxAmt = net * (taxPct / 100);
+
+        subtotal += lineSub;
+        discount += disc;
+        tax += taxAmt;
+      });
+
+      const net = subtotal - discount;
+      const total = net + tax;
+
+      this.totals = { subtotal, discount, net, tax, total };
+    },
+
+    // ─── Validaciones ─────────────────────────────────────────────
+    validate() {
+      let valid = true;
+
+      if (this.items.length === 0) {
+        this.showItemsError = true;
+        valid = false;
+      } else {
+        this.showItemsError = false;
+      }
+
+      // Validar cada item
+      this.items.forEach((item, index) => {
+        item._errors = {};
+        if (!item.product_id) {
+          item._errors.product = 'Seleccioná un producto';
+          valid = false;
+        }
+        if (!item.quantity || item.quantity <= 0) {
+          item._errors.quantity = 'Cantidad inválida';
+          valid = false;
+        }
+        if (item.unit_price < 0) {
+          item._errors.unit_price = 'Precio inválido';
+          valid = false;
+        }
+      });
+
+      return valid;
+    },
+
+    // ─── Submit del formulario ────────────────────────────────────
+    submitForm(action) {
+      if (!this.validate()) {
+        // Scroll al primer error
+        this.$nextTick(() => {
+          const firstError = document.querySelector('.border-red-400');
+          if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        return;
+      }
+
+      this.formAction = action;
+      this.isSubmitting = true;
+      
+      this.$nextTick(() => {
+        document.getElementById('quoteMainForm').submit();
+      });
+    },
+
+    // ─── Formateo de números ──────────────────────────────────────
+    formatNumber(num) {
+      return (parseFloat(num) || 0).toLocaleString('es-AR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+  };
+}
+</script>
+
+<style>
+  /* Estilos base para los campos de Django */
+  input[type="text"], input[type="email"], input[type="number"], input[type="date"],
+  select, textarea {
+    @apply w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition;
+  }
+  textarea {
+    @apply resize-none;
+    min-height: 80px;
+  }
+</style>
+{% endblock %}

@@ -33,7 +33,12 @@ def convert_quote_to_sale(quote, user, modifications=None):
     with transaction.atomic():
         # 1. Crear venta
         sale = Sale.objects.create(
-            customer=quote.customer,
+            customer=quote.customer,          # ← FK (puede ser null)
+            # Copiar datos walk-in del presupuesto
+            customer_name=quote.customer_name,
+            customer_phone=quote.customer_phone,
+            customer_email=quote.customer_email,
+            customer_cuit=quote.customer_cuit,
             quote=quote,
             created_by=user,
             status='draft',
@@ -113,7 +118,7 @@ def confirm_sale(sale, user):
     with transaction.atomic():
         sale.status = 'confirmed'
         sale.confirmed_at = timezone.now()
-        sale.save(update_fields=['status'])
+        sale.save(update_fields=['status', 'confirmed_at'])
         # removed confirmed_at from update_fields as it is not present in the model provided above?
         # Checked models.py provided: Sale does NOT have confirmed_at field explicitly defined in the provided snippet.
         # It says "# confirmed_at = models.DateTimeField..." in commented section.

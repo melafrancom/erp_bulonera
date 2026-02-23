@@ -1,0 +1,359 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Presupuesto {{ quote.number }} - ERP Bulonera Alvear{% endblock %}
+
+{% block breadcrumb_items %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <a href="{% url 'sales_web:quote_list' %}" class="text-gray-600 hover:text-gray-900">Presupuestos</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <span class="text-gray-900 font-medium">{{ quote.number }}</span>
+{% endblock %}
+
+{% block mobile_title %}{{ quote.number }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+  
+  <!-- Header -->
+  <div class="mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+          Presupuesto {{ quote.number }}
+        </h1>
+        <div class="flex flex-wrap items-center gap-2 mt-2">
+          <!-- Badge de Estado -->
+          {% if quote.status == 'draft' %}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+              <i data-lucide="edit" class="w-3 h-3 mr-1"></i>
+              {{ quote.get_status_display }}
+            </span>
+          {% elif quote.status == 'sent' %}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+              <i data-lucide="send" class="w-3 h-3 mr-1"></i>
+              {{ quote.get_status_display }}
+            </span>
+          {% elif quote.status == 'accepted' %}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              <i data-lucide="check-circle" class="w-3 h-3 mr-1"></i>
+              {{ quote.get_status_display }}
+            </span>
+          {% elif quote.status == 'rejected' %}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+              <i data-lucide="x-circle" class="w-3 h-3 mr-1"></i>
+              {{ quote.get_status_display }}
+            </span>
+          {% elif quote.status == 'converted' %}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              <i data-lucide="check-square" class="w-3 h-3 mr-1"></i>
+              {{ quote.get_status_display }}
+            </span>
+          {% else %}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+              {{ quote.get_status_display }}
+            </span>
+          {% endif %}
+          
+          <span class="text-sm text-gray-500">{{ quote.date|date:"d/m/Y" }}</span>
+          <span class="text-sm text-gray-400">•</span>
+          <span class="text-sm text-gray-500">Válido hasta: {{ quote.valid_until|date:"d/m/Y" }}</span>
+        </div>
+      </div>
+      
+      <a href="{% url 'sales_web:quote_list' %}" 
+         class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-gray-700 font-medium">
+        <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
+        Volver
+      </a>
+    </div>
+  </div>
+
+  <!-- Grid 2 Columnas -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- Contenido Principal (2/3) -->
+    <div class="lg:col-span-2 space-y-6">
+      
+      <!-- Card de Cliente -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <i data-lucide="user" class="w-5 h-5 text-gray-600"></i>
+            Cliente
+          </h3>
+          <a href="{% url 'customers:customer_detail' quote.customer.id %}" 
+             class="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
+            Ver perfil
+            <i data-lucide="external-link" class="w-4 h-4"></i>
+          </a>
+        </div>
+        
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Razón Social</dt>
+            <dd class="mt-1 text-sm text-gray-900 font-medium">{{ quote.customer.business_name }}</dd>
+          </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500">CUIT/CUIL</dt>
+            <dd class="mt-1 text-sm text-gray-900">{{ quote.customer.cuit_cuil }}</dd>
+          </div>
+          {% if quote.customer.email %}
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Email</dt>
+            <dd class="mt-1 text-sm text-gray-900">
+              <a href="mailto:{{ quote.customer.email }}" class="text-blue-600 hover:text-blue-700">
+                {{ quote.customer.email }}
+              </a>
+            </dd>
+          </div>
+          {% endif %}
+          {% if quote.customer.phone %}
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Teléfono</dt>
+            <dd class="mt-1 text-sm text-gray-900">
+              <a href="tel:{{ quote.customer.phone }}" class="text-blue-600 hover:text-blue-700">
+                {{ quote.customer.phone }}
+              </a>
+            </dd>
+          </div>
+          {% endif %}
+        </dl>
+      </div>
+
+      <!-- Tabla de Items -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <i data-lucide="package" class="w-5 h-5 text-gray-600"></i>
+            Items del Presupuesto
+          </h3>
+        </div>
+        
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Producto
+                </th>
+                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Cantidad
+                </th>
+                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                  Precio Unit.
+                </th>
+                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                  Descuento
+                </th>
+                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                  Impuesto
+                </th>
+                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Total
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              {% for item in quote.items.all %}
+              <tr class="hover:bg-gray-50">
+                <td class="px-4 py-4">
+                  <div class="text-sm font-medium text-gray-900">{{ item.product.name }}</div>
+                  <div class="text-sm text-gray-500">SKU: {{ item.product.sku }}</div>
+                  {% if item.notes %}
+                  <div class="text-xs text-gray-400 mt-1">{{ item.notes|truncatewords:10 }}</div>
+                  {% endif %}
+                </td>
+                <td class="px-4 py-4 text-right text-sm text-gray-900">
+                  {{ item.quantity|floatformat:0 }}
+                </td>
+                <td class="px-4 py-4 text-right text-sm text-gray-900 hidden sm:table-cell">
+                  ${{ item.unit_price|floatformat:2 }}
+                </td>
+                <td class="px-4 py-4 text-right text-sm hidden md:table-cell">
+                  {% if item.discount_type != 'none' %}
+                    <span class="text-red-600">
+                      {% if item.discount_type == 'percentage' %}
+                        {{ item.discount_value }}%
+                      {% else %}
+                        ${{ item.discount_value|floatformat:2 }}
+                      {% endif %}
+                    </span>
+                  {% else %}
+                    <span class="text-gray-400">-</span>
+                  {% endif %}
+                </td>
+                <td class="px-4 py-4 text-right text-sm text-gray-900 hidden md:table-cell">
+                  {% if item.tax_percentage > 0 %}
+                    {{ item.tax_percentage }}%
+                  {% else %}
+                    <span class="text-gray-400">-</span>
+                  {% endif %}
+                </td>
+                <td class="px-4 py-4 text-right text-sm font-medium text-gray-900">
+                  ${{ item.total|floatformat:2 }}
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                  No hay items en este presupuesto
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot class="bg-gray-50">
+              <tr>
+                <td colspan="5" class="px-4 py-3 text-right text-sm font-bold text-gray-900">
+                  Total General:
+                </td>
+                <td class="px-4 py-3 text-right text-xl font-bold text-blue-600">
+                  ${{ quote.total|floatformat:2 }}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Notas -->
+      {% if quote.notes %}
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <i data-lucide="message-square" class="w-5 h-5 text-gray-600"></i>
+          Notas
+        </h3>
+        <p class="text-sm text-gray-700 whitespace-pre-line">{{ quote.notes }}</p>
+      </div>
+      {% endif %}
+
+      <!-- Notas Internas (solo managers/admin) -->
+      {% if user.is_manager or user.is_admin or user.is_superuser %}
+        {% if quote.internal_notes %}
+        <div class="bg-yellow-50 rounded-xl border border-yellow-200 p-6">
+          <h3 class="text-lg font-semibold text-yellow-900 mb-4 flex items-center gap-2">
+            <i data-lucide="lock" class="w-5 h-5 text-yellow-600"></i>
+            Notas Internas (Privadas)
+          </h3>
+          <p class="text-sm text-yellow-800 whitespace-pre-line">{{ quote.internal_notes }}</p>
+        </div>
+        {% endif %}
+      {% endif %}
+
+      <!-- Info de Auditoría -->
+      <div class="bg-gray-50 rounded-xl border border-gray-200 p-6">
+        <h3 class="text-sm font-semibold text-gray-900 mb-4">Información de Auditoría</h3>
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          <div>
+            <dt class="text-gray-500">Creado por:</dt>
+            <dd class="text-gray-900 font-medium">{{ quote.created_by.get_full_name|default:quote.created_by.username }}</dd>
+          </div>
+          <div>
+            <dt class="text-gray-500">Fecha de creación:</dt>
+            <dd class="text-gray-900">{{ quote.created_at|date:"d/m/Y H:i" }}</dd>
+          </div>
+          <div>
+            <dt class="text-gray-500">Última actualización:</dt>
+            <dd class="text-gray-900">{{ quote.updated_at|date:"d/m/Y H:i" }}</dd>
+          </div>
+        </dl>
+      </div>
+
+    </div>
+
+    <!-- Sidebar (1/3) -->
+    <div class="space-y-6">
+      
+      <!-- Card de Totales -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Resumen</h3>
+        <dl class="space-y-3">
+          <div class="flex justify-between text-sm">
+            <dt class="text-gray-600">Subtotal:</dt>
+            <dd class="font-medium text-gray-900">${{ quote.subtotal|floatformat:2 }}</dd>
+          </div>
+          {% if quote._cached_discount > 0 %}
+          <div class="flex justify-between text-sm">
+            <dt class="text-gray-600">Descuentos:</dt>
+            <dd class="font-medium text-red-600">-${{ quote._cached_discount|floatformat:2 }}</dd>
+          </div>
+          {% endif %}
+          {% if quote._cached_tax > 0 %}
+          <div class="flex justify-between text-sm">
+            <dt class="text-gray-600">Impuestos:</dt>
+            <dd class="font-medium text-gray-900">${{ quote._cached_tax|floatformat:2 }}</dd>
+          </div>
+          {% endif %}
+          <div class="flex justify-between text-lg font-bold border-t pt-3 mt-3">
+            <dt class="text-gray-900">Total:</dt>
+            <dd class="text-blue-600">${{ quote.total|floatformat:2 }}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <!-- Card de Acciones -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Acciones</h3>
+        
+        <div class="space-y-3">
+          <!-- Acciones según estado -->
+          {% if quote.status == 'draft' %}
+            <a href="#" 
+               class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+              <i data-lucide="edit" class="w-4 h-4 mr-2"></i>
+              Editar
+            </a>
+            <button onclick="confirm('¿Enviar este presupuesto al cliente?') && this.closest('form').submit()" 
+                    class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
+              <i data-lucide="send" class="w-4 h-4 mr-2"></i>
+              Enviar al Cliente
+            </button>
+            <button onclick="confirm('¿Eliminar este presupuesto?') && this.closest('form').submit()" 
+                    class="w-full inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">
+              <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i>
+              Eliminar
+            </button>
+            
+          {% elif quote.status == 'sent' %}
+            <a href="#" 
+               class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+              <i data-lucide="file-text" class="w-4 h-4 mr-2"></i>
+              Ver PDF
+            </a>
+            <button class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
+              <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
+              Marcar Aceptado
+            </button>
+            <button class="w-full inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">
+              <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i>
+              Marcar Rechazado
+            </button>
+            
+          {% elif quote.status == 'accepted' %}
+            <a href="#" 
+               class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
+              <i data-lucide="shopping-cart" class="w-4 h-4 mr-2"></i>
+              Convertir a Venta
+            </a>
+            <a href="#" 
+               class="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium">
+              <i data-lucide="file-text" class="w-4 h-4 mr-2"></i>
+              Ver PDF
+            </a>
+            
+          {% else %}
+            <a href="#" 
+               class="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium">
+              <i data-lucide="file-text" class="w-4 h-4 mr-2"></i>
+              Ver PDF
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

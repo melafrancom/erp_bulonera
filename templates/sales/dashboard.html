@@ -281,7 +281,7 @@
       <h2 class="text-lg font-semibold text-gray-900 mb-6">Acciones Rápidas</h2>
       
       <div class="space-y-3">
-        <a href="#" 
+        <a href="{% url 'sales_web:quote_create' %}" 
            class="flex items-center gap-3 p-4 rounded-lg bg-blue-50 hover:bg-blue-100 transition group border border-blue-200">
           <div class="p-3 bg-blue-600 rounded-lg group-hover:bg-blue-700 transition">
             <i data-lucide="file-plus" class="w-6 h-6 text-white"></i>
@@ -293,7 +293,7 @@
           <i data-lucide="chevron-right" class="w-5 h-5 text-blue-600"></i>
         </a>
 
-        <a href="#" 
+        <a href="{% url 'sales_web:sale_create' %}" 
            class="flex items-center gap-3 p-4 rounded-lg bg-green-50 hover:bg-green-100 transition group border border-green-200">
           <div class="p-3 bg-green-600 rounded-lg group-hover:bg-green-700 transition">
             <i data-lucide="shopping-cart" class="w-6 h-6 text-white"></i>
