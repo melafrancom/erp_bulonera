@@ -139,6 +139,7 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
 
 
 class QuoteCreateSerializer(serializers.ModelSerializer):
+    items = QuoteItemSerializer(many=True, required=False)
 
     class Meta:
         model = Quote
@@ -146,7 +147,8 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
             'customer',                             # FK opcional
             'customer_name', 'customer_phone',      # walk-in
             'customer_email', 'customer_cuit',
-            'valid_until', 'notes', 'internal_notes'
+            'valid_until', 'notes', 'internal_notes',
+            'items'
         ]
 
     def validate(self, data):
@@ -158,12 +160,55 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Indicá un cliente existente o al menos un nombre para el presupuesto.'
             )
+        
+        # Validar items en modo creación/actualización si se proveen
+        if self.instance is None: # Creación
+            items_data = data.get('items', [])
+            if not items_data:
+                raise serializers.ValidationError({'items': 'Un presupuesto debe tener al menos un ítem.'})
+        
         return data
 
     def validate_valid_until(self, value):
         if value < timezone.now().date():
             raise serializers.ValidationError('La fecha de vencimiento debe ser futura.')
         return value
+
+    def create(self, validated_data):
+        items_data = validated_data.pop('items', [])
+        # Asignar usuario creador desde el request si está disponible
+        user = self.context['request'].user if 'request' in self.context else None
+        if user:
+            validated_data['created_by'] = user
+
+        from django.db import transaction
+        with transaction.atomic():
+            quote = Quote.objects.create(**validated_data)
+            for item_data in items_data:
+                QuoteItem.objects.create(quote=quote, **item_data)
+            
+            # Forzar recálculo de totales (vía signal o manual si es necesario)
+            # En erp_bulonera las signals se encargan de actualizar los _cached fields.
+            return quote
+
+    def update(self, instance, validated_data):
+        items_data = validated_data.pop('items', None)
+        
+        # Actualizar campos básicos
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if items_data is not None:
+            from django.db import transaction
+            with transaction.atomic():
+                # Enfoque simple: borrar e insertar todos los ítems
+                # (Más robusto que intentar machen por ID en este caso de formularios)
+                instance.items.all().delete()
+                for item_data in items_data:
+                    QuoteItem.objects.create(quote=instance, **item_data)
+        
+        return instance
 
 
 # ============================================================================
@@ -324,8 +369,8 @@ class SaleDetailSerializer(serializers.ModelSerializer):
     def get_is_stock_reserved(self, obj):
         return obj.is_stock_reserved()
 
-
 class SaleCreateSerializer(serializers.ModelSerializer):
+    items = SaleItemSerializer(many=True, required=False)
 
     class Meta:
         model = Sale
@@ -335,7 +380,8 @@ class SaleCreateSerializer(serializers.ModelSerializer):
             'customer_email', 'customer_cuit',
             'quote',
             'notes', 'internal_notes',
-            'delivery_address', 'delivery_date'
+            'delivery_address', 'delivery_date',
+            'items'
         ]
 
     def validate(self, data):
@@ -347,6 +393,13 @@ class SaleCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Indicá un cliente existente o al menos un nombre para la venta.'
             )
+        
+        # Validar items en modo creación si se proveen
+        if self.instance is None:
+            items_data = data.get('items', [])
+            if not items_data:
+                raise serializers.ValidationError({'items': 'Una venta debe tener al menos un ítem.'})
+
         return data
 
     def validate_quote(self, value):
@@ -355,6 +408,42 @@ class SaleCreateSerializer(serializers.ModelSerializer):
                 f'El presupuesto no puede convertirse. Estado: {value.status}'
             )
         return value
+
+    def create(self, validated_data):
+        items_data = validated_data.pop('items', [])
+        user = self.context['request'].user if 'request' in self.context else None
+        if user:
+            validated_data['created_by'] = user
+
+        from django.db import transaction
+        with transaction.atomic():
+            sale = Sale.objects.create(**validated_data)
+            for item_data in items_data:
+                # El costo se toma del producto en el momento de creación
+                if 'unit_cost' not in item_data:
+                    item_data['unit_cost'] = item_data['product'].current_cost if hasattr(item_data['product'], 'current_cost') else 0
+                SaleItem.objects.create(sale=sale, **item_data)
+            return sale
+
+    def update(self, instance, validated_data):
+        items_data = validated_data.pop('items', None)
+        
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if items_data is not None:
+            from django.db import transaction
+            with transaction.atomic():
+                instance.items.all().delete()
+                for item_data in items_data:
+                    # No recalculamos costo en edición, mantenemos el original si es posible
+                    # Pero si es un ítem nuevo (o si reimplementamos borrando), usamos el costo actual
+                    if 'unit_cost' not in item_data:
+                        item_data['unit_cost'] = item_data['product'].current_cost if hasattr(item_data['product'], 'current_cost') else 0
+                    SaleItem.objects.create(sale=instance, **item_data)
+        
+        return instance
 
 
 # ============================================================================

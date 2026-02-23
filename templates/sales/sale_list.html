@@ -24,7 +24,7 @@
       </div>
       
       <!-- Botón Crear Venta -->
-      <a href="#" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
+      <a href="{% url 'sales_web:sale_create' %}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
         <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
         Crear Venta
       </a>
@@ -288,7 +288,7 @@
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
               <div class="flex items-center justify-end gap-2">
                 <!-- Ver -->
-                <a href="#" 
+                <a href="{% url 'sales_web:sale_detail' sale.id %}" 
                    class="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded-lg transition"
                    title="Ver detalle">
                   <i data-lucide="eye" class="w-4 h-4"></i>
@@ -296,7 +296,7 @@
                 
                 <!-- Confirmar (solo si draft) -->
                 {% if sale.status == 'draft' %}
-                <a href="#" 
+                <a href="{% url 'sales_web:sale_confirm' sale.id %}" 
                    class="text-green-600 hover:text-green-900 p-2 hover:bg-green-50 rounded-lg transition"
                    title="Confirmar venta">
                   <i data-lucide="check-circle" class="w-4 h-4"></i>
@@ -305,7 +305,7 @@
                 
                 <!-- Cambiar estado -->
                 {% if sale.status != 'delivered' and sale.status != 'cancelled' %}
-                <a href="#" 
+                <a href="{% url 'sales_web:sale_change_status' sale.id %}" 
                    class="text-purple-600 hover:text-purple-900 p-2 hover:bg-purple-50 rounded-lg transition"
                    title="Cambiar estado">
                   <i data-lucide="repeat" class="w-4 h-4"></i>
@@ -314,7 +314,7 @@
                 
                 <!-- Cancelar -->
                 {% if sale.status != 'cancelled' and sale.status != 'delivered' %}
-                <a href="#" 
+                <a href="{% url 'sales_web:sale_cancel' sale.id %}" 
                    class="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-lg transition"
                    title="Cancelar venta">
                   <i data-lucide="x-circle" class="w-4 h-4"></i>
