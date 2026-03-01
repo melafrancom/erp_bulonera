@@ -143,9 +143,7 @@ def category(db, admin_user):
     """Categoría de producto de prueba."""
     from products.models import Category
     return Category.objects.create(
-        name='Tornillos',
-        description='Tornillos y pernos',
-        created_by=admin_user
+        name='Tornillos'
     )
 
 
@@ -157,11 +155,8 @@ def product(db, category, admin_user):
         name='Tornillo M10x50',
         sku='TOR-M10-50',
         category=category,
-        description='Tornillo de acero inoxidable',
         price=100.00,
-        cost=50.00,
-        is_active=True,
-        created_by=admin_user
+        cost=50.00
     )
 
 
@@ -188,5 +183,19 @@ def sale(db, customer, admin_user):
         created_by=admin_user,
         status='draft',
         payment_status='unpaid'
+    )
+    return sale
+
+
+@pytest.fixture
+def sale_with_items(db, sale, product):
+    """Venta con items."""
+    from sales.models import SaleItem
+    SaleItem.objects.create(
+        sale=sale,
+        product=product,
+        quantity=5,
+        unit_price=100,
+        tax_percentage=21
     )
     return sale

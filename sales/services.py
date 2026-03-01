@@ -145,9 +145,53 @@ def cancel_sale(sale, user, reason):
     
     with transaction.atomic():
         sale.status = 'cancelled'
-        sale.internal_notes += f'\n\nCancelada por {user.username} el {timezone.now()}: {reason}'
+        ts = timezone.now().strftime('%d/%m/%Y %H:%M')
+        sale.internal_notes += f'\n\n[{ts}] Cancelada por {user.get_full_name() or user.username}: {reason}'
         sale.save(update_fields=['status', 'internal_notes'])
         
         # Signal se encargará de liberar stock reservado
+    
+    return sale
+
+
+def move_sale_status(sale, user, new_status, delivery_notes=None):
+    """
+    Avanza o cambia el estado de una venta validando transiciones permitidas.
+    
+    Máquina de estados:
+        confirmed → in_preparation
+        in_preparation → ready
+        ready → delivered
+    
+    Para confirmar usar confirm_sale(). Para cancelar usar cancel_sale().
+    """
+    VALID_TRANSITIONS = {
+        'confirmed':      'in_preparation',
+        'in_preparation': 'ready',
+        'ready':          'delivered',
+    }
+
+    expected = VALID_TRANSITIONS.get(sale.status)
+
+    if not expected:
+        raise ValueError(f'La venta en estado "{sale.get_status_display()}" no puede avanzar de etapa.')
+
+    if new_status != expected:
+        raise ValueError(f'Transición inválida: de "{sale.get_status_display()}" a "{new_status}".')
+
+    with transaction.atomic():
+        sale.status = new_status
+
+        # Manejo de notas de entrega (historial en internal_notes)
+        if new_status == 'delivered':
+            ts = timezone.now().strftime('%d/%m/%Y %H:%M')
+            author = user.get_full_name() or user.username
+            note_entry = f'[{ts}] Entregado por {author}'
+            if delivery_notes:
+                note_entry += f': {delivery_notes}'
+            
+            sale.internal_notes = (f'{sale.internal_notes}\n\n{note_entry}').strip()
+
+        sale.save(update_fields=['status', 'internal_notes'])
     
     return sale

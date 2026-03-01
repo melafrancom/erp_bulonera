@@ -54,8 +54,6 @@ THIRD_PARTY_APPS = [
     'corsheaders',
     'widget_tweaks',
     'drf_spectacular',
-
-
 ]
 SHARED_APPS = [
     'erp_crm_bulonera',
@@ -67,6 +65,7 @@ SHARED_APPS = [
     'inventory',
     'payments',
     'bills',
+    'afip',
 ]
 
 # ALL APPS
@@ -458,7 +457,27 @@ CACHES = {
 CACHE_MIDDLEWARE_SECONDS = 3600
 CACHE_MIDDLEWARE_KEY_PREFIX = 'bulonera_cache'
 
-COMPANY_NAME = env('COMPANY_NAME', default = 'Tu Empresa de prueba')
+# =========================================================================
+# AFIP CONFIGURATION
+# =========================================================================
+
+AFIP_CONFIG = {
+    'homologacion': {
+        'ambiente': 'homologacion',
+        'cert_path': env('AFIP_CERT_PATH_HOMOLOGACION'),
+        'cert_password': env('AFIP_CERT_PASSWORD_HOMOLOGACION', default=''),
+    },
+    'produccion': {
+        'ambiente': 'produccion',
+        'cert_path': env('AFIP_CERT_PATH_PRODUCCION'),
+        'cert_password': env('AFIP_CERT_PASSWORD_PRODUCCION', default=''),
+    }
+}
+
+EMPRESA_CUIT = env('EMPRESA_CUIT')
+EMPRESA_RAZON_SOCIAL = env('EMPRESA_RAZON_SOCIAL')
+EMPRESA_PUNTO_VENTA = env('EMPRESA_PUNTO_VENTA')
+COMPANY_NAME = env('COMPANY_NAME', default = 'Nombre comercial')
 
 # ============================================================================
 # Logging Configuration

@@ -41,6 +41,9 @@ urlpatterns = [
     path('inventory/', include('inventory.web.urls')),
     path('payments/', include('payments.web.urls')),
     path('bills/', include('bills.web.urls')),
+
+    # afip
+    path('afip/', include('afip.urls')),
 ]
 
 # Servir archivos estáticos y media en desarrollo

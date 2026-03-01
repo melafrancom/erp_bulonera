@@ -150,7 +150,7 @@ class QuoteItem(BaseModel):
     @property
     def discount_amount(self):
         if self.discount_type == 'percentage':
-            return self.line_subtotal * (self.discount_value / 100)
+            return self.line_subtotal * (self.discount_value / Decimal('100'))
         elif self.discount_type == 'fixed':
             return self.discount_value
         return Decimal('0')
@@ -161,7 +161,7 @@ class QuoteItem(BaseModel):
     
     @property
     def tax_amount(self):
-        return self.subtotal_with_discount * (self.tax_percentage / 100)
+        return self.subtotal_with_discount * (self.tax_percentage / Decimal('100'))
     
     @property
     def total(self):
@@ -473,7 +473,7 @@ class Sale(BaseModel):
         items_discount = sum(item.discount_amount for item in self.items.all())
         
         if self.global_discount_type == 'percentage':
-            global_disc = self._cached_subtotal * (self.global_discount_value / 100)
+            global_disc = self._cached_subtotal * (self.global_discount_value / Decimal('100'))
         elif self.global_discount_type == 'fixed':
             global_disc = self.global_discount_value
         else:
@@ -588,7 +588,7 @@ class SaleItem(BaseModel):
     @property
     def discount_amount(self):
         if self.discount_type == 'percentage':
-            return self.line_subtotal * (self.discount_value / 100)
+            return self.line_subtotal * (self.discount_value / Decimal('100'))
         elif self.discount_type == 'fixed':
             return self.discount_value
         return Decimal('0')
@@ -599,7 +599,7 @@ class SaleItem(BaseModel):
     
     @property
     def tax_amount(self):
-        return self.subtotal_with_discount * (self.tax_percentage / 100)
+        return self.subtotal_with_discount * (self.tax_percentage / Decimal('100'))
     
     @property
     def total(self):

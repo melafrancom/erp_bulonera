@@ -42,7 +42,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from sales.models import Quote, QuoteItem, Sale, SaleItem
-from sales.services import cancel_sale, confirm_sale, convert_quote_to_sale
+from sales.services import cancel_sale, confirm_sale, convert_quote_to_sale, move_sale_status
 
 logger = logging.getLogger(__name__)
 
@@ -596,47 +596,16 @@ def sale_move_status(request, pk):
         messages.error(request, 'No tenés acceso a esta venta.')
         return redirect('sales_web:sale_list')
 
-    # Transiciones válidas desde esta vista
-    VALID_TRANSITIONS = {
-        'confirmed':      'in_preparation',
-        'in_preparation': 'ready',
-        'ready':          'delivered',
-    }
-
     new_status = request.POST.get('new_status', '').strip()
-    expected   = VALID_TRANSITIONS.get(sale.status)
-
-    if not expected:
-        messages.error(
-            request,
-            f'La venta en estado "{sale.get_status_display()}" no puede avanzar.'
-        )
-        return redirect('sales_web:sale_detail', pk=pk)
-
-    if new_status != expected:
-        messages.error(
-            request,
-            f'Transición inválida: no se puede pasar de '
-            f'"{sale.get_status_display()}" a "{new_status}".'
-        )
-        return redirect('sales_web:sale_detail', pk=pk)
+    delivery_notes = request.POST.get('delivery_notes', '').strip()
 
     try:
-        sale.status = new_status
-
-        # Agregar nota de entrega si se proporciona
-        if new_status == 'delivered':
-            delivery_notes = request.POST.get('delivery_notes', '').strip()
-            if delivery_notes:
-                ts = timezone.now().strftime('%d/%m/%Y %H:%M')
-                sale.internal_notes = (
-                    f'{sale.internal_notes}\n\n'
-                    f'[{ts}] Entregado por {request.user.get_full_name() or request.user.username}: '
-                    f'{delivery_notes}'
-                ).strip()
-
-        sale.save(update_fields=['status', 'internal_notes'])
-
+        move_sale_status(
+            sale=sale,
+            user=request.user,
+            new_status=new_status,
+            delivery_notes=delivery_notes
+        )
         messages.success(
             request,
             f'Venta {sale.number} movida a "{sale.get_status_display()}".'
@@ -646,9 +615,13 @@ def sale_move_status(request, pk):
             sale.number, new_status, request.user.username,
         )
 
+    except ValueError as exc:
+        messages.error(request, f'No se pudo mover el estado: {exc}')
     except Exception:
         logger.exception('Unexpected error moving status of sale %s', pk)
         messages.error(request, 'Ocurrió un error inesperado. Intentá de nuevo.')
+
+    return redirect('sales_web:sale_detail', pk=pk)
 
     return redirect('sales_web:sale_detail', pk=pk)
 

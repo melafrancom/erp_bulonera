@@ -238,7 +238,6 @@ class SaleItemSerializer(serializers.ModelSerializer):
             'quantity', 'unit_price', 'unit_cost',
             'discount_type', 'discount_value', 'discount_reason',
             'tax_percentage',
-            'calculation_mode', 'target_total',
             'line_subtotal', 'discount_amount', 'subtotal_with_discount',
             'tax_amount', 'total', 'profit', 'margin_percentage',
             'notes', 'line_order',
@@ -272,8 +271,8 @@ class SaleItemSerializer(serializers.ModelSerializer):
         """Calcula porcentaje de margen"""
         if obj.line_subtotal == 0:
             return 0
-        margin = (obj.subtotal_with_discount - (obj.unit_cost * obj.quantity)) / obj.subtotal_with_discount * 100
-        return round(margin, 2)
+        margin = (obj.subtotal_with_discount - (obj.unit_cost * obj.quantity)) / obj.subtotal_with_discount * Decimal('100')
+        return round(float(margin), 2)
 
 
 class SaleSerializer(serializers.ModelSerializer):
@@ -322,7 +321,7 @@ class SaleDetailSerializer(serializers.ModelSerializer):
         model = Sale
         fields = [
             'id', 'number', 'date', 'status', 'payment_status', 'fiscal_status',
-            'customer', 'customer_name', 'customer_tax_condition',
+            'customer', 'customer_display', 'customer_tax_condition',
             'created_by', 'created_by_username',
             'quote', 'quote_number',
             'items',

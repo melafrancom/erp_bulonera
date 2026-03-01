@@ -20,7 +20,7 @@ from sales.api.serializers import (
     SaleSerializer, SaleDetailSerializer, SaleCreateSerializer
 )
 from sales.api.filters import SaleFilter
-from sales.services import confirm_sale, cancel_sale
+from sales.services import confirm_sale, cancel_sale, move_sale_status
 from common.permissions import ModulePermission
 from common.mixins import AuditMixin, OwnerQuerysetMixin
 from common.decorators import audit_log
@@ -150,34 +150,36 @@ class SaleViewSet(AuditMixin, OwnerQuerysetMixin, viewsets.ModelViewSet):
         
         Body:
         {
-            "new_status": "ready"  // "in_preparation", "ready", o "delivered"
+            "new_status": "ready",        // "in_preparation", "ready", o "delivered"
+            "delivery_notes": "Nota..."   // opcional para estado delivered
         }
         """
         sale = self.get_object()
         new_status = request.data.get('new_status')
-        valid_transitions = {
-            'draft': ['confirmed'],
-            'confirmed': ['in_preparation', 'cancelled'],
-            'in_preparation': ['ready', 'cancelled'],
-            'ready': ['delivered', 'cancelled'],
-            'delivered': [],
-            'cancelled': [],
-        }
-        if new_status not in valid_transitions.get(sale.status, []):
+        delivery_notes = request.data.get('delivery_notes')
+
+        try:
+            move_sale_status(
+                sale=sale,
+                user=request.user,
+                new_status=new_status,
+                delivery_notes=delivery_notes
+            )
+            return Response({
+                'message': f'Venta movida a {sale.get_status_display()}',
+                'sale': SaleDetailSerializer(sale).data
+            })
+        except ValueError as e:
             return Response(
-                {'error': f'No puedes cambiar de {sale.status} a {new_status}'},
+                {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        sale.status = new_status
-        if new_status == 'delivered':
-            notes = request.data.get('delivery_notes', '')
-            if notes:
-                sale.internal_notes += f"\n\n[{timezone.now().strftime('%Y-%m-%d %H:%M')}] Entregado: {notes}"
-        sale.save()
-        return Response({
-            'message': f'Venta movida a {sale.get_status_display()}',
-            'sale': SaleDetailSerializer(sale).data
-        })
+        except Exception as e:
+            logger.exception('Unexpected error moving status of sale %s', sale.id)
+            return Response(
+                {'error': 'Ocurrió un error inesperado al mover el estado.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
     @action(detail=False, methods=['get'])
     def pending_payment(self, request):
