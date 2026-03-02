@@ -1,45 +1,72 @@
 """
-Filtros para la API de Facturas.
+Filtros para la API de Facturas (bills).
 """
 from django_filters import (
-    FilterSet, DateFilter, NumberFilter, CharFilter
+    FilterSet, DateFilter, NumberFilter, CharFilter, ChoiceFilter
 )
 from bills.models import Invoice
 
 
 class InvoiceFilter(FilterSet):
     """Filtros para InvoiceViewSet."""
-    
+
     number = CharFilter(
         field_name='number',
         lookup_expr='icontains',
         label='Número'
     )
-    date_from = DateFilter(
-        field_name='created_at',
+    cliente_cuit = CharFilter(
+        field_name='cliente_cuit',
+        lookup_expr='icontains',
+        label='CUIT Cliente'
+    )
+    cliente_razon_social = CharFilter(
+        field_name='cliente_razon_social',
+        lookup_expr='icontains',
+        label='Razón Social'
+    )
+    cae = CharFilter(
+        field_name='cae',
+        lookup_expr='exact',
+        label='CAE'
+    )
+    estado_fiscal = ChoiceFilter(
+        field_name='estado_fiscal',
+        choices=Invoice.ESTADO_FISCAL_CHOICES,
+        label='Estado Fiscal'
+    )
+    tipo_comprobante = NumberFilter(
+        field_name='tipo_comprobante',
+        label='Tipo Comprobante'
+    )
+    fecha_desde = DateFilter(
+        field_name='fecha_emision',
         lookup_expr='gte',
-        label='Fecha (desde)'
+        label='Fecha Emisión (desde)'
     )
-    date_to = DateFilter(
-        field_name='created_at',
+    fecha_hasta = DateFilter(
+        field_name='fecha_emision',
         lookup_expr='lte',
-        label='Fecha (hasta)'
+        label='Fecha Emisión (hasta)'
     )
-    amount_min = NumberFilter(
+    total_min = NumberFilter(
         field_name='total',
         lookup_expr='gte',
-        label='Monto Mínimo'
+        label='Total Mínimo'
     )
-    amount_max = NumberFilter(
+    total_max = NumberFilter(
         field_name='total',
         lookup_expr='lte',
-        label='Monto Máximo'
+        label='Total Máximo'
     )
-    
+    sale_id = NumberFilter(
+        field_name='sale_id',
+        label='ID Venta'
+    )
+
     class Meta:
         model = Invoice
-        fields = ['number']
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.queryset = self.queryset.select_related('created_by')
+        fields = [
+            'number', 'estado_fiscal', 'tipo_comprobante',
+            'cliente_cuit', 'cae', 'sale_id',
+        ]

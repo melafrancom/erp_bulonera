@@ -423,8 +423,19 @@ CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000       # Reciclar worker process
 CELERY_TASK_ROUTES = {
     'sales.tasks.*': {'queue': 'sales'},
     'notifications.tasks.*': {'queue': 'notifications'},
-    'services.afip.tasks.*': {'queue': 'afip'},
+    'afip.tasks.*': {'queue': 'afip'},           # Cola dedicada para ARCA
     'common.tasks.generate_pdf': {'queue': 'heavy'},
+}
+
+# Beat Schedule (Tareas periódicas)
+# Nota: 'afip.renovar_tokens_expirados' requiere ARCA habilitada.
+from celery.schedules import crontab
+CELERY_BEAT_SCHEDULE = {
+    # Renueva tokens WSAA próximos a vencer cada 30 minutos
+    'afip-renovar-tokens': {
+        'task': 'afip.renovar_tokens_expirados',
+        'schedule': crontab(minute='*/30'),
+    },
 }
 
 # ============================================================================
@@ -599,6 +610,11 @@ LOGGING = {
         'celery': {
             'handlers': ['api_file', 'console'],
             'level': 'INFO',
+            'propagate': False,
+        },
+        'afip': {
+            'handlers': ['api_file', 'console', 'error_file'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
             'propagate': False,
         },
     },

@@ -347,16 +347,8 @@ class Sale(BaseModel):
         db_index=True,
         help_text='Estado ante AFIP/ARCA'
     )
-    # NUEVO: Referencia a factura (cuando exista app bills)
-    invoice = models.OneToOneField(
-        'bills.Invoice',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='sale'
-    )
-    invoice_number = models.CharField(max_length=50, null=True, blank=True)  # Snapshot
-    cae = models.CharField(max_length=14, null=True, blank=True)  # CAE AFIP
+    # La relación Sale ↔ Invoice se gestiona desde bills.Invoice.sale (FK)
+    # Acceso inverso: sale.factura  (OneToOneField desde Invoice)
     
     # Información adicional
     notes = models.TextField(blank=True)

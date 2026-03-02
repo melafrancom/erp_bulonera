@@ -43,7 +43,8 @@ urlpatterns = [
     path('bills/', include('bills.web.urls')),
 
     # afip
-    path('afip/', include('afip.urls')),
+    path('api/v1/afip/', include('afip.api.urls', namespace='afip_api')),
+    path('afip/', include('afip.web.urls', namespace='afip_web')),
 ]
 
 # Servir archivos estáticos y media en desarrollo

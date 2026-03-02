@@ -317,6 +317,12 @@ class SaleDetailSerializer(serializers.ModelSerializer):
     can_be_invoiced = serializers.SerializerMethodField()
     is_stock_reserved = serializers.SerializerMethodField()
     
+    # Factura (relación inversa desde bills.Invoice.sale)
+    factura_id = serializers.SerializerMethodField()
+    factura_number = serializers.SerializerMethodField()
+    factura_cae = serializers.SerializerMethodField()
+    factura_estado = serializers.SerializerMethodField()
+    
     class Meta:
         model = Sale
         fields = [
@@ -328,7 +334,7 @@ class SaleDetailSerializer(serializers.ModelSerializer):
             'notes', 'internal_notes',
             'delivery_address', 'delivery_date',
             'stock_reserved_at', 'stock_reserved_by',
-            'invoice', 'invoice_number', 'cae',
+            'factura_id', 'factura_number', 'factura_cae', 'factura_estado',
             'global_discount_type', 'global_discount_value', 'global_discount_reason',
             '_cached_subtotal', '_cached_discount', '_cached_tax', '_cached_total',
             'subtotal', 'total', 'total_paid', 'balance_due',
@@ -342,7 +348,8 @@ class SaleDetailSerializer(serializers.ModelSerializer):
             '_cached_subtotal', '_cached_discount', '_cached_tax', '_cached_total',
             'subtotal', 'total', 'total_paid', 'balance_due',
             'is_editable', 'can_be_invoiced', 'is_stock_reserved',
-            'sync_status', 'version'
+            'sync_status', 'version',
+            'factura_id', 'factura_number', 'factura_cae', 'factura_estado',
         ]
     def get_customer_tax_condition(self, obj):
         return obj.customer.tax_condition if obj.customer else None
@@ -367,6 +374,27 @@ class SaleDetailSerializer(serializers.ModelSerializer):
     
     def get_is_stock_reserved(self, obj):
         return obj.is_stock_reserved()
+
+    # ── Factura (relación inversa desde bills.Invoice) ────────
+    def _get_factura(self, obj):
+        """Helper: obtiene la factura vinculada o None."""
+        return getattr(obj, 'factura', None)
+
+    def get_factura_id(self, obj):
+        f = self._get_factura(obj)
+        return f.id if f else None
+
+    def get_factura_number(self, obj):
+        f = self._get_factura(obj)
+        return f.number if f else None
+
+    def get_factura_cae(self, obj):
+        f = self._get_factura(obj)
+        return f.cae if f else None
+
+    def get_factura_estado(self, obj):
+        f = self._get_factura(obj)
+        return f.estado_fiscal if f else None
 
 class SaleCreateSerializer(serializers.ModelSerializer):
     items = SaleItemSerializer(many=True, required=False)

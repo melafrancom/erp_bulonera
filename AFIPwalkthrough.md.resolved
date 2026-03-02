@@ -1,0 +1,134 @@
+# Walkthrough – Implementación AFIP/ARCA
+
+## Lo que se hizo
+
+### Bugs críticos corregidos (8 en total)
+
+| Archivo | Bug | Fix |
+|---|---|---|
+| [utils/validators.py](file:///c:/Users/frank/Desktop/BULONERA_ERP/afip/utils/validators.py) | Import `from .excepciones` (nombre incorrecto) | → `from .exceptions` |
+| [models.py](file:///c:/Users/frank/Desktop/BULONERA_ERP/afip/models.py) | [tiempo_restante()](file:///c:/Users/frank/Desktop/BULONERA_ERP/afip/models.py#79-83) y [obtener_token_vigente()](file:///c:/Users/frank/Desktop/BULONERA_ERP/afip/models.py#84-101) no existían | Agregados. [esta_vigente()](file:///c:/Users/frank/Desktop/BULONERA_ERP/afip/models.py#75-78) ahora usa margen de 5 min |
+| [clients/wsaa_client.py](file:///c:/Users/frank/Desktop/BULONERA_ERP/afip/clients/wsaa_client.py) | `WSAA_ENDPOINTS` nunca definido + bloques `if __name__` rotos + endpoints ficticios | Reescritura completa |
+| [clients/wsfev1_client.py](file:///c:/Users/frank/Desktop/BULONERA_ERP/afip/clients/wsfev1_client.py) | Endpoints ficticios + XML [FECAESolicitar](file:///c:/Users/frank/Desktop/BULONERA_ERP/afip/tests/test_wsfev1.py#117-200) con tags incorrectos + sin CUIT en Auth | Reescritura completa |
+| [services/facturacion_service.py](file:///c:/Users/frank/Desktop/BULONERA_ERP/afip/services/facturacion_service.py) | Bug de indentación: cuerpo del [__init__](file:///c:/Users/frank/Desktop/BULONERA_ERP/afip/services/facturacion_service.py#62-102) fuera del método | Reescritura con reintentos |
+| [settings/base.py](file:///c:/Users/frank/Desktop/BULONERA_ERP/erp_crm_bulonera/settings/base.py) | `CELERY_TASK_ROUTES` con path `services.afip.*` incorrecto | Corregido a `afip.tasks.*` |
+
+---
+
+### Archivos nuevos creados
+
+| Archivo | Qué hace |
+|---|---|
+| [afip/tasks.py](file:///c:/Users/frank/Desktop/BULONERA_ERP/afip/tasks.py) | Tareas Celery: [emitir_comprobante_async](file:///c:/Users/frank/Desktop/BULONERA_ERP/afip/tasks.py#39-117), [renovar_tokens_expirados](file:///c:/Users/frank/Desktop/BULONERA_ERP/afip/tasks.py#119-188), [consultar_ultimo_numero_async](file:///c:/Users/frank/Desktop/BULONERA_ERP/afip/tasks.py#190-212) |
+| [afip/management/commands/afip_obtener_token.py](file:///c:/Users/frank/Desktop/BULONERA_ERP/afip/management/commands/afip_obtener_token.py) | CLI para obtener/renovar token WSAA |
+| [afip/management/commands/afip_consultar_cae.py](file:///c:/Users/frank/Desktop/BULONERA_ERP/afip/management/commands/afip_consultar_cae.py) | CLI para consultar último número autorizado |
+| [afip/tests/test_wsaa.py](file:///c:/Users/frank/Desktop/BULONERA_ERP/afip/tests/test_wsaa.py) | Tests unitarios WSAA (XML, parseo SOAP, cache) |
+| [afip/tests/test_wsfev1.py](file:///c:/Users/frank/Desktop/BULONERA_ERP/afip/tests/test_wsfev1.py) | Tests unitarios WSFEv1 (generador, parseo respuestas) |
+
+---
+
+### Endpoints reales de ARCA configurados
+
+```
+WSAA Homologación:   https://wsaahomo.afip.gov.ar/ws/services/LoginCms
+WSAA Producción:     https://wsaa.afip.gov.ar/ws/services/LoginCms
+WSFEv1 Homologación: https://wswhomo.afip.gov.ar/wsfev1/service.asmx
+WSFEv1 Producción:   https://servicios1.afip.gov.ar/wsfev1/service.asmx
+```
+
+---
+
+## Verificación local
+
+```
+✅ 13/13 archivos pasan verificación de sintaxis AST
+```
+
+---
+
+## Pasos a ejecutar en el servidor (Linux + Docker)
+
+Una vez que clones el repositorio en el servidor:
+
+### 1. Crear migración inicial de la app `afip`
+```bash
+docker exec -it <contenedor_django> python manage.py makemigrations afip
+docker exec -it <contenedor_django> python manage.py migrate afip
+```
+
+### 2. Crear ConfiguracionARCA desde el Admin Django
+URL: `http://tuservidor/admin/afip/configuracionarca/add/`
+
+| Campo | Valor |
+|---|---|
+| empresa_cuit | `20180545574` |
+| razon_social | `MELA MIGUEL ANGEL` |
+| ambiente | `homologacion` |
+| ruta_certificado | `/var/www/erp/bills/certs/certificados_arca_temp/development/certificado_con_clave.pem` |
+| punto_venta | `3` |
+| activo | ✓ |
+
+### 3. Probar token WSAA
+```bash
+docker exec -it <contenedor_django> python manage.py afip_obtener_token --ambiente homologacion
+```
+Resultado esperado:
+```
+✅ Token obtenido desde WSAA (nuevo)
+   Token (primeros 60 chars): PD94bWwgdmVyc2lvbj0i...
+   Sign  (primeros 60 chars): MIIG8AYJKoZIhvcNAQcC...
+   Expira: 2026-03-01 22:00:00+00:00
+```
+
+### 4. Probar consulta último número
+```bash
+docker exec -it <contenedor_django> python manage.py afip_consultar_cae --tipo 6 --punto-venta 3
+```
+Resultado esperado:
+```
+✅ Último número autorizado: 0
+   Próximo número a usar:     1
+```
+
+### 5. Correr tests unitarios
+```bash
+docker exec -it <contenedor_django> pytest afip/tests/ -v
+```
+Los tests **no requieren conexión real a ARCA** (usan mocks).
+
+### 6. Iniciar worker Celery con cola AFIP
+```bash
+# En docker-compose.yml el worker ya debería tener:
+celery -A erp_crm_bulonera worker -Q default,afip -l info
+# Y el beat para tareas periódicas:
+celery -A erp_crm_bulonera beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+```
+
+---
+
+## Flujo completo de emisión (una vez configurado)
+
+```python
+# Opción 1: Síncrono (para Django shell, scripts de admin)
+from afip.services.facturacion_service import FacturacionService
+service = FacturacionService('20180545574')
+resultado = service.emitir_comprobante(comprobante_id=1)
+
+# Opción 2: Asíncrono con Celery (para vistas/API, recomendado en producción)
+from afip.tasks import emitir_comprobante_async
+task = emitir_comprobante_async.delay(comprobante_id=1, empresa_cuit='20180545574')
+resultado = task.get(timeout=120)  # Espera máx 2 minutos
+```
+
+---
+
+## Advertencias importantes
+
+> [!WARNING]
+> Los timeouts HTTP están en 60 segundos. ARCA en homologación puede tardar 10-20 segundos.
+
+> [!IMPORTANT]
+> **SIEMPRE** consultar el último número con `afip_consultar_cae` antes de emitir el primer comprobante. ARCA rechaza cualquier número que no sea el siguiente en secuencia exacta.
+
+> [!NOTE]
+> El TA (Ticket de Acceso) dura 12 horas. El sistema renueva automáticamente con margen de 5 minutos via la tarea Celery Beat cada 30 minutos.
