@@ -1,0 +1,95 @@
+<!-- 
+  Partial: _product_filters.html
+  Uso: include 'products/partials/_product_filters.html' 
+  Panel de filtros con collapse en mobile (Alpine.js).
+  Variables de contexto esperadas: categories, subcategories, search,
+  category_filter, subcategory_filter, brand_filter, supplier_filter
+-->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4"
+     x-data="{ open: false }">
+  
+  <!-- Toggle (mobile) -->
+  <button @click="open = !open"
+          class="flex items-center justify-between w-full md:hidden text-left"
+          type="button"
+          aria-expanded="false"
+          :aria-expanded="open">
+    <span class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+      <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+      Filtros
+    </span>
+    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform" :class="open && 'rotate-180'"></i>
+  </button>
+
+  <!-- Filtros (siempre visible en desktop, colapsable en mobile) -->
+  <div :class="open ? '' : 'hidden'" class="md:block mt-3 md:mt-0">
+    <form method="GET" action="{% url 'products:product_list' %}" id="filterForm">
+      
+      <!-- Mantener búsqueda actual -->
+      <input type="hidden" name="search" value="{{ search }}">
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+        
+        <!-- Categoría -->
+        <div>
+          <label for="filter-category" class="block text-xs font-medium text-gray-600 mb-1">Categoría</label>
+          <select id="filter-category" name="category"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+            <option value="">Todas</option>
+            {% for cat in categories %}
+              <option value="{{ cat.id }}" {% if cat.id|stringformat:"s" == category_filter %}selected{% endif %}>
+                {{ cat.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Subcategoría -->
+        <div>
+          <label for="filter-subcategory" class="block text-xs font-medium text-gray-600 mb-1">Subcategoría</label>
+          <select id="filter-subcategory" name="subcategory"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+            <option value="">Todas</option>
+            {% for subcat in subcategories %}
+              <option value="{{ subcat.id }}" {% if subcat.id|stringformat:"s" == subcategory_filter %}selected{% endif %}>
+                {{ subcat.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Marca -->
+        <div>
+          <label for="filter-brand" class="block text-xs font-medium text-gray-600 mb-1">Marca</label>
+          <input type="text" id="filter-brand" name="brand"
+                 value="{{ brand_filter }}"
+                 placeholder="Filtrar marca..."
+                 class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        </div>
+
+        <!-- Proveedor -->
+        <div>
+          <label for="filter-supplier" class="block text-xs font-medium text-gray-600 mb-1">Proveedor</label>
+          <input type="text" id="filter-supplier" name="supplier"
+                 value="{{ supplier_filter }}"
+                 placeholder="Filtrar proveedor..."
+                 class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <div class="flex flex-wrap gap-2 mt-3">
+        <button type="submit"
+                class="inline-flex items-center px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+          <i data-lucide="filter" class="w-4 h-4 mr-1.5"></i>
+          Aplicar
+        </button>
+        <a href="{% url 'products:product_list' %}"
+           class="inline-flex items-center px-4 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
+          <i data-lucide="x" class="w-4 h-4 mr-1.5"></i>
+          Limpiar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,269 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Productos - ERP Bulonera Alvear{% endblock %}
+
+{% block breadcrumb_items %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <span class="text-gray-900 font-medium">Productos</span>
+{% endblock %}
+
+{% block mobile_title %}Productos{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       HEADER: Título + Botones de acción
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-1">Productos</h1>
+        <p class="text-gray-600 text-sm">
+          {{ total_count }} producto{{ total_count|pluralize:"s" }} en el catálogo
+        </p>
+      </div>
+
+      <!-- Botones acción -->
+      <div class="flex flex-wrap gap-2">
+        <a href="{% url 'products:product_import' %}"
+           class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm">
+          <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+          Importar Excel
+        </a>
+        <a href="{% url 'products:product_create' %}"
+           class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium text-sm">
+          <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+          Nuevo Producto
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       BARRA DE BÚSQUEDA
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="mb-4">
+    <form method="GET" action="{% url 'products:product_list' %}" class="flex gap-2">
+      <!-- Mantener filtros activos -->
+      {% if category_filter %}<input type="hidden" name="category" value="{{ category_filter }}">{% endif %}
+      {% if subcategory_filter %}<input type="hidden" name="subcategory" value="{{ subcategory_filter }}">{% endif %}
+      {% if brand_filter %}<input type="hidden" name="brand" value="{{ brand_filter }}">{% endif %}
+      {% if supplier_filter %}<input type="hidden" name="supplier" value="{{ supplier_filter }}">{% endif %}
+
+      <div class="relative flex-1">
+        <i data-lucide="search" class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+        <input type="search" name="search" value="{{ search }}"
+               placeholder="Buscar por nombre, código o SKU..."
+               class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+               aria-label="Buscar productos">
+      </div>
+      <button type="submit"
+              class="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium shrink-0">
+        Buscar
+      </button>
+    </form>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       FILTROS
+       ═══════════════════════════════════════════════════════════════════ -->
+  {% include 'products/partials/_product_filters.html' %}
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       TABLA DESKTOP (≥ md)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Categoría</th>
+            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Costo</th>
+            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Venta</th>
+            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell">Ganancia</th>
+            <th scope="col" class="relative px-4 py-3"><span class="sr-only">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          {% for product in products %}
+          <tr class="hover:bg-gray-50 transition cursor-pointer"
+              onclick="window.location='{% url 'products:product_detail' product.pk %}'">
+            
+            <td class="px-4 py-3 whitespace-nowrap">
+              <span class="text-sm font-medium text-gray-900">{{ product.code }}</span>
+            </td>
+            
+            <td class="px-4 py-3 whitespace-nowrap">
+              <span class="text-sm text-gray-600">{{ product.sku|default:"—" }}</span>
+            </td>
+            
+            <td class="px-4 py-3">
+              <div class="text-sm font-medium text-gray-900 max-w-xs truncate" title="{{ product.name }}">
+                {{ product.name|truncatewords:8 }}
+              </div>
+              {% if product.brand %}
+                <div class="text-xs text-gray-500">{{ product.brand }}</div>
+              {% endif %}
+            </td>
+
+            <td class="px-4 py-3 whitespace-nowrap hidden lg:table-cell">
+              <span class="text-sm text-gray-600">{{ product.category.name|default:"—" }}</span>
+            </td>
+            
+            <td class="px-4 py-3 whitespace-nowrap text-right">
+              <span class="text-sm text-gray-700">${{ product.cost|floatformat:2 }}</span>
+            </td>
+            
+            <td class="px-4 py-3 whitespace-nowrap text-right">
+              <span class="text-sm font-medium text-gray-900">${{ product.price|floatformat:2 }}</span>
+            </td>
+            
+            <td class="px-4 py-3 whitespace-nowrap text-right hidden xl:table-cell">
+              {% if product.profit_margin_percentage > 0 %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                  ↑ {{ product.profit_margin_percentage|floatformat:1 }}%
+                </span>
+              {% elif product.profit_margin_percentage < 0 %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                  ↓ {{ product.profit_margin_percentage|floatformat:1 }}%
+                </span>
+              {% else %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+                  0%
+                </span>
+              {% endif %}
+            </td>
+
+            <td class="px-4 py-3 whitespace-nowrap text-right" onclick="event.stopPropagation()">
+              <div class="flex items-center justify-end gap-1">
+                <a href="{% url 'products:product_detail' product.pk %}"
+                   class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Ver detalle">
+                  <i data-lucide="eye" class="w-4 h-4"></i>
+                </a>
+                <a href="{% url 'products:product_edit' product.pk %}"
+                   class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition" title="Editar">
+                  <i data-lucide="pencil" class="w-4 h-4"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="px-6 py-12 text-center">
+              <div class="flex flex-col items-center justify-center">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                  <i data-lucide="package" class="w-8 h-8 text-gray-400"></i>
+                </div>
+                <p class="text-gray-500 font-medium">No se encontraron productos</p>
+                <p class="text-sm text-gray-400 mt-1">Ajusta los filtros o crea un nuevo producto</p>
+                <a href="{% url 'products:product_create' %}"
+                   class="mt-4 inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium">
+                  <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                  Nuevo Producto
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación Desktop -->
+    {% if products.has_other_pages %}
+    <div class="px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="text-sm text-gray-700">
+        Mostrando <span class="font-medium">{{ products.start_index }}</span> a
+        <span class="font-medium">{{ products.end_index }}</span> de
+        <span class="font-medium">{{ products.paginator.count }}</span> productos
+      </div>
+      <div class="flex gap-2">
+        {% if products.has_previous %}
+          <a href="?page={{ products.previous_page_number }}&search={{ search }}&category={{ category_filter }}&subcategory={{ subcategory_filter }}&brand={{ brand_filter }}&supplier={{ supplier_filter }}"
+             class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-sm">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+          </a>
+        {% else %}
+          <button disabled class="px-4 py-2 border border-gray-200 rounded-lg text-gray-300 cursor-not-allowed">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+          </button>
+        {% endif %}
+
+        <span class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm">
+          {{ products.number }}
+        </span>
+
+        {% if products.has_next %}
+          <a href="?page={{ products.next_page_number }}&search={{ search }}&category={{ category_filter }}&subcategory={{ subcategory_filter }}&brand={{ brand_filter }}&supplier={{ supplier_filter }}"
+             class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-sm">
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </a>
+        {% else %}
+          <button disabled class="px-4 py-2 border border-gray-200 rounded-lg text-gray-300 cursor-not-allowed">
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       CARDS MOBILE (< md)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="md:hidden space-y-1">
+    {% for product in products %}
+      {% include 'products/partials/_product_card.html' with product=product %}
+    {% empty %}
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 mx-auto">
+          <i data-lucide="package" class="w-8 h-8 text-gray-400"></i>
+        </div>
+        <p class="text-gray-500 font-medium">No se encontraron productos</p>
+        <a href="{% url 'products:product_create' %}"
+           class="mt-4 inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium">
+          <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+          Nuevo Producto
+        </a>
+      </div>
+    {% endfor %}
+
+    <!-- Paginación Mobile -->
+    {% if products.has_other_pages %}
+    <div class="flex items-center justify-between py-4">
+      {% if products.has_previous %}
+        <a href="?page={{ products.previous_page_number }}&search={{ search }}&category={{ category_filter }}&subcategory={{ subcategory_filter }}&brand={{ brand_filter }}&supplier={{ supplier_filter }}"
+           class="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-sm font-medium">
+          ← Anterior
+        </a>
+      {% else %}
+        <button disabled class="px-4 py-2.5 border border-gray-200 rounded-lg text-gray-300 cursor-not-allowed text-sm">
+          ← Anterior
+        </button>
+      {% endif %}
+
+      <span class="text-sm text-gray-600 font-medium">
+        {{ products.number }} / {{ products.paginator.num_pages }}
+      </span>
+
+      {% if products.has_next %}
+        <a href="?page={{ products.next_page_number }}&search={{ search }}&category={{ category_filter }}&subcategory={{ subcategory_filter }}&brand={{ brand_filter }}&supplier={{ supplier_filter }}"
+           class="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-sm font-medium">
+          Siguiente →
+        </a>
+      {% else %}
+        <button disabled class="px-4 py-2.5 border border-gray-200 rounded-lg text-gray-300 cursor-not-allowed text-sm">
+          Siguiente →
+        </button>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

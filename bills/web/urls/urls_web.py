@@ -7,5 +7,5 @@ from bills.web.views.web_views import bills_dashboard
 app_name = 'bills_web'
 
 urlpatterns = [
-    path('dashboard/', bills_dashboard, name='dashboard'),
+    path('dashboard/', bills_dashboard, name='bills_dashboard'),
 ]

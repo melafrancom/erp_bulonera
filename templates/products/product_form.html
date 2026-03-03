@@ -1,0 +1,367 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{% if is_edit %}Editar {{ product.code }}{% else %}Nuevo Producto{% endif %} - ERP Bulonera Alvear{% endblock %}
+
+{% block breadcrumb_items %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <a href="{% url 'products:product_list' %}" class="text-gray-600 hover:text-gray-900">Productos</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <span class="text-gray-900 font-medium">{% if is_edit %}Editar{% else %}Nuevo{% endif %}</span>
+{% endblock %}
+
+{% block mobile_title %}{% if is_edit %}Editar Producto{% else %}Nuevo Producto{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <a href="{% url 'products:product_list' %}" class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition mb-2">
+        <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Volver
+      </a>
+      <h1 class="text-2xl font-bold text-gray-900">
+        {% if is_edit %}
+          Editar Producto: {{ product.code }}
+        {% else %}
+          Nuevo Producto
+        {% endif %}
+      </h1>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       FORMULARIO PRINCIPAL
+       ═══════════════════════════════════════════════════════════════════ -->
+  <form method="POST" enctype="multipart/form-data" id="productForm" novalidate>
+    {% csrf_token %}
+
+    <!-- ── INFORMACIÓN BÁSICA ────────────────────────────────────────── -->
+    <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <i data-lucide="clipboard-list" class="w-5 h-5 text-blue-600"></i>
+        Información Básica
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Código * -->
+        <div>
+          <label for="id_code" class="block text-sm font-medium text-gray-700 mb-1">
+            Código <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="id_code" name="code" required maxlength="100"
+                 value="{% if is_edit %}{{ product.code }}{% endif %}"
+                 placeholder="Ej: ABC-001"
+                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+        </div>
+
+        <!-- SKU -->
+        <div>
+          <label for="id_sku" class="block text-sm font-medium text-gray-700 mb-1">SKU</label>
+          <input type="text" id="id_sku" name="sku" maxlength="100"
+                 value="{% if is_edit %}{{ product.sku }}{% endif %}"
+                 placeholder="Se auto-genera si queda vacío"
+                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+        </div>
+
+        <!-- Nombre * -->
+        <div class="md:col-span-2">
+          <label for="id_name" class="block text-sm font-medium text-gray-700 mb-1">
+            Nombre <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="id_name" name="name" required maxlength="200"
+                 value="{% if is_edit %}{{ product.name }}{% endif %}"
+                 placeholder="Nombre del producto"
+                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+        </div>
+
+        <!-- Categoría * -->
+        <div>
+          <label for="id_category" class="block text-sm font-medium text-gray-700 mb-1">
+            Categoría <span class="text-red-500">*</span>
+          </label>
+          <select id="id_category" name="category" required
+                  class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white">
+            <option value="">Seleccionar categoría</option>
+            {% for cat in categories %}
+              <option value="{{ cat.id }}" {% if is_edit and product.category_id == cat.id %}selected{% endif %}>
+                {{ cat.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Subcategorías -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Subcategorías</label>
+          <div class="border border-gray-300 rounded-lg p-3 max-h-32 overflow-y-auto bg-white">
+            {% for subcat in subcategories %}
+              <label class="flex items-center gap-2 py-1 cursor-pointer text-sm">
+                <input type="checkbox" name="subcategories" value="{{ subcat.id }}"
+                       {% if is_edit and subcat in product.subcategories.all %}checked{% endif %}
+                       class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4">
+                {{ subcat.name }}
+              </label>
+            {% empty %}
+              <p class="text-sm text-gray-400">Sin subcategorías disponibles</p>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Marca -->
+        <div>
+          <label for="id_brand" class="block text-sm font-medium text-gray-700 mb-1">Marca</label>
+          <input type="text" id="id_brand" name="brand" maxlength="100"
+                 value="{% if is_edit %}{{ product.brand }}{% endif %}"
+                 placeholder="Ej: BREMEN, Stanley"
+                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+        </div>
+
+        <!-- Proveedor -->
+        <div>
+          <label for="id_supplier_name" class="block text-sm font-medium text-gray-700 mb-1">Proveedor</label>
+          <input type="text" id="id_supplier_name" name="supplier_name" maxlength="200"
+                 value="{% if is_edit %}{{ product.supplier_name|default_if_none:'' }}{% endif %}"
+                 placeholder="Nombre del proveedor"
+                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+        </div>
+
+        <!-- Descripción -->
+        <div class="md:col-span-2">
+          <label for="id_description" class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+          <textarea id="id_description" name="description" rows="3" maxlength="1500"
+                    placeholder="Descripción del producto (opcional)"
+                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-y">{% if is_edit %}{{ product.description }}{% endif %}</textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── ESPECIFICACIONES TÉCNICAS ─────────────────────────────────── -->
+    <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <i data-lucide="wrench" class="w-5 h-5 text-orange-600"></i>
+        Especificaciones Técnicas
+      </h2>
+      <p class="text-xs text-gray-500 mb-4">Campos opcionales para nomenclatura de bulonería.</p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div>
+          <label for="id_diameter" class="block text-sm font-medium text-gray-700 mb-1">Diámetro</label>
+          <input type="text" id="id_diameter" name="diameter" maxlength="50"
+                 value="{% if is_edit %}{{ product.diameter|default_if_none:'' }}{% endif %}"
+                 placeholder='Ej: 1/4", 8mm'
+                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+        </div>
+
+        <div>
+          <label for="id_length" class="block text-sm font-medium text-gray-700 mb-1">Longitud</label>
+          <input type="text" id="id_length" name="length" maxlength="50"
+                 value="{% if is_edit %}{{ product.length|default_if_none:'' }}{% endif %}"
+                 placeholder='Ej: 2", 50mm'
+                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+        </div>
+
+        <div>
+          <label for="id_material" class="block text-sm font-medium text-gray-700 mb-1">Material</label>
+          <input type="text" id="id_material" name="material" maxlength="100"
+                 value="{% if is_edit %}{{ product.material|default_if_none:'' }}{% endif %}"
+                 placeholder="Ej: Acero, Inoxidable"
+                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+        </div>
+
+        <div>
+          <label for="id_grade" class="block text-sm font-medium text-gray-700 mb-1">Grado</label>
+          <input type="text" id="id_grade" name="grade" maxlength="100"
+                 value="{% if is_edit %}{{ product.grade|default_if_none:'' }}{% endif %}"
+                 placeholder="Ej: G2, G8"
+                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+        </div>
+
+        <div>
+          <label for="id_norm" class="block text-sm font-medium text-gray-700 mb-1">Norma</label>
+          <input type="text" id="id_norm" name="norm" maxlength="100"
+                 value="{% if is_edit %}{{ product.norm|default_if_none:'' }}{% endif %}"
+                 placeholder="Ej: DIN 933, ISO 4017"
+                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+        </div>
+
+        <div>
+          <label for="id_colour" class="block text-sm font-medium text-gray-700 mb-1">Color</label>
+          <input type="text" id="id_colour" name="colour" maxlength="100"
+                 value="{% if is_edit %}{{ product.colour|default_if_none:'' }}{% endif %}"
+                 placeholder="Ej: Zincado, Negro"
+                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+        </div>
+
+        <div>
+          <label for="id_product_type" class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+          <input type="text" id="id_product_type" name="product_type" maxlength="100"
+                 value="{% if is_edit %}{{ product.product_type|default_if_none:'' }}{% endif %}"
+                 placeholder="Ej: Autoperforante"
+                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+        </div>
+
+        <div>
+          <label for="id_form" class="block text-sm font-medium text-gray-700 mb-1">Forma</label>
+          <input type="text" id="id_form" name="form" maxlength="100"
+                 value="{% if is_edit %}{{ product.form|default_if_none:'' }}{% endif %}"
+                 placeholder="Ej: Hexagonal"
+                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+        </div>
+
+        <div>
+          <label for="id_thread_format" class="block text-sm font-medium text-gray-700 mb-1">Formato Rosca</label>
+          <input type="text" id="id_thread_format" name="thread_format" maxlength="100"
+                 value="{% if is_edit %}{{ product.thread_format|default_if_none:'' }}{% endif %}"
+                 placeholder="Ej: UNC, Métrica"
+                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+        </div>
+
+        <div>
+          <label for="id_origin" class="block text-sm font-medium text-gray-700 mb-1">Origen</label>
+          <input type="text" id="id_origin" name="origin" maxlength="100"
+                 value="{% if is_edit %}{{ product.origin|default_if_none:'' }}{% endif %}"
+                 placeholder="País de origen"
+                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PRECIOS ───────────────────────────────────────────────────── -->
+    <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <i data-lucide="dollar-sign" class="w-5 h-5 text-green-600"></i>
+        Precios
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Costo -->
+        <div>
+          <label for="id_cost" class="block text-sm font-medium text-gray-700 mb-1">
+            Precio Costo (sin IVA) <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
+            <input type="number" id="id_cost" name="cost" required min="0" step="0.01"
+                   value="{% if is_edit %}{{ product.cost }}{% endif %}"
+                   placeholder="0.00"
+                   class="w-full pl-7 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+          </div>
+        </div>
+
+        <!-- Venta -->
+        <div>
+          <label for="id_price" class="block text-sm font-medium text-gray-700 mb-1">
+            Precio Venta (sin IVA) <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
+            <input type="number" id="id_price" name="price" required min="0" step="0.01"
+                   value="{% if is_edit %}{{ product.price }}{% endif %}"
+                   placeholder="0.00"
+                   class="w-full pl-7 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+          </div>
+        </div>
+
+        <!-- IVA -->
+        <div>
+          <label for="id_tax_rate" class="block text-sm font-medium text-gray-700 mb-1">IVA %</label>
+          <select id="id_tax_rate" name="tax_rate"
+                  class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white">
+            <option value="21.00" {% if is_edit and product.tax_rate == 21 %}selected{% endif %}>21%</option>
+            <option value="10.50" {% if is_edit and product.tax_rate == 10.5 %}selected{% endif %}>10.5%</option>
+            <option value="0.00" {% if is_edit and product.tax_rate == 0 %}selected{% endif %}>Exento (0%)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Cálculos en tiempo real -->
+      <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          <div class="flex items-center gap-2">
+            <i data-lucide="calculator" class="w-4 h-4 text-gray-400"></i>
+            <span class="text-gray-600">Precio Venta c/IVA:</span>
+            <span id="calc-price-with-tax" class="font-bold text-gray-900">$0.00</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <i data-lucide="trending-up" class="w-4 h-4 text-gray-400"></i>
+            <span class="text-gray-600">Ganancia:</span>
+            <span id="calc-profit" class="font-bold">0%</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── STOCK ─────────────────────────────────────────────────────── -->
+    <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <i data-lucide="package" class="w-5 h-5 text-purple-600"></i>
+        Stock
+      </h2>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div>
+          <label for="id_stock_quantity" class="block text-sm font-medium text-gray-700 mb-1">Stock Actual</label>
+          <input type="number" id="id_stock_quantity" name="stock_quantity" min="0"
+                 value="{% if is_edit %}{{ product.stock_quantity }}{% else %}0{% endif %}"
+                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+        </div>
+
+        <div>
+          <label for="id_min_stock" class="block text-sm font-medium text-gray-700 mb-1">Stock Mínimo</label>
+          <input type="number" id="id_min_stock" name="min_stock" min="0"
+                 value="{% if is_edit %}{{ product.min_stock }}{% else %}0{% endif %}"
+                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+        </div>
+
+        <div>
+          <label for="id_unit_of_sale" class="block text-sm font-medium text-gray-700 mb-1">Unidad de Venta</label>
+          <select id="id_unit_of_sale" name="unit_of_sale"
+                  class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white">
+            {% for choice_val, choice_label in unit_choices %}
+              <option value="{{ choice_val }}" {% if is_edit and product.unit_of_sale == choice_val %}selected{% endif %}>
+                {{ choice_label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label for="id_min_sale_unit" class="block text-sm font-medium text-gray-700 mb-1">Unidad Mínima Venta</label>
+          <input type="number" id="id_min_sale_unit" name="min_sale_unit" min="1"
+                 value="{% if is_edit %}{{ product.min_sale_unit }}{% else %}1{% endif %}"
+                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+        </div>
+
+        <div class="flex items-end pb-1">
+          <label class="flex items-center gap-2 cursor-pointer text-sm">
+            <input type="checkbox" name="stock_control_enabled" value="true"
+                   {% if is_edit and product.stock_control_enabled %}checked{% endif %}
+                   class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-5 w-5">
+            <span class="text-gray-700 font-medium">Activar control de stock</span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── BOTONES DE ACCIÓN ─────────────────────────────────────────── -->
+    <div class="flex flex-col sm:flex-row gap-3 mb-8">
+      <button type="submit" id="submitBtn"
+              class="inline-flex items-center justify-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition text-sm font-medium order-1 sm:order-2">
+        <i data-lucide="save" class="w-4 h-4 mr-2"></i>
+        {% if is_edit %}Guardar Cambios{% else %}Crear Producto{% endif %}
+      </button>
+      <a href="{% url 'products:product_list' %}"
+         class="inline-flex items-center justify-center px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-medium order-2 sm:order-1">
+        Cancelar
+      </a>
+    </div>
+
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/products/product-form.js' %}"></script>
+{% endblock %}

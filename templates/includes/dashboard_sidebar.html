@@ -80,11 +80,21 @@
 
         {% if user.can_manage_products %}
         <a
-          href="#"
+          href="{% url 'products:product_list' %}"
           class="nav-item {% if 'products' in request.path %}active{% endif %}"
         >
           <i data-lucide="package" class="w-5 h-5"></i>
           <span>Productos</span>
+        </a>
+
+        <a href="{% url 'products:product_create' %}" class="nav-item {% if request.resolver_match.url_name == 'product_create' %}active{% endif %}">
+          <i data-lucide="plus-circle" class="w-5 h-5"></i>
+          <span>Nuevo Producto</span>
+        </a>
+
+        <a href="{% url 'products:product_import' %}" class="nav-item {% if 'importar' in request.path %}active{% endif %}">
+          <i data-lucide="upload" class="w-5 h-5"></i>
+          <span>Importar Excel</span>
         </a>
 
         <a href="#" class="nav-item">
