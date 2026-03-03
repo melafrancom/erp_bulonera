@@ -54,6 +54,7 @@ def admin_user(db):
     user.can_manage_payments = True
     user.can_manage_bills = True
     user.can_manage_users = True
+    user.can_manage_products = True
     user.save()
     return user
 
@@ -143,7 +144,19 @@ def category(db, admin_user):
     """Categoría de producto de prueba."""
     from products.models import Category
     return Category.objects.create(
-        name='Tornillos'
+        name='Tornillos',
+        created_by=admin_user,
+    )
+
+
+@pytest.fixture
+def subcategory(db, category, admin_user):
+    """Subcategoría de producto de prueba."""
+    from products.models import Subcategory
+    return Subcategory.objects.create(
+        name='Hexagonales',
+        category=category,
+        created_by=admin_user,
     )
 
 
@@ -152,11 +165,25 @@ def product(db, category, admin_user):
     """Producto de prueba."""
     from products.models import Product
     return Product.objects.create(
+        code='TOR-M10-50',
         name='Tornillo M10x50',
-        sku='TOR-M10-50',
         category=category,
         price=100.00,
-        cost=50.00
+        cost=50.00,
+        created_by=admin_user,
+    )
+
+
+@pytest.fixture
+def price_list(db, admin_user):
+    """Lista de precios de prueba."""
+    from products.models import PriceList
+    return PriceList.objects.create(
+        name='Mayorista',
+        list_type='DISCOUNT',
+        percentage=20,
+        priority=1,
+        created_by=admin_user,
     )
 
 

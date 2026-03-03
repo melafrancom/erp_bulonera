@@ -1,0 +1,30 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Actualizar Precios{% endblock %}
+
+{% block content %}
+<div style="padding: 20px;">
+    <h2>💰 Actualizar Precios Masivamente</h2>
+    <p>Suba un archivo <strong>.xlsx</strong> o <strong>.csv</strong> con los precios a actualizar.</p>
+    
+    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #ffc107;">
+        <strong>⚠️ Formato requerido:</strong><br>
+        <ul style="margin: 5px 0;">
+            <li>Columnas obligatorias: <code>code</code>, <code>price</code></li>
+            <li>Se actualizarán SOLO los precios de productos existentes.</li>
+            <li>Productos no encontrados serán reportados como errores.</li>
+        </ul>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" style="margin-top: 20px;">
+        {% csrf_token %}
+        <table>
+            {{ form.as_table }}
+        </table>
+        <br>
+        <input type="submit" value="Actualizar Precios" class="default" style="padding: 10px 30px; font-size: 14px;">
+        <a href="{% url 'admin:products_product_changelist' %}" style="margin-left: 15px;">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

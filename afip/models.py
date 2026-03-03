@@ -334,11 +334,15 @@ class Comprobante(models.Model):
     
     def __str__(self):
         tipo = dict(TipoComprob.choices()).get(self.tipo_compr, 'Desc')
-        return f"{tipo} {self.punto_venta:04d}-{self.numero:08d}"
+        pv = self.punto_venta or 0
+        num = self.numero or 0
+        return f"{tipo} {pv:04d}-{num:08d}"
     
     @property
     def numero_completo(self):
-        return f"{self.punto_venta:04d}-{self.numero:08d}"
+        pv = self.punto_venta or 0
+        num = self.numero or 0
+        return f"{pv:04d}-{num:08d}"
     
     def puede_emitirse(self):
         """¿El comprobante está listo para emitir?"""

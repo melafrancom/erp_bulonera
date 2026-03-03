@@ -104,8 +104,17 @@ class CategoryFactory(DjangoModelFactory):
     class Meta:
         model = 'products.Category'
     
-    name = factory.Faker('word')
+    name = factory.Sequence(lambda n: f'Categoría {n}')
     description = factory.Faker('sentence')
+
+
+class SubcategoryFactory(DjangoModelFactory):
+    """Factory para Subcategory."""
+    class Meta:
+        model = 'products.Subcategory'
+    
+    name = factory.Sequence(lambda n: f'Subcategoría {n}')
+    category = factory.SubFactory(CategoryFactory)
 
 
 class ProductFactory(DjangoModelFactory):
@@ -113,13 +122,24 @@ class ProductFactory(DjangoModelFactory):
     class Meta:
         model = 'products.Product'
     
-    name = factory.Faker('word')
-    sku = factory.Sequence(lambda n: f'SKU-{n:06d}')
+    code = factory.Sequence(lambda n: f'PROD-{n:06d}')
+    name = factory.Sequence(lambda n: f'Producto Test {n}')
     category = factory.SubFactory(CategoryFactory)
     description = factory.Faker('sentence')
     price = factory.Faker('pydecimal', left_digits=5, right_digits=2, positive=True, min_value=100)
     cost = factory.Faker('pydecimal', left_digits=5, right_digits=2, positive=True, min_value=50)
     is_active = True
+
+
+class PriceListFactory(DjangoModelFactory):
+    """Factory para PriceList."""
+    class Meta:
+        model = 'products.PriceList'
+    
+    name = factory.Sequence(lambda n: f'Lista {n}')
+    list_type = 'DISCOUNT'
+    percentage = 10
+    priority = 0
 
 
 class QuoteFactory(DjangoModelFactory):

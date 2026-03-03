@@ -66,6 +66,7 @@ SHARED_APPS = [
     'payments',
     'bills',
     'afip',
+    'suppliers',
 ]
 
 # ALL APPS

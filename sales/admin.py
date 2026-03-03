@@ -29,12 +29,12 @@ class SaleAdmin(admin.ModelAdmin):
     list_filter = ['status', 'payment_status', 'fiscal_status', 'date']
     search_fields = ['number', 'customer__business_name', 'customer__cuit_cuil']
     inlines = [SaleItemInline]
-    readonly_fields = ['number', 'created_by', 'quote', 'version', 'sync_status', '_cached_subtotal', '_cached_discount', '_cached_tax', '_cached_total']
+    readonly_fields = ['number', 'date', 'created_by', 'quote', 'version', 'sync_status', '_cached_subtotal', '_cached_discount', '_cached_tax', '_cached_total']
     autocomplete_fields = ['customer']
     
     fieldsets = (
         ('Identificación', {
-            'fields': ('number', 'status', 'date', 'customer')
+            'fields': ('number', 'status', 'customer')
         }),
         ('Estados', {
             'fields': ('payment_status', 'fiscal_status')
@@ -43,7 +43,7 @@ class SaleAdmin(admin.ModelAdmin):
             'fields': ('_cached_subtotal', '_cached_discount', '_cached_tax', '_cached_total')
         }),
         ('Auditoría', {
-            'fields': ('created_by', 'quote', 'version', 'sync_status')
+            'fields': ('created_by', 'date', 'quote', 'version', 'sync_status')
         }),
     )
 

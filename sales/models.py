@@ -575,6 +575,8 @@ class SaleItem(BaseModel):
     # Propiedades idénticas a QuoteItem
     @property
     def line_subtotal(self):
+        if self.unit_price is None or self.quantity is None:
+            return Decimal('0')
         return self.unit_price * self.quantity
     
     @property
@@ -600,6 +602,8 @@ class SaleItem(BaseModel):
     @property
     def profit(self):
         """Ganancia bruta del item"""
+        if self.unit_cost is None or self.quantity is None:
+            return Decimal('0')
         cost_total = self.unit_cost * self.quantity
         return self.subtotal_with_discount - cost_total
 
