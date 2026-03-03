@@ -1,15 +1,118 @@
 """
 Vistas web (templates) para la app Products.
 """
+import os
+import logging
+from decimal import Decimal, InvalidOperation
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.contrib import messages
-from django.db.models import Q
+from django.core.exceptions import ValidationError
+from django.db.models import Prefetch, Q, Case, When, IntegerField, Value
+from django.conf import settings
 
 from products.models import Product, Category, Subcategory, PriceList
-from products.services import PriceService
+from products.services import ProductService, PriceService
 
+logger = logging.getLogger(__name__)
+
+
+def _require_product_permission(user):
+    """Verifica que el usuario tenga permiso para gestionar productos."""
+    return user.can_manage_products if hasattr(user, 'can_manage_products') else user.is_staff
+
+
+def _parse_product_form(request):
+    """
+    Extrae y parsea los datos del formulario de producto.
+    Retorna dict listo para ProductService.
+    """
+    POST = request.POST
+
+    data = {
+        'code': POST.get('code', '').strip(),
+        'name': POST.get('name', '').strip(),
+        'description': POST.get('description', '').strip(),
+        'brand': POST.get('brand', '').strip(),
+        'supplier_name': POST.get('supplier_name', '').strip() or None,
+        # Técnicos
+        'diameter': POST.get('diameter', '').strip() or None,
+        'length': POST.get('length', '').strip() or None,
+        'material': POST.get('material', '').strip() or None,
+        'grade': POST.get('grade', '').strip() or None,
+        'norm': POST.get('norm', '').strip() or None,
+        'colour': POST.get('colour', '').strip() or None,
+        'product_type': POST.get('product_type', '').strip() or None,
+        'form': POST.get('form', '').strip() or None,
+        'thread_format': POST.get('thread_format', '').strip() or None,
+        'origin': POST.get('origin', '').strip() or None,
+        # Stock
+        'unit_of_sale': POST.get('unit_of_sale', 'UNIDAD'),
+        'stock_control_enabled': POST.get('stock_control_enabled') == 'true',
+    }
+
+    # Categoría
+    category_id = POST.get('category')
+    if category_id:
+        try:
+            data['category'] = Category.objects.get(id=int(category_id))
+        except (Category.DoesNotExist, ValueError):
+            raise ValidationError("Categoría seleccionada no válida.")
+    else:
+        data['category'] = None
+
+    # SKU (opcional)
+    sku = POST.get('sku', '').strip()
+    if sku:
+        data['sku'] = sku
+
+    # Precios — siempre Decimal
+    try:
+        data['price'] = Decimal(POST.get('price', '0'))
+    except (InvalidOperation, TypeError):
+        data['price'] = Decimal('0')
+
+    try:
+        data['cost'] = Decimal(POST.get('cost', '0'))
+    except (InvalidOperation, TypeError):
+        data['cost'] = Decimal('0')
+
+    try:
+        data['tax_rate'] = Decimal(POST.get('tax_rate', '21.00'))
+    except (InvalidOperation, TypeError):
+        data['tax_rate'] = Decimal('21.00')
+
+    # Stock
+    try:
+        data['stock_quantity'] = int(POST.get('stock_quantity', 0))
+    except (ValueError, TypeError):
+        data['stock_quantity'] = 0
+
+    try:
+        data['min_stock'] = int(POST.get('min_stock', 0))
+    except (ValueError, TypeError):
+        data['min_stock'] = 0
+
+    try:
+        data['min_sale_unit'] = int(POST.get('min_sale_unit', 1))
+    except (ValueError, TypeError):
+        data['min_sale_unit'] = 1
+
+    # Subcategorías (M2M)
+    subcat_ids = POST.getlist('subcategories')
+    if subcat_ids:
+        data['subcategories'] = Subcategory.objects.filter(
+            id__in=[int(s) for s in subcat_ids if s.isdigit()]
+        )
+
+    return data
+
+
+# =============================================================================
+# LISTADO
+# =============================================================================
 
 @login_required
 def product_list(request):
@@ -18,15 +121,37 @@ def product_list(request):
         'category'
     ).prefetch_related('subcategories').all()
 
-    # Búsqueda general
+    # Búsqueda general por nombre, código, sku, o descripción
     search = request.GET.get('search', '').strip()
     if search:
-        queryset = queryset.filter(
-            Q(name__icontains=search) |
+        words = [w for w in search.split() if w]
+        
+        # Coincidencia por código, sku o descripción con el término completo
+        exact_q = (
             Q(code__icontains=search) |
             Q(sku__icontains=search) |
             Q(description__icontains=search)
         )
+        
+        # Coincidencia por nombre (debe contener TODAS las palabras sin importar el orden)
+        name_q = Q()
+        if words:
+            name_q = Q(name__icontains=words[0])
+            for w in words[1:]:
+                name_q &= Q(name__icontains=w)
+
+        # Filtramos el listado
+        queryset = queryset.filter(exact_q | name_q).distinct()
+        
+        # Anotamos match_score=1 para mantener la compatibilidad con el template y resaltarlos
+        queryset = queryset.annotate(
+            match_score=Value(1, output_field=IntegerField())
+        ).order_by('name')
+    else:
+        # Sin búsqueda
+        queryset = queryset.annotate(
+            match_score=Value(0, output_field=IntegerField())
+        ).order_by('name')
 
     # Filtros
     code_filter = request.GET.get('code', '').strip()
@@ -58,6 +183,29 @@ def product_list(request):
     page_number = request.GET.get('page')
     products = paginator.get_page(page_number)
 
+    # Obtener todas las listas de precios activas
+    price_lists = PriceList.objects.filter(is_active=True).order_by('priority')
+
+    # Computar Listas de Precio SOLAMENTE para los productos de la página actual
+    from decimal import Decimal, ROUND_HALF_UP
+    for p in products:
+        # Calcular IVA del precio base
+        tax_multiplier = 1 + (p.tax_rate / Decimal('100.0'))
+        p_base_with_tax = (p.price * tax_multiplier).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        p.base_price_with_tax = p_base_with_tax
+        
+        # p.price es Decimal, tax_rate es Decimal
+        p.computed_prices = []
+        for pl in price_lists:
+            calc = pl.calculate_price(p.price, p.tax_rate)
+            p.computed_prices.append({
+                'list_name': pl.name,
+                'type': pl.list_type,
+                'percentage': pl.percentage,
+                'price_without_tax': calc['price_without_tax'],
+                'price_with_tax': calc['price_with_tax'],
+            })
+
     # Datos para filtros
     categories = Category.objects.all().order_by('name')
     subcategories = Subcategory.objects.all().order_by('name')
@@ -77,6 +225,10 @@ def product_list(request):
     }
     return render(request, 'products/product_list.html', context)
 
+
+# =============================================================================
+# DETALLE
+# =============================================================================
 
 @login_required
 def product_detail(request, pk):
@@ -99,9 +251,34 @@ def product_detail(request, pk):
     return render(request, 'products/product_detail.html', context)
 
 
+# =============================================================================
+# CREAR
+# =============================================================================
+
 @login_required
 def product_create(request):
-    """Formulario de creación de producto."""
+    """Formulario de creación de producto (GET muestra, POST crea)."""
+    if not _require_product_permission(request.user):
+        messages.error(request, "No tenés permiso para crear productos.")
+        return redirect('products:product_list')
+
+    if request.method == 'POST':
+        try:
+            data = _parse_product_form(request)
+            service = ProductService()
+            product = service.create_product(data, request.user)
+            messages.success(
+                request,
+                f"Producto '{product.code} - {product.name}' creado exitosamente."
+            )
+            return redirect('products:product_detail', pk=product.pk)
+        except ValidationError as e:
+            error_msg = e.message if hasattr(e, 'message') else str(e)
+            messages.error(request, f"Error al crear producto: {error_msg}")
+        except Exception as e:
+            logger.error(f"Error inesperado al crear producto: {e}", exc_info=True)
+            messages.error(request, f"Error inesperado: {e}")
+
     categories = Category.objects.all().order_by('name')
     subcategories = Subcategory.objects.all().order_by('name')
 
@@ -115,10 +292,36 @@ def product_create(request):
     return render(request, 'products/product_form.html', context)
 
 
+# =============================================================================
+# EDITAR
+# =============================================================================
+
 @login_required
 def product_edit(request, pk):
-    """Formulario de edición de producto."""
+    """Formulario de edición de producto (GET muestra, POST actualiza)."""
+    if not _require_product_permission(request.user):
+        messages.error(request, "No tenés permiso para editar productos.")
+        return redirect('products:product_list')
+
     product = get_object_or_404(Product, pk=pk)
+
+    if request.method == 'POST':
+        try:
+            data = _parse_product_form(request)
+            service = ProductService()
+            service.update_product(product, data, request.user)
+            messages.success(
+                request,
+                f"Producto '{product.code}' actualizado exitosamente."
+            )
+            return redirect('products:product_detail', pk=product.pk)
+        except ValidationError as e:
+            error_msg = e.message if hasattr(e, 'message') else str(e)
+            messages.error(request, f"Error al actualizar: {error_msg}")
+        except Exception as e:
+            logger.error(f"Error inesperado al editar producto: {e}", exc_info=True)
+            messages.error(request, f"Error inesperado: {e}")
+
     categories = Category.objects.all().order_by('name')
     subcategories = Subcategory.objects.all().order_by('name')
 
@@ -133,16 +336,105 @@ def product_edit(request, pk):
     return render(request, 'products/product_form.html', context)
 
 
+# =============================================================================
+# ELIMINAR (soft delete)
+# =============================================================================
+
+@login_required
+def product_delete(request, pk):
+    """Soft delete de producto (solo POST)."""
+    if not _require_product_permission(request.user):
+        messages.error(request, "No tenés permiso para eliminar productos.")
+        return redirect('products:product_list')
+
+    product = get_object_or_404(Product, pk=pk)
+
+    if request.method == 'POST':
+        code = product.code
+        name = product.name
+        product.delete(user=request.user)
+        messages.success(request, f"Producto '{code} - {name}' eliminado.")
+        return redirect('products:product_list')
+
+    # Si llega por GET, redirigir al detalle
+    return redirect('products:product_detail', pk=pk)
+
+
+# =============================================================================
+# IMPORTAR
+# =============================================================================
+
 @login_required
 def product_import(request):
-    """Vista para importar productos desde Excel."""
+    """Vista para importar productos desde Excel (GET muestra, POST procesa)."""
+    if not _require_product_permission(request.user):
+        messages.error(request, "No tenés permiso para importar productos.")
+        return redirect('products:product_list')
+
+    if request.method == 'POST':
+        uploaded_file = request.FILES.get('file')
+        if not uploaded_file:
+            messages.error(request, "No se seleccionó ningún archivo.")
+            return render(request, 'products/import_products.html')
+
+        # Validar extensión
+        ext = os.path.splitext(uploaded_file.name)[1].lower()
+        if ext not in ('.xlsx', '.csv'):
+            messages.error(request, f"Formato '{ext}' no soportado. Usá .xlsx o .csv")
+            return render(request, 'products/import_products.html')
+
+        # Guardar archivo temporal
+        imports_dir = os.path.join(settings.MEDIA_ROOT, 'imports')
+        os.makedirs(imports_dir, exist_ok=True)
+
+        from django.utils import timezone
+        timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+        file_name = f"import_{timestamp}{ext}"
+        file_path = os.path.join(imports_dir, file_name)
+
+        with open(file_path, 'wb') as dest:
+            for chunk in uploaded_file.chunks():
+                dest.write(chunk)
+
+        # Lanzar tarea Celery
+        try:
+            from products.tasks.import_tasks import import_products_from_excel
+            task = import_products_from_excel.delay(file_path, request.user.id)
+            messages.info(request, "Importación iniciada. Se procesará en segundo plano.")
+            return redirect('products:import_report_task', task_id=task.id)
+        except Exception as e:
+            logger.error(f"Error al lanzar tarea de importación: {e}", exc_info=True)
+            messages.error(request, f"Error al iniciar importación: {e}")
+
     return render(request, 'products/import_products.html')
 
+
+# =============================================================================
+# REPORTE DE IMPORTACIÓN
+# =============================================================================
 
 @login_required
 def import_report(request, task_id=None):
     """Vista para mostrar resultados de importación."""
+    task_status = None
+    task_result = None
+
+    if task_id:
+        try:
+            from celery.result import AsyncResult
+            result = AsyncResult(task_id)
+            task_status = result.status
+            if result.ready():
+                task_result = result.result
+            elif result.status == 'PROGRESS':
+                task_result = result.info
+        except Exception as e:
+            logger.error(f"Error al consultar tarea {task_id}: {e}")
+            task_status = 'UNKNOWN'
+
     context = {
         'task_id': task_id,
+        'task_status': task_status,
+        'task_result': task_result,
     }
     return render(request, 'products/import_report.html', context)

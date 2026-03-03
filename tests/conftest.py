@@ -163,13 +163,14 @@ def subcategory(db, category, admin_user):
 @pytest.fixture
 def product(db, category, admin_user):
     """Producto de prueba."""
+    from decimal import Decimal
     from products.models import Product
     return Product.objects.create(
         code='TOR-M10-50',
         name='Tornillo M10x50',
         category=category,
-        price=100.00,
-        cost=50.00,
+        price=Decimal('100.00'),
+        cost=Decimal('50.00'),
         created_by=admin_user,
     )
 

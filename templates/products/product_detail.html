@@ -361,7 +361,7 @@
       // Crear form dinámico para POST al endpoint de delete
       const form = document.createElement('form');
       form.method = 'POST';
-      form.action = '{% url "products:product_detail" product.pk %}';
+      form.action = '{% url "products:product_delete" product.pk %}';
 
       // CSRF token
       const csrf = document.createElement('input');
@@ -369,13 +369,6 @@
       csrf.name = 'csrfmiddlewaretoken';
       csrf.value = '{{ csrf_token }}';
       form.appendChild(csrf);
-
-      // Acción delete
-      const action = document.createElement('input');
-      action.type = 'hidden';
-      action.name = 'action';
-      action.value = 'delete';
-      form.appendChild(action);
 
       document.body.appendChild(form);
       form.submit();

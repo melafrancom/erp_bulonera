@@ -128,7 +128,7 @@ class Product(BaseModel):
         help_text="Stock Keeping Unit. Puede coincidir con el código."
     )
     name = models.CharField(
-        "Nombre", max_length=200, unique=True,
+        "Nombre", max_length=200, blank=True, null=True,
         help_text="Nombre completo. Se auto-completa con dimensiones si aplica."
     )
     slug = models.SlugField(
@@ -143,6 +143,7 @@ class Product(BaseModel):
     category = models.ForeignKey(
         Category,
         on_delete=models.PROTECT,
+        null=True, blank=True,
         related_name='products',
         verbose_name="Categoría"
     )
@@ -391,6 +392,24 @@ class Product(BaseModel):
             self.meta_keywords = ', '.join(self.name.lower().split()[:10])
 
         super().save(*args, **kwargs)
+
+    def delete(self, hard_delete=False, user=None, *args, **kwargs):
+        """
+        Override soft-delete para liberar code, sku y slug.
+        Al hacer soft-delete, estos campos se modifican con un prefijo
+        '__deleted_<id>_' para que los valores originales queden disponibles.
+        """
+        if hard_delete:
+            super().delete(hard_delete=True, user=user, *args, **kwargs)
+        else:
+            if self.code and not self.code.startswith("__deleted_"):
+                self.code = f"__deleted_{self.id}_{self.code}"[:100]
+            if self.slug and not self.slug.startswith("__deleted_"):
+                self.slug = f"__deleted_{self.id}_{self.slug}"[:250]
+            if self.sku and not self.sku.startswith("__deleted_"):
+                self.sku = f"__deleted_{self.id}_{self.sku}"[:100]
+            
+            super().delete(hard_delete=False, user=user, *args, **kwargs)
 
 
 # =============================================================================

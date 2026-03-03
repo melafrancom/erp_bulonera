@@ -1,0 +1,1379 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-9.0.2, pluggy-1.6.0 -- /usr/local/bin/python3.11
+cachedir: .pytest_cache
+django: version: 5.0.14, settings: erp_crm_bulonera.settings.local (from env)
+rootdir: /app
+configfile: pytest.ini
+plugins: Faker-40.5.1, cov-7.0.0, django-4.12.0
+collecting ... collected 22 items
+
+products/tests/test_web_views.py::TestProductListView::test_requires_login ERROR [  4%]
+products/tests/test_web_views.py::TestProductListView::test_list_page_loads ERROR [  9%]
+products/tests/test_web_views.py::TestProductListView::test_list_empty ERROR [ 13%]
+products/tests/test_web_views.py::TestProductListView::test_search_filter ERROR [ 18%]
+products/tests/test_web_views.py::TestProductListView::test_category_filter ERROR [ 22%]
+products/tests/test_web_views.py::TestProductDetailView::test_detail_loads ERROR [ 27%]
+products/tests/test_web_views.py::TestProductDetailView::test_detail_404 ERROR [ 31%]
+products/tests/test_web_views.py::TestProductCreateView::test_create_get ERROR [ 36%]
+products/tests/test_web_views.py::TestProductCreateView::test_create_post_valid ERROR [ 40%]
+products/tests/test_web_views.py::TestProductCreateView::test_create_post_duplicate_code ERROR [ 45%]
+products/tests/test_web_views.py::TestProductCreateView::test_create_no_permission ERROR [ 50%]
+products/tests/test_web_views.py::TestProductEditView::test_edit_get ERROR [ 54%]
+products/tests/test_web_views.py::TestProductEditView::test_edit_post_valid ERROR [ 59%]
+products/tests/test_web_views.py::TestProductEditView::test_edit_no_permission ERROR [ 63%]
+products/tests/test_web_views.py::TestProductDeleteView::test_delete_post ERROR [ 68%]
+products/tests/test_web_views.py::TestProductDeleteView::test_delete_get_redirects ERROR [ 72%]
+products/tests/test_web_views.py::TestProductDeleteView::test_delete_no_permission ERROR [ 77%]
+products/tests/test_web_views.py::TestProductImportView::test_import_get ERROR [ 81%]
+products/tests/test_web_views.py::TestProductImportView::test_import_no_permission ERROR [ 86%]
+products/tests/test_web_views.py::TestProductImportView::test_import_post_no_file ERROR [ 90%]
+products/tests/test_web_views.py::TestImportReportView::test_report_no_task ERROR [ 95%]
+products/tests/test_web_views.py::TestImportReportView::test_report_with_fake_task ERROR [100%]
+
+==================================== ERRORS ====================================
+__________ ERROR at setup of TestProductListView.test_requires_login ___________
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/plugin.py:566: in _django_db_marker
+    request.getfixturevalue("_django_db_helper")
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+__________ ERROR at setup of TestProductListView.test_list_page_loads __________
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+____________ ERROR at setup of TestProductListView.test_list_empty _____________
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+___________ ERROR at setup of TestProductListView.test_search_filter ___________
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+__________ ERROR at setup of TestProductListView.test_category_filter __________
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+__________ ERROR at setup of TestProductDetailView.test_detail_loads ___________
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+___________ ERROR at setup of TestProductDetailView.test_detail_404 ____________
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+___________ ERROR at setup of TestProductCreateView.test_create_get ____________
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+________ ERROR at setup of TestProductCreateView.test_create_post_valid ________
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+___ ERROR at setup of TestProductCreateView.test_create_post_duplicate_code ____
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+______ ERROR at setup of TestProductCreateView.test_create_no_permission _______
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+_____________ ERROR at setup of TestProductEditView.test_edit_get ______________
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+__________ ERROR at setup of TestProductEditView.test_edit_post_valid __________
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+________ ERROR at setup of TestProductEditView.test_edit_no_permission _________
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+___________ ERROR at setup of TestProductDeleteView.test_delete_post ___________
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+______ ERROR at setup of TestProductDeleteView.test_delete_get_redirects _______
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+______ ERROR at setup of TestProductDeleteView.test_delete_no_permission _______
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+___________ ERROR at setup of TestProductImportView.test_import_get ____________
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+______ ERROR at setup of TestProductImportView.test_import_no_permission _______
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+_______ ERROR at setup of TestProductImportView.test_import_post_no_file _______
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+__________ ERROR at setup of TestImportReportView.test_report_no_task __________
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+______ ERROR at setup of TestImportReportView.test_report_with_fake_task _______
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   MySQLdb.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:22: in _execute_create_test_db
+    super()._execute_create_test_db(cursor, parameters, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:190: in _execute_create_test_db
+    cursor.execute("CREATE DATABASE %(dbname)s %(suffix)s" % parameters)
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:79: in execute
+    return self._execute_with_wrappers(
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:92: in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:100: in _execute
+    with self.db.wrap_database_errors:
+/usr/local/lib/python3.11/site-packages/django/db/utils.py:91: in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+/usr/local/lib/python3.11/site-packages/django/db/backends/utils.py:103: in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/base.py:76: in execute
+    return self.cursor.execute(query, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:179: in execute
+    res = self._query(mogrified_query)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/MySQLdb/cursors.py:330: in _query
+    db.query(q)
+/usr/local/lib/python3.11/site-packages/MySQLdb/connections.py:286: in query
+    _mysql.connection.query(self, query)
+E   django.db.utils.OperationalError: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+
+During handling of the above exception, another exception occurred:
+/usr/local/lib/python3.11/site-packages/pytest_django/fixtures.py:186: in django_db_setup
+    db_cfg = setup_databases(
+/usr/local/lib/python3.11/site-packages/django/test/utils.py:203: in setup_databases
+    connection.creation.create_test_db(
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:62: in create_test_db
+    self._create_test_db(verbosity, autoclobber, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/base/creation.py:204: in _create_test_db
+    self._execute_create_test_db(cursor, test_db_params, keepdb)
+/usr/local/lib/python3.11/site-packages/django/db/backends/mysql/creation.py:27: in _execute_create_test_db
+    sys.exit(2)
+E   SystemExit: 2
+---------------------------- Captured stderr setup -----------------------------
+Creating test database for alias 'default'...
+Got an error creating the test database: (1044, "Access denied for user 'bulonera_user'@'%' to database 'test_bulonera_erpDB'")
+=========================== short test summary info ============================
+ERROR products/tests/test_web_views.py::TestProductListView::test_requires_login
+ERROR products/tests/test_web_views.py::TestProductListView::test_list_page_loads
+ERROR products/tests/test_web_views.py::TestProductListView::test_list_empty
+ERROR products/tests/test_web_views.py::TestProductListView::test_search_filter
+ERROR products/tests/test_web_views.py::TestProductListView::test_category_filter
+ERROR products/tests/test_web_views.py::TestProductDetailView::test_detail_loads
+ERROR products/tests/test_web_views.py::TestProductDetailView::test_detail_404
+ERROR products/tests/test_web_views.py::TestProductCreateView::test_create_get
+ERROR products/tests/test_web_views.py::TestProductCreateView::test_create_post_valid
+ERROR products/tests/test_web_views.py::TestProductCreateView::test_create_post_duplicate_code
+ERROR products/tests/test_web_views.py::TestProductCreateView::test_create_no_permission
+ERROR products/tests/test_web_views.py::TestProductEditView::test_edit_get - ...
+ERROR products/tests/test_web_views.py::TestProductEditView::test_edit_post_valid
+ERROR products/tests/test_web_views.py::TestProductEditView::test_edit_no_permission
+ERROR products/tests/test_web_views.py::TestProductDeleteView::test_delete_post
+ERROR products/tests/test_web_views.py::TestProductDeleteView::test_delete_get_redirects
+ERROR products/tests/test_web_views.py::TestProductDeleteView::test_delete_no_permission
+ERROR products/tests/test_web_views.py::TestProductImportView::test_import_get
+ERROR products/tests/test_web_views.py::TestProductImportView::test_import_no_permission
+ERROR products/tests/test_web_views.py::TestProductImportView::test_import_post_no_file
+ERROR products/tests/test_web_views.py::TestImportReportView::test_report_no_task
+ERROR products/tests/test_web_views.py::TestImportReportView::test_report_with_fake_task
+======================== 1 warning, 22 errors in 2.41s =========================
