@@ -1,0 +1,275 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Listas de Precios - ERP Bulonera Alvear{% endblock %}
+
+{% block breadcrumb_items %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <a href="{% url 'products:product_list' %}" class="text-gray-600 hover:text-gray-900">Productos</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <span class="text-gray-900 font-medium">Listas de Precios</span>
+{% endblock %}
+
+{% block mobile_title %}Listas de Precios{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       HEADER: Título + Botón Nueva Lista
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-1">Listas de Precios</h1>
+        <p class="text-gray-600 text-sm">
+          {{ total_count }} lista{{ total_count|pluralize:"s" }} configurada{{ total_count|pluralize:"s" }}
+        </p>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <a href="{% url 'products:pricelist_create' %}"
+           class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium text-sm shadow-sm">
+          <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+          Nueva Lista
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       MENSAJES
+       ═══════════════════════════════════════════════════════════════════ -->
+  {% if messages %}
+    {% for message in messages %}
+      <div class="mb-4 px-4 py-3 rounded-lg text-sm font-medium
+                  {% if message.tags == 'success' %}bg-green-50 text-green-800 border border-green-200
+                  {% elif message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200
+                  {% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       BARRA DE BÚSQUEDA
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="mb-4">
+    <form method="GET" action="{% url 'products:pricelist_list' %}" class="flex gap-2">
+      <div class="relative flex-1">
+        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+        <input type="search" name="search" value="{{ search }}"
+               placeholder="Buscar por nombre..."
+               class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white">
+      </div>
+      <button type="submit"
+              class="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium shadow-sm">
+        Buscar
+      </button>
+      {% if search %}
+        <a href="{% url 'products:pricelist_list' %}"
+           class="px-4 py-2.5 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
+          Limpiar
+        </a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       TABLA DESKTOP (md+)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-gray-50 border-b border-gray-200 text-left">
+          <th class="px-4 py-3 font-semibold text-gray-600">Nombre</th>
+          <th class="px-4 py-3 font-semibold text-gray-600">Tipo</th>
+          <th class="px-4 py-3 font-semibold text-gray-600 text-right">Porcentaje</th>
+          <th class="px-4 py-3 font-semibold text-gray-600 text-center">Prioridad</th>
+          <th class="px-4 py-3 font-semibold text-gray-600">Descripción</th>
+          <th class="px-4 py-3 font-semibold text-gray-600 text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for pl in pricelists %}
+        <tr class="hover:bg-gray-50 transition-colors">
+          <!-- Nombre -->
+          <td class="px-4 py-3.5 font-semibold text-gray-900">
+            {{ pl.name }}
+          </td>
+
+          <!-- Tipo (badge) -->
+          <td class="px-4 py-3.5">
+            {% if pl.list_type == 'DISCOUNT' %}
+              <span class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                <i data-lucide="trending-down" class="w-3 h-3 mr-1"></i>
+                Bonificación
+              </span>
+            {% else %}
+              <span class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                <i data-lucide="trending-up" class="w-3 h-3 mr-1"></i>
+                Recargo
+              </span>
+            {% endif %}
+          </td>
+
+          <!-- Porcentaje -->
+          <td class="px-4 py-3.5 text-right font-mono font-semibold
+                     {% if pl.list_type == 'DISCOUNT' %}text-green-700{% else %}text-red-700{% endif %}">
+            {% if pl.list_type == 'SURCHARGE' %}+{% else %}-{% endif %}{{ pl.percentage }}%
+          </td>
+
+          <!-- Prioridad -->
+          <td class="px-4 py-3.5 text-center text-gray-500">
+            {{ pl.priority }}
+          </td>
+
+          <!-- Descripción -->
+          <td class="px-4 py-3.5 text-gray-500 max-w-xs truncate">
+            {{ pl.description|default:"—"|truncatechars:60 }}
+          </td>
+
+          <!-- Acciones -->
+          <td class="px-4 py-3.5 text-center">
+            <div class="flex items-center justify-center gap-2">
+              <a href="{% url 'products:pricelist_edit' pl.pk %}"
+                 class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
+                 title="Editar">
+                <i data-lucide="pencil" class="w-3.5 h-3.5 mr-1"></i>
+                Editar
+              </a>
+              <form method="POST" action="{% url 'products:pricelist_delete' pl.pk %}"
+                    onsubmit="return confirm('¿Estás seguro de eliminar la lista &quot;{{ pl.name }}&quot;?');"
+                    class="inline">
+                {% csrf_token %}
+                <button type="submit"
+                        class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition"
+                        title="Eliminar">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-1"></i>
+                  Eliminar
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="px-4 py-12 text-center text-gray-400">
+            <i data-lucide="list" class="w-12 h-12 mx-auto mb-3 opacity-30"></i>
+            <p class="text-lg font-medium">No hay listas de precios</p>
+            <p class="text-sm mt-1">Creá tu primera lista para aplicar bonificaciones o recargos.</p>
+            <a href="{% url 'products:pricelist_create' %}"
+               class="inline-flex items-center mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium">
+              <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+              Nueva Lista
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       CARDS MOBILE (<md)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="md:hidden space-y-3 mb-6">
+    {% for pl in pricelists %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div class="flex items-start justify-between mb-3">
+        <div>
+          <h3 class="font-semibold text-gray-900 text-base">{{ pl.name }}</h3>
+          <div class="mt-1">
+            {% if pl.list_type == 'DISCOUNT' %}
+              <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                <i data-lucide="trending-down" class="w-3 h-3 mr-1"></i>
+                Bonificación
+              </span>
+            {% else %}
+              <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                <i data-lucide="trending-up" class="w-3 h-3 mr-1"></i>
+                Recargo
+              </span>
+            {% endif %}
+          </div>
+        </div>
+        <span class="text-lg font-bold font-mono
+                     {% if pl.list_type == 'DISCOUNT' %}text-green-700{% else %}text-red-700{% endif %}">
+          {% if pl.list_type == 'SURCHARGE' %}+{% else %}-{% endif %}{{ pl.percentage }}%
+        </span>
+      </div>
+
+      {% if pl.description %}
+      <p class="text-sm text-gray-500 mb-3">{{ pl.description|truncatechars:100 }}</p>
+      {% endif %}
+
+      <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+        <span class="text-xs text-gray-400">Prioridad: {{ pl.priority }}</span>
+        <div class="flex gap-2">
+          <a href="{% url 'products:pricelist_edit' pl.pk %}"
+             class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
+            <i data-lucide="pencil" class="w-3 h-3 mr-1"></i>
+            Editar
+          </a>
+          <form method="POST" action="{% url 'products:pricelist_delete' pl.pk %}"
+                onsubmit="return confirm('¿Estás seguro de eliminar la lista &quot;{{ pl.name }}&quot;?');"
+                class="inline">
+            {% csrf_token %}
+            <button type="submit"
+                    class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition">
+              <i data-lucide="trash-2" class="w-3 h-3 mr-1"></i>
+              Eliminar
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center text-gray-400">
+      <i data-lucide="list" class="w-12 h-12 mx-auto mb-3 opacity-30"></i>
+      <p class="text-lg font-medium">No hay listas de precios</p>
+      <p class="text-sm mt-1">Creá tu primera lista para aplicar bonificaciones o recargos.</p>
+      <a href="{% url 'products:pricelist_create' %}"
+         class="inline-flex items-center mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium">
+        <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+        Nueva Lista
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       PAGINACIÓN
+       ═══════════════════════════════════════════════════════════════════ -->
+  {% if page_obj.has_other_pages %}
+  <div class="flex items-center justify-between py-4">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}&search={{ search }}"
+         class="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-sm font-medium">
+        ← Anterior
+      </a>
+    {% else %}
+      <button disabled class="px-4 py-2.5 border border-gray-200 rounded-lg text-gray-300 cursor-not-allowed text-sm">
+        ← Anterior
+      </button>
+    {% endif %}
+
+    <span class="text-sm text-gray-600 font-medium">
+      {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}&search={{ search }}"
+         class="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-sm font-medium">
+        Siguiente →
+      </a>
+    {% else %}
+      <button disabled class="px-4 py-2.5 border border-gray-200 rounded-lg text-gray-300 cursor-not-allowed text-sm">
+        Siguiente →
+      </button>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

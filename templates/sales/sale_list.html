@@ -296,29 +296,29 @@
                 
                 <!-- Confirmar (solo si draft) -->
                 {% if sale.status == 'draft' %}
-                <a href="{% url 'sales_web:sale_confirm' sale.id %}" 
-                   class="text-green-600 hover:text-green-900 p-2 hover:bg-green-50 rounded-lg transition"
-                   title="Confirmar venta">
-                  <i data-lucide="check-circle" class="w-4 h-4"></i>
-                </a>
+                <form method="post" action="{% url 'sales_web:sale_confirm' sale.id %}" style="display:inline">
+                  {% csrf_token %}
+                  <button type="submit" onclick="return confirm('¿Confirmar esta venta?')" 
+                     class="text-green-600 hover:text-green-900 p-2 hover:bg-green-50 rounded-lg transition"
+                     title="Confirmar venta">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                  </button>
+                </form>
                 {% endif %}
                 
-                <!-- Cambiar estado -->
-                {% if sale.status != 'delivered' and sale.status != 'cancelled' %}
-                <a href="{% url 'sales_web:sale_change_status' sale.id %}" 
-                   class="text-purple-600 hover:text-purple-900 p-2 hover:bg-purple-50 rounded-lg transition"
-                   title="Cambiar estado">
-                  <i data-lucide="repeat" class="w-4 h-4"></i>
-                </a>
-                {% endif %}
+                
+                <!-- Cambiar estado - TODO: Implementar vista sale_change_status -->
                 
                 <!-- Cancelar -->
                 {% if sale.status != 'cancelled' and sale.status != 'delivered' %}
-                <a href="{% url 'sales_web:sale_cancel' sale.id %}" 
-                   class="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-lg transition"
-                   title="Cancelar venta">
-                  <i data-lucide="x-circle" class="w-4 h-4"></i>
-                </a>
+                <form method="post" action="{% url 'sales_web:sale_cancel' sale.id %}" style="display:inline">
+                  {% csrf_token %}
+                  <button type="submit" onclick="return confirm('¿Cancelar esta venta?')" 
+                     class="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-lg transition"
+                     title="Cancelar venta">
+                    <i data-lucide="x-circle" class="w-4 h-4"></i>
+                  </button>
+                </form>
                 {% endif %}
               </div>
             </td>

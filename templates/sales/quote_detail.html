@@ -82,13 +82,15 @@
             <i data-lucide="user" class="w-5 h-5 text-gray-600"></i>
             Cliente
           </h3>
+          {% if quote.customer %}
           <a href="{% url 'customers:customer_detail' quote.customer.id %}" 
              class="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
             Ver perfil
             <i data-lucide="external-link" class="w-4 h-4"></i>
           </a>
+          {% endif %}
         </div>
-        
+        {% if quote.customer %}
         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
           <div>
             <dt class="text-sm font-medium text-gray-500">Razón Social</dt>
@@ -119,6 +121,19 @@
           </div>
           {% endif %}
         </dl>
+        {% else %}
+        <div class="flex items-center gap-3 text-gray-600">
+          <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+            <i data-lucide="user" class="w-5 h-5 text-gray-400"></i>
+          </div>
+          <div>
+            <p class="font-medium text-gray-900">{{ quote.customer_name|default:"Consumidor Final" }}</p>
+            {% if quote.customer_phone %}<p class="text-sm text-gray-500">{{ quote.customer_phone }}</p>{% endif %}
+            {% if quote.customer_email %}<p class="text-sm text-gray-500">{{ quote.customer_email }}</p>{% endif %}
+            {% if quote.customer_cuit %}<p class="text-sm text-gray-500">CUIT: {{ quote.customer_cuit }}</p>{% endif %}
+          </div>
+        </div>
+        {% endif %}
       </div>
 
       <!-- Tabla de Items -->
@@ -272,18 +287,6 @@
             <dt class="text-gray-600">Subtotal:</dt>
             <dd class="font-medium text-gray-900">${{ quote.subtotal|floatformat:2 }}</dd>
           </div>
-          {% if quote._cached_discount > 0 %}
-          <div class="flex justify-between text-sm">
-            <dt class="text-gray-600">Descuentos:</dt>
-            <dd class="font-medium text-red-600">-${{ quote._cached_discount|floatformat:2 }}</dd>
-          </div>
-          {% endif %}
-          {% if quote._cached_tax > 0 %}
-          <div class="flex justify-between text-sm">
-            <dt class="text-gray-600">Impuestos:</dt>
-            <dd class="font-medium text-gray-900">${{ quote._cached_tax|floatformat:2 }}</dd>
-          </div>
-          {% endif %}
           <div class="flex justify-between text-lg font-bold border-t pt-3 mt-3">
             <dt class="text-gray-900">Total:</dt>
             <dd class="text-blue-600">${{ quote.total|floatformat:2 }}</dd>

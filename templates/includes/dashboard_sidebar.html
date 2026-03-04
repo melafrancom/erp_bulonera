@@ -102,7 +102,7 @@
           <span>Categorías</span>
         </a>
 
-        <a href="#" class="nav-item">
+        <a href="{% url 'products:pricelist_list' %}" class="nav-item {% if 'listas-precios' in request.path %}active{% endif %}">
           <i data-lucide="list" class="w-5 h-5"></i>
           <span>Listas de Precios</span>
         </a>

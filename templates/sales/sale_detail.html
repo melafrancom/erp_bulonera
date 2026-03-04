@@ -136,12 +136,15 @@
             </span>
             Cliente
           </h3>
+          {% if sale.customer %}
           <a href="{% url 'customers:customer_detail' sale.customer.id %}"
              class="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 font-medium">
             Ver perfil
             <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
           </a>
+          {% endif %}
         </div>
+        {% if sale.customer %}
         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
           <div>
             <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Razón Social</dt>
@@ -172,6 +175,19 @@
           </div>
           {% endif %}
         </dl>
+        {% else %}
+        <div class="flex items-center gap-3 text-gray-600">
+          <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+            <i data-lucide="user" class="w-5 h-5 text-gray-400"></i>
+          </div>
+          <div>
+            <p class="font-medium text-gray-900">{{ sale.customer_name|default:"Consumidor Final" }}</p>
+            {% if sale.customer_phone %}<p class="text-sm text-gray-500">{{ sale.customer_phone }}</p>{% endif %}
+            {% if sale.customer_email %}<p class="text-sm text-gray-500">{{ sale.customer_email }}</p>{% endif %}
+            {% if sale.customer_cuit %}<p class="text-sm text-gray-500">CUIT: {{ sale.customer_cuit }}</p>{% endif %}
+          </div>
+        </div>
+        {% endif %}
       </div>
 
       <!-- Tabla de Items -->
@@ -344,22 +360,6 @@
             <dt class="text-gray-500">Subtotal:</dt>
             <dd class="font-medium text-gray-900">${{ sale.subtotal|floatformat:2 }}</dd>
           </div>
-          {% with discount_total=sale.items.all|dictsumby:"discount_amount" %}
-          {% if discount_total %}
-          <div class="flex justify-between text-sm">
-            <dt class="text-gray-500">Descuentos:</dt>
-            <dd class="font-medium text-red-500">-${{ discount_total|floatformat:2 }}</dd>
-          </div>
-          {% endif %}
-          {% endwith %}
-          {% with tax_total=sale.items.all|dictsumby:"tax_amount" %}
-          {% if tax_total %}
-          <div class="flex justify-between text-sm">
-            <dt class="text-gray-500">Impuestos:</dt>
-            <dd class="font-medium text-gray-900">${{ tax_total|floatformat:2 }}</dd>
-          </div>
-          {% endif %}
-          {% endwith %}
           <div class="flex justify-between text-lg font-bold border-t border-gray-200 pt-3 mt-1">
             <dt class="text-gray-900">Total:</dt>
             <dd class="text-blue-600">${{ sale.total|floatformat:2 }}</dd>
@@ -372,11 +372,10 @@
               <i data-lucide="lock" class="w-3 h-3 text-yellow-500"></i>
               Ganancia bruta:
             </dt>
-            {% with profit_total=sale.items.all|dictsumby:"profit" %}
-            <dd class="font-semibold {% if profit_total >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
-              {% if profit_total >= 0 %}+{% endif %}${{ profit_total|floatformat:2 }}
+            <dd class="font-semibold text-gray-600">
+              <!-- Ganancia se calculará cuando se implemente -->
+              —
             </dd>
-            {% endwith %}
           </div>
           {% endif %}
         </dl>

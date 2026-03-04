@@ -222,14 +222,7 @@
                   <i data-lucide="eye" class="w-4 h-4"></i>
                 </a>
                 
-                <!-- Enviar (solo si draft) -->
-                {% if quote.status == 'draft' %}
-                <a href="{% url 'sales_web:quote_send' quote.id %}" 
-                   class="text-orange-600 hover:text-orange-900 p-2 hover:bg-orange-50 rounded-lg transition"
-                   title="Enviar">
-                  <i data-lucide="send" class="w-4 h-4"></i>
-                </a>
-                {% endif %}
+                <!-- Enviar - TODO: Implementar vista quote_send -->
                 
                 <!-- Convertir a venta (solo si accepted) -->
                 {% if quote.status == 'accepted' %}
@@ -240,14 +233,7 @@
                 </a>
                 {% endif %}
                 
-                <!-- Eliminar (solo si draft) -->
-                {% if quote.status == 'draft' %}
-                <a href="{% url 'sales_web:quote_delete' quote.id %}" 
-                   class="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-lg transition"
-                   title="Eliminar">
-                  <i data-lucide="trash-2" class="w-4 h-4"></i>
-                </a>
-                {% endif %}
+                <!-- Eliminar - TODO: Implementar vista quote_delete -->
               </div>
             </td>
           </tr>
