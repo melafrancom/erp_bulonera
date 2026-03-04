@@ -43,6 +43,7 @@ class User(BaseModel, AbstractUser):
     can_manage_inventory = models.BooleanField(default=False)
     can_manage_payments = models.BooleanField(default=False)
     can_manage_bills = models.BooleanField(default=False)
+    can_manage_suppliers = models.BooleanField(default=False)
     can_view_reports = models.BooleanField(default=False)
 
     class Meta:

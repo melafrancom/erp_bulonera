@@ -248,9 +248,10 @@ def quote_create(request):
         return redirect('sales_web:quote_list')
 
     context = {
-        'products': _get_products_queryset(),
-        'today':    timezone.now().date(),
-        'mode':     'create',
+        'products':   _get_products_queryset(),
+        'pricelists': _get_pricelists_queryset(),
+        'today':      timezone.now().date(),
+        'mode':       'create',
     }
     return render(request, 'sales/quote_form.html', context)
 
@@ -286,11 +287,12 @@ def quote_update(request, pk):
     products  = _get_products_queryset()
 
     context = {
-        'quote':     quote,
-        'items':     quote.items.select_related('product').order_by('line_order'),
-        'customers': customers,
-        'products':  products,
-        'mode':      'update',
+        'quote':      quote,
+        'items':      quote.items.select_related('product').order_by('line_order'),
+        'customers':  customers,
+        'products':   products,
+        'pricelists': _get_pricelists_queryset(),
+        'mode':       'update',
     }
 
     return render(request, 'sales/quote_form.html', context)
@@ -450,9 +452,10 @@ def sale_create(request):
         return redirect('sales_web:quote_list')
 
     context = {
-        'products': _get_products_queryset(),
-        'today':    timezone.now().date(),
-        'mode':     'create',
+        'products':   _get_products_queryset(),
+        'pricelists': _get_pricelists_queryset(),
+        'today':      timezone.now().date(),
+        'mode':       'create',
     }
     return render(request, 'sales/sale_form.html', context)
 
@@ -713,4 +716,17 @@ def _get_products_queryset():
         return Product.objects.filter(is_active=True).order_by('name')
     except Exception:
         logger.warning('products app not available, returning empty queryset')
+        return []
+
+
+def _get_pricelists_queryset():
+    """
+    Retorna las listas de precios activas.
+    Cada <option> en el template usará data-type y data-percentage.
+    """
+    try:
+        from products.models import PriceList
+        return PriceList.objects.filter(is_active=True).order_by('priority', 'name')
+    except Exception:
+        logger.warning('PriceList not available, returning empty list')
         return []

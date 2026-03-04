@@ -33,7 +33,9 @@ urlpatterns = [
     path('api/v1/inventory/', include('inventory.api.urls', namespace='inventory_api')),
     path('api/v1/payments/', include('payments.api.urls', namespace='payments_api')),
     path('api/v1/bills/', include('bills.api.urls', namespace='bills_api')),
-    
+    path('api/v1/suppliers/', include('suppliers.api.urls', namespace='suppliers_api')),
+    path('api/v1/afip/', include('afip.api.urls', namespace='afip_api')),
+
     # Vistas web (templates)
     path('customers/', include('customers.web.urls.urls', namespace='customers')),
     path('sales/', include('sales.web.urls.urls_web', namespace='sales_web')),
@@ -41,10 +43,9 @@ urlpatterns = [
     path('inventory/', include('inventory.web.urls')),
     path('payments/', include('payments.web.urls')),
     path('bills/', include('bills.web.urls')),
-
-    # afip
-    path('api/v1/afip/', include('afip.api.urls', namespace='afip_api')),
+    path('suppliers/', include('suppliers.web.urls', namespace='suppliers_web')),
     path('afip/', include('afip.web.urls', namespace='afip_web')),
+
 ]
 
 # Servir archivos estáticos y media en desarrollo

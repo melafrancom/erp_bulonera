@@ -334,7 +334,7 @@ class ProductImportService:
         # Campos opcionales simples
         OPTIONAL_TEXT_FIELDS = {
             'sku': 'sku', 'diameter': 'diameter', 'length': 'length',
-            'brand': 'brand', 'supplier_name': 'supplier_name',
+            'brand': 'brand',
             'material': 'material', 'grade': 'grade', 'norm': 'norm',
             'colour': 'colour', 'type': 'product_type', 'form': 'form',
             'thread_formats': 'thread_format', 'thread_format': 'thread_format',
@@ -428,7 +428,7 @@ class ProductExportService:
                 'tax_rate': float(p.tax_rate),
                 'stock': p.stock_quantity,
                 'brand': p.brand,
-                'supplier_name': p.supplier_name or '',
+                'supplier': p.supplier.business_name if p.supplier else '',
                 'diameter': p.diameter or '',
                 'length': p.length or '',
                 'material': p.material or '',

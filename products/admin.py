@@ -119,7 +119,7 @@ class ProductAdmin(admin.ModelAdmin):
         ('Comercial', {
             'classes': ('collapse',),
             'fields': (
-                'brand', 'supplier_name', 'barcode', 'qr_code',
+                'brand', 'supplier', 'barcode', 'qr_code',
                 'gtin', 'mpn', 'condition',
             )
         }),

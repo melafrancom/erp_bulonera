@@ -144,12 +144,14 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quote
         fields = [
+            'id', 'number',                         # read-only, devueltos en la respuesta
             'customer',                             # FK opcional
             'customer_name', 'customer_phone',      # walk-in
             'customer_email', 'customer_cuit',
             'valid_until', 'notes', 'internal_notes',
             'items'
         ]
+        read_only_fields = ['id', 'number']
 
     def validate(self, data):
         """Debe tener FK de cliente O nombre del cliente, nunca ninguno."""
@@ -402,6 +404,7 @@ class SaleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sale
         fields = [
+            'id', 'number',                         # read-only, devueltos en la respuesta
             'customer',                             # FK opcional
             'customer_name', 'customer_phone',      # walk-in
             'customer_email', 'customer_cuit',
@@ -410,6 +413,7 @@ class SaleCreateSerializer(serializers.ModelSerializer):
             'delivery_address', 'delivery_date',
             'items'
         ]
+        read_only_fields = ['id', 'number']
 
     def validate(self, data):
         """Igual que Quote: necesita FK o nombre."""

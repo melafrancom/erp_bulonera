@@ -219,9 +219,13 @@ class Product(BaseModel):
     brand = models.CharField(
         "Marca", max_length=100, blank=True, default=""
     )
-    supplier_name = models.CharField(
-        "Nombre del proveedor", max_length=200, blank=True, null=True,
-        help_text="Temporal hasta que se implemente la app suppliers."
+    supplier = models.ForeignKey(
+        'suppliers.Supplier',
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='products',
+        verbose_name="Proveedor",
+        help_text="Proveedor principal de este producto."
     )
     barcode = models.CharField(
         "Código de barras", max_length=100, blank=True, null=True
@@ -316,7 +320,7 @@ class Product(BaseModel):
             models.Index(fields=['slug']),
             models.Index(fields=['category']),
             models.Index(fields=['brand']),
-            models.Index(fields=['supplier_name']),
+            models.Index(fields=['supplier']),
         ]
 
     def __str__(self):
@@ -483,6 +487,18 @@ class PriceList(BaseModel):
             'price_without_tax': final_price,
             'price_with_tax': price_with_tax,
         }
+
+    def delete(self, hard_delete=False, user=None, *args, **kwargs):
+        """
+        Override soft-delete para liberar el nombre único.
+        Añade prefijo '__deleted_<id>_' al name para que pueda reutilizarse.
+        """
+        if hard_delete:
+            super().delete(hard_delete=True, user=user, *args, **kwargs)
+        else:
+            if self.name and not self.name.startswith("__deleted_"):
+                self.name = f"__deleted_{self.id}_{self.name}"[:100]
+            super().delete(hard_delete=False, user=user, *args, **kwargs)
 
 
 # =============================================================================

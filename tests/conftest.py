@@ -55,6 +55,7 @@ def admin_user(db):
     user.can_manage_bills = True
     user.can_manage_users = True
     user.can_manage_products = True
+    user.can_manage_suppliers = True
     user.save()
     return user
 
@@ -227,3 +228,27 @@ def sale_with_items(db, sale, product):
         tax_percentage=21
     )
     return sale
+
+
+@pytest.fixture
+def supplier_tag(db):
+    """Etiqueta de proveedor de prueba."""
+    from suppliers.models import SupplierTag
+    tag, _ = SupplierTag.objects.get_or_create(
+        name='Importador',
+        defaults={'color': '#FF6B6B'}
+    )
+    return tag
+
+
+@pytest.fixture
+def supplier(db, admin_user):
+    """Proveedor de prueba."""
+    from suppliers.models import Supplier
+    return Supplier.objects.create(
+        business_name='Proveedor Test S.A.',
+        cuit=generate_valid_cuit(99000001),
+        tax_condition='RI',
+        payment_term=30,
+        created_by=admin_user,
+    )

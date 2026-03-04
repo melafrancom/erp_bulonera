@@ -92,7 +92,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'category', 'category_name',
             'price', 'cost', 'tax_rate',
             'sale_price_with_tax', 'profit_margin_percentage',
-            'brand', 'supplier_name',
+            'brand', 'supplier',
             'stock_quantity', 'stock_control_enabled',
             'is_active',
         ]
@@ -133,7 +133,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'diameter', 'length', 'material', 'grade', 'norm',
             'colour', 'product_type', 'form', 'thread_format', 'origin',
             # Comercial
-            'brand', 'supplier_name', 'barcode', 'qr_code', 'gtin', 'mpn',
+            'brand', 'supplier', 'barcode', 'qr_code', 'gtin', 'mpn',
             # Stock
             'stock_quantity', 'min_stock', 'stock_control_enabled',
             'unit_of_sale', 'min_sale_unit',
@@ -189,7 +189,7 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
             'price', 'cost', 'tax_rate',
             'diameter', 'length', 'material', 'grade', 'norm',
             'colour', 'product_type', 'form', 'thread_format', 'origin',
-            'brand', 'supplier_name', 'barcode', 'qr_code', 'gtin', 'mpn',
+            'brand', 'supplier', 'barcode', 'qr_code', 'gtin', 'mpn',
             'stock_quantity', 'min_stock', 'stock_control_enabled',
             'unit_of_sale', 'min_sale_unit',
             'last_purchase_date', 'last_purchase_price',

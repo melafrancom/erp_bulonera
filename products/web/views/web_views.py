@@ -36,7 +36,7 @@ def _parse_product_form(request):
         'name': POST.get('name', '').strip(),
         'description': POST.get('description', '').strip(),
         'brand': POST.get('brand', '').strip(),
-        'supplier_name': POST.get('supplier_name', '').strip() or None,
+        # supplier handled separately via FK
         # Técnicos
         'diameter': POST.get('diameter', '').strip() or None,
         'length': POST.get('length', '').strip() or None,
@@ -168,7 +168,10 @@ def product_list(request):
 
     supplier_filter = request.GET.get('supplier', '').strip()
     if supplier_filter:
-        queryset = queryset.filter(supplier_name__icontains=supplier_filter)
+        queryset = queryset.filter(
+            Q(supplier__business_name__icontains=supplier_filter) |
+            Q(supplier__trade_name__icontains=supplier_filter)
+        )
 
     category_filter = request.GET.get('category', '').strip()
     if category_filter:
@@ -438,3 +441,158 @@ def import_report(request, task_id=None):
         'task_result': task_result,
     }
     return render(request, 'products/import_report.html', context)
+
+
+# =============================================================================
+# LISTAS DE PRECIOS — CRUD
+# =============================================================================
+
+@login_required
+def pricelist_list(request):
+    """Listado de listas de precios con búsqueda y paginación."""
+    if not _require_product_permission(request.user):
+        messages.error(request, "No tenés permisos para gestionar listas de precios.")
+        return redirect('core:dashboard')
+
+    pricelists = PriceList.objects.filter(is_active=True)
+
+    search = request.GET.get('search', '').strip()
+    if search:
+        pricelists = pricelists.filter(name__icontains=search)
+
+    pricelists = pricelists.order_by('priority', 'name')
+
+    paginator = Paginator(pricelists, 25)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+
+    context = {
+        'page_obj': page_obj,
+        'pricelists': page_obj.object_list,
+        'search': search,
+        'total_count': paginator.count,
+    }
+    return render(request, 'products/pricelist_list.html', context)
+
+
+@login_required
+def pricelist_create(request):
+    """Crear nueva lista de precios."""
+    if not _require_product_permission(request.user):
+        messages.error(request, "No tenés permisos para crear listas de precios.")
+        return redirect('products:pricelist_list')
+
+    if request.method == 'POST':
+        try:
+            name = request.POST.get('name', '').strip()
+            list_type = request.POST.get('list_type', '')
+            percentage = request.POST.get('percentage', '')
+            description = request.POST.get('description', '').strip()
+            priority = request.POST.get('priority', '0')
+
+            if not name:
+                raise ValueError("El nombre es obligatorio.")
+            if list_type not in ('DISCOUNT', 'SURCHARGE'):
+                raise ValueError("Tipo de lista inválido.")
+            if not percentage:
+                raise ValueError("El porcentaje es obligatorio.")
+
+            percentage = Decimal(percentage)
+            priority = int(priority) if priority else 0
+
+            if percentage <= 0:
+                raise ValueError("El porcentaje debe ser mayor a 0.")
+
+            pricelist = PriceList.objects.create(
+                name=name,
+                list_type=list_type,
+                percentage=percentage,
+                description=description or '',
+                priority=priority,
+                created_by=request.user,
+                updated_by=request.user,
+            )
+            messages.success(request, f'Lista de precios "{pricelist.name}" creada exitosamente.')
+            return redirect('products:pricelist_list')
+
+        except (ValueError, InvalidOperation) as e:
+            messages.error(request, str(e))
+        except Exception as e:
+            logger.error(f"Error al crear lista de precios: {e}", exc_info=True)
+            messages.error(request, f'Error al crear la lista: {e}')
+
+    return render(request, 'products/pricelist_form.html', {'is_edit': False})
+
+
+@login_required
+def pricelist_edit(request, pk):
+    """Editar lista de precios existente."""
+    if not _require_product_permission(request.user):
+        messages.error(request, "No tenés permisos para editar listas de precios.")
+        return redirect('products:pricelist_list')
+
+    pricelist = get_object_or_404(PriceList, pk=pk, is_active=True)
+
+    if request.method == 'POST':
+        try:
+            name = request.POST.get('name', '').strip()
+            list_type = request.POST.get('list_type', '')
+            percentage = request.POST.get('percentage', '')
+            description = request.POST.get('description', '').strip()
+            priority = request.POST.get('priority', '0')
+
+            if not name:
+                raise ValueError("El nombre es obligatorio.")
+            if list_type not in ('DISCOUNT', 'SURCHARGE'):
+                raise ValueError("Tipo de lista inválido.")
+            if not percentage:
+                raise ValueError("El porcentaje es obligatorio.")
+
+            percentage = Decimal(percentage)
+            priority = int(priority) if priority else 0
+
+            if percentage <= 0:
+                raise ValueError("El porcentaje debe ser mayor a 0.")
+
+            pricelist.name = name
+            pricelist.list_type = list_type
+            pricelist.percentage = percentage
+            pricelist.description = description or ''
+            pricelist.priority = priority
+            pricelist.updated_by = request.user
+            pricelist.save()
+
+            messages.success(request, f'Lista de precios "{pricelist.name}" actualizada exitosamente.')
+            return redirect('products:pricelist_list')
+
+        except (ValueError, InvalidOperation) as e:
+            messages.error(request, str(e))
+        except Exception as e:
+            logger.error(f"Error al actualizar lista de precios: {e}", exc_info=True)
+            messages.error(request, f'Error al actualizar la lista: {e}')
+
+    return render(request, 'products/pricelist_form.html', {
+        'is_edit': True,
+        'pricelist': pricelist,
+    })
+
+
+@login_required
+def pricelist_delete(request, pk):
+    """Soft delete de lista de precios (solo POST)."""
+    if not _require_product_permission(request.user):
+        messages.error(request, "No tenés permisos para eliminar listas de precios.")
+        return redirect('products:pricelist_list')
+
+    if request.method != 'POST':
+        return redirect('products:pricelist_list')
+
+    pricelist = get_object_or_404(PriceList, pk=pk, is_active=True)
+
+    try:
+        pricelist.delete(user=request.user)
+        messages.success(request, f'Lista de precios "{pricelist.name}" eliminada exitosamente.')
+    except Exception as e:
+        logger.error(f"Error al eliminar lista de precios: {e}", exc_info=True)
+        messages.error(request, f'Error al eliminar la lista: {e}')
+
+    return redirect('products:pricelist_list')
