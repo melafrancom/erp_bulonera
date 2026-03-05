@@ -10,6 +10,7 @@ from products.web.views import (
     product_delete,
     product_import,
     import_report,
+    download_import_template,
     pricelist_list,
     pricelist_create,
     pricelist_edit,
@@ -28,6 +29,7 @@ urlpatterns = [
     path('importar/', product_import, name='product_import'),
     path('importar/reporte/', import_report, name='import_report'),
     path('importar/reporte/<str:task_id>/', import_report, name='import_report_task'),
+    path('importar/plantilla/', download_import_template, name='download_import_template'),
 
     # ── Listas de Precios ────────────────────────────────────────────
     path('listas-precios/', pricelist_list, name='pricelist_list'),

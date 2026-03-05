@@ -301,55 +301,66 @@
         <div class="space-y-3">
           <!-- Acciones según estado -->
           {% if quote.status == 'draft' %}
-            <a href="#" 
+            <a href="{% url 'sales_web:quote_update' quote.id %}" 
                class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
               <i data-lucide="edit" class="w-4 h-4 mr-2"></i>
               Editar
             </a>
-            <button onclick="confirm('¿Enviar este presupuesto al cliente?') && this.closest('form').submit()" 
-                    class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
-              <i data-lucide="send" class="w-4 h-4 mr-2"></i>
-              Enviar al Cliente
-            </button>
-            <button onclick="confirm('¿Eliminar este presupuesto?') && this.closest('form').submit()" 
-                    class="w-full inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">
-              <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i>
-              Eliminar
-            </button>
+            <form method="post" action="{% url 'sales_web:quote_send' quote.id %}">
+              {% csrf_token %}
+              <button type="submit"
+                      onclick="return confirm('¿Enviar este presupuesto al cliente?')"
+                      class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
+                <i data-lucide="send" class="w-4 h-4 mr-2"></i>
+                Enviar al Cliente
+              </button>
+            </form>
             
           {% elif quote.status == 'sent' %}
-            <a href="#" 
-               class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
-              <i data-lucide="file-text" class="w-4 h-4 mr-2"></i>
-              Ver PDF
-            </a>
-            <button class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
-              <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
-              Marcar Aceptado
-            </button>
-            <button class="w-full inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">
-              <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i>
-              Marcar Rechazado
-            </button>
+            <form method="post" action="{% url 'sales_web:quote_accept' quote.id %}">
+              {% csrf_token %}
+              <button type="submit"
+                      onclick="return confirm('¿Marcar este presupuesto como aceptado?')"
+                      class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
+                <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
+                Marcar Aceptado
+              </button>
+            </form>
+            <form method="post" action="{% url 'sales_web:quote_reject' quote.id %}">
+              {% csrf_token %}
+              <button type="submit"
+                      onclick="return confirm('¿Marcar este presupuesto como rechazado?')"
+                      class="w-full inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">
+                <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i>
+                Marcar Rechazado
+              </button>
+            </form>
             
           {% elif quote.status == 'accepted' %}
-            <a href="#" 
-               class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
-              <i data-lucide="shopping-cart" class="w-4 h-4 mr-2"></i>
-              Convertir a Venta
-            </a>
-            <a href="#" 
-               class="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium">
-              <i data-lucide="file-text" class="w-4 h-4 mr-2"></i>
-              Ver PDF
-            </a>
+            <form method="post" action="{% url 'sales_web:quote_convert' quote.id %}">
+              {% csrf_token %}
+              <button type="submit"
+                      onclick="return confirm('¿Convertir este presupuesto en una venta?')"
+                      class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
+                <i data-lucide="shopping-cart" class="w-4 h-4 mr-2"></i>
+                Convertir a Venta
+              </button>
+            </form>
             
-          {% else %}
-            <a href="#" 
-               class="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium">
-              <i data-lucide="file-text" class="w-4 h-4 mr-2"></i>
-              Ver PDF
+          {% elif quote.status == 'converted' %}
+            {% if converted_sale %}
+            <a href="{% url 'sales_web:sale_detail' converted_sale.id %}" 
+               class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+              <i data-lucide="shopping-cart" class="w-4 h-4 mr-2"></i>
+              Ver Venta Generada
             </a>
+            {% endif %}
+
+          {% elif quote.status == 'rejected' %}
+            <div class="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+              <i data-lucide="x-circle" class="w-4 h-4 flex-shrink-0"></i>
+              Este presupuesto fue rechazado.
+            </div>
           {% endif %}
         </div>
       </div>

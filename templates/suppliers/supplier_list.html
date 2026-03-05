@@ -1,0 +1,256 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Proveedores - ERP Bulonera Alvear{% endblock %}
+
+{% block breadcrumb_items %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <span class="text-gray-900 font-medium">Proveedores</span>
+{% endblock %}
+
+{% block mobile_title %}Proveedores{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       HEADER
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-1">Proveedores</h1>
+        <p class="text-gray-600 text-sm">
+          {{ suppliers|length }} proveedor{{ suppliers|length|pluralize:"es" }} registrado{{ suppliers|length|pluralize:"s" }}
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <a href="{% url 'suppliers_web:supplier_import' %}"
+           class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm">
+          <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+          Importar Excel
+        </a>
+        <a href="{% url 'suppliers_web:supplier_create' %}"
+           class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium text-sm">
+          <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+          Nuevo Proveedor
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       BÚSQUEDA
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="mb-4">
+    <form method="GET" action="{% url 'suppliers_web:supplier_list' %}" class="flex gap-2">
+      {% if selected_tag %}<input type="hidden" name="tag" value="{{ selected_tag }}">{% endif %}
+      {% if selected_tax_condition %}<input type="hidden" name="tax_condition" value="{{ selected_tax_condition }}">{% endif %}
+
+      <div class="relative flex-1">
+        <i data-lucide="search" class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+        <input type="search" name="search" value="{{ search }}"
+               placeholder="Buscar por razón social, nombre comercial o CUIT..."
+               class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+               aria-label="Buscar proveedores">
+      </div>
+      <button type="submit"
+              class="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium shrink-0">
+        Buscar
+      </button>
+    </form>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       FILTROS
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4"
+       x-data="{ open: false }">
+
+    <!-- Toggle mobile -->
+    <button @click="open = !open"
+            class="flex items-center justify-between w-full md:hidden text-left"
+            type="button" :aria-expanded="open">
+      <span class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+        <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+        Filtros
+      </span>
+      <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform" :class="open && 'rotate-180'"></i>
+    </button>
+
+    <div :class="open ? '' : 'hidden'" class="md:block mt-3 md:mt-0">
+      <form method="GET" action="{% url 'suppliers_web:supplier_list' %}">
+        <input type="hidden" name="search" value="{{ search }}">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          <!-- Etiqueta -->
+          <div>
+            <label for="filter-tag" class="block text-xs font-medium text-gray-600 mb-1">Etiqueta</label>
+            <select id="filter-tag" name="tag"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+              <option value="">Todas</option>
+              {% for tag in tags %}
+                <option value="{{ tag.id }}" {% if tag.id|stringformat:"s" == selected_tag %}selected{% endif %}>
+                  {{ tag.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Condición IVA -->
+          <div>
+            <label for="filter-tax" class="block text-xs font-medium text-gray-600 mb-1">Condición IVA</label>
+            <select id="filter-tax" name="tax_condition"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+              <option value="">Todas</option>
+              <option value="RI" {% if selected_tax_condition == 'RI' %}selected{% endif %}>Responsable Inscripto</option>
+              <option value="MONO" {% if selected_tax_condition == 'MONO' %}selected{% endif %}>Monotributista</option>
+              <option value="EX" {% if selected_tax_condition == 'EX' %}selected{% endif %}>Exento</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2 mt-3">
+          <button type="submit"
+                  class="inline-flex items-center px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+            <i data-lucide="filter" class="w-4 h-4 mr-1.5"></i>
+            Aplicar
+          </button>
+          <a href="{% url 'suppliers_web:supplier_list' %}"
+             class="inline-flex items-center px-4 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
+            <i data-lucide="x" class="w-4 h-4 mr-1.5"></i>
+            Limpiar
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       TABLA DESKTOP (≥ md)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Razón Social</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CUIT</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Cond. IVA</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Teléfono</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell">Tags</th>
+            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Deuda</th>
+            <th scope="col" class="relative px-4 py-3"><span class="sr-only">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          {% for supplier in suppliers %}
+          <tr class="hover:bg-gray-50 transition cursor-pointer"
+              onclick="window.location='{% url 'suppliers_web:supplier_detail' supplier.pk %}'">
+
+            <td class="px-4 py-3">
+              <div class="text-sm font-medium text-gray-900 max-w-xs truncate" title="{{ supplier.business_name }}">
+                {{ supplier.business_name }}
+              </div>
+              {% if supplier.trade_name %}
+                <div class="text-xs text-gray-500">{{ supplier.trade_name }}</div>
+              {% endif %}
+            </td>
+
+            <td class="px-4 py-3 whitespace-nowrap">
+              <span class="text-sm font-mono text-gray-700">{{ supplier.cuit }}</span>
+            </td>
+
+            <td class="px-4 py-3 whitespace-nowrap hidden lg:table-cell">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
+                {% if supplier.tax_condition == 'RI' %}bg-blue-100 text-blue-800
+                {% elif supplier.tax_condition == 'MONO' %}bg-yellow-100 text-yellow-800
+                {% else %}bg-gray-100 text-gray-700{% endif %}">
+                {{ supplier.get_tax_condition_display }}
+              </span>
+            </td>
+
+            <td class="px-4 py-3 whitespace-nowrap hidden lg:table-cell">
+              <span class="text-sm text-gray-600">{{ supplier.phone|default:"—" }}</span>
+            </td>
+
+            <td class="px-4 py-3 hidden xl:table-cell" onclick="event.stopPropagation()">
+              <div class="flex flex-wrap gap-1">
+                {% for tag in supplier.tags.all %}
+                  <span class="inline-block px-2 py-0.5 text-xs font-medium rounded-full text-white"
+                        style="background-color: {{ tag.color }}">
+                    {{ tag.name }}
+                  </span>
+                {% empty %}
+                  <span class="text-xs text-gray-400">—</span>
+                {% endfor %}
+              </div>
+            </td>
+
+            <td class="px-4 py-3 whitespace-nowrap text-right">
+              {% if supplier.has_debt %}
+                <span class="text-sm font-medium text-red-700">${{ supplier.current_debt|floatformat:2 }}</span>
+              {% else %}
+                <span class="text-sm text-green-700">$0.00</span>
+              {% endif %}
+            </td>
+
+            <td class="px-4 py-3 whitespace-nowrap text-right" onclick="event.stopPropagation()">
+              <div class="flex items-center justify-end gap-1">
+                <a href="{% url 'suppliers_web:supplier_detail' supplier.pk %}"
+                   class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Ver detalle">
+                  <i data-lucide="eye" class="w-4 h-4"></i>
+                </a>
+                <a href="{% url 'suppliers_web:supplier_edit' supplier.pk %}"
+                   class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition" title="Editar">
+                  <i data-lucide="pencil" class="w-4 h-4"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="px-6 py-12 text-center">
+              <div class="flex flex-col items-center justify-center">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                  <i data-lucide="truck" class="w-8 h-8 text-gray-400"></i>
+                </div>
+                <p class="text-gray-500 font-medium">No se encontraron proveedores</p>
+                <p class="text-sm text-gray-400 mt-1">Ajustá los filtros o creá un nuevo proveedor</p>
+                <a href="{% url 'suppliers_web:supplier_create' %}"
+                   class="mt-4 inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium">
+                  <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                  Nuevo Proveedor
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       CARDS MOBILE (< md)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="md:hidden space-y-1">
+    {% for supplier in suppliers %}
+      {% include 'suppliers/partials/_supplier_card.html' with supplier=supplier %}
+    {% empty %}
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 mx-auto">
+          <i data-lucide="truck" class="w-8 h-8 text-gray-400"></i>
+        </div>
+        <p class="text-gray-500 font-medium">No se encontraron proveedores</p>
+        <a href="{% url 'suppliers_web:supplier_create' %}"
+           class="mt-4 inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium">
+          <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+          Nuevo Proveedor
+        </a>
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

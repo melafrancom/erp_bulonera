@@ -198,6 +198,32 @@
         </div>
       </div>
     </section>
+
+    {% else %}
+    <!-- Estado desconocido o tarea no encontrada -->
+    <section class="bg-white rounded-xl shadow-sm border border-amber-200 p-6 mb-4">
+      <div class="text-center">
+        <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="help-circle" class="w-8 h-8 text-amber-600"></i>
+        </div>
+        <h2 class="text-xl font-bold text-amber-800 mb-2">Estado Desconocido</h2>
+        <p class="text-gray-600 text-sm mb-4">
+          El estado de la tarea es: <strong>{{ task_status }}</strong>.<br>
+          Verificá que Celery y Redis estén funcionando correctamente.
+        </p>
+        <div class="flex flex-wrap gap-3 justify-center">
+          <a href=""
+             class="inline-flex items-center px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium">
+            <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i>
+            Reintentar
+          </a>
+          <a href="{% url 'products:product_list' %}"
+             class="inline-flex items-center px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-medium">
+            Volver a Productos
+          </a>
+        </div>
+      </div>
+    </section>
     {% endif %}
 
   {% else %}

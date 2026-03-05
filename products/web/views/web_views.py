@@ -15,6 +15,7 @@ from django.conf import settings
 
 from products.models import Product, Category, Subcategory, PriceList
 from products.services import ProductService, PriceService
+from suppliers.models import Supplier
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +107,16 @@ def _parse_product_form(request):
         data['subcategories'] = Subcategory.objects.filter(
             id__in=[int(s) for s in subcat_ids if s.isdigit()]
         )
+
+    # Supplier FK
+    supplier_id = POST.get('supplier')
+    if supplier_id:
+        try:
+            data['supplier'] = Supplier.objects.get(id=int(supplier_id))
+        except (Supplier.DoesNotExist, ValueError):
+            data['supplier'] = None
+    else:
+        data['supplier'] = None
 
     return data
 
@@ -284,10 +295,12 @@ def product_create(request):
 
     categories = Category.objects.all().order_by('name')
     subcategories = Subcategory.objects.all().order_by('name')
+    suppliers = Supplier.objects.all().order_by('business_name')
 
     context = {
         'categories': categories,
         'subcategories': subcategories,
+        'suppliers': suppliers,
         'unit_choices': Product.UNIT_CHOICES,
         'condition_choices': Product.CONDITION_CHOICES,
         'is_edit': False,
@@ -327,11 +340,13 @@ def product_edit(request, pk):
 
     categories = Category.objects.all().order_by('name')
     subcategories = Subcategory.objects.all().order_by('name')
+    suppliers = Supplier.objects.all().order_by('business_name')
 
     context = {
         'product': product,
         'categories': categories,
         'subcategories': subcategories,
+        'suppliers': suppliers,
         'unit_choices': Product.UNIT_CHOICES,
         'condition_choices': Product.CONDITION_CHOICES,
         'is_edit': True,
@@ -441,6 +456,133 @@ def import_report(request, task_id=None):
         'task_result': task_result,
     }
     return render(request, 'products/import_report.html', context)
+
+
+# =============================================================================
+# DESCARGAR PLANTILLA DE IMPORTACIÓN
+# =============================================================================
+
+@login_required
+def download_import_template(request):
+    """Genera y descarga la plantilla Excel para importación de productos."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.comments import Comment
+    from django.http import HttpResponse
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Productos'
+
+    # Columnas: (nombre_técnico, descripción_amigable, ancho, es_obligatorio)
+    columns = [
+        ('code', 'Código del producto (obligatorio)', 15, True),
+        ('price', 'Precio de venta (obligatorio)', 12, True),
+        ('cost', 'Costo sin IVA (Opcional)', 12, False),
+        ('name', 'Nombre del producto', 35, False),
+        ('diameter', 'Diámetro (ej: M10)', 12, False),
+        ('length', 'Largo (ej: 50mm)', 12, False),
+        ('description', 'Descripción del producto', 40, False),
+        ('supplier', 'Proveedor (Nombre)', 25, False),
+        ('supplier_cuit', 'CUIT del Proveedor (Opcional)', 20, False),
+        ('images', 'URLs de imágenes separadas por coma', 30, False),
+        ('stock', 'Cantidad en stock', 10, False),
+        ('category', 'Nombre de categoría (se crea si no existe)', 20, False),
+        ('subcategories', 'Subcategorías separadas por coma', 25, False),
+        ('brand', 'Marca del producto', 18, False),
+        ('condition', 'Estado: new, used, refurbished', 15, False),
+        ('gallery', 'URLs de galería separadas por coma', 30, False),
+        ('norm', 'Norma técnica (ej: DIN 933)', 15, False),
+        ('grade', 'Grado (ej: 8.8)', 12, False),
+        ('material', 'Material (ej: Acero)', 18, False),
+        ('colour', 'Color', 12, False),
+        ('type', 'Tipo de producto', 15, False),
+        ('form', 'Forma', 15, False),
+        ('thread_formats', 'Formato de rosca', 18, False),
+        ('origin', 'País de origen', 15, False),
+        ('faq', 'Preguntas frecuentes', 30, False),
+        ('gtin', 'Código GTIN/EAN', 18, False),
+        ('mpn', 'Número de parte del fabricante', 18, False),
+        ('meta_title', 'Título SEO', 25, False),
+        ('meta_description', 'Descripción SEO', 35, False),
+        ('meta_keywords', 'Palabras clave SEO', 25, False),
+        ('google_category', 'Categoría de Google Shopping', 25, False),
+    ]
+
+    # Estilos
+    header_font = Font(name='Calibri', bold=True, size=11, color='FFFFFF')
+    required_fill = PatternFill(start_color='1D4ED8', end_color='1D4ED8', fill_type='solid')
+    optional_fill = PatternFill(start_color='2563EB', end_color='2563EB', fill_type='solid')
+    header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    thin_border = Border(
+        left=Side(style='thin', color='D1D5DB'),
+        right=Side(style='thin', color='D1D5DB'),
+        top=Side(style='thin', color='D1D5DB'),
+        bottom=Side(style='thin', color='D1D5DB'),
+    )
+
+    # Fila 1: nombres técnicos (pandas lee esta fila como headers)
+    for col_idx, (col_name, description, width, required) in enumerate(columns, 1):
+        cell = ws.cell(row=1, column=col_idx, value=col_name)
+        cell.font = header_font
+        cell.fill = required_fill if required else optional_fill
+        cell.alignment = header_alignment
+        cell.border = thin_border
+        cell.comment = Comment(description, 'ERP Bulonera')
+        ws.column_dimensions[cell.column_letter].width = width
+
+    # Fila 2: ejemplo de datos (en itálica gris)
+    example_font = Font(name='Calibri', size=10, italic=True, color='6B7280')
+    example_data = {
+        'code': 'BUL-001',
+        'price': '1250.50',
+        'cost': '950.00',
+        'name': 'Arandela Plana',
+        'diameter': 'M10',
+        'length': '50mm',
+        'description': 'Arandela plana de acero',
+        'supplier': 'Bulonera Alvear S.A.',
+        'supplier_cuit': '30-11111111-2',
+        'images': 'arandelaPlana.png',
+        'stock': '100',
+        'category': 'Bulonería',
+        'subcategories': 'Arandelas',
+        'brand': 'Stanley',
+        'condition': 'new',
+        'gallery': 'arandelaPlana.png, arandelaPlana2.png',
+        'norm': 'DIN 933',
+        'grade': '8.8',
+        'material': 'Acero',
+        'colour': 'Gris',
+        'type': 'Tipo',
+        'form': 'Forma',
+        'thread_formats': 'Formato de rosca',
+        'origin': 'Nacional',
+        'faq': 'Preguntas frecuentes',
+        'gtin': 'Código GTIN/EAN',
+        'mpn': 'Número de parte del fabricante',
+        'meta_title': 'Título SEO',
+        'meta_description': 'Descripción SEO',
+        'meta_keywords': 'Palabras clave SEO',
+        'google_category': 'Bricolaje > Accesorios de bricolaje > Artículos de ferretería > Arandelas',
+    }
+    for col_idx, (col_name, _, _, _) in enumerate(columns, 1):
+        cell = ws.cell(row=2, column=col_idx, value=example_data.get(col_name, ''))
+        cell.font = example_font
+        cell.border = thin_border
+
+    # Congelar panel debajo del header
+    ws.freeze_panes = 'A2'
+    # Altura de fila del header
+    ws.row_dimensions[1].height = 25
+
+    # Generar respuesta HTTP
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename="plantilla_importacion_productos.xlsx"'
+    wb.save(response)
+    return response
 
 
 # =============================================================================

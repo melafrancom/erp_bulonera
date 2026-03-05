@@ -49,6 +49,14 @@ def supplier_list(request):
 def supplier_detail(request, pk):
     """Detalle completo de un proveedor."""
     supplier = get_object_or_404(Supplier, pk=pk)
+    
+    # Manejar eliminación desde la vista de detalle
+    if request.method == 'POST' and request.POST.get('action') == 'delete':
+        from suppliers.services import SupplierService
+        SupplierService.soft_delete(supplier, request.user)
+        messages.success(request, f'Proveedor "{supplier.business_name}" eliminado correctamente.')
+        return redirect('suppliers_web:supplier_list')
+
     from products.models import Product
     products = Product.objects.filter(supplier=supplier)
 

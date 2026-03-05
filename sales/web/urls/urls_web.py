@@ -31,6 +31,10 @@ from sales.web.views.web_views import (
     quote_create,
     quote_update,
     sale_convert_from_quote,
+    # Quote actions (POST only)
+    quote_send,
+    quote_accept,
+    quote_reject,
     # Sales
     sale_list,
     sale_detail,
@@ -61,6 +65,11 @@ urlpatterns = [
         sale_convert_from_quote,
         name='quote_convert',
     ),
+
+    # Acciones POST sobre un presupuesto
+    path('presupuestos/<int:pk>/enviar/',   quote_send,   name='quote_send'),
+    path('presupuestos/<int:pk>/aceptar/',  quote_accept,  name='quote_accept'),
+    path('presupuestos/<int:pk>/rechazar/', quote_reject,  name='quote_reject'),
 
     # ── Ventas (Sales) ────────────────────────────────────────────────────────
     path('ventas/',             sale_list,   name='sale_list'),

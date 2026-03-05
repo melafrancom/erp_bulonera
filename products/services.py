@@ -268,6 +268,8 @@ class ProductImportService:
     @transaction.atomic
     def _process_row(self, row, user):
         """Procesa una fila del archivo y crea/actualiza un producto."""
+        from suppliers.models import Supplier
+
         # Validar campos obligatorios
         code = row.get('code')
         price_val = row.get('price')
@@ -331,6 +333,30 @@ class ProductImportService:
             )
             product.category = category
 
+        # Proveedor (Opcional - creación al vuelo)
+        sup_name = row.get('supplier')
+        sup_cuit = row.get('supplier_cuit')
+        if sup_name and not (isinstance(sup_name, float) and pd.isna(sup_name)):
+            sup_name = str(sup_name).strip()
+            sup_cuit = str(sup_cuit).strip() if sup_cuit and not (isinstance(sup_cuit, float) and pd.isna(sup_cuit)) else None
+            
+            supplier = None
+            if sup_cuit:
+                # Buscar por CUIT si fue provisto
+                supplier = Supplier.objects.filter(cuit=sup_cuit).first()
+            if not supplier:
+                # Si no hay CUIT o no se encontró por CUIT, buscar por nombre
+                supplier = Supplier.objects.filter(business_name=sup_name).first()
+                
+            if not supplier:
+                # Crear nuevo proveedor
+                supplier = Supplier.objects.create(
+                    business_name=sup_name,
+                    cuit=sup_cuit,
+                    created_by=user,
+                )
+            product.supplier = supplier
+
         # Campos opcionales simples
         OPTIONAL_TEXT_FIELDS = {
             'sku': 'sku', 'diameter': 'diameter', 'length': 'length',
@@ -348,6 +374,13 @@ class ProductImportService:
             val = row.get(csv_col)
             if val and not (isinstance(val, float) and pd.isna(val)):
                 setattr(product, model_field, str(val).strip())
+
+        # Normalizar condition a lowercase (Excel puede traer "New", "Used", etc.)
+        if product.condition:
+            product.condition = product.condition.lower()
+            valid_conditions = [c[0] for c in Product.CONDITION_CHOICES]
+            if product.condition not in valid_conditions:
+                product.condition = 'new'  # fallback seguro
 
         # Stock
         stock_val = row.get('stock') or row.get('stock_quantity')

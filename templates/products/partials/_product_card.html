@@ -26,7 +26,7 @@
 
   <!-- Info básica -->
   <div class="text-sm text-gray-600 space-y-0.5">
-    <p><span class="font-medium text-gray-700">Proveedor:</span> {{ product.supplier_name|default:"—" }}</p>
+    <p><span class="font-medium text-gray-700">Proveedor:</span> {{ product.supplier.business_name|default:"—" }}</p>
     <p><span class="font-medium text-gray-700">Código:</span> {{ product.code }}</p>
     {% if product.category %}
       <p><span class="font-medium text-gray-700">Categoría:</span> {{ product.category.name }}</p>

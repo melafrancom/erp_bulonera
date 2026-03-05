@@ -1,0 +1,323 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Proveedores | ERP Bulonera Alvear{% endblock %}
+
+{% block breadcrumb_items %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <a href="{% url 'suppliers_web:supplier_list' %}" class="text-gray-600 hover:text-gray-900 transition">Proveedores</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <span class="text-gray-900 font-medium">{% if supplier %}Editar Proveedor{% else %}Nuevo Proveedor{% endif %}</span>
+{% endblock %}
+
+{% block mobile_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto pb-12">
+
+  <!-- Header -->
+  <div class="flex items-center gap-3 mb-6">
+    <a href="{% if supplier %}{% url 'suppliers_web:supplier_detail' supplier.pk %}{% else %}{% url 'suppliers_web:supplier_list' %}{% endif %}" 
+       class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition" title="Volver">
+      <i data-lucide="arrow-left" class="w-5 h-5"></i>
+    </a>
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
+      {% if supplier %}
+        <p class="text-sm text-gray-500">Editando datos de {{ supplier.business_name }}</p>
+      {% else %}
+        <p class="text-sm text-gray-500">Completá los datos para dar de alta un nuevo proveedor</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <form method="POST" action="" id="supplierForm" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- Errores generales del formulario -->
+    {% if form.non_field_errors %}
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <i data-lucide="alert-circle" class="h-5 w-5 text-red-500"></i>
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-red-800">Se encontraron errores:</h3>
+          <ul class="mt-1 text-sm text-red-700 list-disc list-inside">
+            {% for error in form.non_field_errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- 1️⃣ IDENTIFICACIÓN Y DATOS FISCALES -->
+    <section class="bg-white rounded-xl shadow-sm border border-gray-200 lg:p-6 p-4">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <i data-lucide="building" class="w-5 h-5 text-blue-600"></i>
+        Identificación y Datos Fiscales
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <div class="md:col-span-2">
+          <label for="{{ form.business_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+            Razón Social <span class="text-red-500">*</span>
+          </label>
+          {{ form.business_name }}
+          {% if form.business_name.errors %}
+            <p class="mt-1 text-xs text-red-600">{{ form.business_name.errors.0 }}</p>
+          {% elif form.business_name.help_text %}
+            <p class="mt-1 text-xs text-gray-500">{{ form.business_name.help_text }}</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label for="{{ form.trade_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+            Nombre Comercial
+          </label>
+          {{ form.trade_name }}
+          {% if form.trade_name.errors %}
+            <p class="mt-1 text-xs text-red-600">{{ form.trade_name.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <div>
+           <!-- Espacio vacío en desktop para alinear o podés poner otro campo -->
+        </div>
+
+        <div>
+          <label for="{{ form.cuit.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+            CUIT <span class="text-red-500">*</span>
+          </label>
+          {{ form.cuit }}
+          <p id="cuitError" class="mt-1 text-xs text-red-600 hidden">Formato inválido. Debe ser XX-XXXXXXXX-X</p>
+          {% if form.cuit.errors %}
+            <p class="mt-1 text-xs text-red-600">{{ form.cuit.errors.0 }}</p>
+          {% elif form.cuit.help_text %}
+            <p class="mt-1 text-xs text-gray-500">{{ form.cuit.help_text }}</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label for="{{ form.tax_condition.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+            Condición IVA <span class="text-red-500">*</span>
+          </label>
+          {{ form.tax_condition }}
+          {% if form.tax_condition.errors %}
+            <p class="mt-1 text-xs text-red-600">{{ form.tax_condition.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Tags -->
+        <div class="md:col-span-2 mt-2 pt-4 border-t border-gray-100">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Etiquetas de Clasificación</label>
+          <div class="flex flex-wrap gap-3">
+            {% for checkbox in form.tags %}
+              <label class="inline-flex items-center cursor-pointer group">
+                 {{ checkbox.tag }}
+                 <span class="ml-2 text-sm text-gray-700 group-hover:text-blue-600">{{ checkbox.choice_label }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 2️⃣ CONTACTO Y DIRECCIÓN -->
+    <section class="bg-white rounded-xl shadow-sm border border-gray-200 lg:p-6 p-4">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <i data-lucide="map-pin" class="w-5 h-5 text-red-500"></i>
+        Contacto y Dirección
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <div class="md:col-span-2">
+          <h3 class="text-sm font-medium text-gray-900 mb-2 pb-1 border-b border-gray-100">Datos de Contacto</h3>
+        </div>
+
+        <div>
+          <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Email Principal</label>
+          {{ form.email }}
+          {% if form.email.errors %}<p class="mt-1 text-xs text-red-600">{{ form.email.errors.0 }}</p>{% endif %}
+        </div>
+        
+        <div>
+          <label for="{{ form.website.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Sitio Web</label>
+          {{ form.website }}
+          {% if form.website.errors %}<p class="mt-1 text-xs text-red-600">{{ form.website.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div>
+          <label for="{{ form.phone.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Teléfono Fijo</label>
+          {{ form.phone }}
+          {% if form.phone.errors %}<p class="mt-1 text-xs text-red-600">{{ form.phone.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div>
+          <label for="{{ form.mobile.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Celular</label>
+          {{ form.mobile }}
+          {% if form.mobile.errors %}<p class="mt-1 text-xs text-red-600">{{ form.mobile.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div class="md:col-span-2 mt-4">
+          <h3 class="text-sm font-medium text-gray-900 mb-2 pb-1 border-b border-gray-100">Ubicación física</h3>
+        </div>
+
+        <div class="md:col-span-2">
+          <label for="{{ form.address.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+          {{ form.address }}
+          {% if form.address.errors %}<p class="mt-1 text-xs text-red-600">{{ form.address.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 md:col-span-2">
+          <div>
+            <label for="{{ form.city.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
+            {{ form.city }}
+            {% if form.city.errors %}<p class="mt-1 text-xs text-red-600">{{ form.city.errors.0 }}</p>{% endif %}
+          </div>
+          <div>
+            <label for="{{ form.state.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Provincia</label>
+            {{ form.state }}
+            {% if form.state.errors %}<p class="mt-1 text-xs text-red-600">{{ form.state.errors.0 }}</p>{% endif %}
+          </div>
+          <div>
+            <label for="{{ form.zip_code.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Código Postal</label>
+            {{ form.zip_code }}
+            {% if form.zip_code.errors %}<p class="mt-1 text-xs text-red-600">{{ form.zip_code.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 3️⃣ CONTACTO COMERCIAL Y BANCOS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Vendedor / Representante -->
+      <section class="bg-white rounded-xl shadow-sm border border-gray-200 lg:p-6 p-4">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <i data-lucide="briefcase" class="w-5 h-5 text-orange-600"></i>
+          Contacto Comercial
+        </h2>
+        <div class="space-y-4">
+          <div>
+            <label for="{{ form.contact_person.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Nombre (Vendedor/Rep.)</label>
+            {{ form.contact_person }}
+            {% if form.contact_person.errors %}<p class="mt-1 text-xs text-red-600">{{ form.contact_person.errors.0 }}</p>{% endif %}
+          </div>
+          <div>
+            <label for="{{ form.contact_email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Email del contacto</label>
+            {{ form.contact_email }}
+            {% if form.contact_email.errors %}<p class="mt-1 text-xs text-red-600">{{ form.contact_email.errors.0 }}</p>{% endif %}
+          </div>
+          <div>
+            <label for="{{ form.contact_phone.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Teléfono del contacto</label>
+            {{ form.contact_phone }}
+            {% if form.contact_phone.errors %}<p class="mt-1 text-xs text-red-600">{{ form.contact_phone.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+      </section>
+
+      <!-- Datos Bancarios -->
+      <section class="bg-white rounded-xl shadow-sm border border-gray-200 lg:p-6 p-4">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <i data-lucide="landmark" class="w-5 h-5 text-green-600"></i>
+          Datos Bancarios
+        </h2>
+        <div class="space-y-4">
+          <div>
+            <label for="{{ form.bank_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Banco</label>
+            {{ form.bank_name }}
+            {% if form.bank_name.errors %}<p class="mt-1 text-xs text-red-600">{{ form.bank_name.errors.0 }}</p>{% endif %}
+          </div>
+          <div>
+            <label for="{{ form.cbu.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">CBU (22 dígitos)</label>
+            {{ form.cbu }}
+            {% if form.cbu.errors %}<p class="mt-1 text-xs text-red-600">{{ form.cbu.errors.0 }}</p>{% endif %}
+          </div>
+          <div>
+            <label for="{{ form.bank_alias.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Alias Bancario</label>
+            {{ form.bank_alias }}
+            {% if form.bank_alias.errors %}<p class="mt-1 text-xs text-red-600">{{ form.bank_alias.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 4️⃣ CONDICIONES COMERCIALES Y EXTRAS -->
+    <section class="bg-white rounded-xl shadow-sm border border-gray-200 lg:p-6 p-4">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <i data-lucide="handshake" class="w-5 h-5 text-purple-600"></i>
+        Condiciones Comerciales
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <div>
+          <label for="{{ form.payment_term.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Plazo de pago (días)</label>
+          {{ form.payment_term }}
+          {% if form.payment_term.help_text %}<p class="mt-1 text-xs text-gray-500">{{ form.payment_term.help_text }}</p>{% endif %}
+          {% if form.payment_term.errors %}<p class="mt-1 text-xs text-red-600">{{ form.payment_term.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div>
+          <label for="{{ form.payment_day_of_month.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Día de pago mensual</label>
+          {{ form.payment_day_of_month }}
+          {% if form.payment_day_of_month.help_text %}<p class="mt-1 text-xs text-gray-500">{{ form.payment_day_of_month.help_text }}</p>{% endif %}
+          {% if form.payment_day_of_month.errors %}<p class="mt-1 text-xs text-red-600">{{ form.payment_day_of_month.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div>
+          <label for="{{ form.early_payment_discount.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Descuento pronto pago (%)</label>
+          {{ form.early_payment_discount }}
+          {% if form.early_payment_discount.errors %}<p class="mt-1 text-xs text-red-600">{{ form.early_payment_discount.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div>
+          <label for="{{ form.delivery_days.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Plazo entrega (días)</label>
+          {{ form.delivery_days }}
+          {% if form.delivery_days.errors %}<p class="mt-1 text-xs text-red-600">{{ form.delivery_days.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div class="md:col-span-2 mt-2 pt-4 border-t border-gray-100">
+          <label for="{{ form.last_price_list_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Fecha de última lista de precios</label>
+          {{ form.last_price_list_date }}
+          {% if form.last_price_list_date.errors %}<p class="mt-1 text-xs text-red-600">{{ form.last_price_list_date.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div class="md:col-span-2">
+          <label for="{{ form.notes.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+          {{ form.notes }}
+          {% if form.notes.errors %}<p class="mt-1 text-xs text-red-600">{{ form.notes.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div class="md:col-span-2 mt-2">
+          <label class="inline-flex items-center cursor-pointer">
+            {{ form.is_active }}
+            <span class="ml-2 text-sm font-medium text-gray-800">Proveedor activo</span>
+          </label>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ESTADO FLOTANTE INFERIOR -->
+    <div class="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20 flex justify-end gap-3 rounded-t-xl md:rounded-lg">
+      <a href="{% if supplier %}{% url 'suppliers_web:supplier_detail' supplier.pk %}{% else %}{% url 'suppliers_web:supplier_list' %}{% endif %}" 
+         class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+        Cancelar
+      </a>
+      <button type="submit" id="submitBtn" class="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition flex items-center shadow-sm">
+        <i data-lucide="save" class="w-4 h-4 mr-2"></i>
+        Guardar Proveedor
+      </button>
+    </div>
+
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/suppliers/supplier-form.js' %}"></script>
+{% endblock %}

@@ -412,8 +412,9 @@
             </form>
 
           {% elif sale.status == 'confirmed' %}
-            <form method="post" action="#">
+            <form method="post" action="{% url 'sales_web:sale_move_status' sale.id %}">
               {% csrf_token %}
+              <input type="hidden" name="new_status" value="in_preparation">
               <button type="submit"
                       onclick="return confirm('¿Pasar la venta a &quot;En Preparación&quot;?')"
                       class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl hover:from-orange-600 hover:to-amber-600 transition font-semibold shadow-sm text-sm">
@@ -439,8 +440,9 @@
             </form>
 
           {% elif sale.status == 'in_preparation' %}
-            <form method="post" action="#">
+            <form method="post" action="{% url 'sales_web:sale_move_status' sale.id %}">
               {% csrf_token %}
+              <input type="hidden" name="new_status" value="ready">
               <button type="submit"
                       onclick="return confirm('¿Marcar como lista para entregar?')"
                       class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-violet-600 text-white rounded-xl hover:from-purple-700 hover:to-violet-700 transition font-semibold shadow-sm text-sm">
@@ -459,8 +461,9 @@
             </form>
 
           {% elif sale.status == 'ready' %}
-            <form method="post" action="#">
+            <form method="post" action="{% url 'sales_web:sale_move_status' sale.id %}">
               {% csrf_token %}
+              <input type="hidden" name="new_status" value="delivered">
               <button type="submit"
                       onclick="return confirm('¿Confirmar entrega al cliente?')"
                       class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-xl hover:from-green-700 hover:to-teal-700 transition font-semibold shadow-sm text-sm">

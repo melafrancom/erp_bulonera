@@ -123,7 +123,15 @@
 
       <div class="flex justify-between py-2 border-b border-gray-50">
         <span class="text-gray-500">Proveedor</span>
-        <span class="text-gray-900 font-medium">{{ product.supplier_name|default:"—" }}</span>
+        <span class="text-gray-900 font-medium">
+          {% if product.supplier %}
+            <a href="{% url 'suppliers_web:supplier_detail' product.supplier.pk %}" class="text-blue-600 hover:underline">
+              {{ product.supplier.display_name }}
+            </a>
+          {% else %}
+            —
+          {% endif %}
+        </span>
       </div>
 
       <div class="flex justify-between py-2 border-b border-gray-50">

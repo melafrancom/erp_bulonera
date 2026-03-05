@@ -107,7 +107,7 @@
           <span>Listas de Precios</span>
         </a>
 
-        <a href="#" class="nav-item">
+        <a href="{% url 'suppliers_web:supplier_list' %}" class="nav-item {% if 'suppliers' in request.path %}active{% endif %}">
           <i data-lucide="truck" class="w-5 h-5"></i>
           <span>Proveedores</span>
         </a>

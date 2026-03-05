@@ -626,7 +626,7 @@ def sale_move_status(request, pk):
 
     return redirect('sales_web:sale_detail', pk=pk)
 
-    return redirect('sales_web:sale_detail', pk=pk)
+
 
 
 @login_required
@@ -685,6 +685,107 @@ def sale_convert_from_quote(request, quote_pk):
         messages.error(request, 'Ocurrió un error inesperado. Intentá de nuevo.')
 
     return redirect('sales_web:quote_detail', pk=quote_pk)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ACCIONES DE PRESUPUESTO — POST only
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+@require_POST
+def quote_send(request, pk):
+    """
+    Marca un presupuesto como enviado al cliente.
+
+    POST /ventas/presupuestos/<pk>/enviar/
+    """
+    quote = get_object_or_404(Quote, pk=pk)
+
+    if not _owns_or_privileged(request.user, quote):
+        messages.error(request, 'No tenés acceso a este presupuesto.')
+        return redirect('sales_web:quote_list')
+
+    if quote.status not in ('draft', 'sent'):
+        messages.warning(
+            request,
+            f'El presupuesto {quote.number} no puede enviarse '
+            f'(estado: {quote.get_status_display()}).'
+        )
+        return redirect('sales_web:quote_detail', pk=pk)
+
+    quote.status = 'sent'
+    quote.save(update_fields=['status'])
+    messages.success(request, f'✅ Presupuesto {quote.number} marcado como enviado.')
+    logger.info('Quote %s sent by user %s', quote.number, request.user.username)
+    return redirect('sales_web:quote_detail', pk=pk)
+
+
+@login_required
+@require_POST
+def quote_accept(request, pk):
+    """
+    Marca un presupuesto como aceptado por el cliente.
+
+    POST /ventas/presupuestos/<pk>/aceptar/
+    """
+    quote = get_object_or_404(Quote, pk=pk)
+
+    if not _owns_or_privileged(request.user, quote):
+        messages.error(request, 'No tenés acceso a este presupuesto.')
+        return redirect('sales_web:quote_list')
+
+    if quote.status != 'sent':
+        messages.warning(
+            request,
+            f'Solo los presupuestos enviados pueden aceptarse '
+            f'(estado actual: {quote.get_status_display()}).'
+        )
+        return redirect('sales_web:quote_detail', pk=pk)
+
+    quote.status = 'accepted'
+    quote.save(update_fields=['status'])
+    messages.success(request, f'✅ Presupuesto {quote.number} marcado como aceptado.')
+    logger.info('Quote %s accepted by user %s', quote.number, request.user.username)
+    return redirect('sales_web:quote_detail', pk=pk)
+
+
+@login_required
+@require_POST
+def quote_reject(request, pk):
+    """
+    Marca un presupuesto como rechazado por el cliente.
+
+    POST /ventas/presupuestos/<pk>/rechazar/
+
+    Body (form): reason (str, opcional)
+    """
+    quote = get_object_or_404(Quote, pk=pk)
+
+    if not _owns_or_privileged(request.user, quote):
+        messages.error(request, 'No tenés acceso a este presupuesto.')
+        return redirect('sales_web:quote_list')
+
+    if quote.status != 'sent':
+        messages.warning(
+            request,
+            f'Solo los presupuestos enviados pueden rechazarse '
+            f'(estado actual: {quote.get_status_display()}).'
+        )
+        return redirect('sales_web:quote_detail', pk=pk)
+
+    reason = request.POST.get('reason', '').strip()
+    quote.status = 'rejected'
+    if reason:
+        from django.utils import timezone as tz
+        quote.internal_notes = (quote.internal_notes or '') + \
+            f"\n\n[{tz.now().strftime('%Y-%m-%d %H:%M')}] Rechazado: {reason}"
+        quote.save(update_fields=['status', 'internal_notes'])
+    else:
+        quote.save(update_fields=['status'])
+
+    messages.success(request, f'Presupuesto {quote.number} marcado como rechazado.')
+    logger.info('Quote %s rejected by user %s', quote.number, request.user.username)
+    return redirect('sales_web:quote_detail', pk=pk)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -101,7 +101,7 @@ class Supplier(BaseModel):
             raise ValidationError('El CUIT no es válido (dígito verificador incorrecto).')
 
     cuit = models.CharField(
-        "CUIT", max_length=13, unique=True,
+        "CUIT", max_length=13, null=True, blank=True,
         validators=[
             RegexValidator(
                 regex=r'^\d{2}-\d{8}-\d{1}$',
@@ -109,10 +109,7 @@ class Supplier(BaseModel):
             ),
             validate_cuit_checksum,
         ],
-        help_text="Formato: XX-XXXXXXXX-X",
-        error_messages={
-            'unique': 'Ya existe un proveedor con este CUIT.',
-        }
+        help_text="Formato: XX-XXXXXXXX-X (Opcional)",
     )
     tax_condition = models.CharField(
         "Condición IVA", max_length=10,
@@ -237,6 +234,13 @@ class Supplier(BaseModel):
             models.Index(fields=['cuit']),
             models.Index(fields=['business_name']),
             models.Index(fields=['is_active']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['cuit'],
+                condition=~models.Q(cuit=None) & ~models.Q(cuit=''),
+                name='unique_supplier_cuit_if_not_null'
+            )
         ]
 
     def __str__(self):
