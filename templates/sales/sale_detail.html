@@ -84,19 +84,19 @@
           <!-- Badge: Estado Fiscal -->
           {% if sale.fiscal_status == 'authorized' %}
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-teal-100 text-teal-800 border border-teal-200">
-              <i data-lucide="file-check" class="w-3 h-3"></i>{{ sale.get_fiscal_status_display }}
+              <i data-lucide="file-check" class="w-3 h-3"></i>Fiscal: {{ sale.get_fiscal_status_display }}
             </span>
           {% elif sale.fiscal_status == 'pending' %}
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-              <i data-lucide="file-clock" class="w-3 h-3"></i>{{ sale.get_fiscal_status_display }}
+              <i data-lucide="file-clock" class="w-3 h-3"></i>Fiscal: {{ sale.get_fiscal_status_display }}
             </span>
           {% elif sale.fiscal_status == 'rejected' or sale.fiscal_status == 'cancelled' %}
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200">
-              <i data-lucide="file-x" class="w-3 h-3"></i>{{ sale.get_fiscal_status_display }}
+              <i data-lucide="file-x" class="w-3 h-3"></i>Fiscal: {{ sale.get_fiscal_status_display }}
             </span>
           {% elif sale.fiscal_status == 'not_required' %}
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
-              <i data-lucide="file-minus" class="w-3 h-3"></i>{{ sale.get_fiscal_status_display }}
+              <i data-lucide="file-minus" class="w-3 h-3"></i>Fiscal: {{ sale.get_fiscal_status_display }}
             </span>
           {% endif %}
 
@@ -423,11 +423,15 @@
               </button>
             </form>
             {% if sale.can_be_invoiced %}
-            <a href="#"
-               class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-xl hover:bg-teal-100 transition font-medium text-sm">
-              <i data-lucide="file-text" class="w-4 h-4"></i>
-              Generar Factura
-            </a>
+            <form method="post" action="{% url 'sales_web:sale_invoice' sale.id %}">
+              {% csrf_token %}
+              <button type="submit"
+                      onclick="return confirm('¿Generar factura electrónica para esta venta?')"
+                      class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-xl hover:bg-teal-100 transition font-medium text-sm">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                Generar Factura
+              </button>
+            </form>
             {% endif %}
             <form method="post" action="{% url 'sales_web:sale_cancel' sale.id %}">
               {% csrf_token %}

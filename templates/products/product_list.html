@@ -301,11 +301,22 @@
             <i data-lucide="chevron-left" class="w-4 h-4"></i>
           </button>
         {% endif %}
-
-        <span class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm">
-          {{ products.number }}
-        </span>
-
+        <!-- Formulario para ir a página específica -->
+        <form method="GET" action="" class="flex items-center">
+          <!-- Preservar los filtros actuales -->
+          {% if search %}<input type="hidden" name="search" value="{{ search }}">{% endif %}
+          {% if category_filter %}<input type="hidden" name="category" value="{{ category_filter }}">{% endif %}
+          {% if subcategory_filter %}<input type="hidden" name="subcategory" value="{{ subcategory_filter }}">{% endif %}
+          {% if brand_filter %}<input type="hidden" name="brand" value="{{ brand_filter }}">{% endif %}
+          {% if supplier_filter %}<input type="hidden" name="supplier" value="{{ supplier_filter }}">{% endif %}
+          
+          <input type="number" name="page" min="1" max="{{ products.paginator.num_pages }}" value="{{ products.number }}" 
+                 class="w-16 px-2 py-2 text-center border border-gray-300 rounded-l-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium"
+                 aria-label="Número de página">
+          <span class="px-3 py-2 border-y border-r border-gray-300 bg-gray-50 text-gray-500 text-sm rounded-r-lg">
+            de {{ products.paginator.num_pages }}
+          </span>
+        </form>
         {% if products.has_next %}
           <a href="?page={{ products.next_page_number }}&search={{ search }}&category={{ category_filter }}&subcategory={{ subcategory_filter }}&brand={{ brand_filter }}&supplier={{ supplier_filter }}"
              class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-sm">

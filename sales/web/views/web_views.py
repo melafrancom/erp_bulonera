@@ -248,10 +248,12 @@ def quote_create(request):
         return redirect('sales_web:quote_list')
 
     context = {
-        'products':   _get_products_queryset(),
-        'pricelists': _get_pricelists_queryset(),
-        'today':      timezone.now().date(),
-        'mode':       'create',
+        'products':      _get_products_queryset(),
+        'pricelists':    _get_pricelists_queryset(),
+        'categories':    _get_categories_queryset(),
+        'subcategories': _get_subcategories_queryset(),
+        'today':         timezone.now().date(),
+        'mode':          'create',
     }
     return render(request, 'sales/quote_form.html', context)
 
@@ -290,9 +292,11 @@ def quote_update(request, pk):
         'quote':      quote,
         'items':      quote.items.select_related('product').order_by('line_order'),
         'customers':  customers,
-        'products':   products,
-        'pricelists': _get_pricelists_queryset(),
-        'mode':       'update',
+        'products':      products,
+        'pricelists':    _get_pricelists_queryset(),
+        'categories':    _get_categories_queryset(),
+        'subcategories': _get_subcategories_queryset(),
+        'mode':          'update',
     }
 
     return render(request, 'sales/quote_form.html', context)
@@ -452,10 +456,12 @@ def sale_create(request):
         return redirect('sales_web:quote_list')
 
     context = {
-        'products':   _get_products_queryset(),
-        'pricelists': _get_pricelists_queryset(),
-        'today':      timezone.now().date(),
-        'mode':       'create',
+        'products':      _get_products_queryset(),
+        'pricelists':    _get_pricelists_queryset(),
+        'categories':    _get_categories_queryset(),
+        'subcategories': _get_subcategories_queryset(),
+        'today':         timezone.now().date(),
+        'mode':          'create',
     }
     return render(request, 'sales/sale_form.html', context)
 
@@ -831,3 +837,56 @@ def _get_pricelists_queryset():
     except Exception:
         logger.warning('PriceList not available, returning empty list')
         return []
+
+def _get_categories_queryset():
+    """Retorna las categorías activas."""
+    try:
+        from products.models import Category
+        return Category.objects.filter(is_active=True).order_by('name')
+    except Exception:
+        return []
+
+def _get_subcategories_queryset():
+    """Retorna las subcategorías activas."""
+    try:
+        from products.models import Subcategory
+        return Subcategory.objects.filter(is_active=True).order_by('name')
+    except Exception:
+        return []
+
+@login_required
+@require_POST
+def sale_invoice(request, pk):
+    """
+    Emite factura para una venta.
+    
+    POST /sales/sales/<pk>/facturar/
+    """
+    sale = get_object_or_404(Sale, pk=pk)
+    
+    if not _is_privileged(request.user):
+        messages.error(request, 'No tenés permisos para facturar ventas.')
+        return redirect('sales_web:sale_detail', pk=pk)
+
+    if not sale.can_be_invoiced():
+        messages.warning(
+            request,
+            f'La venta {sale.number} no se puede facturar en este momento. '
+            f'Asegurate de que esté confirmada y tenga CUIT si es a responsable inscripto.'
+        )
+        return redirect('sales_web:sale_detail', pk=pk)
+
+    try:
+        from bills.services import facturar_venta
+        # facturar_venta maneja la creación de Invoice y Comprobante AFIP
+        result = facturar_venta(sale=sale, user=request.user, async_emission=True)
+        messages.success(request, f"✅ Venta {sale.number} enviada a facturar. ID: {result.get('invoice_id')}")
+        logger.info('Sale %s invoiced by user %s', sale.number, request.user.username)
+    except ValueError as exc:
+        messages.error(request, f'❌ Error al facturar: {exc}')
+        logger.warning('Failed to invoice sale %s by user %s: %s', sale.number, request.user.username, exc)
+    except Exception as exc:
+        logger.exception('Unexpected error invoicing sale %s', pk)
+        messages.error(request, 'Ocurrió un error inesperado al intentar facturar.')
+
+    return redirect('sales_web:sale_detail', pk=pk)

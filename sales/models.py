@@ -509,15 +509,11 @@ class Sale(BaseModel):
         return self.status == 'draft'
     
     def can_be_invoiced(self):
-        """Puede facturarse si está confirmada/entregada, sin factura, y tiene CUIT."""
-        cuit = (
-            (self.customer and getattr(self.customer, 'cuit_cuil', None))
-            or self.customer_cuit
-        )
+        """Puede facturarse si está confirmada/entregada y no tiene factura final."""
         return (
             self.status in ['confirmed', 'delivered']
             and self.fiscal_status in ['not_required', 'pending']
-            and bool(cuit)  # ← CUIT requerido solo en este punto
+            # CUIT Requirement is handled dynamically by AFIP services based on amounts
         )
 
 class SaleItem(BaseModel):

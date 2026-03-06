@@ -58,9 +58,14 @@
           <span>Presupuestos</span>
         </a>
 
-        <a href="{% url 'sales_web:sale_list' %}" class="nav-item">
+        <a href="{% url 'sales_web:sale_list' %}" class="nav-item {% if 'ventas/list' in request.path %}active{% endif %}">
           <i data-lucide="receipt" class="w-5 h-5"></i>
           <span>Lista de Ventas</span>
+        </a>
+
+        <a href="{% url 'bills_web:invoice_list' %}" class="nav-item {% if 'facturas' in request.path %}active{% endif %}">
+          <i data-lucide="file-text" class="w-5 h-5"></i>
+          <span>Facturas Emitidas</span>
         </a>
         {% endif %} {% if user.can_manage_customers %}
         <a href="{% url 'customers:customer_list' %}" class="nav-item">

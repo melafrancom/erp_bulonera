@@ -176,7 +176,31 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('La fecha de vencimiento debe ser futura.')
         return value
 
+    def _handle_new_customer(self, validated_data):
+        customer = validated_data.get('customer')
+        customer_name = validated_data.get('customer_name', '').strip()
+        if not customer and customer_name and customer_name.lower() != 'consumidor final':
+            from customers.models import Customer
+            cuit = validated_data.get('customer_cuit', '').strip()
+            if cuit:
+                existing = Customer.objects.filter(cuit_cuil=cuit).first()
+                if existing:
+                    validated_data['customer'] = existing
+                    return
+            new_customer = Customer.objects.create(
+                business_name=customer_name,
+                cuit_cuil=cuit,
+                phone=validated_data.get('customer_phone', '').strip(),
+                email=validated_data.get('customer_email', '').strip()
+            )
+            validated_data['customer'] = new_customer
+            validated_data['customer_name'] = ''
+            validated_data['customer_cuit'] = ''
+            validated_data['customer_phone'] = ''
+            validated_data['customer_email'] = ''
+
     def create(self, validated_data):
+        self._handle_new_customer(validated_data)
         items_data = validated_data.pop('items', [])
         # Asignar usuario creador desde el request si está disponible
         user = self.context['request'].user if 'request' in self.context else None
@@ -194,6 +218,7 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
             return quote
 
     def update(self, instance, validated_data):
+        self._handle_new_customer(validated_data)
         items_data = validated_data.pop('items', None)
         
         # Actualizar campos básicos
@@ -440,7 +465,31 @@ class SaleCreateSerializer(serializers.ModelSerializer):
             )
         return value
 
+    def _handle_new_customer(self, validated_data):
+        customer = validated_data.get('customer')
+        customer_name = validated_data.get('customer_name', '').strip()
+        if not customer and customer_name and customer_name.lower() != 'consumidor final':
+            from customers.models import Customer
+            cuit = validated_data.get('customer_cuit', '').strip()
+            if cuit:
+                existing = Customer.objects.filter(cuit_cuil=cuit).first()
+                if existing:
+                    validated_data['customer'] = existing
+                    return
+            new_customer = Customer.objects.create(
+                business_name=customer_name,
+                cuit_cuil=cuit,
+                phone=validated_data.get('customer_phone', '').strip(),
+                email=validated_data.get('customer_email', '').strip()
+            )
+            validated_data['customer'] = new_customer
+            validated_data['customer_name'] = ''
+            validated_data['customer_cuit'] = ''
+            validated_data['customer_phone'] = ''
+            validated_data['customer_email'] = ''
+
     def create(self, validated_data):
+        self._handle_new_customer(validated_data)
         items_data = validated_data.pop('items', [])
         user = self.context['request'].user if 'request' in self.context else None
         if user:
@@ -457,6 +506,7 @@ class SaleCreateSerializer(serializers.ModelSerializer):
             return sale
 
     def update(self, instance, validated_data):
+        self._handle_new_customer(validated_data)
         items_data = validated_data.pop('items', None)
         
         for attr, value in validated_data.items():

@@ -12,8 +12,8 @@ class ProductFilter(FilterSet):
     sku = CharFilter(field_name='sku', lookup_expr='icontains', label='SKU')
     name = CharFilter(field_name='name', lookup_expr='icontains', label='Nombre')
     brand = CharFilter(field_name='brand', lookup_expr='icontains', label='Marca')
-    supplier = NumberFilter(
-        field_name='supplier', lookup_expr='exact', label='Proveedor (ID)'
+    supplier = CharFilter(
+        field_name='supplier__business_name', lookup_expr='icontains', label='Proveedor (Nombre)'
     )
     category = ModelChoiceFilter(
         queryset=Category.objects.all(),
