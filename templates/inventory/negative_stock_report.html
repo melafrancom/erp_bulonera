@@ -1,0 +1,69 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Reporte Stock Negativo - ERP Bulonera Alvear{% endblock %}
+
+{% block breadcrumb_items %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <a href="{% url 'inventory_web:dashboard' %}" class="text-gray-600 hover:text-gray-900">Inventario</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <span class="text-gray-900 font-medium">Stock Negativo</span>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+  
+  <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900 mb-2">Reporte de Stock Negativo</h1>
+      <p class="text-gray-600">Productos con descuadre urgente originado en ventas despachadas sin recepción de entrada en sistema.</p>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="window.print()" class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium border border-gray-300">
+        <i data-lucide="printer" class="w-4 h-4 mr-2"></i>
+        Imprimir
+      </button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto / Categoría</th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Faltante</th>
+            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acción</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          {% for product in products %}
+          <tr class="hover:bg-red-50 transition">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.code }}</td>
+            <td class="px-6 py-4">
+              <div class="text-sm font-medium text-gray-900">{{ product.name }}</div>
+              <div class="text-xs text-gray-500">{{ product.category.name|default:"-" }}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-red-600">
+              {{ product.stock_quantity }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+              <a href="{% url 'inventory_web:adjustment_form' %}?product_id={{ product.id }}" class="text-blue-600 hover:underline">Resolver Mermas/Entrada</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="px-6 py-12 text-center text-gray-500">
+              <i data-lucide="check-circle" class="w-12 h-12 mx-auto text-green-500 mb-3"></i>
+              Excelente. No hay stock negativo en el sistema.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

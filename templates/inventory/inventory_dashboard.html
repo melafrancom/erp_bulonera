@@ -1,0 +1,175 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Inventario - ERP Bulonera Alvear{% endblock %}
+
+{% block breadcrumb_items %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <span class="text-gray-900 font-medium">Inventario</span>
+{% endblock %}
+
+{% block mobile_title %}Inventario{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+  
+  <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Control de Inventario</h1>
+      <p class="text-gray-600">Gestión de stock, movimientos y alertas</p>
+    </div>
+    <div class="flex gap-2">
+      <a href="{% url 'inventory_web:adjustment_form' %}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+        <i data-lucide="sliders" class="w-4 h-4 mr-2"></i>
+        Ajuste Manual
+      </a>
+      <a href="{% url 'inventory_web:count_form' %}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
+        <i data-lucide="clipboard-list" class="w-4 h-4 mr-2"></i>
+        Nuevo Conteo
+      </a>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+    
+    <!-- Link to Stock Movements -->
+    <a href="{% url 'inventory_web:movement_list' %}" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition group">
+      <div class="flex items-center justify-between mb-4">
+        <div class="p-3 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition">
+          <i data-lucide="arrow-left-right" class="w-6 h-6 text-indigo-600"></i>
+        </div>
+      </div>
+      <h3 class="text-lg font-semibold text-gray-900">Movimientos</h3>
+      <p class="text-sm text-gray-500 mt-1">Historial de entradas, salidas y ajustes</p>
+    </a>
+
+    <!-- Link to Counts -->
+    <a href="{% url 'inventory_web:count_list' %}" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition group">
+      <div class="flex items-center justify-between mb-4">
+        <div class="p-3 bg-teal-100 rounded-lg group-hover:bg-teal-200 transition">
+          <i data-lucide="check-square" class="w-6 h-6 text-teal-600"></i>
+        </div>
+      </div>
+      <h3 class="text-lg font-semibold text-gray-900">Conteos Físicos</h3>
+      <p class="text-sm text-gray-500 mt-1">Auditoría y conciliación de stock</p>
+    </a>
+
+    <!-- Link to Low Stock -->
+    <a href="{% url 'inventory_web:low_stock' %}" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition group">
+      <div class="flex items-center justify-between mb-4">
+        <div class="p-3 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition">
+          <i data-lucide="alert-triangle" class="w-6 h-6 text-orange-600"></i>
+        </div>
+      </div>
+      <h3 class="text-lg font-semibold text-gray-900">Stock Bajo</h3>
+      <p class="text-sm text-gray-500 mt-1">Productos por debajo del mínimo</p>
+    </a>
+
+    <!-- Link to Negative Stock -->
+    <a href="{% url 'inventory_web:negative_stock' %}" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition group">
+      <div class="flex items-center justify-between mb-4">
+        <div class="p-3 bg-red-100 rounded-lg group-hover:bg-red-200 transition">
+          <i data-lucide="alert-circle" class="w-6 h-6 text-red-600"></i>
+        </div>
+      </div>
+      <h3 class="text-lg font-semibold text-gray-900">Stock Negativo</h3>
+      <p class="text-sm text-gray-500 mt-1">Productos con urgencia de revisión</p>
+    </a>
+
+  </div>
+
+  <!-- Últimos Movimientos (Alpine fetching API) -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" 
+       x-data="recentMovements()">
+    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+      <h2 class="text-lg font-semibold text-gray-900">Últimos Movimientos</h2>
+      <a href="{% url 'inventory_web:movement_list' %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Ver todos</a>
+    </div>
+    
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cant.</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <template x-for="mov in movements" :key="mov.id">
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="formatDate(mov.created_at)"></td>
+              <td class="px-6 py-4">
+                <div class="text-sm font-medium text-gray-900" x-text="mov.product_name"></div>
+                <div class="text-xs text-gray-500" x-text="mov.product_code"></div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                      :class="{
+                        'bg-green-100 text-green-800': mov.movement_type === 'ENTRY' || mov.movement_type === 'RETURN',
+                        'bg-red-100 text-red-800': mov.movement_type === 'EXIT' || mov.movement_type === 'LOSS',
+                        'bg-blue-100 text-blue-800': mov.movement_type === 'ADJUSTMENT',
+                        'bg-gray-100 text-gray-800': !['ENTRY','RETURN','EXIT','LOSS','ADJUSTMENT'].includes(mov.movement_type)
+                      }" x-text="mov.movement_type_display"></span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold"
+                  :class="{
+                    'text-green-600': mov.movement_type === 'ENTRY' || mov.movement_type === 'RETURN' || (mov.movement_type === 'ADJUSTMENT' && mov.new_stock > mov.previous_stock),
+                    'text-red-600': mov.movement_type === 'EXIT' || mov.movement_type === 'LOSS' || (mov.movement_type === 'ADJUSTMENT' && mov.new_stock < mov.previous_stock)
+                  }">
+                <span x-text="(mov.movement_type === 'ENTRY' || mov.movement_type === 'RETURN' || (mov.movement_type === 'ADJUSTMENT' && mov.new_stock > mov.previous_stock)) ? '+' + mov.quantity : '-' + mov.quantity"></span>
+              </td>
+            </tr>
+          </template>
+          <tr x-show="loading">
+            <td colspan="4" class="px-6 py-12 text-center text-gray-500">Cargando movimientos...</td>
+          </tr>
+          <tr x-show="!loading && movements.length === 0">
+            <td colspan="4" class="px-6 py-12 text-center text-gray-500">No hay movimientos recientes.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('alpine:init', () => {
+  Alpine.data('recentMovements', () => ({
+    movements: [],
+    loading: true,
+    
+    init() {
+      this.fetchMovements();
+    },
+    
+    async fetchMovements() {
+      try {
+        // Fetch movements from API limits to 5
+        const response = await fetch('/api/v1/inventory/movements/?ordering=-created_at&limit=5');
+        if (response.ok) {
+          const data = await response.json();
+          this.movements = data.results || data;
+        }
+      } catch (e) {
+        console.error("Error fetching recent movements:", e);
+      } finally {
+        this.loading = false;
+      }
+    },
+    
+    formatDate(isoString) {
+      if (!isoString) return '';
+      const date = new Date(isoString);
+      return date.toLocaleDateString('es-AR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+  }));
+});
+</script>
+{% endblock %}

@@ -40,7 +40,7 @@ urlpatterns = [
     path('customers/', include('customers.web.urls.urls', namespace='customers')),
     path('sales/', include('sales.web.urls.urls_web', namespace='sales_web')),
     path('products/', include('products.web.urls')),
-    path('inventory/', include('inventory.web.urls')),
+    path('inventory/', include('inventory.web.urls.urls_web', namespace='inventory_web')),
     path('payments/', include('payments.web.urls')),
     path('bills/', include('bills.web.urls')),
     path('suppliers/', include('suppliers.web.urls', namespace='suppliers_web')),

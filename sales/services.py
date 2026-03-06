@@ -144,12 +144,18 @@ def cancel_sale(sale, user, reason):
         raise ValueError(f'Venta {sale.number} no puede cancelarse. Estado: {sale.status}')
     
     with transaction.atomic():
+        was_ready = sale.status == 'ready'
         sale.status = 'cancelled'
         ts = timezone.now().strftime('%d/%m/%Y %H:%M')
         sale.internal_notes += f'\n\n[{ts}] Cancelada por {user.get_full_name() or user.username}: {reason}'
         sale.save(update_fields=['status', 'internal_notes'])
         
-        # Signal se encargará de liberar stock reservado
+        # 1. Devuelve stock si ya había sido descontado (cuando pasó a 'ready')
+        if was_ready:
+            from inventory.services import InventoryService
+            InventoryService().revert_stock_from_cancelled_sale(sale)
+        
+        # 2. Signal se encargará de liberar reservas previas a la deducción (si aplica)
     
     return sale
 
@@ -191,6 +197,11 @@ def move_sale_status(sale, user, new_status, delivery_notes=None):
                 note_entry += f': {delivery_notes}'
             
             sale.internal_notes = (f'{sale.internal_notes}\n\n{note_entry}').strip()
+
+        # Descomentar/deducir el stock real en inventario al pasar a 'ready' (preparado para despacho/lista)
+        if new_status == 'ready' and sale.status != 'ready':
+            from inventory.services import InventoryService
+            InventoryService().decrease_stock_from_sale(sale)
 
         sale.save(update_fields=['status', 'internal_notes'])
     

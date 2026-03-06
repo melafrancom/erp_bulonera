@@ -1,0 +1,89 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Nuevo Conteo - ERP Bulonera Alvear{% endblock %}
+
+{% block breadcrumb_items %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <a href="{% url 'inventory_web:dashboard' %}" class="text-gray-600 hover:text-gray-900">Inventario</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <span class="text-gray-900 font-medium">Nuevo Conteo</span>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto" x-data="countForm()">
+  
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Iniciar Nuevo Conteo Físico</h1>
+    <p class="text-gray-600 mt-1">Crea un registro para auditoría y corrección de stock.</p>
+  </div>
+
+  <form @submit.prevent="submit" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div x-show="error" x-cloak class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-md">
+      <p class="text-sm text-red-700" x-text="error"></p>
+    </div>
+
+    <div class="space-y-6" :class="{'opacity-50 pointer-events-none': loading}">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha Programada</label>
+        <input type="date" x-model="form.count_date" required
+               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Notas / Sector</label>
+        <textarea x-model="form.notes" rows="3"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ej: Auditoría semestral del pasillo 4..."></textarea>
+      </div>
+
+      <div class="pt-4 flex justify-end gap-3 border-t">
+        <a href="{% url 'inventory_web:count_list' %}" class="px-4 py-2 border text-gray-700 rounded-lg hover:bg-gray-50">Cancelar</a>
+        <button type="submit" class="inline-flex items-center px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition" :disabled="loading">
+          <i data-lucide="play" class="w-4 h-4 mr-2" x-show="!loading"></i>
+          <span x-show="loading" class="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+          Iniciar Conteo
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('alpine:init', () => {
+  Alpine.data('countForm', () => ({
+    form: { count_date: new Date().toISOString().split('T')[0], notes: '', status: 'in_progress' },
+    loading: false,
+    error: '',
+
+    async submit() {
+      this.loading = true;
+      this.error = '';
+      try {
+        const csrfToken = document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+        
+        const response = await fetch('/api/v1/inventory/counts/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+          body: JSON.stringify(this.form)
+        });
+        
+        if (!response.ok) throw new Error('Error al crear conteo');
+        
+        const data = await response.json();
+        // Redirigir al detalle para empezar a cargar productos
+        window.location.href = `/inventory/counts/${data.id}/`;
+        
+      } catch (e) {
+        this.error = 'Ocurrió un error al procesar la solicitud.';
+        console.error(e);
+      } finally {
+        this.loading = false;
+      }
+    }
+  }));
+});
+</script>
+{% endblock %}
