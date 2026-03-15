@@ -1,0 +1,87 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Log #{{ log.pk }} - AFIP{% endblock %}
+
+{% block breadcrumb_items %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <a href="{% url 'afip_web:dashboard' %}" class="text-gray-600 hover:text-gray-900">AFIP</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <a href="{% url 'afip_web:log_list' %}" class="text-gray-600 hover:text-gray-900">Logs</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <span class="text-gray-900 font-medium">#{{ log.pk }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+  <div class="mb-6 flex items-center justify-between">
+    <h1 class="text-2xl font-bold text-gray-900">Detalle de Log #{{ log.pk }}</h1>
+    <a href="{% url 'afip_web:log_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-gray-700 font-medium">
+      <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Volver
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Info General -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h3 class="text-base font-semibold text-gray-900 mb-4">Información General</h3>
+      <dl class="space-y-3">
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">Tipo</dt>
+          <dd class="text-sm font-medium {% if 'ERROR' in log.tipo %}text-red-600{% else %}text-gray-900{% endif %}">{{ log.get_tipo_display }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">Fecha/Hora</dt>
+          <dd class="text-sm text-gray-900">{{ log.timestamp|date:"d/m/Y H:i:s" }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">CUIT</dt>
+          <dd class="text-sm text-gray-900">{{ log.cuit }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">Servicio</dt>
+          <dd class="text-sm text-gray-900">{{ log.servicio }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">Response Code</dt>
+          <dd class="text-sm font-medium {% if log.response_code == 200 %}text-green-600{% else %}text-red-600{% endif %}">{{ log.response_code|default:"—" }}</dd>
+        </div>
+        {% if log.comprobante %}
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">Comprobante</dt>
+          <dd class="text-sm text-blue-600">{{ log.comprobante.numero_completo }}</dd>
+        </div>
+        {% endif %}
+      </dl>
+    </div>
+
+    <!-- Error -->
+    {% if log.error %}
+    <div class="bg-red-50 rounded-xl shadow-sm border border-red-200 p-6">
+      <h3 class="text-base font-semibold text-red-800 mb-3 flex items-center gap-2">
+        <i data-lucide="alert-triangle" class="w-5 h-5"></i> Error
+      </h3>
+      <pre class="text-sm text-red-700 whitespace-pre-wrap break-all bg-red-100 rounded-lg p-4">{{ log.error }}</pre>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Request / Response XML -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+    {% if log.request_xml %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h3 class="text-base font-semibold text-gray-900 mb-3">Request XML</h3>
+      <pre class="text-xs text-gray-700 whitespace-pre-wrap break-all bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto font-mono">{{ log.request_xml }}</pre>
+    </div>
+    {% endif %}
+
+    {% if log.response_xml %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h3 class="text-base font-semibold text-gray-900 mb-3">Response XML</h3>
+      <pre class="text-xs text-gray-700 whitespace-pre-wrap break-all bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto font-mono">{{ log.response_xml }}</pre>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

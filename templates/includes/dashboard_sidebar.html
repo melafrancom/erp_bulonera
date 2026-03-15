@@ -188,6 +188,11 @@
           <span>Usuarios</span>
         </a>
 
+        <a href="{% url 'afip_web:dashboard' %}" class="nav-item {% if 'afip' in request.path %}active{% endif %}">
+          <i data-lucide="shield-check" class="w-5 h-5"></i>
+          <span>AFIP / ARCA</span>
+        </a>
+
         <a href="#" class="nav-item">
           <i data-lucide="shield" class="w-5 h-5"></i>
           <span>Seguridad</span>

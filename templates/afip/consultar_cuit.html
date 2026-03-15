@@ -1,0 +1,129 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Consultar CUIT - AFIP{% endblock %}
+
+{% block breadcrumb_items %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <a href="{% url 'afip_web:dashboard' %}" class="text-gray-600 hover:text-gray-900">AFIP</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+  <span class="text-gray-900 font-medium">Consultar CUIT</span>
+{% endblock %}
+
+{% block mobile_title %}Consultar CUIT{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+
+  <!-- Header -->
+  <div class="mb-6">
+    <div class="flex items-center gap-3 mb-2">
+      <div class="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-sm">
+        <i data-lucide="user-search" class="w-5 h-5 text-white"></i>
+      </div>
+      <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Consultar CUIT en Padrón AFIP</h1>
+    </div>
+    <p class="text-gray-600">Ingresá un CUIT para obtener automáticamente la Razón Social, Condición IVA y Domicilio.</p>
+  </div>
+
+  <!-- Formulario de Búsqueda -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+    <form method="get" class="flex flex-col sm:flex-row gap-4" id="cuit-form">
+      <div class="flex-1 relative">
+        <i data-lucide="hash" class="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+        <input type="text" name="cuit" id="cuit-input" value="{{ cuit }}"
+               placeholder="Ej: 20-34567890-1 o 20345678901"
+               class="w-full pl-10 pr-4 py-3 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+               maxlength="13" autofocus>
+      </div>
+      <button type="submit" class="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold text-lg">
+        <i data-lucide="search" class="w-5 h-5 inline mr-1"></i> Consultar
+      </button>
+    </form>
+  </div>
+
+  <!-- Resultado -->
+  {% if resultado %}
+    {% if resultado.success %}
+    <div class="bg-white rounded-xl shadow-sm border border-green-200 p-6" id="resultado-cuit">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="p-2 bg-green-100 rounded-lg">
+          <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900">Datos del contribuyente</h3>
+      </div>
+
+      <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+        <div>
+          <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">CUIT</dt>
+          <dd class="mt-1 text-base font-semibold text-gray-900">{{ cuit }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Razón Social</dt>
+          <dd class="mt-1 text-base font-semibold text-gray-900">{{ resultado.razon_social }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Condición frente al IVA</dt>
+          <dd class="mt-1 text-sm text-gray-900">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-teal-100 text-teal-800">
+              {{ resultado.condicion_iva }}
+            </span>
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Tipo de Persona</dt>
+          <dd class="mt-1 text-sm text-gray-900">{{ resultado.tipo_persona }}</dd>
+        </div>
+        <div class="sm:col-span-2">
+          <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Domicilio Fiscal</dt>
+          <dd class="mt-1 text-sm text-gray-900">{{ resultado.domicilio|default:"No disponible" }}</dd>
+        </div>
+        {% if resultado.actividad_principal %}
+        <div class="sm:col-span-2">
+          <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Actividad Principal</dt>
+          <dd class="mt-1 text-sm text-gray-900">{{ resultado.actividad_principal }}</dd>
+        </div>
+        {% endif %}
+      </dl>
+    </div>
+    {% else %}
+    <div class="bg-red-50 rounded-xl shadow-sm border border-red-200 p-6">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-red-100 rounded-lg">
+          <i data-lucide="x-circle" class="w-5 h-5 text-red-600"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-semibold text-red-800">No se encontraron datos</h3>
+          <p class="text-sm text-red-600 mt-1">{{ resultado.error }}</p>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  {% endif %}
+
+  {% if error %}
+  <div class="bg-red-50 rounded-xl shadow-sm border border-red-200 p-6">
+    <div class="flex items-center gap-3">
+      <div class="p-2 bg-red-100 rounded-lg">
+        <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600"></i>
+      </div>
+      <div>
+        <h3 class="text-base font-semibold text-red-800">Error de conexión</h3>
+        <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Tip -->
+  <div class="mt-6 bg-blue-50 rounded-xl border border-blue-200 p-4">
+    <div class="flex items-start gap-3">
+      <i data-lucide="lightbulb" class="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0"></i>
+      <div>
+        <p class="text-sm text-blue-800 font-medium">Tip: Autocompletado en Ventas</p>
+        <p class="text-sm text-blue-700 mt-1">Esta misma consulta se usa internamente al crear clientes nuevos. Al ingresar un CUIT en el formulario de Ventas, el sistema rellenará automáticamente la Razón Social y el domicilio.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
