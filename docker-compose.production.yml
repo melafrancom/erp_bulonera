@@ -1,0 +1,150 @@
+# docker-compose.production.yml
+# Despliegue en producción - VPS Hostinger Ubuntu 24.04
+# ⚠️  MariaDB NO se levanta aquí: se usa la instancia del HOST en 127.0.0.1:3306
+# ⚠️  Los puertos solo escuchan en 127.0.0.1 (OpenLiteSpeed hace el reverse proxy)
+
+networks:
+  erp_network:
+    driver: bridge
+
+services:
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Redis (caché y broker de Celery)
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  redis:
+    image: redis:7-alpine
+    container_name: erp_redis
+    restart: always
+    networks:
+      - erp_network
+    expose:
+      - "6379"  # Solo accesible dentro de la red Docker, NO al host
+    volumes:
+      - redis_data:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Django + uWSGI (app principal)
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    image: erp_bulonera:latest
+    container_name: erp_web
+    restart: always
+    ports:
+      # Solo accesible desde localhost (OLS hace el proxy hacia erp.buloneraalvear.online)
+      - "127.0.0.1:8002:8000"
+    networks:
+      - erp_network
+    env_file:
+      - .env
+    volumes:
+      # Archivos estáticos: collectstatic los escribe aquí, OLS los sirve directamente
+      - /var/www/erp/static:/app/staticfiles
+      # Media del ERP (ver nota sobre compartir con app web)
+      - /var/www/erp/media:/app/media
+      # Certificados AFIP/ARCA (solo lectura desde el contenedor)
+      - /var/www/erp/bills/certs/certificados_arca_temp:/var/www/erp/certs_afip:ro
+      # Logs accesibles desde el host para monitoreo
+      - /var/www/erp/logs:/app/logs
+    extra_hosts:
+      # Permite al contenedor conectarse a MariaDB en el HOST (127.0.0.1 del host)
+      - "host-gateway:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    command: uwsgi --ini /app/uwsgi.production.ini
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Celery Worker
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  celery_worker:
+    image: erp_bulonera:latest
+    container_name: erp_celery_worker
+    restart: always
+    networks:
+      - erp_network
+    env_file:
+      - .env
+    volumes:
+      - /var/www/erp/logs:/app/logs
+      - /var/www/erp/bills/certs/certificados_arca_temp:/var/www/erp/certs_afip:ro
+    extra_hosts:
+      - "host-gateway:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: >
+      celery -A erp_crm_bulonera worker
+      --loglevel=info
+      --concurrency=2
+      --time-limit=3600
+      --soft-time-limit=3300
+      --logfile=/app/logs/celery_worker.log
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Celery Beat (tareas programadas)
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  celery_beat:
+    image: erp_bulonera:latest
+    container_name: erp_celery_beat
+    restart: always
+    networks:
+      - erp_network
+    env_file:
+      - .env
+    volumes:
+      - /var/www/erp/logs:/app/logs
+    extra_hosts:
+      - "host-gateway:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: >
+      celery -A erp_crm_bulonera beat
+      --loglevel=info
+      --scheduler django_celery_beat.schedulers:DatabaseScheduler
+      --logfile=/app/logs/celery_beat.log
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Flower (monitoreo Celery)
+  # Accesible SOLO por SSH tunnel o a través de OLS con autenticación
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  flower:
+    image: erp_bulonera:latest
+    container_name: erp_flower
+    restart: always
+    ports:
+      - "127.0.0.1:5555:5555"  # Solo localhost
+    networks:
+      - erp_network
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - celery_worker
+    command: >
+      celery -A erp_crm_bulonera flower
+      --port=5555
+      --basic_auth=${FLOWER_USER}:${FLOWER_PASSWORD}
+
+volumes:
+  redis_data:

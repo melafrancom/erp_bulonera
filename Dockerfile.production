@@ -1,0 +1,63 @@
+# Dockerfile.production
+# Imagen multi-stage optimizada para producción:
+# - Stage 'builder': compila uWSGI y dependencias Python (incluye gcc, libpcre3-dev)
+# - Stage 'final': imagen de runtime liviana sin herramientas de compilación
+
+# ── Stage 1: Builder ────────────────────────────────
+FROM python:3.11-slim AS builder
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# uWSGI necesita gcc + libpcre3-dev para compilarse
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    default-libmysqlclient-dev \
+    pkg-config \
+    build-essential \
+    libssl-dev \
+    libffi-dev \
+    libpcre3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY requirements.txt .
+# requirements.txt incluye uwsgi>=2.0.27
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
+
+# ── Stage 2: Runtime final (sin herramientas de compilación) ─
+FROM python:3.11-slim AS final
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Solo librerías de runtime (libpcre3 es necesario en runtime por uWSGI)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    default-libmysqlclient-dev \
+    libpcre3 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar paquetes Python desde el builder
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+WORKDIR /app
+
+# Copiar el código fuente
+COPY . /app/
+
+# Crear usuario no-root para seguridad y directorios necesarios
+RUN useradd -m -u 1000 appuser && \
+    mkdir -p /app/logs /app/staticfiles /app/media && \
+    chown -R appuser:appuser /app
+
+USER appuser
+
+EXPOSE 8000
+
+# El comando por defecto es sobreescrito por docker-compose.production.yml
+CMD ["uwsgi", "--ini", "/app/uwsgi.production.ini"]
