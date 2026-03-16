@@ -53,8 +53,10 @@ services:
     volumes:
       # Archivos estáticos: collectstatic los escribe aquí, OLS los sirve directamente
       - /var/www/erp/static:/app/staticfiles
-      # Media del ERP (ver nota sobre compartir con app web)
+      # Media ESCRITURA del ERP (PDFs de facturas, uploads propios del ERP)
       - /var/www/erp/media:/app/media
+      # Media LECTURA de la app web (fotos de productos del catálogo, solo lectura)
+      - /var/www/bulonera/bulonera/media:/app/media_web:ro
       # Certificados AFIP/ARCA (solo lectura desde el contenedor)
       - /var/www/erp/bills/certs/certificados_arca_temp:/var/www/erp/certs_afip:ro
       # Logs accesibles desde el host para monitoreo
