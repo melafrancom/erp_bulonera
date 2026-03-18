@@ -55,6 +55,7 @@ DATABASES = {
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STATIC_URL = '/static/'
 STATIC_ROOT = env('STATIC_ROOT', default='/app/staticfiles')
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 MEDIA_URL = '/media/'
 # Si querés compartir media con tu app web, cambiar a:
