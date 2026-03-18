@@ -13,7 +13,13 @@ from drf_spectacular.views import (
     SpectacularRedocView,
 )
 
+
+def health_check(request):
+    return JsonResponse({'status': 'ok', 'service': 'erp_bulonera'})
+
 urlpatterns = [
+    # Health Check
+    path('health/', health_check, name='health_check'),
     # Admin
     path('admin/', admin.site.urls),
     
