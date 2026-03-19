@@ -52,6 +52,7 @@ DATABASES = {
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # ARCHIVOS ESTÁTICOS Y MEDIA
 # OpenLiteSpeed sirve estos directorios directamente (más eficiente que Django)
+# WhiteNoise: compresión gzip/brotli + cache-busting automático con hash en nombre
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STATIC_URL = '/static/'
 STATIC_ROOT = env('STATIC_ROOT', default='/app/staticfiles')
@@ -62,6 +63,26 @@ MEDIA_URL = '/media/'
 # MEDIA_ROOT = '/var/www/bulonera/bulonera/media'
 # (ver nota en la guía sobre esto)
 MEDIA_ROOT = env('MEDIA_ROOT', default='/app/media')
+
+# WhiteNoise: compresión + cache-busting para assets estáticos
+# CompressedManifestStaticFilesStorage añade hash al nombre del archivo
+# (ej: main.abc123.js) → permite Cache-Control: max-age=1año de forma segura
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
+
+# Tiempo de caché para assets estáticos servidos por WhiteNoise (en segundos)
+# Los archivos con hash en el nombre pueden cachearse por 1 año sin problemas.
+WHITENOISE_MAX_AGE = 31536000  # 1 año
+
+# Comprimir también archivos de tamaño pequeño (>0 bytes, default es 1024)
+WHITENOISE_MAX_GZIP_RATIO = 10
+
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # EMAIL

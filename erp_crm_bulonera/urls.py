@@ -1,10 +1,12 @@
 """
 URL Configuration for erp_crm_bulonera project.
 """
+import os
 from django.contrib import admin
 from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import HttpResponse, JsonResponse
 
 # OpenAPI/Swagger
 from drf_spectacular.views import (
@@ -17,7 +19,35 @@ from drf_spectacular.views import (
 def health_check(request):
     return JsonResponse({'status': 'ok', 'service': 'erp_bulonera'})
 
+
+def serve_service_worker(request):
+    """
+    Sirve el Service Worker desde la raíz (/) del dominio.
+    Los SW DEBEN estar en la raíz del scope para controlar toda la app.
+    No debe ser cacheado por el browser (Cache-Control: no-cache).
+    """
+    # Leer el archivo desde el directorio de statics del proyecto
+    sw_path = os.path.join(settings.BASE_DIR, 'static', 'service-worker.js')
+    try:
+        with open(sw_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+    except FileNotFoundError:
+        return HttpResponse('Service Worker no encontrado', status=404)
+
+    return HttpResponse(
+        content,
+        content_type='application/javascript; charset=utf-8',
+        headers={
+            # El browser NO debe cachear el SW para detectar actualizaciones
+            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+            'Service-Worker-Allowed': '/',  # Permite scope raíz
+        },
+    )
+
 urlpatterns = [
+    # ── PWA: Service Worker en la raíz del scope ────────────────
+    path('service-worker.js', serve_service_worker, name='service_worker'),
+
     # Health Check
     path('health/', health_check, name='health_check'),
     # Admin

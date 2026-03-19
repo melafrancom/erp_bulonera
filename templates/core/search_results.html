@@ -1,0 +1,198 @@
+{% extends 'base/base.html' %}
+{% block title %}Resultados de Búsqueda{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto py-6">
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">Resultados de búsqueda</h1>
+    <p class="mt-2 text-sm text-gray-600">
+      {% if query %}
+        Buscando: <span class="font-bold">"{{ query }}"</span>
+      {% else %}
+        Escribí algo en el buscador para comenzar.
+      {% endif %}
+    </p>
+  </div>
+
+  {% if query %}
+    <div class="space-y-8">
+      
+      <!-- Clientes -->
+      {% if results.customers %}
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            <i data-lucide="users" class="w-5 h-5 text-indigo-500"></i> Clientes
+          </h2>
+        </div>
+        <ul class="divide-y divide-gray-200">
+          {% for cust in results.customers %}
+          <li>
+            <a href="{% url 'customers:customer_detail' cust.pk %}" class="block hover:bg-gray-50 px-6 py-4 transition">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="text-sm font-medium text-indigo-600">{{ cust.business_name|default:cust.trade_name }}</p>
+                  <p class="text-xs text-gray-500 mt-1">CUIT/DNI: {{ cust.cuit_cuil|default:'-' }}</p>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+              </div>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <!-- Productos -->
+      {% if results.products %}
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            <i data-lucide="package" class="w-5 h-5 text-blue-500"></i> Productos
+          </h2>
+        </div>
+        <ul class="divide-y divide-gray-200">
+          {% for prod in results.products %}
+          <li>
+            <a href="{% url 'products:product_detail' prod.pk %}" class="block hover:bg-gray-50 px-6 py-4 transition">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="text-sm font-medium text-blue-600">{{ prod.name }}</p>
+                  <p class="text-xs text-gray-500 mt-1">Cód: {{ prod.code|default:prod.sku }} | Stock: {{ prod.stock_quantity }}</p>
+                </div>
+                <div class="text-sm font-semibold text-gray-900 mr-4">
+                  ${{ prod.sale_price|floatformat:2 }}
+                </div>
+              </div>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <!-- Proveedores -->
+      {% if results.suppliers %}
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            <i data-lucide="truck" class="w-5 h-5 text-green-500"></i> Proveedores
+          </h2>
+        </div>
+        <ul class="divide-y divide-gray-200">
+          {% for sup in results.suppliers %}
+          <li>
+            <a href="{% url 'suppliers_web:supplier_detail' sup.pk %}" class="block hover:bg-gray-50 px-6 py-4 transition">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="text-sm font-medium text-green-600">{{ sup.business_name|default:sup.trade_name }}</p>
+                  <p class="text-xs text-gray-500 mt-1">CUIT: {{ sup.cuit|default:'-' }}</p>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+              </div>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <!-- Ventas -->
+      {% if results.sales %}
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            <i data-lucide="shopping-cart" class="w-5 h-5 text-purple-500"></i> Ventas
+          </h2>
+        </div>
+        <ul class="divide-y divide-gray-200">
+          {% for sale in results.sales %}
+          <li>
+            <a href="{% url 'sales_web:sale_detail' sale.pk %}" class="block hover:bg-gray-50 px-6 py-4 transition">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="text-sm font-medium text-purple-600">Venta #{{ sale.pk }} - {{ sale.customer.business_name|default:sale.customer_name }}</p>
+                  <p class="text-xs text-gray-500 mt-1">{{ sale.created_at|date:"d/m/Y H:i" }} | Estado: {{ sale.get_status_display }}</p>
+                </div>
+                <div class="text-sm font-semibold text-gray-900 mr-4">
+                  ${{ sale.total_amount|floatformat:2 }}
+                </div>
+              </div>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <!-- Presupuestos -->
+      {% if results.quotes %}
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            <i data-lucide="file-text" class="w-5 h-5 text-orange-500"></i> Presupuestos
+          </h2>
+        </div>
+        <ul class="divide-y divide-gray-200">
+          {% for quote in results.quotes %}
+          <li>
+            <a href="{% url 'sales_web:quote_detail' quote.pk %}" class="block hover:bg-gray-50 px-6 py-4 transition">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="text-sm font-medium text-orange-600">Presupuesto #{{ quote.pk }} - {{ quote.customer.business_name|default:quote.customer_name }}</p>
+                  <p class="text-xs text-gray-500 mt-1">{{ quote.created_at|date:"d/m/Y H:i" }} | Estado: {{ quote.get_status_display }}</p>
+                </div>
+                <div class="text-sm font-semibold text-gray-900 mr-4">
+                  ${{ quote.total_amount|floatformat:2 }}
+                </div>
+              </div>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <!-- Facturas -->
+      {% if results.bills %}
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            <i data-lucide="receipt" class="w-5 h-5 text-emerald-500"></i> Facturas
+          </h2>
+        </div>
+        <ul class="divide-y divide-gray-200">
+          {% for bill in results.bills %}
+          <li>
+            <a href="{% url 'bills_web:bill_detail' bill.pk %}" class="block hover:bg-gray-50 px-6 py-4 transition">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="text-sm font-medium text-emerald-600">{{ bill.get_tipo_comprobante_display }} {{ bill.punto_venta|stringformat:"04d" }}-{{ bill.numero|stringformat:"08d" }}</p>
+                  <p class="text-xs text-gray-500 mt-1">Cliente: {{ bill.cliente_razon_social }} | CUIT: {{ bill.cliente_cuit }}</p>
+                </div>
+                <div class="text-sm font-semibold text-gray-900 mr-4">
+                  ${{ bill.importe_total|floatformat:2 }}
+                </div>
+              </div>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      
+      <!-- No Results -->
+      {% if not results.customers and not results.products and not results.suppliers and not results.sales and not results.quotes and not results.bills %}
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+          <i data-lucide="search-x" class="w-8 h-8 text-gray-400"></i>
+        </div>
+        <h3 class="text-lg font-medium text-gray-900 mb-1">Sin resultados</h3>
+        <p class="text-gray-500">No encontramos nada que coincida con "{{ query }}".</p>
+      </div>
+      {% endif %}
+      
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

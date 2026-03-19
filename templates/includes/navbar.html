@@ -35,12 +35,12 @@
 
       <!-- Search Bar -->
       <div class="flex-1 max-w-md">
-        <div class="relative">
-          <input type="search"
+        <form action="{% url 'core_web:global_search' %}" method="GET" class="relative">
+          <input type="search" name="q"
                  placeholder="Buscar productos, clientes..."
                  class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
           <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
-        </div>
+        </form>
       </div>
 
       <!-- Actions (Notifications + User Menu) -->
@@ -125,12 +125,12 @@
 
     <!-- Mobile Search Bar (expandible) -->
     <div class="lg:hidden mt-3">
-      <div class="relative">
-        <input type="search"
+      <form action="{% url 'core_web:global_search' %}" method="GET" class="relative">
+        <input type="search" name="q"
                placeholder="Buscar..."
                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
         <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
-      </div>
+      </form>
     </div>
 
   </div>

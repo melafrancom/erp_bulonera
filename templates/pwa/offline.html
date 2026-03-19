@@ -1,45 +1,120 @@
-<!-- Página sin conexión -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sin Conexión - Bulonera Alvear</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #1e3a5f 0%, #0f1f33 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            text-align: center;
-            padding: 20px;
-        }
-        .container { max-width: 400px; }
-        .icon { font-size: 64px; margin-bottom: 20px; }
-        h1 { font-size: 24px; margin-bottom: 12px; }
-        p { opacity: 0.8; margin-bottom: 24px; }
-        button {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 12px 32px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        button:hover { background: #2563eb; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Sin Conexión - Bulonera Alvear</title>
+
+  <!-- Tailwind CSS (CDN - mismo que el resto de la app) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } }
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
-    <div class="container">
-        <div class="icon">📡</div>
-        <h1>Sin conexión a internet</h1>
-        <p>Verifica tu conexión y vuelve a intentarlo.</p>
-        <button onclick="location.reload()">Reintentar</button>
+
+<body class="min-h-screen bg-gradient-to-br from-slate-800 via-blue-950 to-slate-900 font-sans flex flex-col items-center justify-center p-4 text-white">
+
+  <!-- Card principal -->
+  <div class="w-full max-w-md text-center">
+
+    <!-- Ícono animado -->
+    <div class="mb-8 flex justify-center">
+      <div class="relative w-24 h-24">
+        <!-- Círculo exterior pulsante -->
+        <span class="absolute inset-0 rounded-full bg-amber-500/20 animate-ping"></span>
+        <div class="relative w-24 h-24 bg-amber-500/10 border-2 border-amber-400/30 rounded-full flex items-center justify-center">
+          <svg class="w-12 h-12 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M18.364 5.636a9 9 0 010 12.728M15.536 8.464a5 5 0 010 7.072M12 12h.01
+                 M3.515 3.515l17.97 17.97"/>
+          </svg>
+        </div>
+      </div>
     </div>
+
+    <!-- Título y descripción -->
+    <h1 class="text-2xl font-bold text-white mb-3">Sin conexión a internet</h1>
+    <p class="text-slate-400 text-sm mb-2">
+      No se pudo conectar con el servidor del ERP.<br>
+      Verificá tu red y volvé a intentarlo.
+    </p>
+    <p class="text-slate-500 text-xs mb-8">
+      Las páginas que visitaste recientemente siguen disponibles en modo offline.
+    </p>
+
+    <!-- Botón de reintentar -->
+    <button
+      onclick="window.location.reload()"
+      class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700
+             text-white font-semibold rounded-xl transition-all duration-200
+             shadow-lg hover:shadow-blue-500/25 mb-6">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581
+             m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+      </svg>
+      Reintentar conexión
+    </button>
+
+    <!-- Páginas disponibles offline -->
+    <div class="bg-white/5 border border-white/10 rounded-2xl p-5 text-left mt-2">
+      <h2 class="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+        <svg class="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12
+               a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
+        </svg>
+        Páginas disponibles offline
+      </h2>
+      <div class="space-y-2">
+        <a href="/dashboard/" class="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors group">
+          <div class="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <svg class="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0
+                   012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0
+                   012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0
+                   01-2 2h-2a2 2 0 01-2-2v-2z"/>
+            </svg>
+          </div>
+          <span class="text-sm text-slate-300 group-hover:text-white">Dashboard</span>
+        </a>
+        <a href="/products/" class="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors group">
+          <div class="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <svg class="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+          </div>
+          <span class="text-sm text-slate-300 group-hover:text-white">Productos</span>
+        </a>
+        <a href="/sales/" class="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors group">
+          <div class="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <svg class="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184
+                   1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
+          </div>
+          <span class="text-sm text-slate-300 group-hover:text-white">Ventas</span>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <p class="mt-8 text-slate-600 text-xs">ERP Bulonera Alvear &mdash; Sistema de Gestión</p>
+
+  <!-- Auto-reintentar silenciosamente cuando vuelve la conexión -->
+  <script>
+    window.addEventListener('online', () => {
+      // Breve espera antes de recargar para que la conexión se estabilice
+      setTimeout(() => window.location.reload(), 800);
+    });
+  </script>
 </body>
 </html>

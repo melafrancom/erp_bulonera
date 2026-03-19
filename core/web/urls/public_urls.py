@@ -5,7 +5,7 @@ URLs públicas accesibles para usuarios autenticados
 
 from django.urls import path
 from core.web.views import public_views
-
+from core.web.views import search_views
 
 urlpatterns = [
     # Home (adaptativo: anónimo o logueado)
@@ -21,4 +21,7 @@ urlpatterns = [
     path('offline/', public_views.offline_view, name='offline'),
 
     path('sw.js', public_views.serve_service_worker, name='service_worker'),
+    
+    # Global Search
+    path('search/', search_views.global_search_view, name='global_search'),
 ]

@@ -91,21 +91,23 @@ class Customer(BaseModel):
     # Tax Information
     def validate_cuit_checksum(value):
         from common.utils import validate_cuit
-        if not validate_cuit(value):
+        clean_val = value.replace('-', '')
+        # Solo lanzar error de checksum si tratan de meter un CUIT de 11 digitos
+        if len(clean_val) == 11 and not validate_cuit(clean_val):
             raise ValidationError('El CUIT/CUIL no es válido (dígito verificador incorrecto).')
 
     cuit_cuil = models.CharField(
-        max_length=13,
+        max_length=11,
         unique=True,
         validators=[
             RegexValidator(
-                regex=r'^\d{2}-\d{8}-\d{1}$',
-                message='El formato debe ser XX-XXXXXXXX-X',
+                regex=r'^\d{7,11}$',
+                message='Debe contener solo números, entre 7 y 11 dígitos.',
             ),
             validate_cuit_checksum
         ],
         verbose_name="CUIT/CUIL/DNI",
-        help_text="Formato: XX-XXXXXXXX-X",
+        help_text="Ingrese solo números (sin guiones).",
         error_messages={
             'unique': 'Ya existe un cliente con este CUIT/CUIL/DNI.',
         }

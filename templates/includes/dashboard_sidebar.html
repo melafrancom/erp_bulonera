@@ -1,7 +1,7 @@
 {% load static %}
 
 <!-- Sidebar -->
-<aside class="sidebar flex flex-col">
+<aside :class="{'open': sidebarOpen}" class="sidebar flex flex-col">
   <!-- Logo y Nombre de Empresa -->
   <div class="p-6 border-b border-white/10">
     <a href="{% url 'core_web:dashboard' %}" class="flex items-center space-x-3">
