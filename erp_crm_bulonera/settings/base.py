@@ -476,13 +476,13 @@ CACHE_MIDDLEWARE_KEY_PREFIX = 'bulonera_cache'
 AFIP_CONFIG = {
     'homologacion': {
         'ambiente': 'homologacion',
-        'cert_path': env('AFIP_CERT_PATH_HOMOLOGACION'),
-        'cert_password': env('AFIP_CERT_PASSWORD_HOMOLOGACION', default=''),
+        'cert_path': env('AFIP_CERT_PATH'),
+        'cert_password': env('AFIP_CERT_PASSWORD', default=''),
     },
     'produccion': {
         'ambiente': 'produccion',
-        'cert_path': env('AFIP_CERT_PATH_PRODUCCION'),
-        'cert_password': env('AFIP_CERT_PASSWORD_PRODUCCION', default=''),
+        'cert_path': env('AFIP_CERT_PATH'),
+        'cert_password': env('AFIP_CERT_PASSWORD', default=''),
     }
 }
 
