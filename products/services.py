@@ -369,6 +369,7 @@ class ProductImportService:
             'meta_title': 'meta_title', 'meta_description': 'meta_description',
             'meta_keywords': 'meta_keywords', 'google_category': 'google_category',
             'condition': 'condition',
+            'other codes': 'other_codes',
         }
         for csv_col, model_field in OPTIONAL_TEXT_FIELDS.items():
             val = row.get(csv_col)
@@ -462,6 +463,7 @@ class ProductExportService:
                 'stock': p.stock_quantity,
                 'brand': p.brand,
                 'supplier': p.supplier.business_name if p.supplier else '',
+                'other_codes': p.other_codes or '',
                 'diameter': p.diameter or '',
                 'length': p.length or '',
                 'material': p.material or '',
@@ -585,6 +587,7 @@ class ProductExportService:
                 'form': p.form or '',
                 'thread_formats': p.thread_format or '',
                 'origin': p.origin or '',
+                'other_codes': p.other_codes or '',
                 'faq': faq_str,
                 'gtin': p.gtin or '',
                 'mpn': p.mpn or '',

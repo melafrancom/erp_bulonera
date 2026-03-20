@@ -88,7 +88,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            'id', 'code', 'sku', 'name', 'slug',
+            'id', 'code', 'sku', 'other_codes', 'name', 'slug',
             'category', 'category_name',
             'price', 'cost', 'tax_rate',
             'sale_price_with_tax', 'profit_margin_percentage',
@@ -123,7 +123,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            'id', 'code', 'sku', 'name', 'slug', 'description',
+            'id', 'code', 'sku', 'other_codes', 'name', 'slug', 'description',
             # Clasificación
             'category', 'subcategories',
             # Precios
@@ -184,7 +184,7 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            'code', 'sku', 'name', 'description',
+            'code', 'sku', 'other_codes', 'name', 'description',
             'category', 'subcategory_ids',
             'price', 'cost', 'tax_rate',
             'diameter', 'length', 'material', 'grade', 'norm',

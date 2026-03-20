@@ -332,26 +332,27 @@ class WSFEv1Client:
 
         # Errores de autenticación / aplicación (FECAESolicitar > Errors)
         errores = []
-        for err in root.findall('.//Err'):
-            code = self._text(err, 'Code')
-            msg  = self._text(err, 'Msg')
+        ns = {'ar': 'http://ar.gov.afip.dif.FEV1/'}
+        for err in root.findall('.//ar:Err', ns):
+            code = self._text(err, 'ar:Code', ns)
+            msg  = self._text(err, 'ar:Msg', ns)
             errores.append(f"[{code}] {msg}")
         if errores:
             return self._error_result("Error ARCA: " + " | ".join(errores))
 
         # CAE
-        cae     = self._text(root, './/CAE')
-        cae_vto = self._text(root, './/CAEFchVto')
+        cae     = self._text(root, './/ar:CAE', ns)
+        cae_vto = self._text(root, './/ar:CAEFchVto', ns)
 
         if not cae:
             # Puede haber observaciones de rechazo
             obs = []
-            for ob in root.findall('.//Obs'):
-                code = self._text(ob, 'Code')
-                msg  = self._text(ob, 'Msg')
+            for ob in root.findall('.//ar:Obs', ns):
+                code = self._text(ob, 'ar:Code', ns)
+                msg  = self._text(ob, 'ar:Msg', ns)
                 obs.append(f"[{code}] {msg}")
 
-            resultado_elem = root.find('.//Resultado')
+            resultado_elem = root.find('.//ar:Resultado', ns)
             resultado_str = resultado_elem.text if resultado_elem is not None else '?'
 
             error_msg = f"Resultado={resultado_str}. Observaciones: " + " | ".join(obs) if obs else (
@@ -369,9 +370,9 @@ class WSFEv1Client:
 
         # Advertencias (no bloquean la autorización)
         advertencias = []
-        for obs in root.findall('.//Obs'):
-            code = self._text(obs, 'Code')
-            msg  = self._text(obs, 'Msg')
+        for obs in root.findall('.//ar:Obs', ns):
+            code = self._text(obs, 'ar:Code', ns)
+            msg  = self._text(obs, 'ar:Msg', ns)
             if msg:
                 advertencias.append(f"[{code}] {msg}")
         if advertencias:
@@ -414,27 +415,25 @@ class WSFEv1Client:
     xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
     xmlns:ar="http://ar.gov.afip.dif.FEV1/">
     <soapenv:Body>
-        <ar:FECAEConsultarUltNro>
+        <ar:FECompUltimoAutorizado>
             <ar:Auth>
                 <ar:Token>{token}</ar:Token>
                 <ar:Sign>{sign}</ar:Sign>
                 <ar:Cuit>{cuit}</ar:Cuit>
             </ar:Auth>
-            <ar:BuscarUltCbteRequest>
-                <ar:PtoVta>{punto_venta}</ar:PtoVta>
-                <ar:CbteTipo>{tipo_compr}</ar:CbteTipo>
-            </ar:BuscarUltCbteRequest>
-        </ar:FECAEConsultarUltNro>
+            <ar:PtoVta>{punto_venta}</ar:PtoVta>
+            <ar:CbteTipo>{tipo_compr}</ar:CbteTipo>
+        </ar:FECompUltimoAutorizado>
     </soapenv:Body>
 </soapenv:Envelope>"""
 
         logger.info(
-            f"[WSFEv1] FECAEConsultarUltNro → PtoVta={punto_venta}, Tipo={tipo_compr}"
+            f"[WSFEv1] FECompUltimoAutorizado → PtoVta={punto_venta}, Tipo={tipo_compr}"
         )
 
         return self._enviar_soap(
             soap=soap,
-            soap_action='FECAEConsultarUltNro',
+            soap_action='FECompUltimoAutorizado',
             parser=self._parsear_consultar_ult_nro,
             timeout=timeout,
         )
@@ -449,12 +448,13 @@ class WSFEv1Client:
         if fault is not None:
             return {'success': False, 'error': f"SOAP Fault: {fault.text}", 'ultimo_numero': None}
 
-        for err in root.findall('.//Err'):
-            code = self._text(err, 'Code')
-            msg  = self._text(err, 'Msg')
+        ns = {'ar': 'http://ar.gov.afip.dif.FEV1/'}
+        for err in root.findall('.//ar:Err', ns):
+            code = self._text(err, 'ar:Code', ns)
+            msg  = self._text(err, 'ar:Msg', ns)
             return {'success': False, 'error': f"[{code}] {msg}", 'ultimo_numero': None}
 
-        cbte_nro_elem = root.find('.//CbteNro')
+        cbte_nro_elem = root.find('.//ar:CbteNro', ns)
         if cbte_nro_elem is None:
             return {'success': False, 'error': 'Respuesta sin CbteNro', 'ultimo_numero': None}
 
@@ -478,12 +478,17 @@ class WSFEv1Client:
                 data=soap.encode('utf-8'),
                 headers={
                     'Content-Type': 'text/xml; charset=utf-8',
-                    'SOAPAction':   f'"{soap_action}"',
+                    'SOAPAction':   f'http://ar.gov.afip.dif.FEV1/{soap_action}',
                 },
                 timeout=timeout,
                 verify=True,
             )
-            response.raise_for_status()
+            
+            if response.status_code == 500 and "Envelope" in response.text:
+                logger.warning(f"[WSFEv1] HTTP 500 recibido, analizando posible SOAP Fault...")
+            else:
+                response.raise_for_status()
+                
             logger.debug(f"[WSFEv1] Respuesta HTTP {response.status_code}")
             logger.debug(f"[WSFEv1] Response XML:\n{response.text[:2000]}")
             return parser(response.text)
@@ -498,8 +503,13 @@ class WSFEv1Client:
             logger.error(f"[WSFEv1] {msg}")
             return self._error_result(msg)
 
+        except requests.exceptions.HTTPError as exc:
+            msg = f"Error HTTP {exc.response.status_code} en WSFEv1. Response: {exc.response.text[:500]}"
+            logger.error(f"[WSFEv1] {msg}")
+            return self._error_result(msg)
+
         except RequestException as exc:
-            msg = f"Error HTTP WSFEv1: {exc}"
+            msg = f"Error Request WSFEv1: {exc}"
             logger.error(f"[WSFEv1] {msg}")
             return self._error_result(msg)
 
@@ -508,9 +518,9 @@ class WSFEv1Client:
             return self._error_result(str(exc))
 
     @staticmethod
-    def _text(element, path: str) -> Optional[str]:
+    def _text(element, path: str, namespaces=None) -> Optional[str]:
         """Busca un elemento por XPath y retorna su texto o None."""
-        found = element.find(path)
+        found = element.find(path, namespaces=namespaces) if namespaces else element.find(path)
         return found.text if found is not None else None
 
     @staticmethod

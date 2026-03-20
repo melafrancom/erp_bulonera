@@ -472,24 +472,18 @@ CACHE_MIDDLEWARE_KEY_PREFIX = 'bulonera_cache'
 # =========================================================================
 # AFIP CONFIGURATION
 # =========================================================================
+# Nota: La configuración operativa (cert_path, ambiente, punto_venta) se
+# almacena en el modelo ConfiguracionARCA de la DB, cargado via fixture o Admin.
+# Estas variables son solo de referencia para scripts de management.
 
-AFIP_CONFIG = {
-    'homologacion': {
-        'ambiente': 'homologacion',
-        'cert_path': env('AFIP_CERT_PATH'),
-        'cert_password': env('AFIP_CERT_PASSWORD', default=''),
-    },
-    'produccion': {
-        'ambiente': 'produccion',
-        'cert_path': env('AFIP_CERT_PATH'),
-        'cert_password': env('AFIP_CERT_PASSWORD', default=''),
-    }
-}
+AFIP_AMBIENTE = env('AFIP_ENVIRONMENT', default='homologacion')
+AFIP_CERT_PATH = env('AFIP_CERT_PATH', default='')
+AFIP_CERT_PASSWORD = env('AFIP_CERT_PASSWORD', default='')
 
-EMPRESA_CUIT = env('EMPRESA_CUIT')
-EMPRESA_RAZON_SOCIAL = env('EMPRESA_RAZON_SOCIAL')
-EMPRESA_PUNTO_VENTA = env('EMPRESA_PUNTO_VENTA')
-COMPANY_NAME = env('COMPANY_NAME', default = 'Nombre comercial')
+EMPRESA_CUIT = env('EMPRESA_CUIT', default='')
+EMPRESA_RAZON_SOCIAL = env('EMPRESA_RAZON_SOCIAL', default='')
+EMPRESA_PUNTO_VENTA = env.int('EMPRESA_PUNTO_VENTA', default=1)
+COMPANY_NAME = env('COMPANY_NAME', default='Nombre comercial')
 
 # ============================================================================
 # Logging Configuration

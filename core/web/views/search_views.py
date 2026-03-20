@@ -25,7 +25,8 @@ def global_search_view(request):
         context['results']['products'] = Product.objects.filter(
             Q(name__icontains=query) |
             Q(code__icontains=query) |
-            Q(sku__icontains=query)
+            Q(sku__icontains=query) |
+            Q(other_codes__icontains=query)
         )[:10]
         
         # Proveedores

@@ -62,10 +62,16 @@ def generar_login_ticket_request(service: str = "wsfe") -> str:
     Returns:
         XML como cadena de texto (sin declaración XML)
     """
-    # ARCA requiere timestamps en UTC con formato ISO 8601
+    # ARCA requiere timestamps en timezone de Argentina (UTC-3, sin DST).
+    # Tomamos UTC y restamos 3 horas para obtener la hora local de Argentina.
+    # NO usar el offset -03:00 directamente sobre now_utc porque el servidor
+    # puede estar en UTC: si el server está en UTC 01:49, la hora Argentina
+    # correcta es 22:49 del día anterior, NOT "01:49-03:00" (que sería 04:49 UTC).
+    AR_OFFSET = timedelta(hours=-3)
     now_utc = datetime.now(dt_timezone.utc)
-    generation_time = now_utc.strftime('%Y-%m-%dT%H:%M:%S') + '-03:00'
-    expiration_time = (now_utc + timedelta(minutes=10)).strftime('%Y-%m-%dT%H:%M:%S') + '-03:00'
+    now_ar = now_utc + AR_OFFSET
+    generation_time = now_ar.strftime('%Y-%m-%dT%H:%M:%S') + '-03:00'
+    expiration_time = (now_ar + timedelta(minutes=10)).strftime('%Y-%m-%dT%H:%M:%S') + '-03:00'
 
     # UniqueID: entero positivo, distinto en cada llamada
     unique_id = int(time.time())
@@ -130,13 +136,13 @@ def firmar_xml_cms(xml_string: str, cert_path: str) -> str:
         # Comando OpenSSL CMS para firmar
         # -nodetach: firma adjunta (no detached) – WSAA lo requiere así
         # -nosmimecap: no incluye MIMECapabilities (reduce tamaño)
-        # -nocerts: no incluye cadena de certificados en el p7s
+        # NOTA: NO usar -nocerts. WSAA requiere el certificado del firmador
+        #       incluido en el CMS para poder verificar la identidad.
         cmd = [
             'openssl', 'cms',
             '-sign',
             '-nodetach',
             '-nosmimecap',
-            '-nocerts',
             '-signer', cert_path,
             '-outform', 'DER',
             '-out', p7s_temp_path,
@@ -338,7 +344,12 @@ class WSAAClient:
                 timeout=timeout,
                 verify=True,
             )
-            response.raise_for_status()
+
+            # En SOAP, un Fault se envía con HTTP 500. Si es 500 y tiene XML, intentamos parsearlo
+            if response.status_code == 500 and "Envelope" in response.text:
+                logger.warning(f"[WSAA] HTTP 500 recibido, analizando posible SOAP Fault...")
+            else:
+                response.raise_for_status()
 
             resultado = self._parsear_respuesta_soap(response.text)
 
@@ -372,8 +383,14 @@ class WSAAClient:
             logger.error(f"[WSAA] {msg}")
             return self._error_result(msg)
 
+        except requests.exceptions.HTTPError as exc:
+            # Ahora capturo explícitamente HTTPError si es que falla raise_for_status() en otros casos
+            msg = f"Error HTTP {exc.response.status_code} en WSAA. Response: {exc.response.text[:500]}"
+            logger.error(f"[WSAA] {msg}")
+            return self._error_result(msg)
+
         except RequestException as exc:
-            msg = f"Error HTTP WSAA: {exc}"
+            msg = f"Error Request WSAA: {exc}"
             logger.error(f"[WSAA] {msg}")
             return self._error_result(msg)
 
@@ -418,18 +435,33 @@ class WSAAClient:
             logger.error(f"[WSAA] SOAP Fault: {msg}")
             return self._error_result(f"SOAP Fault: {msg}")
 
-        # ---- Buscar token y sign (independiente de namespace) ----
-        token_elem  = root.find('.//token')
-        sign_elem   = root.find('.//sign')
-        expiry_elem = root.find('.//expirationTime')
+        # ---- Buscar credentials dentro del XML escapado ----
+        # WSAA devuelve el resultado como un string XML escapado dentro de loginCmsReturn
+        # Ejemplo: <loginCmsReturn>&lt;loginTicketResponse...&gt;</loginCmsReturn>
+        login_return_elem = root.find('.//loginCmsReturn')
+        if login_return_elem is None:
+            # Fallback en caso de namespaces
+            for elem in root.iter():
+                if 'loginCmsReturn' in elem.tag:
+                    login_return_elem = elem
+                    break
+
+        if login_return_elem is None or not login_return_elem.text:
+            return self._error_result("Respuesta WSAA no contiene loginCmsReturn válido.")
+
+        try:
+            # Parsear el string XML interno
+            inner_xml = ET.fromstring(login_return_elem.text)
+        except ET.ParseError as exc:
+            logger.error(f"[WSAA] El inner XML (loginCmsReturn) es inválido: {exc}")
+            return self._error_result(f"El inner XML es inválido: {exc}")
+
+        token_elem  = inner_xml.find('.//token')
+        sign_elem   = inner_xml.find('.//sign')
+        expiry_elem = inner_xml.find('.//expirationTime')
 
         if token_elem is None or sign_elem is None:
-            # Intentamos limpiar namespaces del XML y reintentamos
-            logger.warning(
-                "[WSAA] No se encontraron <token>/<sign> en el XML. "
-                "Intentando parseo alternativo..."
-            )
-            logger.debug(f"[WSAA] XML respuesta:\n{response_xml[:1000]}")
+            logger.warning("[WSAA] No se encontraron <token>/<sign> en el inner XML.")
             return self._error_result(
                 "Respuesta WSAA sin token/sign. Verificá que el certificado "
                 "esté asociado al servicio en el portal ARCA."
@@ -439,19 +471,15 @@ class WSAAClient:
         sign  = sign_elem.text
         expiry_str = expiry_elem.text if expiry_elem is not None else None
 
-        # Parsea fecha de expiración (formato: "2026-01-01T14:00:00-03:00")
+        # Parsea fecha de expiración (formato: "2026-01-01T14:00:00-03:00" o con milisegundos ".906-03:00")
         expiration = None
         if expiry_str:
-            for fmt in ('%Y-%m-%dT%H:%M:%S%z', '%Y-%m-%dT%H:%M:%SZ'):
-                try:
-                    expiration = datetime.strptime(
-                        expiry_str.replace('-03:00', '+00:00').replace('-00:00', '+00:00').replace('Z', '+00:00'),
-                        '%Y-%m-%dT%H:%M:%S+00:00'
-                    ).replace(tzinfo=dt_timezone.utc)
-                    break
-                except ValueError:
-                    continue
-            if expiration is None:
+            # Reemplazar Z por +00:00 para alinear con ISO
+            clean_str = expiry_str.replace('Z', '+00:00')
+            try:
+                # fromisoformat maneja milisegundos y offsets de manera nativa en Python 3.7+
+                expiration = datetime.fromisoformat(clean_str)
+            except ValueError:
                 logger.warning(f"[WSAA] No se pudo parsear expirationTime: '{expiry_str}'")
 
         return {

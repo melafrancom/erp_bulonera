@@ -37,7 +37,7 @@ class Command(BaseCommand):
             cuit=cuit
         )
         
-        resultado_wsaa = wsaa.obtener_ticket_acceso(servicio='wsfe', usar_cache=False)
+        resultado_wsaa = wsaa.obtener_ticket_acceso(servicio='wsfe', usar_cache=True)
         
         if not resultado_wsaa['success']:
             self.stderr.write(self.style.ERROR(f"❌ Falló WSAA: {resultado_wsaa['error']}"))

@@ -99,7 +99,7 @@ class ProductViewSet(AuditMixin, ModelViewSet):
 
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = ProductFilter
-    search_fields = ['code', 'sku', 'name', 'brand']
+    search_fields = ['code', 'sku', 'other_codes', 'name', 'brand']
     ordering_fields = ['code', 'name', 'price', 'cost', 'created_at', 'stock_quantity']
     ordering = ['name']
 
@@ -314,7 +314,7 @@ class ProductImportViewSet(AuditMixin, GenericViewSet):
             'sku', 'diameter', 'length', 'brand',
             'stock', 'tax_rate', 'material', 'grade', 'norm', 'colour',
             'form', 'thread_format', 'origin', 'condition',
-            'meta_title', 'meta_description', 'meta_keywords',
+            'other_codes', 'meta_title', 'meta_description', 'meta_keywords',
         ]
         df = pd.DataFrame(columns=columns)
 
