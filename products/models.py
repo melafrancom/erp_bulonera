@@ -364,6 +364,8 @@ class Product(BaseModel):
 
     def get_base_name(self):
         """Obtiene el nombre base del producto sin dimensiones."""
+        if not self.name:
+            return ""
         if self.diameter and self.length:
             suffix = f" {self.diameter} x {self.length}"
             if self.name.endswith(suffix):
@@ -374,8 +376,9 @@ class Product(BaseModel):
         # Auto-generar nombre completo con dimensiones
         if self.diameter and self.length:
             suffix = f" {self.diameter} x {self.length}"
-            if suffix not in self.name:
-                self.name = f"{self.name}{suffix}"
+            name_val = self.name or ""
+            if suffix not in name_val:
+                self.name = f"{name_val}{suffix}".strip()
 
         # Auto-generar slug
         if not self.slug:
@@ -392,7 +395,7 @@ class Product(BaseModel):
             self.sku = self.code
 
         # Auto-generar meta SEO
-        if not self.meta_title:
+        if not self.meta_title and self.name:
             self.meta_title = self.name[:200]
         if not self.meta_description and self.description:
             self.meta_description = Truncator(self.description).chars(150)

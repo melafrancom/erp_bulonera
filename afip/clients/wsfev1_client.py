@@ -122,38 +122,54 @@ class GeneradorSolicitudFECAE:
         })
 
     def generar_xml_fe_det_req(self) -> str:
-        """
-        Genera el bloque <FeCbteDetReq> para cada comprobante.
-        Retorna un string XML listo para insertar en el SOAP.
-        """
         partes = []
         for det in self._detalles:
-            c = det['comprobante']
-
-            # Bloque de alícuotas IVA
             iva_xml = self._generar_xml_iva(det['iva_por_alicuota'])
+            # Mapear DocTipo → CondicionIVAReceptorId (RG 5616)
+            condicion_iva_receptor = self._get_condicion_iva_receptor(det['doc_tipo'])
 
-            parte = f"""<FeCbteDetReq>
-                <Concepto>{self.concepto}</Concepto>
-                <DocTipo>{det['doc_tipo']}</DocTipo>
-                <DocNro>{det['doc_nro']}</DocNro>
-                <CbteDesde>{det['cbte_nro']}</CbteDesde>
-                <CbteHasta>{det['cbte_nro']}</CbteHasta>
-                <CbteFch>{det['fecha_cbte']}</CbteFch>
-                <ImpTotal>{self._fmt(det['imp_total'])}</ImpTotal>
-                <ImpTotConc>{self._fmt(det['imp_tot_conc'])}</ImpTotConc>
-                <ImpNeto>{self._fmt(det['imp_neto'])}</ImpNeto>
-                <ImpOpEx>{self._fmt(det['imp_op_ex'])}</ImpOpEx>
-                <ImpIVA>{self._fmt(det['imp_iva'])}</ImpIVA>
-                <ImpTrib>{self._fmt(det['imp_trib'])}</ImpTrib>
-                <MonId>PES</MonId>
-                <MonCotiz>1</MonCotiz>
-                {iva_xml}
-            </FeCbteDetReq>"""
+            parte = f"""<ar:FECAEDetRequest>
+                    <ar:Concepto>{self.concepto}</ar:Concepto>
+                    <ar:DocTipo>{det['doc_tipo']}</ar:DocTipo>
+                    <ar:DocNro>{det['doc_nro']}</ar:DocNro>
+                    <ar:CbteDesde>{det['cbte_nro']}</ar:CbteDesde>
+                    <ar:CbteHasta>{det['cbte_nro']}</ar:CbteHasta>
+                    <ar:CbteFch>{det['fecha_cbte']}</ar:CbteFch>
+                    <ar:ImpTotal>{self._fmt(det['imp_total'])}</ar:ImpTotal>
+                    <ar:ImpTotConc>{self._fmt(det['imp_tot_conc'])}</ar:ImpTotConc>
+                    <ar:ImpNeto>{self._fmt(det['imp_neto'])}</ar:ImpNeto>
+                    <ar:ImpOpEx>{self._fmt(det['imp_op_ex'])}</ar:ImpOpEx>
+                    <ar:ImpIVA>{self._fmt(det['imp_iva'])}</ar:ImpIVA>
+                    <ar:ImpTrib>{self._fmt(det['imp_trib'])}</ar:ImpTrib>
+                    <ar:MonId>PES</ar:MonId>
+                    <ar:MonCotiz>1</ar:MonCotiz>
+                    <ar:CondicionIVAReceptorId>{condicion_iva_receptor}</ar:CondicionIVAReceptorId>
+                    {iva_xml}
+                </ar:FECAEDetRequest>"""
             partes.append(parte)
 
         return '\n'.join(partes)
-
+    
+    @staticmethod
+    def _get_condicion_iva_receptor(doc_tipo: int) -> int:
+        """
+        Mapea el tipo de documento del receptor a la condición IVA requerida por RG 5616.
+        Usá FEParamGetCondicionIvaReceptor para obtener la tabla completa de ARCA.
+        
+        Para Factura B (tipo 6):
+        DocTipo 99 (sin identificar / CF) → 5 (Consumidor Final)
+        DocTipo 80/86 (CUIT) → 1 (RI), 6 (MONO), 4 (Exento), etc.
+        
+        Para Factura A (tipo 1):
+        DocTipo 80/86 → 1 (Responsable Inscripto)
+        """
+        MAPA = {
+            99: 5,   # Sin identificar → Consumidor Final
+            80: 1,   # CUIT → Responsable Inscripto (default, puede variar)
+            86: 1,   # CUIT → Responsable Inscripto (default, puede variar)
+            87: 6,   # CUIL → Monotributista (default)
+        }
+        return MAPA.get(doc_tipo, 5)  # Default: Consumidor Final
     # ------------------------------------------------------------------
     # Helpers privados
     # ------------------------------------------------------------------
@@ -201,19 +217,18 @@ class GeneradorSolicitudFECAE:
 
     @staticmethod
     def _generar_xml_iva(iva_por_alicuota: dict) -> str:
-        """Genera el bloque <Iva> con las alícuotas discriminadas."""
         if not iva_por_alicuota:
             return ''
 
         alicuotas_xml = []
         for alicuota_id, montos in iva_por_alicuota.items():
-            alicuotas_xml.append(f"""<AlicIva>
-                    <Id>{alicuota_id}</Id>
-                    <BaseImp>{GeneradorSolicitudFECAE._fmt(montos['base_imp'])}</BaseImp>
-                    <Importe>{GeneradorSolicitudFECAE._fmt(montos['importe'])}</Importe>
-                </AlicIva>""")
+            alicuotas_xml.append(f"""<ar:AlicIva>
+                    <ar:Id>{alicuota_id}</ar:Id>
+                    <ar:BaseImp>{GeneradorSolicitudFECAE._fmt(montos['base_imp'])}</ar:BaseImp>
+                    <ar:Importe>{GeneradorSolicitudFECAE._fmt(montos['importe'])}</ar:Importe>
+                </ar:AlicIva>""")
 
-        return f"<Iva>{''.join(alicuotas_xml)}</Iva>"
+        return f"<ar:Iva>{''.join(alicuotas_xml)}</ar:Iva>"
 
     @staticmethod
     def _fmt(valor) -> str:

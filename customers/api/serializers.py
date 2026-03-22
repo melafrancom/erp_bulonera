@@ -91,14 +91,15 @@ class CustomerCreateSerializer(serializers.ModelSerializer):
     
     def validate_cuit_cuil(self, value):
         from common.utils import validate_cuit
-        # Limpiar guiones
+        # Limpiar guiones para validación y guardado uniforme
         clean_value = value.replace('-', '')
+        
         if len(clean_value) == 11 and not validate_cuit(clean_value):
             raise serializers.ValidationError("El CUIT/CUIL no es válido (dígito verificador incorrecto).")
         
         # Unicidad (revisar en todos, incluso eliminados no deben causar choque sorpresa)
         customer = self.instance
-        queryset = getattr(Customer, 'all_objects', Customer.objects).filter(cuit_cuil=value)
+        queryset = getattr(Customer, 'all_objects', Customer.objects).filter(cuit_cuil=clean_value)
         if customer:
             queryset = queryset.exclude(pk=customer.pk)
         
@@ -110,7 +111,7 @@ class CustomerCreateSerializer(serializers.ModelSerializer):
                 # Lo permitimos pasar, peeeero avisamos al Context para que create() sepa restaurarlo
                 self.context['deleted_customer_to_restore'] = existing
 
-        return value
+        return clean_value
 
     def create(self, validated_data):
         # Si la validación detectó un cliente eliminado suavemente con el mismo CUIT

@@ -609,12 +609,12 @@ class QuoteConversion(BaseModel):
     
     quote = models.OneToOneField(
         Quote,
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name='conversion'
     )
     sale = models.OneToOneField(
         Sale,
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name='source_quote_conversion'
     )
     

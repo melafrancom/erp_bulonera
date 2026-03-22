@@ -118,6 +118,8 @@ class TestProductActions:
         """GET /api/v1/products/export/excel/ - Exportar Excel ERP."""
         url = reverse('products_api:product-export-excel')
         response = authenticated_client.get(url)
+        if response.status_code != 200:
+            print(f"DEBUG EXPORT EXCEL: {response.content.decode()}")
         assert response.status_code == status.HTTP_200_OK
         assert 'spreadsheet' in response['content-type']
 
@@ -125,6 +127,8 @@ class TestProductActions:
         """GET /api/v1/products/export/web/ - Exportar Excel Web."""
         url = reverse('products_api:product-export-for-web')
         response = authenticated_client.get(url)
+        if response.status_code != 200:
+            print(response.content.decode())
         assert response.status_code == status.HTTP_200_OK
         assert 'spreadsheet' in response['content-type']
 

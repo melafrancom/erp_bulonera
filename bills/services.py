@@ -68,9 +68,10 @@ def facturar_venta(sale, user, tipo_comprobante=None, async_emission=True):
         condicion_iva = customer.tax_condition
         cliente_domicilio = customer.billing_address or ''
     else:
-        # Cliente walk-in
-        cliente_cuit = sale.customer_cuit.replace('-', '') if sale.customer_cuit else ''
-        cliente_razon_social = sale.customer_name or 'Consumidor Final'
+        # Venta walk-in (sin FK de cliente)
+        cliente_cuit = getattr(sale, 'customer_cuit', '') or ''
+        cliente_cuit = cliente_cuit.replace('-', '')
+        cliente_razon_social = getattr(sale, 'customer_name', '') or 'Consumidor Final'
         condicion_iva = 'CF'
         cliente_domicilio = ''
 
@@ -179,7 +180,7 @@ def facturar_venta(sale, user, tipo_comprobante=None, async_emission=True):
             sale=sale,
             tipo_compr=tipo_comprobante,
             punto_venta=punto_venta,
-            numero=1,  # Temporal — se actualiza con ARCA
+            numero=0,  # ← placeholder, se actualiza con el número real de ARCA
             fecha_compr=date.today(),
             doc_cliente_tipo=doc_tipo,
             doc_cliente=doc_nro,

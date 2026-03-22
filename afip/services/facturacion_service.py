@@ -276,13 +276,38 @@ class FacturacionService:
     # =========================================================================
 
     def _emitir_una_vez(self, comprobante: Comprobante) -> dict:
-        """
-        Realiza un intento único de emisión (sin reintentos).
-        Gestiona estado del comprobante en BD.
-        """
+        """Realiza un intento único de emisión."""
         token, sign = self.obtener_token_acceso()
 
-        # Marca como PENDIENTE antes de enviar (para detect duplicados)
+        # ── NUEVO: Consultar y asignar el próximo número correlativo ──────
+        resultado_nro = self.wsfev1_client.fe_cae_consultar_ult_nro(
+            token=token,
+            sign=sign,
+            cuit=self.empresa_cuit,
+            punto_venta=comprobante.punto_venta,
+            tipo_compr=comprobante.tipo_compr,
+        )
+        if not resultado_nro['success']:
+            return {
+                'success': False,
+                'error': f"No se pudo obtener el último número de ARCA: {resultado_nro['error']}",
+                'cae': None,
+                'fecha_vto_cae': None,
+                'motivos_obs': [],
+            }
+
+        proximo_numero = resultado_nro['ultimo_numero'] + 1
+        logger.info(
+            f"[FacturacionService] Próximo número para tipo {comprobante.tipo_compr} "
+            f"PtoVta {comprobante.punto_venta}: {proximo_numero}"
+        )
+
+        # Actualizar el número en BD antes de enviar
+        comprobante.numero = proximo_numero
+        comprobante.save(update_fields=['numero'])
+        # ──────────────────────────────────────────────────────────────────
+
+        # Marca como PENDIENTE
         comprobante.marcar_como_enviado()
 
         generador = GeneradorSolicitudFECAE(
@@ -309,9 +334,11 @@ class FacturacionService:
             comprobante.marcar_como_autorizado(
                 cae=resultado['cae'],
                 fecha_vto_cae=resultado['fecha_vto_cae'],
-                respuesta_json={'cae': resultado['cae'],
-                                'vencimiento': str(resultado['fecha_vto_cae']),
-                                'advertencias': resultado.get('advertencias', [])},
+                respuesta_json={
+                    'cae': resultado['cae'],
+                    'vencimiento': str(resultado['fecha_vto_cae']),
+                    'advertencias': resultado.get('advertencias', []),
+                },
             )
             logger.info(
                 f"[FacturacionService] ✅ CAE obtenido: {resultado['cae']} "
@@ -327,12 +354,12 @@ class FacturacionService:
             error_msg = resultado.get('error', 'Error desconocido')
             comprobante.marcar_como_rechazado(
                 error_msg=error_msg,
-                respuesta_json={'error': error_msg,
-                                'observaciones': resultado.get('motivos_obs', [])},
+                respuesta_json={
+                    'error': error_msg,
+                    'observaciones': resultado.get('motivos_obs', []),
+                },
             )
-            logger.error(
-                f"[FacturacionService] ❌ Rechazado: {error_msg}"
-            )
+            logger.error(f"[FacturacionService] ❌ Rechazado: {error_msg}")
             self._log(
                 tipo='FE_ERROR',
                 comprobante=comprobante,
@@ -347,7 +374,7 @@ class FacturacionService:
             'error':         resultado.get('error'),
             'motivos_obs':   resultado.get('motivos_obs', []),
         }
-
+    
     def _validar_comprobante(self, comprobante: Comprobante) -> None:
         """
         Valida el comprobante antes de enviarlo a ARCA.
@@ -406,8 +433,11 @@ class FacturacionService:
         return 1  # 1=Productos, 2=Servicios, 3=Productos y Servicios
 
     def _log(self, tipo: str, comprobante=None, **kwargs) -> None:
-        """Registra una transacción en LogARCA de forma segura."""
         try:
+            # Asegurar que response_xml nunca sea None
+            if 'response_xml' not in kwargs:
+                kwargs['response_xml'] = ''
+                
             LogARCA.objects.create(
                 tipo=tipo,
                 cuit=self.empresa_cuit,
@@ -416,5 +446,4 @@ class FacturacionService:
                 **kwargs,
             )
         except Exception as exc:
-            # No interrumpir el flujo principal si el log falla
             logger.error(f"[FacturacionService] No se pudo guardar LogARCA: {exc}")

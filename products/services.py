@@ -453,7 +453,7 @@ class ProductExportService:
                 'code': p.code,
                 'sku': p.sku,
                 'name': p.name,
-                'category': p.category.name if p.category else '',
+                'category': getattr(p.category, 'name', '') if p.category else '',
                 'subcategories': ', '.join(
                     p.subcategories.values_list('name', flat=True)
                 ),
@@ -462,7 +462,7 @@ class ProductExportService:
                 'tax_rate': float(p.tax_rate),
                 'stock': p.stock_quantity,
                 'brand': p.brand,
-                'supplier': p.supplier.business_name if p.supplier else '',
+                'supplier': getattr(p.supplier, 'business_name', '') if p.supplier else '',
                 'other_codes': p.other_codes or '',
                 'diameter': p.diameter or '',
                 'length': p.length or '',
@@ -542,13 +542,16 @@ class ProductExportService:
             # Imagen principal
             main_img = ''
             if p.main_image:
-                main_img = os.path.basename(p.main_image.name)
+                try:
+                    main_img = os.path.basename(p.main_image.name)
+                except (AttributeError, ValueError):
+                    main_img = ''
 
             # Galería: imágenes adicionales separadas por coma
             gallery_imgs = ', '.join(
                 os.path.basename(img.image.name)
                 for img in p.images.all()
-                if img.image
+                if img.image and hasattr(img.image, 'name')
             )
 
             # FAQs: recopilar de subcategorías del producto
@@ -572,7 +575,7 @@ class ProductExportService:
                 'description': p.description or '',
                 'images': main_img,
                 'stock': p.stock_quantity,
-                'category': p.category.name if p.category else '',
+                'category': getattr(p.category, 'name', '') if p.category else '',
                 'subcategories': ', '.join(
                     p.subcategories.values_list('name', flat=True)
                 ),

@@ -1,12 +1,11 @@
-"""
-Configuración global de fixtures para pytest.
-"""
 import pytest
 from datetime import timedelta
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
+
+
 
 User = get_user_model()
 
@@ -127,7 +126,7 @@ def customer(db, admin_user, customer_segment):
     return Customer.objects.create(
         customer_type='COMPANY',
         business_name='Empresa Prueba S.A.',
-        cuit_cuil=generate_valid_cuit(12345678),
+        cuit_cuil=generate_valid_cuit(12345678).replace('-', ''),
         tax_condition='RI',
         email='empresa@test.com',
         phone='+54-11-1234-5678',
@@ -148,6 +147,7 @@ def category(db, admin_user):
         name='Tornillos',
         created_by=admin_user,
     )
+
 
 
 @pytest.fixture

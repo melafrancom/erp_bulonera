@@ -443,14 +443,14 @@ class LogARCA(models.Model):
     servicio = models.CharField(max_length=50)
     
     # Request
-    request_xml = models.TextField(blank=True)
+    request_xml = models.TextField(blank=True, default='')
     
     # Response
-    response_xml = models.TextField(blank=True)
+    response_xml = models.TextField(blank=True, default='')
     response_code = models.IntegerField(null=True, blank=True)
     
     # Errores
-    error = models.TextField(blank=True)
+    error = models.TextField(blank=True, default='')
     
     # Comprobante relacionado
     comprobante = models.ForeignKey(

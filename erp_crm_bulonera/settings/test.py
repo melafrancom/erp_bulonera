@@ -17,22 +17,26 @@ PASSWORD_HASHERS = [
 ]
 
 # Desactivar CSRF para tests
-CSRF_TRUSTED_ORIGINS = ['testserver']
+CSRF_TRUSTED_ORIGINS = ['http://testserver']
 
 # Email backend
 EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
 
+# Archivos media para tests
+MEDIA_ROOT = BASE_DIR / 'media_test'
+
 # Debug
 DEBUG = True
 
-# REST Framework: Desactivar throttling y simplificar auth para tests
-REST_FRAMEWORK = {
+# REST Framework: Desactivar throttling y usar renderers estándar para tests
+REST_FRAMEWORK.update({
     'DEFAULT_THROTTLE_CLASSES': [],
     'DEFAULT_THROTTLE_RATES': {},
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    # Usar renderers estándar para que los tests que esperan datos sin "envelope" funcionen
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
     ],
-}
+})
 
 # Caché en memoria para tests
 CACHES = {
@@ -52,6 +56,6 @@ LOGGING = {
     },
     'root': {
         'handlers': ['console'],
-        'level': 'CRITICAL',
+        'level': 'ERROR',
     },
 }

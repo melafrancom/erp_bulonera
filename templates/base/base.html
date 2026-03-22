@@ -39,6 +39,17 @@
       tailwind.config = {
         theme: {
           extend: {
+            colors: {
+              primary: {
+                DEFAULT: '#667eea',
+                dark: '#5a67d8',
+              },
+              secondary: '#764ba2',
+              success: '#10b981',
+              warning: '#f59e0b',
+              error: '#ef4444',
+              info: '#3b82f6',
+            },
             fontFamily: {
               sans: ["Inter", "sans-serif"],
             },
@@ -62,16 +73,28 @@
     <!-- Custom CSS Files -->
     <link rel="stylesheet" href="{% static 'css/base.css' %}" />
     <link rel="stylesheet" href="{% static 'css/forms.css' %}" />
-    <link rel="stylesheet" href="{% static 'css/responsive.css' %}" />
-
 
     <!-- Custom Inline Styles -->
     <style type="text/tailwindcss">
+      [x-cloak] { display: none !important; }
+
+      :root {
+        --sat: env(safe-area-inset-top);
+        --sar: env(safe-area-inset-right);
+        --sab: env(safe-area-inset-bottom);
+        --sal: env(safe-area-inset-left);
+      }
+      
       /* Sidebar styling */
       .sidebar {
         width: 260px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, theme('colors.primary.DEFAULT') 0%, theme('colors.secondary') 100%);
         min-height: 100vh;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .safe-area-bottom {
+        padding-bottom: calc(theme('spacing.2') + var(--sab));
       }
 
       .nav-item {
@@ -114,7 +137,7 @@
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
              class="fixed inset-0 bg-black/50 z-40 lg:hidden"
-             style="display: none;"></div>
+             x-cloak></div>
 
         <!-- Sidebar -->
         {% include 'includes/dashboard_sidebar.html' %}

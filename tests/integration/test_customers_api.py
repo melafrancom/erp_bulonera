@@ -26,7 +26,7 @@ class TestCustomerAPI:
         data = {
             'customer_type': 'COMPANY',
             'business_name': 'Nueva Empresa S.A.',
-            'cuit_cuil': generate_valid_cuit(11111111),
+            'cuit_cuil': generate_valid_cuit(99887766),
             'tax_condition': 'RI',
             'email': 'nueva@empresa.com',
             'customer_segment': customer_segment.id
@@ -35,7 +35,8 @@ class TestCustomerAPI:
         
         assert response.status_code == status.HTTP_201_CREATED, f"Error: {response.data}"
         assert response.data['business_name'] == 'Nueva Empresa S.A.'
-        assert Customer.objects.filter(cuit_cuil=generate_valid_cuit(11111111)).exists()
+        clean_cuit = generate_valid_cuit(99887766).replace('-', '')
+        assert Customer.objects.filter(cuit_cuil=clean_cuit).exists()
     
     def test_create_customer_duplicate_cuit(self, authenticated_client, customer):
         """Test crear cliente con CUIT duplicado."""
