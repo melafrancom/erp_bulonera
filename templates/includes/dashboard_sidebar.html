@@ -1,7 +1,7 @@
 {% load static %}
 
 <!-- Sidebar -->
-<aside :class="{'open': sidebarOpen}" class="sidebar flex flex-col">
+<aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="sidebar fixed inset-y-0 left-0 z-50 flex flex-col lg:static lg:translate-x-0 transition-transform duration-300 w-[260px]">
   <!-- Logo y Nombre de Empresa -->
   <div class="p-6 border-b border-white/10">
     <a href="{% url 'core_web:dashboard' %}" class="flex items-center space-x-3">
@@ -147,12 +147,10 @@
           <span>Movimientos</span>
         </a>
 
-        {% if users.can_view_reports %}
-        <a href="#" class="nav-item">
+        <a href="{% url 'reports_web:dashboard' %}" class="nav-item {% if 'reports' in request.path %}active{% endif %}">
           <i data-lucide="trending-up" class="w-5 h-5"></i>
-          <span>Reportes</span>
+          <span>Dashboard Comercial</span>
         </a>
-        {% endif %}
       </div>
       <!-- Sección: Notificaciones -->
       <a href="#" class="nav-item">

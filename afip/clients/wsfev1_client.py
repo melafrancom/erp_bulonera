@@ -119,6 +119,10 @@ class GeneradorSolicitudFECAE:
             'imp_iva':            comprobante_obj.monto_iva,
             'imp_trib':           Decimal('0'),
             'iva_por_alicuota':   iva_por_alicuota,
+            # CbtesAsoc
+            'cbte_asoc_tipo':     comprobante_obj.cbte_asoc_tipo,
+            'cbte_asoc_pto_vta':  comprobante_obj.cbte_asoc_pto_vta,
+            'cbte_asoc_numero':   comprobante_obj.cbte_asoc_numero,
         })
 
     def generar_xml_fe_det_req(self) -> str:
@@ -127,6 +131,17 @@ class GeneradorSolicitudFECAE:
             iva_xml = self._generar_xml_iva(det['iva_por_alicuota'])
             # Mapear DocTipo → CondicionIVAReceptorId (RG 5616)
             condicion_iva_receptor = self._get_condicion_iva_receptor(det['doc_tipo'])
+            
+            cbtes_asoc_xml = ""
+            if det.get('cbte_asoc_numero') and det.get('cbte_asoc_pto_vta') and det.get('cbte_asoc_tipo'):
+                cbtes_asoc_xml = f"""<ar:CbtesAsoc>
+                        <ar:CbteAsoc>
+                            <ar:Tipo>{det['cbte_asoc_tipo']}</ar:Tipo>
+                            <ar:PtoVta>{det['cbte_asoc_pto_vta']}</ar:PtoVta>
+                            <ar:Nro>{det['cbte_asoc_numero']}</ar:Nro>
+                            <ar:Cuit>{self.cuit_empresa}</ar:Cuit>
+                        </ar:CbteAsoc>
+                    </ar:CbtesAsoc>"""
 
             parte = f"""<ar:FECAEDetRequest>
                     <ar:Concepto>{self.concepto}</ar:Concepto>
@@ -144,6 +159,7 @@ class GeneradorSolicitudFECAE:
                     <ar:MonId>PES</ar:MonId>
                     <ar:MonCotiz>1</ar:MonCotiz>
                     <ar:CondicionIVAReceptorId>{condicion_iva_receptor}</ar:CondicionIVAReceptorId>
+                    {cbtes_asoc_xml}
                     {iva_xml}
                 </ar:FECAEDetRequest>"""
             partes.append(parte)

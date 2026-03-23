@@ -18,9 +18,11 @@ from afip.models import ConfiguracionARCA, LogARCA, WSAAToken
 
 
 class AdminRequiredMixin(UserPassesTestMixin):
-    """Solo admins y managers pueden acceder a la configuración AFIP."""
+    """Mixin para requerir privilegios de Admin."""
+    raise_exception = True
+    
     def test_func(self):
-        return self.request.user.is_superuser or getattr(self.request.user, 'is_admin', False) or getattr(self.request.user, 'is_manager', False)
+        return (self.request.user.is_authenticated and self.request.user.role == 'admin') or getattr(self.request.user, 'is_manager', False)
 
 
 # ============================================================================

@@ -12,6 +12,10 @@ from .base import *  # noqa: F401, F403
 # Solo agregamos lo que base.py NO tiene:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+# Añadimos los hosts locales para permitir health checks y proxies internos
+ALLOWED_HOSTS.extend(['localhost', '127.0.0.1', '[::1]'])
+
+
 # Necesario cuando hay un reverse proxy (OLS) delante de uWSGI/Docker
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 

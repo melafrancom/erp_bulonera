@@ -1,0 +1,10 @@
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    {% for kpi in kpis %}
+        {% include "reports/partials/_kpi_card.html" with kpi=kpi %}
+    {% empty %}
+        <div class="col-span-full py-12 flex flex-col items-center justify-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+            <i data-lucide="bar-chart" class="h-12 w-12 text-gray-300 mb-4"></i>
+            <p class="text-gray-500 font-medium">No hay indicadores disponibles para tu perfil.</p>
+        </div>
+    {% endfor %}
+</div>

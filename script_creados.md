@@ -225,8 +225,8 @@ echo ""
 echo -e "${CYAN}📝 Logs Recientes (últimos 10 líneas):${NC}"
 echo ""
 
-# Mostrar logs recientes del servicio web
-docker logs erp_web --tail 10
+# Mostrar logs recientes del servicio web (uWSGI)
+tail -10 /var/www/erp/logs/uwsgi_erp.log
 
 echo ""
 

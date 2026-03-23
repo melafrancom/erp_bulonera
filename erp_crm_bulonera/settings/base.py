@@ -44,6 +44,7 @@ DJANGO_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'django_filters',
     'django_celery_beat',
 ]
@@ -67,6 +68,7 @@ SHARED_APPS = [
     'bills',
     'afip',
     'suppliers',
+    'reports',
 ]
 
 # ALL APPS

@@ -24,3 +24,9 @@ curl -I https://erp.buloneraalvear.online/ | grep -E "X-Frame|Content-Type-Optio
 
 # 7. Verificar que el archivo .env no se puede acceder desde internet
 sudo curl -I http://erp.buloneraalvear.online/.env
+
+# 8. Verificar los logs
+tail -10 /var/www/erp/logs/uwsgi_erp.log
+
+# 9. Verificar que el servicio uWSGI está funcionando
+sudo systemctl status uwsgi

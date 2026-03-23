@@ -26,7 +26,7 @@ class TestCustomerAPI:
         data = {
             'customer_type': 'COMPANY',
             'business_name': 'Nueva Empresa S.A.',
-            'cuit_cuil': generate_valid_cuit(99887766),
+            'cuit_cuil': generate_valid_cuit(99887766).replace('-', ''),
             'tax_condition': 'RI',
             'email': 'nueva@empresa.com',
             'customer_segment': customer_segment.id

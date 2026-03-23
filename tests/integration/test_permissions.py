@@ -17,7 +17,7 @@ class TestPermissionsMatrix:
         data = {
             'customer_type': 'COMPANY',
             'business_name': 'Admin Created Customer',
-            'cuit_cuil': generate_valid_cuit(10000001),
+            'cuit_cuil': generate_valid_cuit(10000001).replace('-', ''),
             'tax_condition': 'RI',
             'email': 'admin.customer@test.com',
             'customer_segment': customer_segment.id,
@@ -39,7 +39,7 @@ class TestPermissionsMatrix:
         data = {
             'customer_type': 'COMPANY',
             'business_name': 'Operator Customer',
-            'cuit_cuil': generate_valid_cuit(10000002),
+            'cuit_cuil': generate_valid_cuit(10000002).replace('-', ''),
             'tax_condition': 'RI',
             'email': 'operator.customer@test.com',
             'customer_segment': customer_segment.id
@@ -63,7 +63,7 @@ class TestPermissionsMatrix:
         data = {
             'customer_type': 'COMPANY',
             'business_name': 'Operator With Permission',
-            'cuit_cuil': generate_valid_cuit(10000003),
+            'cuit_cuil': generate_valid_cuit(10000003).replace('-', ''),
             'tax_condition': 'RI',
             'email': 'operator.perm@test.com',
             'customer_segment': customer_segment.id,
@@ -90,7 +90,7 @@ class TestPermissionsMatrix:
         data = {
             'customer_type': 'COMPANY',
             'business_name': 'Viewer Customer',
-            'cuit_cuil': generate_valid_cuit(10000004),
+            'cuit_cuil': generate_valid_cuit(10000004).replace('-', ''),
             'tax_condition': 'RI',
             'email': 'viewer.customer@test.com',
             'customer_segment': customer.customer_segment.id

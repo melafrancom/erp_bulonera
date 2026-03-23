@@ -1,0 +1,93 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} | Bulonera Alvear{% endblock %}
+
+{% block extra_css %}
+<style>
+    .kpi-grid-enter {
+        animation: fadeInUp 0.5s ease forwards;
+    }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto" x-data="{ loading: false }">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 space-y-4 md:space-y-0">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 tracking-tight">
+                ¡Hola, {{ user.get_full_name|default:user.username }}! 👋
+            </h1>
+            <p class="text-gray-500 mt-1 flex items-center">
+                <i data-lucide="calendar" class="h-4 w-4 mr-2"></i>
+                Explora el rendimiento de hoy, <span class="font-semibold ml-1 text-gray-700">{{ timezone.now|date:"d \d\e F, Y" }}</span>
+            </p>
+        </div>
+        
+        <div class="flex items-center space-x-3">
+            <div class="px-4 py-2 bg-white rounded-xl shadow-sm border border-gray-100 flex items-center text-sm font-medium text-gray-600">
+                <span class="w-2 h-2 rounded-full bg-{% if user_role == 'admin' %}purple{% elif user_role == 'manager' %}blue{% else %}gray{% endif %}-500 mr-2 animate-pulse"></span>
+                Rol: {{ user_role|capfirst }}
+            </div>
+            <button @click="window.location.reload()" class="p-2.5 bg-white hover:bg-gray-50 text-gray-600 rounded-xl shadow-sm border border-gray-100 transition-all hover:rotate-180 duration-500" title="Actualizar dashboard">
+                <i data-lucide="refresh-cw" class="h-5 w-5"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- KPI Grid -->
+    <div class="mb-12 kpi-grid-enter">
+        <h2 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
+            <span class="w-8 h-1 bg-primary rounded-full mr-3"></span>
+            Indicadores Clave de Fase 1
+        </h2>
+        {% include "reports/partials/_kpi_grid.html" with kpis=kpis %}
+    </div>
+
+    <!-- Future KPIs Placeholder / Tips -->
+    <div class="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-2xl p-8 border border-primary/20 relative overflow-hidden">
+        <div class="relative z-10 flex flex-col md:flex-row items-center justify-between">
+            <div class="mb-6 md:mb-0 text-center md:text-left">
+                <h3 class="text-xl font-bold text-gray-900 flex items-center justify-center md:justify-start">
+                    <i data-lucide="rocket" class="h-6 w-6 mr-2 text-primary"></i>
+                    Próximamente: Fase 2
+                </h3>
+                <p class="text-gray-600 mt-2 max-w-xl">
+                    Estamos trabajando en métricas avanzadas: tasa de conversión de presupuestos, 
+                    alertas de stock bajo mínimo y análisis de deuda de clientes en tiempo real.
+                </p>
+            </div>
+            <div class="flex -space-x-3">
+                <div class="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center border-2 border-gray-50" title="Stock Analytics">
+                    <i data-lucide="package" class="h-6 w-6 text-gray-400"></i>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center border-2 border-gray-50" title="Customer Insights">
+                    <i data-lucide="users" class="h-6 w-6 text-gray-400"></i>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-primary shadow-lg flex items-center justify-center border-2 border-white" title="Plus More">
+                    <i data-lucide="plus" class="h-6 w-6 text-white"></i>
+                </div>
+            </div>
+        </div>
+        <!-- Decorative blobs -->
+        <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl"></div>
+        <div class="absolute -left-10 -top-10 w-40 h-40 bg-secondary/10 rounded-full blur-3xl"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Reinicializar iconos para los partials cargados
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    });
+</script>
+{% endblock %}

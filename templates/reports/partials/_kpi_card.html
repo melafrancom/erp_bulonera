@@ -1,0 +1,49 @@
+{% load static humanize %}
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg transition-all duration-300 group">
+    <div class="flex items-center justify-between mb-4">
+        <div class="p-3 rounded-xl bg-{{ kpi.color }}-50 group-hover:scale-110 transition-transform duration-300">
+            <i data-lucide="{{ kpi.icon }}" class="h-6 w-6 text-{{ kpi.color }}-600"></i>
+        </div>
+        {% if kpi.trend %}
+        <div class="flex items-center space-x-1 {% if kpi.trend == 'up' %}text-emerald-600{% elif kpi.trend == 'down' %}text-rose-600{% else %}text-gray-400{% endif %} bg-opacity-10 px-2 py-1 rounded-lg text-xs font-bold">
+            {% if kpi.trend == 'up' %}
+                <i data-lucide="trending-up" class="h-3 w-3"></i>
+            {% elif kpi.trend == 'down' %}
+                <i data-lucide="trending-down" class="h-3 w-3"></i>
+            {% endif %}
+            <span>{{ kpi.trend|capfirst }}</span>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div>
+        <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">{{ kpi.label }}</h3>
+        <div class="flex items-baseline mt-1 space-x-1">
+            <span class="text-3xl font-extrabold text-gray-900">
+                {% if kpi.unit == '$' %}${% endif %}{{ kpi.value|floatformat:2|intcomma }}
+            </span>
+            {% if kpi.unit != '$' %}
+            <span class="text-sm font-medium text-gray-400">{{ kpi.unit }}</span>
+            {% endif %}
+        </div>
+        
+        <div class="mt-4 flex items-center justify-between">
+            <p class="text-sm text-gray-400 italic">
+                {{ kpi.secondary_value }}
+            </p>
+            {% if kpi.detail_url and kpi.detail_url != '#' %}
+            <a href="{{ kpi.detail_url }}" class="text-{{ kpi.color }}-600 hover:text-{{ kpi.color }}-700 text-sm font-semibold flex items-center group/link">
+                Ver más
+                <i data-lucide="chevron-right" class="h-4 w-4 ml-1 group-hover/link:translate-x-1 transition-transform"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% if kpi.cached %}
+    <div class="mt-2 text-[10px] text-gray-300 flex items-center">
+        <i data-lucide="clock" class="h-3 w-3 mr-1"></i>
+        Cacheado
+    </div>
+    {% endif %}
+</div>

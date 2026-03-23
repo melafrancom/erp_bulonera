@@ -1,7 +1,8 @@
 <!-- 
   Partial: _product_card.html
   Uso: { .. % include 'products/partials/_product_card.html' with product=p % .. }
-  <!-- Card de producto para vista mobile. Touch-friendly (botones > 44px). -->
+  Card de producto para vista mobile. Touch-friendly (botones > 44px). 
+-->
 <article class="rounded-xl shadow-sm border p-4 mb-3 transition-shadow {% if product.match_score > 0 %}bg-green-50 border-green-200 hover:shadow-md{% else %}bg-white border-gray-200 hover:shadow-md{% endif %}">
   
   <!-- Header: Nombre -->

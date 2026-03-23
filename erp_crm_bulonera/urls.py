@@ -71,6 +71,7 @@ urlpatterns = [
     path('api/v1/bills/', include('bills.api.urls', namespace='bills_api')),
     path('api/v1/suppliers/', include('suppliers.api.urls', namespace='suppliers_api')),
     path('api/v1/afip/', include('afip.api.urls', namespace='afip_api')),
+    path('api/v1/reports/', include('reports.api.urls', namespace='reports_api')),
 
     # Vistas web (templates)
     path('customers/', include('customers.web.urls.urls', namespace='customers')),
@@ -78,9 +79,10 @@ urlpatterns = [
     path('products/', include('products.web.urls')),
     path('inventory/', include('inventory.web.urls.urls_web', namespace='inventory_web')),
     path('payments/', include('payments.web.urls')),
-    path('bills/', include('bills.web.urls')),
+    path('bills/', include('bills.web.urls', namespace='bills_web')),
     path('suppliers/', include('suppliers.web.urls', namespace='suppliers_web')),
     path('afip/', include('afip.web.urls', namespace='afip_web')),
+    path('reports/', include('reports.web.urls', namespace='reports_web')),
 
 ]
 
@@ -95,3 +97,10 @@ if settings.DEBUG:
         urlpatterns = [
             path('__debug__/', include(debug_toolbar.urls)),
         ] + urlpatterns
+
+# ==========================================
+# Handlers de Errores Globales
+# ==========================================
+handler403 = 'core.web.views.errors.custom_403'
+handler404 = 'core.web.views.errors.custom_404'
+handler500 = 'core.web.views.errors.custom_500'

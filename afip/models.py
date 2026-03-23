@@ -249,6 +249,11 @@ class Comprobante(models.Model):
     fecha_compr = models.DateField(
         help_text="Fecha del comprobante"
     )
+    
+    # Comprobante Asociado (CbtesAsoc) para Notas de Crédito
+    cbte_asoc_tipo = models.IntegerField(null=True, blank=True)
+    cbte_asoc_pto_vta = models.IntegerField(null=True, blank=True)
+    cbte_asoc_numero = models.IntegerField(null=True, blank=True)
     fecha_vto_pago = models.DateField(
         null=True,
         blank=True,

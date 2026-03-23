@@ -76,22 +76,45 @@ Variables:
         </dl>
 
         {% if invoice.estado_fiscal == 'autorizada' %}
-        <a href="{% url 'bills_web:invoice_pdf' invoice.pk %}"
-           target="_blank"
-           class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-            <i data-lucide="download" class="w-4 h-4"></i>
-            Descargar PDF de Factura
-        </a>
+        <div class="flex flex-col sm:flex-row gap-3 mt-4">
+            <a href="{% url 'bills_web:invoice_pdf' invoice.pk %}"
+               target="_blank"
+               class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex-1">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                Descargar PDF
+            </a>
+            
+            <form method="post" action="{% url 'bills_web:invoice_cancel' invoice.pk %}" class="flex-1 flex">
+                {% csrf_token %}
+                <button type="submit"
+                        onclick="return confirm('ATENCIÓN: Se emitirá una Nota de Crédito en ARCA y se cancelará la venta asociada devolviendo el stock. ¿Proceder?')"
+                        class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 text-sm font-medium rounded-lg transition-colors">
+                    <i data-lucide="ban" class="w-4 h-4"></i>
+                    Anular (Nota Cr.)
+                </button>
+            </form>
+        </div>
         {% elif invoice.estado_fiscal == 'pendiente' %}
         <p class="text-xs text-yellow-700 bg-yellow-50 rounded-lg px-3 py-2">
             El comprobante fue enviado a ARCA y está esperando respuesta.
             Actualizá la página en unos segundos.
         </p>
         {% elif invoice.estado_fiscal == 'rechazada' %}
-        <p class="text-xs text-red-700 bg-red-50 rounded-lg px-3 py-2">
-            ARCA rechazó el comprobante. Revisá los datos del cliente (CUIT/condición IVA)
-            y contactá al administrador para reintentar.
-        </p>
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p class="text-xs text-red-700 font-medium mb-3">
+                <i data-lucide="alert-circle" class="w-4 h-4 inline mr-1"></i>
+                ARCA rechazó el comprobante. Resolvé el problema y volvé a intentar.
+            </p>
+            <form method="post" action="{% url 'bills_web:invoice_retry' invoice.pk %}">
+                {% csrf_token %}
+                <button type="submit"
+                        onclick="return confirm('¿Reintentar enviar esta factura a ARCA?')"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    Reintentar Emisión
+                </button>
+            </form>
+        </div>
         {% endif %}
 
     {% elif can_invoice %}

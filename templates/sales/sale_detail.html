@@ -422,17 +422,7 @@
                 Iniciar Preparación
               </button>
             </form>
-            {% if sale.can_be_invoiced %}
-            <form method="post" action="{% url 'sales_web:sale_invoice' sale.id %}">
-              {% csrf_token %}
-              <button type="submit"
-                      onclick="return confirm('¿Generar factura electrónica para esta venta?')"
-                      class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-xl hover:bg-teal-100 transition font-medium text-sm">
-                <i data-lucide="file-text" class="w-4 h-4"></i>
-                Generar Factura
-              </button>
-            </form>
-            {% endif %}
+
             <form method="post" action="{% url 'sales_web:sale_cancel' sale.id %}">
               {% csrf_token %}
               <button type="submit"

@@ -16,7 +16,10 @@ from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import transaction
+from django.db.models import Max
+from django.core.exceptions import ValidationError
 from django.conf import settings
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -132,9 +135,13 @@ def facturar_venta(sale, user, tipo_comprobante=None, async_emission=True):
 
     # ── Crear todo en transaction ─────────────────────────────
     with transaction.atomic():
-        # 1. Consultar último número para auto-numerar
-        # (se resolverá al enviar a ARCA, por ahora placeholder)
-        numero_secuencial = 0  # Se actualizará cuando ARCA confirme
+        # 1. Consultar último número para auto-numerar localmente
+        last_invoice = Invoice.objects.filter(
+            tipo_comprobante=tipo_comprobante,
+            punto_venta=punto_venta
+        ).aggregate(Max('numero_secuencial'))
+        
+        numero_secuencial = (last_invoice['numero_secuencial__max'] or 0) + 1
 
         # 2. Crear Invoice
         invoice = Invoice.objects.create(
@@ -143,8 +150,8 @@ def facturar_venta(sale, user, tipo_comprobante=None, async_emission=True):
             emitida_por=user,
             tipo_comprobante=tipo_comprobante,
             punto_venta=punto_venta,
-            numero_secuencial=1,  # Temporal, se actualiza con ARCA
-            number=f'{punto_venta:04d}-00000000',  # Temporal
+            numero_secuencial=numero_secuencial,
+            number=f'{punto_venta:04d}-{numero_secuencial:08d}',
             cliente_cuit=cliente_cuit,
             cliente_razon_social=cliente_razon_social,
             cliente_condicion_iva=condicion_iva,
@@ -174,13 +181,21 @@ def facturar_venta(sale, user, tipo_comprobante=None, async_emission=True):
                 numero_linea=linea['numero_linea'],
             )
 
+        # Determinar número provisional para evitar IntegrityError en Comprobante
+        ultimo_num_arca = Comprobante.objects.filter(
+            empresa_cuit=config,
+            tipo_compr=tipo_comprobante,
+            punto_venta=punto_venta
+        ).aggregate(Max('numero'))['numero__max'] or 0
+        numero_borrador_arca = ultimo_num_arca + 1
+
         # 4. Crear Comprobante ARCA
         comprobante = Comprobante.objects.create(
             empresa_cuit=config,
             sale=sale,
             tipo_compr=tipo_comprobante,
             punto_venta=punto_venta,
-            numero=0,  # ← placeholder, se actualiza con el número real de ARCA
+            numero=numero_borrador_arca,  # Placeholder dinámico (Max+1)
             fecha_compr=date.today(),
             doc_cliente_tipo=doc_tipo,
             doc_cliente=doc_nro,
@@ -240,8 +255,15 @@ def facturar_venta(sale, user, tipo_comprobante=None, async_emission=True):
                     f'[BILLS] ARCA rechazó comprobante {comprobante.id}: '
                     f'{resultado.get("error")}'
                 )
+                invoice.estado_fiscal = 'rechazada'
+                invoice.save(update_fields=['estado_fiscal'])
+                comprobante.estado = 'RECHAZADO'
+                comprobante.save(update_fields=['estado'])
+                
         except Exception as exc:
             logger.error(f'[BILLS] Error emitiendo sync: {exc}')
+            invoice.estado_fiscal = 'rechazada'
+            invoice.save(update_fields=['estado_fiscal'])
 
     return {
         'success': True,
@@ -283,3 +305,156 @@ def _actualizar_post_autorizacion(invoice, comprobante, resultado_arca):
             f'[BILLS] Invoice {invoice.id} autorizada — '
             f'CAE: {comprobante.cae}'
         )
+
+def reintentar_factura(invoice_id):
+    """
+    Reintenta la emisión en ARCA de una factura que quedó borrador/rechazada.
+    """
+    from afip.services.facturacion_service import FacturacionService
+    
+    invoice = Invoice.objects.select_related('comprobante_arca').get(id=invoice_id)
+    comprobante = invoice.comprobante_arca
+    
+    if not comprobante:
+        return {'success': False, 'error': 'La factura no tiene un comprobante ARCA asociado.'}
+        
+    if invoice.estado_fiscal == 'autorizada':
+        return {'success': False, 'error': 'La factura ya se encuentra autorizada.'}
+
+    try:
+        service = FacturacionService(comprobante.empresa_cuit_id)
+        resultado = service.emitir_comprobante(comprobante.id)
+
+        if resultado.get('success'):
+            _actualizar_post_autorizacion(invoice, comprobante, resultado)
+            return {'success': True, 'message': 'Factura emitida y autorizada correctamente con ARCA.'}
+        else:
+            logger.warning(f"[BILLS] Reintento fallido para factura {invoice.id}: {resultado.get('error')}")
+            invoice.estado_fiscal = 'rechazada'
+            invoice.save(update_fields=['estado_fiscal'])
+            comprobante.estado = 'RECHAZADO'
+            comprobante.save(update_fields=['estado'])
+            return {'success': False, 'error': resultado.get('error')}
+    except Exception as exc:
+        logger.exception(f"[BILLS] Excepción reintentando factura {invoice.id}: {exc}")
+        return {'success': False, 'error': str(exc)}
+
+def anular_factura_y_venta(invoice_id, user):
+    """
+    Anula una factura. 
+    1. Si está autorizada en AFIP, emite automáticamente una Nota de Crédito.
+    2. Cancela la Venta asociada (retorna stock e impacta CC del cliente).
+    3. Marca la factura original como anulada.
+    """
+    from django.db import transaction
+    from afip.models import Comprobante, ComprobRenglon
+    from afip.services.facturacion_service import FacturacionService
+    from sales.services import cancel_sale
+
+    invoice = Invoice.objects.select_related('comprobante_arca', 'sale').get(id=invoice_id)
+    
+    if invoice.estado_fiscal == 'anulada':
+        return {'success': False, 'error': 'La factura ya está anulada.'}
+
+    # Mapa Factura -> Nota Crédito
+    MAPA_NC = {1: 3, 6: 8} # Factura A -> NC A, Factura B -> NC B
+    nc_tipo = MAPA_NC.get(invoice.tipo_comprobante)
+    
+    if invoice.estado_fiscal == 'autorizada':
+        if not nc_tipo:
+            return {'success': False, 'error': f'Tipo de comprobante {invoice.tipo_comprobante} no soportado para Nota de Crédito.'}
+            
+        orig_comp = invoice.comprobante_arca
+        
+        with transaction.atomic():
+            # Determinar número provisional para la NC
+            ultimo_num_nc = Comprobante.objects.filter(
+                empresa_cuit=orig_comp.empresa_cuit,
+                tipo_compr=nc_tipo,
+                punto_venta=orig_comp.punto_venta
+            ).aggregate(Max('numero'))['numero__max'] or 0
+            numero_borrador_nc = ultimo_num_nc + 1
+
+            # 1. Crear el Comprobante de NC
+            nc_comp = Comprobante.objects.create(
+                empresa_cuit=orig_comp.empresa_cuit,
+                sale=orig_comp.sale,
+                tipo_compr=nc_tipo,
+                punto_venta=orig_comp.punto_venta,
+                numero=numero_borrador_nc,
+                fecha_compr=date.today(),
+                doc_cliente_tipo=orig_comp.doc_cliente_tipo,
+                doc_cliente=orig_comp.doc_cliente,
+                razon_social_cliente=orig_comp.razon_social_cliente,
+                monto_neto=orig_comp.monto_neto,
+                monto_iva=orig_comp.monto_iva,
+                monto_total=orig_comp.monto_total,
+                estado='BORRADOR',
+                usuario_creacion=user.get_full_name() or user.username,
+                # Link CbtesAsoc
+                cbte_asoc_tipo=orig_comp.tipo_compr,
+                cbte_asoc_pto_vta=orig_comp.punto_venta,
+                cbte_asoc_numero=orig_comp.numero
+            )
+            
+            # 2. Copiar renglones
+            for renglon in orig_comp.renglones.all():
+                ComprobRenglon.objects.create(
+                    comprobante=nc_comp,
+                    numero_linea=renglon.numero_linea,
+                    descripcion=renglon.descripcion,
+                    cantidad=renglon.cantidad,
+                    precio_unitario=renglon.precio_unitario,
+                    subtotal=renglon.subtotal,
+                    alicuota_iva=renglon.alicuota_iva
+                )
+                
+            # 3. Emitir a AFIP
+            service = FacturacionService(nc_comp.empresa_cuit_id)
+            resultado = service.emitir_comprobante(nc_comp.id)
+            
+            if not resultado.get('success'):
+                logger.error(f"[BILLS] Error emitiendo NC para org_id {invoice.id}: {resultado.get('error')}")
+                # Rollback automático al fallar
+                raise Exception(f"ARCA rechazó la Nota de Crédito: {resultado.get('error')}")
+                
+            # Si AFIP aceptó, creamos el Invoice de la NC
+            nc_comp.refresh_from_db()
+            nc_invoice = Invoice.objects.create(
+                sale=invoice.sale,
+                comprobante_arca=nc_comp,
+                customer=invoice.customer,
+                emitida_por=user,
+                number=nc_comp.numero_completo,
+                tipo_comprobante=nc_tipo,
+                punto_venta=orig_comp.punto_venta,
+                numero_secuencial=nc_comp.numero,
+                cliente_cuit=invoice.cliente_cuit,
+                cliente_razon_social=invoice.cliente_razon_social,
+                cliente_condicion_iva=invoice.cliente_condicion_iva,
+                cliente_domicilio=invoice.cliente_domicilio,
+                subtotal=-invoice.subtotal,       # Reflejar negativo localmente
+                descuento_total=-invoice.descuento_total,
+                neto_gravado=-invoice.neto_gravado,
+                monto_iva=-invoice.monto_iva,
+                total=-invoice.total,
+                estado_fiscal='autorizada',
+                fecha_emision=date.today(),
+                cae=nc_comp.cae,
+                cae_vencimiento=nc_comp.fecha_vto_cae
+            )
+
+    # Paso final: Actualizar originales y Venta
+    with transaction.atomic():
+        invoice.estado_fiscal = 'anulada'
+        invoice.save(update_fields=['estado_fiscal'])
+        
+        if invoice.sale and invoice.sale.status not in ['cancelled']:
+            try:
+                # Retorna stock automáticamente
+                cancel_sale(invoice.sale, user, reason=f"Factura {invoice.number} anulada fiscalmente.")
+            except Exception as e:
+                logger.error(f"Error cancelando venta {invoice.sale.number}: {e}")
+                
+    return {'success': True, 'message': 'Factura y Venta anuladas correctamente (Nota de Crédito emitida si correspondía).'}
+
