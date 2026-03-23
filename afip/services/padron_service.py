@@ -1,154 +1,154 @@
 """
 afip/services/padron_service.py
-===============================
-Servicio para consultar el Padrón de AFIP y obtener datos de un CUIT.
+================================
+Servicio orquestador para consultas al Padrón AFIP oficial.
 
-Utiliza el endpoint público de AFIP (no requiere certificados):
-  https://soa.afip.gob.ar/sr-padron/v2/persona/<cuit>
+Reemplaza la versión anterior que usaba el endpoint REST público e inestable
+(https://soa.afip.gob.ar/sr-padron/v2/persona) por el Web Service SOAP oficial
+ws_sr_padron_a13, autenticado mediante el mismo certificado digital que wsfe.
 
-En caso de que el endpoint público no esté disponible, se puede
-configurar para usar el WS `consultaautorizacioneselectronicas`
-sugerido por el usuario.
+Flujo:
+  1. Obtiene ConfiguracionARCA activa (certificado + ambiente)
+  2. Solicita Token WSAA para servicio "ws_sr_padron_a13"
+     → El token se cachea automáticamente en WSAAToken (separado del de wsfe)
+  3. Llama a WSPadronClient.get_persona()
+  4. Retorna dict estándar que consumen la vista web y la API REST
 
-Para testing/homologación:
-  https://awshomo.afip.gov.ar/sr-padron/v2/persona/<cuit>
+Contrato de salida (invariante — la UI no cambia):
+  {
+    'success': bool,
+    'razon_social': str,
+    'condicion_iva': str,          # 'RI' | 'MONO' | 'CF' | 'EX'
+    'condicion_iva_label': str,    # texto legible
+    'domicilio': str,
+    'tipo_persona': str,           # 'FISICA' | 'JURIDICA'
+    'actividad_principal': str,
+    'cuit': str,                   # formateado XX-XXXXXXXX-X
+    'error': str | None,
+  }
 """
 
 import logging
-import requests
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-# URLs del padrón AFIP (público, no requiere autenticación)
-PADRON_URLS = {
-    'produccion': 'https://soa.afip.gob.ar/sr-padron/v2/persona/{cuit}',
-    'homologacion': 'https://awshomo.afip.gov.ar/sr-padron/v2/persona/{cuit}',
-}
-
-# Mapeo de ID de condición IVA → texto legible
-CONDICION_IVA_MAP = {
-    1: 'IVA Responsable Inscripto',
-    4: 'IVA Sujeto Exento',
-    5: 'Consumidor Final',
-    6: 'Responsable Monotributo',
-    8: 'Proveedor del Exterior',
-    9: 'Cliente del Exterior',
-    10: 'IVA Liberado – Ley Nº 19.640',
-    11: 'IVA Responsable Inscripto – Agente de Percepción',
-    13: 'Monotributista Social',
-    99: 'Otro',
-}
+# Nombre del servicio AFIP para padrón (debe estar habilitado en WSASS)
+SERVICIO_PADRON = 'ws_sr_padron_a13'
 
 
 def consultar_padron_afip(cuit: str, ambiente: str = None) -> dict:
     """
-    Consulta el padrón de AFIP para obtener datos de un contribuyente.
-    
+    Consulta el padrón oficial de AFIP/ARCA para obtener datos de un CUIT.
+
+    Usa el Web Service ws_sr_padron_a13 con autenticación por certificado.
+    El Token WSAA se cachea en BD y se renueva automáticamente.
+
     Args:
-        cuit: CUIT sin guiones (ej: '20345678901')
-        ambiente: 'produccion' o 'homologacion'. Si es None, determina
-                  automáticamente según la configuración existente.
-    
+        cuit:     CUIT a consultar (con o sin guiones)
+        ambiente: 'homologacion' | 'produccion'. Si None, usa ConfiguracionARCA activa.
+
     Returns:
-        dict con claves:
-            success (bool)
-            razon_social (str)
-            condicion_iva (str)
-            domicilio (str)
-            tipo_persona (str)  — 'FISICA' o 'JURIDICA'
-            actividad_principal (str)
-            error (str, solo si success=False)
+        dict estándar (ver módulo docstring)
     """
-    # Determinar ambiente
-    if not ambiente:
-        from afip.models import ConfiguracionARCA
-        config = ConfiguracionARCA.objects.filter(activo=True).first()
-        ambiente = config.ambiente if config else 'homologacion'
-    
-    url_template = PADRON_URLS.get(ambiente, PADRON_URLS['homologacion'])
-    url = url_template.format(cuit=cuit)
-    
-    logger.info(f"[PadronService] Consultando CUIT {cuit} en {ambiente}")
-    
+    from afip.models import ConfiguracionARCA
+    from afip.clients.wsaa_client import WSAAClient
+    from afip.clients.ws_padron_client import WSPadronClient
+    from afip.utils.exceptions import ConfiguracionARCAFaltanteException, WSAAException
+
+    # ── Limpiar CUIT ─────────────────────────────────────────────────
+    cuit_limpio = str(cuit).replace('-', '').replace(' ', '').strip()
+
+    if not cuit_limpio or len(cuit_limpio) != 11 or not cuit_limpio.isdigit():
+        return _error_result(f"CUIT inválido: '{cuit}'. Debe tener 11 dígitos.")
+
+    # ── Obtener configuración ARCA ────────────────────────────────────
     try:
-        response = requests.get(url, timeout=15)
-        
-        if response.status_code == 404:
-            return {
-                'success': False,
-                'error': f'CUIT {cuit} no encontrado en el padrón de AFIP.'
-            }
-        
-        response.raise_for_status()
-        data = response.json()
-        
-        if not data.get('success', True):
-            return {
-                'success': False,
-                'error': data.get('error', {}).get('mensaje', 'Error desconocido de AFIP')
-            }
-        
-        persona = data.get('data', {})
-        
-        # Extraer razón social
-        razon_social = persona.get('nombre', '')
-        if persona.get('tipoClave') == 'CUIT' and persona.get('apellido'):
-            razon_social = f"{persona.get('apellido', '')} {persona.get('nombre', '')}".strip()
-        if persona.get('razonSocial'):
-            razon_social = persona.get('razonSocial')
-        
-        # Extraer condición IVA
-        impuestos = persona.get('impuestos', [])
-        condicion_iva = 'Consumidor Final'
-        for imp in impuestos:
-            if imp.get('idImpuesto') == 32:
-                condicion_iva = 'IVA Responsable Inscripto'
-                break
-            elif imp.get('idImpuesto') == 20:
-                condicion_iva = 'Responsable Monotributo'
-                break
-        
-        # Extraer domicilio
-        domicilio_fiscal = persona.get('domicilioFiscal', {})
-        partes_dom = [
-            domicilio_fiscal.get('direccion', ''),
-            domicilio_fiscal.get('localidad', ''),
-            domicilio_fiscal.get('descripcionProvincia', ''),
-        ]
-        domicilio = ', '.join(p for p in partes_dom if p)
-        
-        # Tipo persona
-        tipo_persona = persona.get('tipoPersona', 'DESCONOCIDA')
-        
-        # Actividad principal
-        actividades = persona.get('actividades', [])
-        actividad_principal = ''
-        if actividades:
-            actividad_principal = actividades[0].get('descripcionActividad', '')
-        
-        logger.info(f"[PadronService] ✅ CUIT {cuit}: {razon_social}")
-        
-        return {
-            'success': True,
-            'razon_social': razon_social,
-            'condicion_iva': condicion_iva,
-            'domicilio': domicilio,
-            'tipo_persona': tipo_persona,
-            'actividad_principal': actividad_principal,
-        }
-        
-    except requests.exceptions.Timeout:
-        msg = f'Timeout consultando CUIT {cuit} en AFIP (> 15s).'
-        logger.warning(f"[PadronService] {msg}")
-        return {'success': False, 'error': msg}
-    
-    except requests.exceptions.ConnectionError:
-        msg = f'No se pudo conectar con AFIP para consultar CUIT {cuit}.'
-        logger.warning(f"[PadronService] {msg}")
-        return {'success': False, 'error': msg}
-    
-    except Exception as e:
-        msg = f'Error inesperado consultando CUIT {cuit}: {str(e)}'
-        logger.exception(f"[PadronService] {msg}")
-        return {'success': False, 'error': msg}
+        if ambiente:
+            config = ConfiguracionARCA.objects.get(ambiente=ambiente, activo=True)
+        else:
+            config = ConfiguracionARCA.objects.filter(activo=True).first()
+            if not config:
+                raise ConfiguracionARCA.DoesNotExist()
+    except ConfiguracionARCA.DoesNotExist:
+        msg = (
+            'No hay configuración ARCA activa. '
+            'Creá una en /admin/afip/configuracionarca/add/'
+        )
+        logger.error(f'[PadronService] {msg}')
+        return _error_result(msg)
+    except ConfiguracionARCAFaltanteException as exc:
+        return _error_result(str(exc))
+
+    ambiente_activo = config.ambiente
+    empresa_cuit = config.empresa_cuit
+
+    # ── Obtener Token WSAA para ws_sr_padron_a13 ──────────────────────
+    # El token se cachea en WSAAToken con servicio='ws_sr_padron_a13',
+    # separado e independiente del token de wsfe.
+    logger.info(
+        f'[PadronService] Solicitando token WSAA para {SERVICIO_PADRON} '
+        f'({ambiente_activo})...'
+    )
+    try:
+        wsaa = WSAAClient(
+            ambiente=ambiente_activo,
+            cert_path=config.ruta_certificado,
+            cuit=empresa_cuit,
+        )
+        resultado_wsaa = wsaa.obtener_ticket_acceso(
+            servicio=SERVICIO_PADRON,
+            usar_cache=True,
+        )
+
+        if not resultado_wsaa['success']:
+            msg = f"No se pudo obtener token WSAA para padrón: {resultado_wsaa['error']}"
+            logger.error(f'[PadronService] {msg}')
+            return _error_result(msg)
+
+        token = resultado_wsaa['token']
+        sign  = resultado_wsaa['sign']
+        origen_token = 'cache' if resultado_wsaa.get('from_cache') else 'nuevo'
+        logger.debug(f'[PadronService] Token obtenido ({origen_token})')
+
+    except WSAAException as exc:
+        return _error_result(f'Error de autenticación WSAA: {exc}')
+    except Exception as exc:
+        logger.exception(f'[PadronService] Error inesperado en WSAA: {exc}')
+        return _error_result(f'Error inesperado al autenticar: {exc}')
+
+    # ── Consultar padrón ──────────────────────────────────────────────
+    logger.info(f'[PadronService] Consultando CUIT {cuit_limpio}...')
+    try:
+        client = WSPadronClient(ambiente=ambiente_activo)
+        resultado = client.get_persona(
+            token=token,
+            sign=sign,
+            cuit_representada=empresa_cuit,
+            cuit_consultar=cuit_limpio,
+        )
+    except Exception as exc:
+        logger.exception(f'[PadronService] Error en WSPadronClient: {exc}')
+        return _error_result(f'Error al consultar el padrón: {exc}')
+
+    if not resultado['success']:
+        logger.warning(
+            f'[PadronService] Consulta fallida para {cuit_limpio}: {resultado["error"]}'
+        )
+
+    return resultado
+
+
+def _error_result(msg: str) -> dict:
+    """Retorna el dict estándar de error."""
+    return {
+        'success':             False,
+        'cuit':                '',
+        'razon_social':        '',
+        'condicion_iva':       '',
+        'condicion_iva_label': '',
+        'domicilio':           '',
+        'tipo_persona':        '',
+        'actividad_principal': '',
+        'error':               msg,
+    }
