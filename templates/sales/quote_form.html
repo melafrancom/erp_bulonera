@@ -441,6 +441,8 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/components/customer_selector.js' %}?v={% now 'U' %}"></script>
+<script src="{% static 'js/components/product_search.js' %}?v={% now 'U' %}"></script>
 <script>
 function quoteForm() {
   return {
@@ -763,17 +765,6 @@ function quoteForm() {
   };
 }
 </script>
-<script src="{% static 'js/components/customer_selector.js' %}"></script>
-<script src="{% static 'js/components/product_search.js' %}"></script>
 
-<style>
-  input[type="text"], input[type="email"], input[type="number"], input[type="date"],
-  select, textarea {
-    @apply w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition;
-  }
-  textarea {
-    @apply resize-none;
-    min-height: 80px;
-  }
-</style>
+
 {% endblock %}

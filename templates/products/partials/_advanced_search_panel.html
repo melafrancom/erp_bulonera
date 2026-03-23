@@ -13,15 +13,15 @@
   <div x-show="productSearch.showPanel" x-transition x-cloak class="p-6 space-y-4">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div class="md:col-span-2">
-        <label class="form-label">Buscar</label>
+        <label class="block text-xs font-semibold text-gray-700 mb-1.5 tracking-wide">Buscar</label>
         <div class="relative">
           <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
-          <input type="text" x-model="productSearch.query" @keyup.enter="searchProducts()" placeholder="Nombre, código, SKU..." class="form-input pl-9">
+          <input type="text" x-model="productSearch.query" @keyup.enter="searchProducts()" placeholder="Nombre, código, SKU..." class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors pl-9">
         </div>
       </div>
       <div>
-        <label class="form-label">Categoría</label>
-        <select x-model="productSearch.category" @change="searchProducts()" class="form-select">
+        <label class="block text-xs font-semibold text-gray-700 mb-1.5 tracking-wide">Categoría</label>
+        <select x-model="productSearch.category" @change="searchProducts()" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors bg-white">
           <option value="">Todas</option>
           {% for cat in categories %}
           <option value="{{ cat.id }}">{{ cat.name }}</option>
@@ -29,8 +29,8 @@
         </select>
       </div>
       <div>
-        <label class="form-label">Subcategoría</label>
-        <select x-model="productSearch.subcategory" @change="searchProducts()" class="form-select">
+        <label class="block text-xs font-semibold text-gray-700 mb-1.5 tracking-wide">Subcategoría</label>
+        <select x-model="productSearch.subcategory" @change="searchProducts()" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors bg-white">
           <option value="">Todas</option>
           {% for sub in subcategories %}
           <option value="{{ sub.id }}">{{ sub.name }}</option>
@@ -38,12 +38,12 @@
         </select>
       </div>
       <div>
-        <label class="form-label">Marca</label>
-        <input type="text" x-model="productSearch.brand" @keyup.enter="searchProducts()" placeholder="Ej: Bahco" class="form-input">
+        <label class="block text-xs font-semibold text-gray-700 mb-1.5 tracking-wide">Marca</label>
+        <input type="text" x-model="productSearch.brand" @keyup.enter="searchProducts()" placeholder="Ej: Bahco" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors">
       </div>
       <div>
-         <label class="form-label">Proveedor</label>
-         <input type="text" x-model="productSearch.supplier" @keyup.enter="searchProducts()" placeholder="Ej: Bulonera" class="form-input">
+         <label class="block text-xs font-semibold text-gray-700 mb-1.5 tracking-wide">Proveedor</label>
+         <input type="text" x-model="productSearch.supplier" @keyup.enter="searchProducts()" placeholder="Ej: Bulonera" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors">
       </div>
       <div class="md:col-span-2 flex items-end justify-end">
         <button type="button" @click="searchProducts()" class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 flex items-center gap-2 transition">

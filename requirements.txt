@@ -1,4 +1,4 @@
-# Core Django
+    # Core Django
 Django>=5.0,<5.1
 python-decouple>=3.8
 

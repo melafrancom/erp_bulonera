@@ -23,16 +23,18 @@ function productSearchComponent(addToCallback = null) {
       this.productSearch.isSearching = true;
       try {
         const params = new URLSearchParams({
-          q: this.productSearch.query,
+          search: this.productSearch.query,
           category: this.productSearch.category,
           subcategory: this.productSearch.subcategory,
           brand: this.productSearch.brand,
           supplier: this.productSearch.supplier
         });
         
-        const response = await fetch(`/api/products/search/?${params.toString()}`);
+        const response = await fetch(`/api/v1/products/?${params.toString()}`);
         if (response.ok) {
-          this.productSearch.results = await response.json();
+          const body = await response.json();
+          const targetData = body.data || body;
+          this.productSearch.results = targetData.results || targetData || [];
         }
       } catch (e) {
         console.error("Error searching products:", e);

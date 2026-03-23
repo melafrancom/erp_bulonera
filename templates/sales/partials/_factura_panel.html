@@ -1,0 +1,187 @@
+{% comment %}
+Partial: Panel de facturación electrónica ARCA/AFIP.
+Incluir en sale_detail.html pasando las variables requeridas:
+  {% include 'sales/partials/_factura_panel.html' with sale=sale invoice=invoice can_invoice=can_invoice %}
+
+Variables:
+  sale        → instancia de Sale
+  invoice     → instancia de Invoice o None
+  can_invoice → bool (calculado en la vista)
+{% endcomment %}
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+
+    <!-- Encabezado -->
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+            <i data-lucide="file-text" class="w-4 h-4 text-blue-600"></i>
+            Facturación Electrónica (ARCA/AFIP)
+        </h3>
+
+        <!-- Chip de estado -->
+        {% if invoice %}
+            {% if invoice.estado_fiscal == 'autorizada' %}
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <i data-lucide="check-circle" class="w-3 h-3"></i> Autorizada
+                </span>
+            {% elif invoice.estado_fiscal == 'pendiente' %}
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    <i data-lucide="clock" class="w-3 h-3"></i> Pendiente ARCA
+                </span>
+            {% elif invoice.estado_fiscal == 'rechazada' %}
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                    <i data-lucide="x-circle" class="w-3 h-3"></i> Rechazada por ARCA
+                </span>
+            {% else %}
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                    {{ invoice.get_estado_fiscal_display }}
+                </span>
+            {% endif %}
+        {% elif can_invoice %}
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                Sin facturar
+            </span>
+        {% endif %}
+    </div>
+
+    {% if invoice %}
+        <!-- Factura existente -->
+        <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm mb-5">
+            <div>
+                <dt class="text-xs text-gray-400 uppercase tracking-wide">Número</dt>
+                <dd class="font-semibold text-gray-900 mt-0.5">{{ invoice.number }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs text-gray-400 uppercase tracking-wide">Tipo</dt>
+                <dd class="font-medium text-gray-900 mt-0.5">{{ invoice.get_tipo_comprobante_display }}</dd>
+            </div>
+            {% if invoice.cae %}
+            <div>
+                <dt class="text-xs text-gray-400 uppercase tracking-wide">CAE</dt>
+                <dd class="font-mono text-xs text-gray-700 mt-0.5 break-all">{{ invoice.cae }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs text-gray-400 uppercase tracking-wide">Vto. CAE</dt>
+                <dd class="font-medium text-gray-900 mt-0.5">{{ invoice.cae_vencimiento|date:"d/m/Y" }}</dd>
+            </div>
+            {% endif %}
+            <div>
+                <dt class="text-xs text-gray-400 uppercase tracking-wide">Fecha emisión</dt>
+                <dd class="font-medium text-gray-900 mt-0.5">{{ invoice.fecha_emision|date:"d/m/Y" }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs text-gray-400 uppercase tracking-wide">Total facturado</dt>
+                <dd class="font-semibold text-gray-900 mt-0.5">$ {{ invoice.total|floatformat:2 }}</dd>
+            </div>
+        </dl>
+
+        {% if invoice.estado_fiscal == 'autorizada' %}
+        <a href="{% url 'bills_web:invoice_pdf' invoice.pk %}"
+           target="_blank"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            Descargar PDF de Factura
+        </a>
+        {% elif invoice.estado_fiscal == 'pendiente' %}
+        <p class="text-xs text-yellow-700 bg-yellow-50 rounded-lg px-3 py-2">
+            El comprobante fue enviado a ARCA y está esperando respuesta.
+            Actualizá la página en unos segundos.
+        </p>
+        {% elif invoice.estado_fiscal == 'rechazada' %}
+        <p class="text-xs text-red-700 bg-red-50 rounded-lg px-3 py-2">
+            ARCA rechazó el comprobante. Revisá los datos del cliente (CUIT/condición IVA)
+            y contactá al administrador para reintentar.
+        </p>
+        {% endif %}
+
+    {% elif can_invoice %}
+        <!-- Sin factura — botón de emisión -->
+        <p class="text-sm text-gray-500 mb-4">
+            Esta venta aún no tiene comprobante electrónico.
+            Al emitirla se enviará a ARCA/AFIP y obtendrá el CAE automáticamente.
+        </p>
+
+        <div x-data="{ open: false }">
+
+            <!-- Trigger -->
+            <button @click="open = true"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                <i data-lucide="file-plus" class="w-4 h-4"></i>
+                Emitir Factura Electrónica
+            </button>
+
+            <!-- Modal de confirmación -->
+            <div x-show="open"
+                 x-transition:enter="transition ease-out duration-150"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-100"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="fixed inset-0 z-50 flex items-center justify-center p-4"
+                 style="display: none;">
+
+                <!-- Backdrop -->
+                <div class="absolute inset-0 bg-black/50" @click="open = false"></div>
+
+                <!-- Dialog -->
+                <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6" @click.stop>
+
+                    <!-- Ícono + título -->
+                    <div class="flex items-start gap-3 mb-5">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <i data-lucide="file-text" class="w-5 h-5 text-blue-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Emitir Factura Electrónica</h3>
+                            <p class="text-sm text-gray-500 mt-1">
+                                El comprobante se enviará a ARCA/AFIP y se obtendrá el CAE de forma inmediata.
+                                <strong>Esta acción no se puede deshacer</strong> sin emitir una Nota de Crédito.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Resumen de la venta -->
+                    <div class="bg-gray-50 rounded-lg p-4 mb-5 space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Venta</span>
+                            <span class="font-semibold text-gray-900">{{ sale.number }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Cliente</span>
+                            <span class="font-medium text-gray-900">{{ sale.customer_display }}</span>
+                        </div>
+                        <div class="flex justify-between pt-2 border-t border-gray-200">
+                            <span class="text-gray-500">Total a facturar</span>
+                            <span class="font-bold text-gray-900">$ {{ sale.total|floatformat:2 }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Acción -->
+                    <form method="post" action="{% url 'sales_web:sale_invoice' sale.pk %}">
+                        {% csrf_token %}
+                        <div class="flex gap-3 justify-end">
+                            <button type="button"
+                                    @click="open = false"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                Cancelar
+                            </button>
+                            <button type="submit"
+                                    class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                                Confirmar y emitir
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    {% else %}
+        <!-- Venta no facturable todavía -->
+        <p class="text-sm text-gray-400 italic">
+            La facturación estará disponible cuando la venta sea confirmada o entregada.
+        </p>
+    {% endif %}
+
+</div>

@@ -21,9 +21,11 @@ function customerSelectorComponent() {
       }
       this.customerSearching = true;
       try {
-        const response = await fetch(`/api/customers/search/?q=${encodeURIComponent(this.customerSearchQuery)}`);
+        const response = await fetch(`/api/v1/customers/?search=${encodeURIComponent(this.customerSearchQuery)}`);
         if (response.ok) {
-          this.customerResults = await response.json();
+          const body = await response.json();
+          const targetData = body.data || body;
+          this.customerResults = targetData.results || targetData || [];
         }
       } catch (e) {
         console.error("Error searching customers:", e);
@@ -53,7 +55,7 @@ function customerSelectorComponent() {
       if (!this.newCustomer.cuit) return;
       this.isVerifyingAfip = true;
       try {
-        const response = await fetch(`/api/afip/check-cuit/${this.newCustomer.cuit}/`);
+        const response = await fetch(`/afip/api/padron/${this.newCustomer.cuit}/`);
         const data = await response.json();
         if (data.success && data.data) {
           const d = data.data;
@@ -77,7 +79,7 @@ function customerSelectorComponent() {
 
       this.isSubmittingCustomer = true;
       try {
-        const response = await fetch('/api/customers/', {
+        const response = await fetch('/api/v1/customers/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

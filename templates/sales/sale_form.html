@@ -337,6 +337,8 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/components/customer_selector.js' %}?v={% now 'U' %}"></script>
+<script src="{% static 'js/components/product_search.js' %}?v={% now 'U' %}"></script>
 <script>
 function saleForm() {
   return {
@@ -561,6 +563,4 @@ function saleForm() {
   };
 }
 </script>
-<script src="{% static 'js/components/customer_selector.js' %}"></script>
-<script src="{% static 'js/components/product_search.js' %}"></script>
 {% endblock %}

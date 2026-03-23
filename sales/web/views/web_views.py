@@ -423,7 +423,13 @@ def sale_detail(request, pk):
             source_quote = sale.quote
         except Quote.DoesNotExist:
             pass
-
+    
+    invoice = None
+    try:
+        invoice = sale.factura
+    except Exception:
+        pass
+    
     context = {
         'sale':              sale,
         'items':             sale.items.select_related('product').order_by('id'),
@@ -435,6 +441,7 @@ def sale_detail(request, pk):
         'can_invoice':       can_invoice,
         'next_status':       next_status,
         'next_status_label': next_status_label,
+        'invoice':           invoice,
     }
 
     return render(request, 'sales/sale_detail.html', context)
