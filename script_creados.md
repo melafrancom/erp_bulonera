@@ -305,11 +305,11 @@ docker compose -f "$COMPOSE_FILE" build
 
 # 3. Migraciones (usando un contenedor temporal pero con toda la config de compose)
 echo "🗄️ Ejecutando migraciones..."
-docker compose -f "$COMPOSE_FILE" run --rm web python manage.py migrate --no-input
+docker compose -f "$COMPOSE_FILE" run --rm -e DJANGO_SETTINGS_MODULE=erp_crm_bulonera.settings.production web python manage.py migrate --no-input
 
 # 4. Collectstatic
 echo "📦 Recolectando estáticos..."
-docker compose -f "$COMPOSE_FILE" run --rm web python manage.py collectstatic --no-input
+docker compose -f "$COMPOSE_FILE" run --rm -e DJANGO_SETTINGS_MODULE=erp_crm_bulonera.settings.production web python manage.py collectstatic --no-input
 
 # 5. Reiniciar servicios con la nueva imagen
 echo "🔄 Reiniciando servicios..."

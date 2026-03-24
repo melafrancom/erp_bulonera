@@ -96,6 +96,7 @@ services:
         condition: service_healthy
     command: >
       celery -A erp_crm_bulonera worker
+      -Q default,sales,notifications,afip,heavy
       --loglevel=info
       --concurrency=2
       --time-limit=3600

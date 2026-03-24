@@ -418,7 +418,7 @@ CELERY_TASK_TIME_LIMIT = 30 * 60               # 30 minutos timeout
 CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60          # 25 minutos soft timeout
 
 # Queue Configuration
-CELERY_DEFAULT_QUEUE = 'default'
+CELERY_TASK_DEFAULT_QUEUE = 'default'
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1          # 1 task at a time
 CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000       # Reciclar worker process
 
