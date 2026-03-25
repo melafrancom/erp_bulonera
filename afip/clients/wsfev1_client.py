@@ -202,7 +202,7 @@ class GeneradorSolicitudFECAE:
         resultado = {}
 
         renglones = comprobante_obj.renglones.all()
-        if not renglones.exists():
+        if not renglones:
             # Fallback: asumir todo al 21% si no hay renglones
             alicuota_id = 5
             resultado[alicuota_id] = {

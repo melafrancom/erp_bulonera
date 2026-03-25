@@ -356,7 +356,7 @@ class Comprobante(models.Model):
     def marcar_como_enviado(self):
         """Marca como pendiente (ya se envió a ARCA)."""
         self.estado = 'PENDIENTE'
-        self.save()
+        self.save(update_fields=['estado'])
     
     def marcar_como_autorizado(self, cae, fecha_vto_cae, respuesta_json):
         """Marca como autorizado."""
@@ -365,14 +365,14 @@ class Comprobante(models.Model):
         self.fecha_vto_cae = fecha_vto_cae
         self.respuesta_arca_json = respuesta_json
         self.error_msg = ''
-        self.save()
+        self.save(update_fields=['estado', 'cae', 'fecha_vto_cae', 'respuesta_arca_json', 'error_msg'])
     
     def marcar_como_rechazado(self, error_msg, respuesta_json):
         """Marca como rechazado."""
         self.estado = 'RECHAZADO'
         self.error_msg = error_msg
         self.respuesta_arca_json = respuesta_json
-        self.save()
+        self.save(update_fields=['estado', 'error_msg', 'respuesta_arca_json'])
 
 # ============================================================================
 # DETALLES DE COMPROBANTES

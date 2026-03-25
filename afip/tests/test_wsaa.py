@@ -92,11 +92,7 @@ class TestParsearRespuestaSoap(TestCase):
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
     <soapenv:Body>
         <loginCmsResponse>
-            <loginCmsReturn>
-                <token>TOKEN_DE_PRUEBA</token>
-                <sign>SIGN_DE_PRUEBA</sign>
-                <expirationTime>2026-12-01T10:00:00-03:00</expirationTime>
-            </loginCmsReturn>
+            <loginCmsReturn>&lt;loginTicketResponse&gt;&lt;header&gt;&lt;expirationTime&gt;2026-12-01T10:00:00-03:00&lt;/expirationTime&gt;&lt;/header&gt;&lt;credentials&gt;&lt;token&gt;TOKEN_DE_PRUEBA&lt;/token&gt;&lt;sign&gt;SIGN_DE_PRUEBA&lt;/sign&gt;&lt;/credentials&gt;&lt;/loginTicketResponse&gt;</loginCmsReturn>
         </loginCmsResponse>
     </soapenv:Body>
 </soapenv:Envelope>"""

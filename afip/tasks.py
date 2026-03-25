@@ -80,6 +80,21 @@ def emitir_comprobante_async(self, comprobante_id: int, empresa_cuit: str) -> di
                 f"[Celery/afip] ✅ Comprobante {comprobante_id} autorizado. "
                 f"CAE: {resultado['cae']}"
             )
+            # ── Propagar estado a Invoice y Sale ──
+            try:
+                from bills.services import _actualizar_post_autorizacion
+                from bills.models import Invoice
+                from afip.models import Comprobante
+
+                comprobante = Comprobante.objects.get(pk=comprobante_id)
+                invoice = Invoice.objects.filter(comprobante_arca=comprobante).first()
+                if invoice:
+                    _actualizar_post_autorizacion(invoice, comprobante, resultado)
+                    logger.info(f"[Celery/afip] Invoice {invoice.id} actualizada post-ARCA")
+                else:
+                    logger.warning(f"[Celery/afip] No se encontró Invoice para comprobante {comprobante_id}")
+            except Exception as prop_exc:
+                logger.exception(f"[Celery/afip] Error propagando estado: {prop_exc}")
         else:
             logger.error(
                 f"[Celery/afip] ❌ Comprobante {comprobante_id} rechazado: {resultado['error']}"

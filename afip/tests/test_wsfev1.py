@@ -60,16 +60,16 @@ class TestGeneradorSolicitudFECAE(TestCase):
         gen.agregar_comprobante(comp)
 
         xml = gen.generar_xml_fe_det_req()
-        self.assertIn('<Concepto>', xml)
-        self.assertIn('<DocTipo>', xml)
-        self.assertIn('<DocNro>', xml)
-        self.assertIn('<CbteDesde>', xml)
-        self.assertIn('<CbteHasta>', xml)
-        self.assertIn('<CbteFch>', xml)
-        self.assertIn('<ImpTotal>', xml)
-        self.assertIn('<ImpNeto>', xml)
-        self.assertIn('<ImpIVA>', xml)
-        self.assertIn('<MonId>PES</MonId>', xml)
+        self.assertIn('<ar:Concepto>', xml)
+        self.assertIn('<ar:DocTipo>', xml)
+        self.assertIn('<ar:DocNro>', xml)
+        self.assertIn('<ar:CbteDesde>', xml)
+        self.assertIn('<ar:CbteHasta>', xml)
+        self.assertIn('<ar:CbteFch>', xml)
+        self.assertIn('<ar:ImpTotal>', xml)
+        self.assertIn('<ar:ImpNeto>', xml)
+        self.assertIn('<ar:ImpIVA>', xml)
+        self.assertIn('<ar:MonId>PES</ar:MonId>', xml)
 
     def test_cantidad_registros_correcto(self):
         from afip.clients.wsfev1_client import GeneradorSolicitudFECAE
@@ -87,17 +87,17 @@ class TestGeneradorSolicitudFECAE(TestCase):
         gen = GeneradorSolicitudFECAE(3, 6, '20180545574')
         gen.agregar_comprobante(self._make_comprobante_mock())
         xml = gen.generar_xml_fe_det_req()
-        self.assertIn('<CbteFch>20260301</CbteFch>', xml)
+        self.assertIn('<ar:CbteFch>20260301</ar:CbteFch>', xml)
 
     def test_incluye_bloque_iva(self):
         from afip.clients.wsfev1_client import GeneradorSolicitudFECAE
         gen = GeneradorSolicitudFECAE(3, 6, '20180545574')
         gen.agregar_comprobante(self._make_comprobante_mock())
         xml = gen.generar_xml_fe_det_req()
-        self.assertIn('<Iva>', xml)
-        self.assertIn('<AlicIva>', xml)
+        self.assertIn('<ar:Iva>', xml)
+        self.assertIn('<ar:AlicIva>', xml)
         # Alícuota 21% → Id=5
-        self.assertIn('<Id>5</Id>', xml)
+        self.assertIn('<ar:Id>5</ar:Id>', xml)
 
     def test_formatea_montos_con_dos_decimales(self):
         from afip.clients.wsfev1_client import GeneradorSolicitudFECAE
@@ -121,44 +121,44 @@ class TestParsearFECAESolicitar(TestCase):
         return WSFEv1Client(ambiente='homologacion')
 
     RESPUESTA_EXITOSA = """<?xml version="1.0" encoding="UTF-8"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ar="http://ar.gov.afip.dif.FEV1/">
     <soap:Body>
-        <FECAESolicitarResponse>
-            <FECAESolicitarResult>
-                <FeCabResp>
-                    <Resultado>A</Resultado>
-                </FeCabResp>
-                <FeDetResp>
-                    <FeCbteDetResp>
-                        <Resultado>A</Resultado>
-                        <CAE>12345678901234</CAE>
-                        <CAEFchVto>20260311</CAEFchVto>
-                    </FeCbteDetResp>
-                </FeDetResp>
-            </FECAESolicitarResult>
-        </FECAESolicitarResponse>
+        <ar:FECAESolicitarResponse>
+            <ar:FECAESolicitarResult>
+                <ar:FeCabResp>
+                    <ar:Resultado>A</ar:Resultado>
+                </ar:FeCabResp>
+                <ar:FeDetResp>
+                    <ar:FeCbteDetResp>
+                        <ar:Resultado>A</ar:Resultado>
+                        <ar:CAE>12345678901234</ar:CAE>
+                        <ar:CAEFchVto>20260311</ar:CAEFchVto>
+                    </ar:FeCbteDetResp>
+                </ar:FeDetResp>
+            </ar:FECAESolicitarResult>
+        </ar:FECAESolicitarResponse>
     </soap:Body>
 </soap:Envelope>"""
 
     RESPUESTA_RECHAZADA = """<?xml version="1.0" encoding="UTF-8"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ar="http://ar.gov.afip.dif.FEV1/">
     <soap:Body>
-        <FECAESolicitarResponse>
-            <FECAESolicitarResult>
-                <FeCabResp>
-                    <Resultado>R</Resultado>
-                </FeCabResp>
-                <FeDetResp>
-                    <FeCbteDetResp>
-                        <Resultado>R</Resultado>
-                        <Obs>
-                            <Code>22</Code>
-                            <Msg>El numero del comprobante no es el esperado</Msg>
-                        </Obs>
-                    </FeCbteDetResp>
-                </FeDetResp>
-            </FECAESolicitarResult>
-        </FECAESolicitarResponse>
+        <ar:FECAESolicitarResponse>
+            <ar:FECAESolicitarResult>
+                <ar:FeCabResp>
+                    <ar:Resultado>R</ar:Resultado>
+                </ar:FeCabResp>
+                <ar:FeDetResp>
+                    <ar:FeCbteDetResp>
+                        <ar:Resultado>R</ar:Resultado>
+                        <ar:Obs>
+                            <ar:Code>22</ar:Code>
+                            <ar:Msg>El numero del comprobante no es el esperado</ar:Msg>
+                        </ar:Obs>
+                    </ar:FeCbteDetResp>
+                </ar:FeDetResp>
+            </ar:FECAESolicitarResult>
+        </ar:FECAESolicitarResponse>
     </soap:Body>
 </soap:Envelope>"""
 
@@ -206,13 +206,13 @@ class TestParsearFECAESolicitar(TestCase):
 class TestParsearConsultarUltNro(TestCase):
 
     RESPUESTA_EXITOSA = """<?xml version="1.0"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ar="http://ar.gov.afip.dif.FEV1/">
     <soap:Body>
-        <FECAEConsultarUltNroResponse>
-            <FECAEConsultarUltNroResult>
-                <CbteNro>15</CbteNro>
-            </FECAEConsultarUltNroResult>
-        </FECAEConsultarUltNroResponse>
+        <ar:FECAEConsultarUltNroResponse>
+            <ar:FECAEConsultarUltNroResult>
+                <ar:CbteNro>15</ar:CbteNro>
+            </ar:FECAEConsultarUltNroResult>
+        </ar:FECAEConsultarUltNroResponse>
     </soap:Body>
 </soap:Envelope>"""
 

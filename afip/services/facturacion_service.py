@@ -381,10 +381,10 @@ class FacturacionService:
         Lanza ValueError o ARCAException si hay problemas.
         """
         # Estado
-        if comprobante.estado != 'BORRADOR':
+        if comprobante.estado not in ('BORRADOR', 'PENDIENTE', 'RECHAZADO'):
             raise ComprobantePendienteException(
-                f"El comprobante {comprobante.numero_completo} no está en BORRADOR "
-                f"(estado actual: {comprobante.estado})"
+                f"El comprobante {comprobante.numero_completo} está en estado "
+                f"'{comprobante.estado}' y no se puede reenviar."
             )
 
         # Renglones

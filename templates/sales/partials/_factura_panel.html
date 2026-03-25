@@ -95,10 +95,21 @@ Variables:
             </form>
         </div>
         {% elif invoice.estado_fiscal == 'pendiente' %}
-        <p class="text-xs text-yellow-700 bg-yellow-50 rounded-lg px-3 py-2">
-            El comprobante fue enviado a ARCA y está esperando respuesta.
-            Actualizá la página en unos segundos.
-        </p>
+        <div class="bg-yellow-50 border border-yellow-100 rounded-lg p-4">
+            <p class="text-xs text-yellow-700 font-medium mb-3">
+                <i data-lucide="clock" class="w-4 h-4 inline mr-1"></i>
+                El comprobante está pendiente o esperando respuesta de ARCA.
+            </p>
+            <form method="post" action="{% url 'bills_web:invoice_retry' invoice.pk %}">
+                {% csrf_token %}
+                <button type="submit"
+                        onclick="return confirm('¿Reintentar enviar/consultar esta factura en ARCA?')"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium rounded-lg transition-colors">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    Reintentar / Consultar
+                </button>
+            </form>
+        </div>
         {% elif invoice.estado_fiscal == 'rechazada' %}
         <div class="bg-red-50 border border-red-200 rounded-lg p-4">
             <p class="text-xs text-red-700 font-medium mb-3">
