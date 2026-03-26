@@ -166,7 +166,13 @@ class FacturacionService:
         try:
             self._validar_comprobante(comprobante)
         except (ValueError, ARCAException) as exc:
-            return {'success': False, 'error': str(exc),
+            error_msg = f"Validación local fallida: {exc}"
+            self._log(
+                tipo='FE_ERROR',
+                comprobante=comprobante,
+                error=error_msg
+            )
+            return {'success': False, 'error': error_msg,
                     'cae': None, 'fecha_vto_cae': None, 'motivos_obs': []}
 
         # Reintentos con exponential backoff
@@ -279,7 +285,7 @@ class FacturacionService:
         """Realiza un intento único de emisión."""
         token, sign = self.obtener_token_acceso()
 
-        # ── NUEVO: Consultar y asignar el próximo número correlativo ──────
+        # Consultar el próximo número correlativo desde ARCA
         resultado_nro = self.wsfev1_client.fe_cae_consultar_ult_nro(
             token=token,
             sign=sign,
@@ -302,13 +308,14 @@ class FacturacionService:
             f"PtoVta {comprobante.punto_venta}: {proximo_numero}"
         )
 
-        # Actualizar el número en BD antes de enviar
+        # ── IMPORTANTE: Asignar el número en memoria (sin guardar en BD aún).
+        # Solo se persiste en BD si ARCA devuelve éxito, para evitar
+        # IntegrityError por unique_together en caso de reintentos fallidos.
         comprobante.numero = proximo_numero
-        comprobante.save(update_fields=['numero'])
-        # ──────────────────────────────────────────────────────────────────
 
-        # Marca como PENDIENTE
-        comprobante.marcar_como_enviado()
+        # Marca como PENDIENTE (sin update_fields de numero todavía)
+        comprobante.estado = 'PENDIENTE'
+        comprobante.save(update_fields=['estado'])
 
         generador = GeneradorSolicitudFECAE(
             punto_venta=comprobante.punto_venta,
@@ -322,6 +329,7 @@ class FacturacionService:
             f"[FacturacionService] Enviando {comprobante.numero_completo} "
             f"→ WSFEv1 ({self.ambiente})"
         )
+
 
         resultado = self.wsfev1_client.fe_cae_solicitar(
             token=token,
@@ -434,8 +442,8 @@ class FacturacionService:
 
     def _log(self, tipo: str, comprobante=None, **kwargs) -> None:
         try:
-            # Asegurar que response_xml nunca sea None
-            if 'response_xml' not in kwargs:
+            # Asegurar que response_xml nunca sea None (MariaDB IntegrityError)
+            if kwargs.get('response_xml') is None:
                 kwargs['response_xml'] = ''
                 
             LogARCA.objects.create(

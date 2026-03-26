@@ -42,13 +42,13 @@ class CustomerViewsTests(TestCase):
         # Crear clientes de prueba
         Customer.objects.create(
             business_name='Cliente 1',
-            cuit_cuil='20-11111111-2',
+            cuit_cuil='20111111112',
             tax_condition='CF',
             created_by=self.admin
         )
         Customer.objects.create(
             business_name='Cliente 2',
-            cuit_cuil='30-22222222-9',
+            cuit_cuil='30222222229',
             tax_condition='RI',
             created_by=self.admin
         )
@@ -66,7 +66,7 @@ class CustomerViewsTests(TestCase):
         # Cliente activo
         Customer.objects.create(
             business_name='Activo',
-            cuit_cuil='20-33333333-4',
+            cuit_cuil='20333333334',
             tax_condition='CF',
             created_by=self.admin
         )
@@ -74,7 +74,7 @@ class CustomerViewsTests(TestCase):
         # Cliente eliminado
         deleted = Customer.objects.create(
             business_name='Eliminado',
-            cuit_cuil='20-44444444-5',
+            cuit_cuil='20444444445',
             tax_condition='CF',
             created_by=self.admin
         )
@@ -95,7 +95,7 @@ class CustomerViewsTests(TestCase):
         
         response = self.client.post(reverse('customers:customer_create'), {
             'business_name': 'Nuevo Cliente',
-            'cuit_cuil': '20-12345678-6',
+            'cuit_cuil': '20123456786',
             'tax_condition': 'RI',
             'customer_type': 'COMPANY',
             'email': 'nuevo@cliente.com',
@@ -164,7 +164,7 @@ class CustomerViewsTests(TestCase):
         # Crear primer cliente
         Customer.objects.create(
             business_name='Primero',
-            cuit_cuil='20-12345678-6',
+            cuit_cuil='20123456786',
             tax_condition='RI',
             created_by=self.admin
         )
@@ -172,7 +172,7 @@ class CustomerViewsTests(TestCase):
         # Intentar crear con mismo CUIT
         response = self.client.post(reverse('customers:customer_create'), {
             'business_name': 'Segundo',
-            'cuit_cuil': '20-12345678-6',  # Duplicado
+            'cuit_cuil': '20123456786',  # Duplicado
             'tax_condition': 'RI',
             'customer_type': 'COMPANY',
             'billing_country': 'Argentina',
@@ -200,7 +200,7 @@ class CustomerViewsTests(TestCase):
         
         customer = Customer.objects.create(
             business_name='Original',
-            cuit_cuil='20-66666666-7',
+            cuit_cuil='20666666667',
             tax_condition='CF',
             created_by=self.admin
         )
@@ -209,7 +209,7 @@ class CustomerViewsTests(TestCase):
             reverse('customers:customer_update', kwargs={'pk': customer.id}),
             {
                 'business_name': 'Modificado',
-                'cuit_cuil': '20-66666666-7', # Mantener mismo CUIT
+                'cuit_cuil': '20666666667', # Mantener mismo CUIT
                 'tax_condition': 'CF',
                 'customer_type': 'PERSON',
                 'email': 'nuevo@email.com',
@@ -239,7 +239,7 @@ class CustomerViewsTests(TestCase):
         
         customer = Customer.objects.create(
             business_name='A Eliminar',
-            cuit_cuil='20-77777777-8',
+            cuit_cuil='20777777778',
             tax_condition='CF',
             created_by=self.admin
         )
@@ -269,13 +269,13 @@ class CustomerViewsTests(TestCase):
         
         Customer.objects.create(
             business_name='Ferretería Los Pinos',
-            cuit_cuil='30-11111111-8',
+            cuit_cuil='30111111118',
             tax_condition='RI',
             created_by=self.admin
         )
         Customer.objects.create(
             business_name='Comercio El Sol',
-            cuit_cuil='20-88888888-9',
+            cuit_cuil='20888888889',
             tax_condition='CF',
             created_by=self.admin
         )
@@ -297,7 +297,7 @@ class CustomerViewsTests(TestCase):
         # Cliente Mayorista
         Customer.objects.create(
             business_name='Cliente Mayorista',
-            cuit_cuil='20-44444444-5',
+            cuit_cuil='20444444445',
             tax_condition='RI',
             customer_segment=seg_mayorista,
             created_by=self.admin
@@ -306,7 +306,7 @@ class CustomerViewsTests(TestCase):
         # Cliente Minorista
         Customer.objects.create(
             business_name='Cliente Minorista',
-            cuit_cuil='20-55555555-6',
+            cuit_cuil='20555555556',
             tax_condition='CF',
             customer_segment=seg_minorista,
             created_by=self.admin

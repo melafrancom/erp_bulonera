@@ -424,11 +424,8 @@ def sale_detail(request, pk):
         except Quote.DoesNotExist:
             pass
     
-    invoice = None
-    try:
-        invoice = sale.factura
-    except Exception:
-        pass
+    invoice = sale.facturas.filter(tipo_comprobante__in=[1, 6]).first()
+    nota_credito = sale.facturas.filter(tipo_comprobante__in=[3, 8]).first()
     
     context = {
         'sale':              sale,
@@ -442,6 +439,7 @@ def sale_detail(request, pk):
         'next_status':       next_status,
         'next_status_label': next_status_label,
         'invoice':           invoice,
+        'nota_credito':      nota_credito,
     }
 
     return render(request, 'sales/sale_detail.html', context)

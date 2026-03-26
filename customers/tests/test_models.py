@@ -27,7 +27,7 @@ class CustomerModelTests(TestCase):
             business_name='Ferretería El Tornillo SA',
             # document_type='CUIT',  # No existe en el modelo actual
             # document_number='30-71234567-8',
-            cuit_cuil='30-70707070-2',
+            cuit_cuil='30707070702',
             customer_type='COMPANY',
             tax_condition='RI', # iva_condition -> tax_condition
             email='contacto@eltornillo.com.ar',
@@ -50,7 +50,7 @@ class CustomerModelTests(TestCase):
         # Para CF usamos un CUIL genérico o validamos si se permite DNI en el futuro
         customer = Customer.objects.create(
             business_name='Juan Pérez',
-            cuit_cuil='20-12345678-6',
+            cuit_cuil='20123456786',
             customer_type='PERSON',
             tax_condition='CF',
             email='juan.perez@gmail.com',
@@ -68,7 +68,7 @@ class CustomerModelTests(TestCase):
         """TC-C003: Crear cliente Monotributista con CUIL"""
         customer = Customer.objects.create(
             business_name='María González - Comercio',
-            cuit_cuil='27-22222222-8',
+            cuit_cuil='27222222228',
             customer_type='PERSON',
             tax_condition='MONO',
             email='maria.gonzalez@example.com',
@@ -89,7 +89,7 @@ class CustomerModelTests(TestCase):
         """TC-C004: CRÍTICO - CUIT válido con formato XX-XXXXXXXX-X"""
         customer = Customer.objects.create(
             business_name='Empresa Test',
-            cuit_cuil='20-11111111-2',  # CUIT válido
+            cuit_cuil='20111111112',  # CUIT válido
             tax_condition='RI',
             created_by=self.admin
         )
@@ -101,23 +101,23 @@ class CustomerModelTests(TestCase):
     # Si se pasa directo al create() sin guiones, fallará.
     # Por lo tanto, removemos el test de "sin guiones" al nivel modelo, 
     # o testeamos que Falle si no tiene guiones (el form es quien lo arregla).
-    def test_cuit_sin_guiones_falla_en_modelo(self):
-        """TC-C005-B: El modelo rechaza CUIT sin guiones (el Form se encarga de formatearlo)"""
-        with self.assertRaises(ValidationError):
-            customer = Customer(
-                business_name='Empresa Test 2',
-                cuit_cuil='20123456786',  # Sin guiones
-                tax_condition='RI',
-                created_by=self.admin
-            )
-            customer.full_clean()
+    def test_cuit_sin_guiones_es_valido_en_modelo(self):
+        """TC-C005-B: El modelo acepta CUIT sin guiones (formato canónico)"""
+        customer = Customer(
+            business_name='Empresa Test 2',
+            cuit_cuil='20123456786',  # Sin guiones
+            tax_condition='RI',
+            created_by=self.admin
+        )
+        customer.full_clean() # No debe fallar
+        self.assertEqual(customer.cuit_cuil, '20123456786')
 
     def test_cuit_invalido_digito_verificador(self):
         """TC-C006: CRÍTICO - CUIT con dígito verificador incorrecto debe fallar"""
         with self.assertRaises(ValidationError):
             customer = Customer(
                 business_name='Empresa Inválida',
-                cuit_cuil='20-12345678-0',  # Dígito verificador incorrecto (correcto es 6)
+                cuit_cuil='20123456780',  # Dígito verificador incorrecto (correcto es 6)
                 tax_condition='RI',
                 created_by=self.admin
             )
@@ -128,7 +128,7 @@ class CustomerModelTests(TestCase):
         with self.assertRaises(ValidationError):
             customer = Customer(
                 business_name='Empresa Inválida',
-                cuit_cuil='20-1234567-6',  # Faltan dígitos centrales
+                cuit_cuil='12345',  # Solo 5 dígitos, debe fallar regex 7-11
                 tax_condition='RI',
                 created_by=self.admin
             )
@@ -142,7 +142,7 @@ class CustomerModelTests(TestCase):
         """TC-C008: CRÍTICO - No se pueden crear dos clientes con el mismo CUIT"""
         Customer.objects.create(
             business_name='Cliente 1',
-            cuit_cuil='20-11111111-2',
+            cuit_cuil='20999999998',
             tax_condition='RI',
             created_by=self.admin
         )
@@ -150,7 +150,7 @@ class CustomerModelTests(TestCase):
         with self.assertRaises(IntegrityError):
             Customer.objects.create(
                 business_name='Cliente 2',
-                cuit_cuil='20-11111111-2',  # CUIT duplicado
+                cuit_cuil='20999999998',  # CUIT duplicado
                 tax_condition='RI',
                 created_by=self.admin
             )
@@ -170,7 +170,7 @@ class CustomerModelTests(TestCase):
         """TC-C010: CRÍTICO - Soft delete preserva datos del cliente"""
         customer = Customer.objects.create(
             business_name='Cliente a Eliminar',
-            cuit_cuil='20-11111111-2',
+            cuit_cuil='20111111112',
             tax_condition='CF',
             created_by=self.admin
         )
@@ -196,7 +196,7 @@ class CustomerModelTests(TestCase):
         """TC-C011: Restaurar cliente soft-deleted"""
         customer = Customer.objects.create(
             business_name='Cliente a Restaurar',
-            cuit_cuil='20-22222222-3',
+            cuit_cuil='20222222223',
             tax_condition='CF',
             created_by=self.admin
         )
@@ -220,7 +220,7 @@ class CustomerModelTests(TestCase):
         """TC-C014: Campos de auditoría se completan automáticamente"""
         customer = Customer.objects.create(
             business_name='Test Auditoría',
-            cuit_cuil='20-44444444-5',
+            cuit_cuil='20444444445',
             tax_condition='CF',
             created_by=self.admin
         )
@@ -235,7 +235,7 @@ class CustomerModelTests(TestCase):
         """TC-C015: updated_by se actualiza al modificar"""
         customer = Customer.objects.create(
             business_name='Test Update',
-            cuit_cuil='20-55555555-6',
+            cuit_cuil='20555555556',
             tax_condition='CF',
             created_by=self.admin
         )
@@ -266,7 +266,7 @@ class CustomerModelTests(TestCase):
         """TC-C016: Representación en string del modelo"""
         customer = Customer.objects.create(
             business_name='Ferretería Los Alamos',
-            cuit_cuil='30-11111111-8',
+            cuit_cuil='30111111118',
             tax_condition='RI',
             created_by=self.admin
         )
@@ -286,7 +286,7 @@ class CustomerModelTests(TestCase):
         with self.assertRaises(ValidationError):
             customer = Customer(
                 business_name=long_name,
-                cuit_cuil='20-12345678-6',
+                cuit_cuil='20123456786',
                 tax_condition='CF',
                 created_by=self.admin
             )
@@ -308,7 +308,7 @@ class CustomerModelTests(TestCase):
         """TC-C022: Campos opcionales pueden dejarse vacíos"""
         customer = Customer.objects.create(
             business_name='Test Mínimo',
-            cuit_cuil='20-12345678-6',
+            cuit_cuil='20123456786',
             tax_condition='CF',
             created_by=self.admin
             # Sin email, phone, billing_address, etc.

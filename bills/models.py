@@ -40,12 +40,12 @@ class Invoice(BaseModel):
     ]
 
     # ── Relaciones ────────────────────────────────────────────────
-    sale = models.OneToOneField(
+    sale = models.ForeignKey(
         'sales.Sale',
         on_delete=models.PROTECT,
         null=True,
         blank=True,
-        related_name='factura',
+        related_name='facturas',
         help_text='Venta origen de esta factura'
     )
     comprobante_arca = models.OneToOneField(
@@ -162,6 +162,11 @@ class Invoice(BaseModel):
         choices=ESTADO_FISCAL_CHOICES,
         default='borrador',
         db_index=True
+    )
+    observaciones_afip = models.TextField(
+        blank=True,
+        default='',
+        help_text='Errores u observaciones retornados por ARCA/AFIP'
     )
 
     # ── Fechas ────────────────────────────────────────────────────

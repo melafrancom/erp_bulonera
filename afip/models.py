@@ -25,10 +25,10 @@ class TipoComprob(IntEnum):
         return [(e.value, e.name.replace('_', ' ')) for e in cls]
 
 class TipoDocumento(IntEnum):
-    """Tipo de documento del cliente."""
-    DNI = 80
-    CUIT = 86
-    CUIL = 87
+    """Tipo de documento del cliente según ARCA/AFIP."""
+    CUIT = 80
+    CUIL = 86
+    DNI = 96
     
     @classmethod
     def choices(cls):
@@ -269,6 +269,10 @@ class Comprobante(models.Model):
         help_text="CUIT/CUIL/DNI del cliente"
     )
     razon_social_cliente = models.CharField(max_length=255)
+    condicion_iva_receptor = models.IntegerField(
+        default=5, 
+        help_text='ID condición IVA del receptor (RG 5616). 1=RI, 4=Exento, 5=CF, 6=Mono'
+    )
     
     # Montos
     monto_neto = models.DecimalField(
@@ -359,13 +363,13 @@ class Comprobante(models.Model):
         self.save(update_fields=['estado'])
     
     def marcar_como_autorizado(self, cae, fecha_vto_cae, respuesta_json):
-        """Marca como autorizado."""
+        """Marca como autorizado. El número debe estar asignado en memoria antes de llamar este método."""
         self.estado = 'AUTORIZADO'
         self.cae = cae
         self.fecha_vto_cae = fecha_vto_cae
         self.respuesta_arca_json = respuesta_json
         self.error_msg = ''
-        self.save(update_fields=['estado', 'cae', 'fecha_vto_cae', 'respuesta_arca_json', 'error_msg'])
+        self.save(update_fields=['estado', 'numero', 'cae', 'fecha_vto_cae', 'respuesta_arca_json', 'error_msg'])
     
     def marcar_como_rechazado(self, error_msg, respuesta_json):
         """Marca como rechazado."""

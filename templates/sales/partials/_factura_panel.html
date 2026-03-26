@@ -73,6 +73,12 @@ Variables:
                 <dt class="text-xs text-gray-400 uppercase tracking-wide">Total facturado</dt>
                 <dd class="font-semibold text-gray-900 mt-0.5">$ {{ invoice.total|floatformat:2 }}</dd>
             </div>
+            {% if invoice.observaciones_afip and invoice.estado_fiscal == 'autorizada' %}
+            <div class="col-span-2">
+                <dt class="text-xs text-gray-400 uppercase tracking-wide">Observaciones ARCA</dt>
+                <dd class="text-xs text-gray-600 mt-0.5 italic">{{ invoice.observaciones_afip }}</dd>
+            </div>
+            {% endif %}
         </dl>
 
         {% if invoice.estado_fiscal == 'autorizada' %}
@@ -94,6 +100,27 @@ Variables:
                 </button>
             </form>
         </div>
+        {% elif invoice.estado_fiscal == 'anulada' %}
+        <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mt-4">
+            <p class="text-sm text-orange-700 font-medium mb-3">
+                <i data-lucide="alert-triangle" class="w-4 h-4 inline mr-1"></i>
+                Esta factura fue anulada mediante una Nota de Crédito. Ambos comprobantes siguen siendo válidos ante AFIP.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-3">
+                <a href="{% url 'bills_web:invoice_pdf' invoice.pk %}" target="_blank"
+                   class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors flex-1">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    Descargar Factura
+                </a>
+                {% if nota_credito %}
+                <a href="{% url 'bills_web:invoice_pdf' nota_credito.pk %}" target="_blank"
+                   class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors flex-1">
+                    <i data-lucide="file-minus" class="w-4 h-4"></i>
+                    Descargar Nota de Crédito
+                </a>
+                {% endif %}
+            </div>
+        </div>
         {% elif invoice.estado_fiscal == 'pendiente' %}
         <div class="bg-yellow-50 border border-yellow-100 rounded-lg p-4">
             <p class="text-xs text-yellow-700 font-medium mb-3">
@@ -112,10 +139,21 @@ Variables:
         </div>
         {% elif invoice.estado_fiscal == 'rechazada' %}
         <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p class="text-xs text-red-700 font-medium mb-3">
-                <i data-lucide="alert-circle" class="w-4 h-4 inline mr-1"></i>
-                ARCA rechazó el comprobante. Resolvé el problema y volvé a intentar.
-            </p>
+            <div class="flex items-start gap-3 mb-3">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 mt-0.5"></i>
+                <div>
+                    <p class="text-sm text-red-700 font-bold mb-1">
+                        ARCA rechazó el comprobante
+                    </p>
+                    <p class="text-xs text-red-600">
+                        {% if invoice.observaciones_afip %}
+                            {{ invoice.observaciones_afip }}
+                        {% else %}
+                            Error desconocido o validación fallida en ARCA. Resolvé el problema y volvé a intentar.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
             <form method="post" action="{% url 'bills_web:invoice_retry' invoice.pk %}">
                 {% csrf_token %}
                 <button type="submit"

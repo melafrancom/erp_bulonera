@@ -348,7 +348,7 @@ class Sale(BaseModel):
         help_text='Estado ante AFIP/ARCA'
     )
     # La relación Sale ↔ Invoice se gestiona desde bills.Invoice.sale (FK)
-    # Acceso inverso: sale.factura  (OneToOneField desde Invoice)
+    # Acceso inverso: sale.facturas.all() (ForeignKey desde Invoice — puede tener Factura + NC)
     
     # Información adicional
     notes = models.TextField(blank=True)

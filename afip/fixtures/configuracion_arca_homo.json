@@ -7,8 +7,8 @@
             "ruta_certificado": "/app/afip/certs/homologacion/certificado_con_clave.pem",
             "password_certificado": "",
             "razon_social": "MELA MIGUEL ANGEL",
-            "email_contacto": "contacto@buloneraalvear.online",
-            "punto_venta": 3,
+            "email_contacto": "[EMAIL_ADDRESS]",
+            "punto_venta":99,
             "activo": true,
             "creado_en": "2026-03-19T18:00:00Z",
             "actualizado_en": "2026-03-19T18:00:00Z"

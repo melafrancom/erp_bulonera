@@ -23,6 +23,14 @@ from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
+MAPA_CONDICION_IVA_AFIP = {
+    'RI':   1,  # Responsable Inscripto
+    'EX':   4,  # Exento
+    'CF':   5,  # Consumidor Final
+    'MONO': 6,  # Monotributista
+    'NR':   7,  # No Responsable
+}
+
 
 def facturar_venta(sale, user, tipo_comprobante=None, async_emission=True):
     """
@@ -57,10 +65,11 @@ def facturar_venta(sale, user, tipo_comprobante=None, async_emission=True):
             f'Fiscal: {sale.fiscal_status}'
         )
 
-    # Verificar que no tenga factura previa
-    if hasattr(sale, 'factura') and sale.factura is not None:
+    # Verificar que no tenga factura previa (solo comprobantes tipo factura A o B)
+    factura_previa = sale.facturas.filter(tipo_comprobante__in=[1, 6]).first()
+    if factura_previa:
         raise ValueError(
-            f'Venta {sale.number} ya tiene factura: {sale.factura.number}'
+            f'Venta {sale.number} ya tiene factura: {factura_previa.number}'
         )
 
     # ── Obtener datos del cliente ─────────────────────────────
@@ -98,6 +107,14 @@ def facturar_venta(sale, user, tipo_comprobante=None, async_emission=True):
         config = ConfiguracionARCA.objects.filter(activo=True).first()
 
     punto_venta = config.punto_venta
+
+    # Validar que el cliente no es la misma empresa (ARCA error 10069)
+    if cliente_cuit == str(config.empresa_cuit):
+        raise ValueError(
+            f'No se puede emitir una factura donde el receptor ({cliente_cuit}) '
+            f'es el mismo que el emisor ({config.empresa_cuit}). '
+            f'Cambiá el cliente de la venta.'
+        )
 
     # ── Calcular montos desde SaleItems ───────────────────────
     items = sale.items.all().order_by('line_order')
@@ -197,6 +214,7 @@ def facturar_venta(sale, user, tipo_comprobante=None, async_emission=True):
             punto_venta=punto_venta,
             numero=numero_borrador_arca,  # Placeholder dinámico (Max+1)
             fecha_compr=date.today(),
+            condicion_iva_receptor=MAPA_CONDICION_IVA_AFIP.get(condicion_iva, 5),
             doc_cliente_tipo=doc_tipo,
             doc_cliente=doc_nro,
             razon_social_cliente=cliente_razon_social,
@@ -256,7 +274,8 @@ def facturar_venta(sale, user, tipo_comprobante=None, async_emission=True):
                     f'{resultado.get("error")}'
                 )
                 invoice.estado_fiscal = 'rechazada'
-                invoice.save(update_fields=['estado_fiscal'])
+                invoice.observaciones_afip = resultado.get('error', 'Rechazado por ARCA')
+                invoice.save(update_fields=['estado_fiscal', 'observaciones_afip'])
                 comprobante.estado = 'RECHAZADO'
                 comprobante.save(update_fields=['estado'])
                 
@@ -350,6 +369,7 @@ def anular_factura_y_venta(invoice_id, user):
     from afip.models import Comprobante, ComprobRenglon
     from afip.services.facturacion_service import FacturacionService
     from sales.services import cancel_sale
+    from bills.models import Invoice
 
     invoice = Invoice.objects.select_related('comprobante_arca', 'sale').get(id=invoice_id)
     
@@ -367,21 +387,13 @@ def anular_factura_y_venta(invoice_id, user):
         orig_comp = invoice.comprobante_arca
         
         with transaction.atomic():
-            # Determinar número provisional para la NC
-            ultimo_num_nc = Comprobante.objects.filter(
-                empresa_cuit=orig_comp.empresa_cuit,
-                tipo_compr=nc_tipo,
-                punto_venta=orig_comp.punto_venta
-            ).aggregate(Max('numero'))['numero__max'] or 0
-            numero_borrador_nc = ultimo_num_nc + 1
-
-            # 1. Crear el Comprobante de NC
+            # 1. Crear el Comprobante de NC (Número 0 como placeholder, FacturacionService asignará el real)
             nc_comp = Comprobante.objects.create(
                 empresa_cuit=orig_comp.empresa_cuit,
                 sale=orig_comp.sale,
                 tipo_compr=nc_tipo,
                 punto_venta=orig_comp.punto_venta,
-                numero=numero_borrador_nc,
+                numero=0,
                 fecha_compr=date.today(),
                 doc_cliente_tipo=orig_comp.doc_cliente_tipo,
                 doc_cliente=orig_comp.doc_cliente,
@@ -427,7 +439,7 @@ def anular_factura_y_venta(invoice_id, user):
                 emitida_por=user,
                 number=nc_comp.numero_completo,
                 tipo_comprobante=nc_tipo,
-                punto_venta=orig_comp.punto_venta,
+                punto_venta=nc_comp.punto_venta,
                 numero_secuencial=nc_comp.numero,
                 cliente_cuit=invoice.cliente_cuit,
                 cliente_razon_social=invoice.cliente_razon_social,

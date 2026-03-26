@@ -60,9 +60,9 @@ from datetime import date
 def download_invoice_pdf(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
     
-    # Solo permitir descargar si está autorizada
-    if invoice.estado_fiscal != 'autorizada':
-        raise Http404("La factura no está autorizada por AFIP.")
+    # Solo permitir descargar si está autorizada o anulada
+    if invoice.estado_fiscal not in ('autorizada', 'anulada'):
+        raise Http404("El comprobante no está disponible para descarga.")
         
     buffer = generate_invoice_pdf(invoice)
     

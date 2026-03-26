@@ -67,10 +67,10 @@ class CustomerFormTests(TestCase):
         self.assertIn('business_name', form.errors)
     
     def test_form_invalido_cuit_formato_incorrecto(self):
-        """TC-CF004: Formulario rechaza CUIT con formato incorrecto"""
+        """TC-C018: Formulario con formato CUIT incorrecto (muy corto)"""
         form = CustomerForm(data={
             'business_name': 'Test',
-            'cuit_cuil': '20-1234567-8',  # Formato incorrecto
+            'cuit_cuil': '12-34-56',  # Solo 6 dígitos, debe fallar regex 7-11
             'tax_condition': 'RI',
             'customer_type': 'PERSON',
             'billing_country': 'Argentina',
@@ -99,8 +99,8 @@ class CustomerFormTests(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn('email', form.errors)
     
-    def test_form_limpia_cuit_y_formatea(self):
-        """TC-CF006: Formulario limpia y formatea cuit_cuil (sin guiones -> con guiones)"""
+    def test_form_normaliza_cuit_a_digitos(self):
+        """TC-CF006: Formulario normaliza cuit_cuil removiendo guiones y espacios"""
         form = CustomerForm(data={
             'business_name': 'Test',
             'cuit_cuil': '20123456786',  # Sin guiones. 20-12345678-6 es valido
@@ -114,7 +114,7 @@ class CustomerFormTests(TestCase):
         
         self.assertTrue(form.is_valid(), form.errors)
         cleaned = form.cleaned_data['cuit_cuil']
-        self.assertEqual(cleaned, '20-12345678-6')
+        self.assertEqual(cleaned, '20123456786')
 
     def test_credit_limit_validation(self):
         """TC-CF007: Valida que si allow_credit es True, credit_limit > 0"""

@@ -1,13 +1,23 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import Customer, CustomerSegment, CustomerNote
 import re
+from .models import Customer, CustomerSegment, CustomerNote
+from common.utils import validate_cuit as validate_cuit_logic
 
 
 class CustomerForm(forms.ModelForm):
     """
     Form for creating and updating customers.
     """
+    cuit_cuil = forms.CharField(
+        max_length=15,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'XX-XXXXXXXX-X o XXXXXXXXXXX'
+        }),
+        label='CUIT/CUIL/DNI',
+        help_text='Ingrese con o sin guiones, se normaliza automáticamente.'
+    )
     
     class Meta:
         model = Customer
@@ -48,28 +58,20 @@ class CustomerForm(forms.ModelForm):
     def clean_cuit_cuil(self):
         """
         Validate and format CUIT/CUIL.
+        Normalize to digits only for model compatibility.
         """
         cuit = self.cleaned_data.get('cuit_cuil', '')
         
-        # Remove spaces
-        cuit = cuit.replace(' ', '')
+        # Guardar solo números
+        cuit = re.sub(r'\D', '', cuit)
         
-        # If it doesn't have dashes, try to format it
-        if '-' not in cuit and len(cuit) == 11 and cuit.isdigit():
-            cuit = f"{cuit[0:2]}-{cuit[2:10]}-{cuit[10]}"
+        if not re.match(r'^\d{7,11}$', cuit):
+            raise ValidationError('El CUIT/CUIL debe contener entre 7 y 11 dígitos numéricos.')
         
-        # Validate format
-        pattern = r'^\d{2}-\d{8}-\d{1}$'
-        if not re.match(pattern, cuit):
-            raise ValidationError('El CUIT/CUIL debe tener el formato XX-XXXXXXXX-X')
-        
-        return cuit
-        
-        # Validate checksum
-        from common.utils import validate_cuit
-        if not validate_cuit(cuit):
+        # Validar checksum si es CUIT/CUIL (11 dígitos)
+        if len(cuit) == 11 and not validate_cuit_logic(cuit):
             raise ValidationError('El CUIT/CUIL no es válido (dígito verificador incorrecto).')
-        
+            
         return cuit
     
     def clean(self):

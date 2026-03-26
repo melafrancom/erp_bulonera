@@ -82,15 +82,27 @@ def emitir_comprobante_async(self, comprobante_id: int, empresa_cuit: str) -> di
             )
             # ── Propagar estado a Invoice y Sale ──
             try:
-                from bills.services import _actualizar_post_autorizacion
                 from bills.models import Invoice
                 from afip.models import Comprobante
+                from sales.models import Sale
 
                 comprobante = Comprobante.objects.get(pk=comprobante_id)
                 invoice = Invoice.objects.filter(comprobante_arca=comprobante).first()
                 if invoice:
-                    _actualizar_post_autorizacion(invoice, comprobante, resultado)
-                    logger.info(f"[Celery/afip] Invoice {invoice.id} actualizada post-ARCA")
+                    invoice.estado_fiscal = 'autorizada'
+                    invoice.cae = resultado.get('cae', '')
+                    invoice.cae_vencimiento = resultado.get('fecha_vto_cae')
+                    # Actualizar número de factura si está disponible
+                    if comprobante.numero:
+                        invoice.numero_secuencial = comprobante.numero
+                        invoice.number = f'{comprobante.punto_venta:04d}-{comprobante.numero:08d}'
+                    invoice.observaciones_afip = ''
+                    fields = ['estado_fiscal', 'cae', 'cae_vencimiento', 'observaciones_afip', 'number', 'numero_secuencial']
+                    invoice.save(update_fields=fields)
+                    # Actualizar estado fiscal de la venta
+                    if comprobante.sale_id:
+                        Sale.objects.filter(pk=comprobante.sale_id).update(fiscal_status='authorized')
+                    logger.info(f"[Celery/afip] ✅ Invoice {invoice.id} → autorizada (CAE: {resultado['cae']})")
                 else:
                     logger.warning(f"[Celery/afip] No se encontró Invoice para comprobante {comprobante_id}")
             except Exception as prop_exc:
@@ -99,6 +111,25 @@ def emitir_comprobante_async(self, comprobante_id: int, empresa_cuit: str) -> di
             logger.error(
                 f"[Celery/afip] ❌ Comprobante {comprobante_id} rechazado: {resultado['error']}"
             )
+            # ── Propagar rechazo a Invoice y Sale ──
+            try:
+                from bills.models import Invoice
+                from afip.models import Comprobante
+                from sales.models import Sale
+
+                comprobante = Comprobante.objects.get(pk=comprobante_id)
+                invoice = Invoice.objects.filter(comprobante_arca=comprobante).first()
+                if invoice:
+                    invoice.estado_fiscal = 'rechazada'
+                    # Guardamos el error para mostrarlo en la UI
+                    if hasattr(invoice, 'observaciones_afip'):
+                        invoice.observaciones_afip = resultado.get('error', 'Rechazado por ARCA')
+                    invoice.save(update_fields=['estado_fiscal', 'observaciones_afip'] if hasattr(invoice, 'observaciones_afip') else ['estado_fiscal'])
+                
+                if comprobante.sale_id:
+                    Sale.objects.filter(pk=comprobante.sale_id).update(fiscal_status='rejected')
+            except Exception as prop_exc:
+                logger.exception(f"[Celery/afip] Error propagando rechazo: {prop_exc}")
 
         return resultado
 

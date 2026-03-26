@@ -123,6 +123,7 @@ class GeneradorSolicitudFECAE:
             'cbte_asoc_tipo':     comprobante_obj.cbte_asoc_tipo,
             'cbte_asoc_pto_vta':  comprobante_obj.cbte_asoc_pto_vta,
             'cbte_asoc_numero':   comprobante_obj.cbte_asoc_numero,
+            'condicion_iva_receptor': comprobante_obj.condicion_iva_receptor,
         })
 
     def generar_xml_fe_det_req(self) -> str:
@@ -130,7 +131,8 @@ class GeneradorSolicitudFECAE:
         for det in self._detalles:
             iva_xml = self._generar_xml_iva(det['iva_por_alicuota'])
             # Mapear DocTipo → CondicionIVAReceptorId (RG 5616)
-            condicion_iva_receptor = self._get_condicion_iva_receptor(det['doc_tipo'])
+            # Priorizar el campo real del comprobante
+            condicion_iva_receptor = det.get('condicion_iva_receptor') or self._get_condicion_iva_receptor(det['doc_tipo'])
             
             cbtes_asoc_xml = ""
             if det.get('cbte_asoc_numero') and det.get('cbte_asoc_pto_vta') and det.get('cbte_asoc_tipo'):

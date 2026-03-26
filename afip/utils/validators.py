@@ -40,12 +40,12 @@ def validar_documento_cliente(doc_tipo, doc_numero):
     
     doc_numero = doc_numero.replace(' ', '').replace('-', '').replace('.', '')
     
-    if doc_tipo == 86:  # CUIT
+    if doc_tipo == 80:  # CUIT
         validar_cuit(doc_numero)
-    elif doc_tipo == 87:  # CUIL
+    elif doc_tipo == 86:  # CUIL
         if not doc_numero.isdigit() or len(doc_numero) != 11:
             raise ValueError(f"CUIL inválido: {doc_numero}")
-    elif doc_tipo == 80:  # DNI
+    elif doc_tipo == 96:  # DNI
         if not doc_numero.isdigit() or len(doc_numero) < 7 or len(doc_numero) > 8:
             raise ValueError(f"DNI inválido: {doc_numero}")
     
