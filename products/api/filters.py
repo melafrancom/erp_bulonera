@@ -10,6 +10,7 @@ class ProductFilter(FilterSet):
 
     code = CharFilter(field_name='code', lookup_expr='icontains', label='Código')
     sku = CharFilter(field_name='sku', lookup_expr='icontains', label='SKU')
+    other_codes = CharFilter(field_name='other_codes', lookup_expr='icontains', label='Otros códigos')
     name = CharFilter(field_name='name', lookup_expr='icontains', label='Nombre')
     brand = CharFilter(field_name='brand', lookup_expr='icontains', label='Marca')
     supplier = CharFilter(

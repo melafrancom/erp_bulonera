@@ -158,7 +158,10 @@ def quote_list(request):
         quotes = quotes.filter(
             models.Q(number__icontains=search)
             | models.Q(customer__business_name__icontains=search)
-        )
+            | models.Q(items__product__code__icontains=search)
+            | models.Q(items__product__sku__icontains=search)
+            | models.Q(items__product__other_codes__icontains=search)
+        ).distinct()
 
     # ── Paginación ────────────────────────────────────────────────────────────
     paginator = Paginator(quotes, 20)
@@ -342,7 +345,10 @@ def sale_list(request):
         sales = sales.filter(
             models.Q(number__icontains=search)
             | models.Q(customer__business_name__icontains=search)
-        )
+            | models.Q(items__product__code__icontains=search)
+            | models.Q(items__product__sku__icontains=search)
+            | models.Q(items__product__other_codes__icontains=search)
+        ).distinct()
 
     # ── Paginación ────────────────────────────────────────────────────────────
     paginator = Paginator(sales, 20)

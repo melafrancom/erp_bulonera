@@ -132,13 +132,9 @@ class CustomerExcelManager:
     
     def _format_cuit(self, cuit):
         """
-        Format CUIT to XX-XXXXXXXX-X if needed.
+        Format CUIT to digits only for model compatibility.
         """
         cuit = str(cuit).replace(' ', '').replace('-', '')
-        
-        if len(cuit) == 11 and cuit.isdigit():
-            return f"{cuit[0:2]}-{cuit[2:10]}-{cuit[10]}"
-        
         return cuit
     
     def _process_customer(self, item, update_existing=True):

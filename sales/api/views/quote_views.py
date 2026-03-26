@@ -32,7 +32,10 @@ class QuoteViewSet(AuditMixin, OwnerQuerysetMixin, viewsets.ModelViewSet):
     serializer_class = QuoteSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = QuoteFilter
-    search_fields = ['number', 'customer__business_name']
+    search_fields = [
+        'number', 'customer__business_name', 
+        'items__product__code', 'items__product__sku', 'items__product__other_codes'
+    ]
     ordering_fields = ['date', '_cached_total', 'status', '-date']
     ordering = ['-date']
     

@@ -4,6 +4,11 @@ Vistas web (templates) para la app Suppliers.
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.conf import settings
+import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 from suppliers.models import Supplier, SupplierTag
 from suppliers.web.forms import SupplierForm
@@ -114,8 +119,117 @@ def supplier_edit(request, pk):
 
 @login_required
 def supplier_import(request):
-    """Vista para importar proveedores desde Excel/CSV."""
+    """Vista para importar proveedores desde Excel/CSV (GET muestra, POST procesa)."""
+    if request.method == 'POST':
+        uploaded_file = request.FILES.get('file')
+        if not uploaded_file:
+            messages.error(request, "No se seleccionó ningún archivo.")
+            return render(request, 'suppliers/supplier_import.html')
+
+        # Validar extensión
+        ext = os.path.splitext(uploaded_file.name)[1].lower()
+        if ext not in ('.xlsx', '.csv'):
+            messages.error(request, f"Formato '{ext}' no soportado. Usá .xlsx o .csv")
+            return render(request, 'suppliers/supplier_import.html')
+
+        # Guardar archivo temporal
+        imports_dir = os.path.join(settings.MEDIA_ROOT, 'imports')
+        os.makedirs(imports_dir, exist_ok=True)
+
+        from django.utils import timezone
+        timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+        file_name = f"import_suppliers_{timestamp}{ext}"
+        file_path = os.path.join(imports_dir, file_name)
+
+        with open(file_path, 'wb') as dest:
+            for chunk in uploaded_file.chunks():
+                dest.write(chunk)
+
+        # Lanzar tarea Celery si es posible, sino fallback a sync
+        try:
+            from suppliers.tasks import import_suppliers_task
+            task = import_suppliers_task.delay(file_path, request.user.id)
+            messages.info(request, "Importación iniciada. Se procesará en segundo plano.")
+            # Redirigir a una vista de estado o reporte
+            return redirect('suppliers_web:supplier_list') # TODO: Crear vista de reporte si es necesario
+        except Exception as e:
+            logger.error(f"Error al lanzar tarea de importación de proveedores: {e}", exc_info=True)
+            # Fallback sincrónico
+            from suppliers.services import SupplierImportService
+            service = SupplierImportService()
+            report = service.import_from_file(file_path, request.user.id)
+            
+            if report['status'] == 'completed':
+                messages.success(
+                    request, 
+                    f"Importación completada: {report['created']} creados, {report['updated']} actualizados."
+                )
+            else:
+                messages.error(request, f"Error en importación: {report.get('error', 'Desconocido')}")
+            
+            return redirect('suppliers_web:supplier_list')
+
     return render(request, 'suppliers/supplier_import.html')
+
+
+@login_required
+def supplier_download_template(request):
+    """Genera y descarga la plantilla Excel para importación de proveedores."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from django.http import HttpResponse
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Proveedores'
+
+    # Columnas: (nombre_técnico, descripción_amigable, ancho, es_obligatorio)
+    columns = [
+        ('business_name', 'Razón Social (obligatorio)', 30, True),
+        ('cuit', 'CUIT (XX-XXXXXXXX-X) (obligatorio)', 20, True),
+        ('trade_name', 'Nombre Comercial', 25, False),
+        ('tax_condition', 'Condición IVA (RI, MONO, EX)', 20, False),
+        ('email', 'Email', 25, False),
+        ('phone', 'Teléfono', 15, False),
+        ('mobile', 'Celular', 15, False),
+        ('address', 'Dirección', 30, False),
+        ('city', 'Ciudad', 20, False),
+        ('state', 'Provincia', 20, False),
+        ('zip_code', 'CP', 10, False),
+        ('bank_name', 'Banco', 20, False),
+        ('cbu', 'CBU', 25, False),
+        ('bank_alias', 'Alias', 20, False),
+        ('contact_person', 'Contacto', 25, False),
+        ('payment_term', 'Plazo Pago (días)', 15, False),
+        ('notes', 'Notas', 40, False),
+    ]
+
+    # Estilos
+    header_font = Font(name='Calibri', bold=True, size=11, color='FFFFFF')
+    fill = PatternFill(start_color='4F46E5', end_color='4F46E5', fill_type='solid') # Indigo 600
+    
+    for col_idx, (col_name, desc, width, req) in enumerate(columns, 1):
+        cell = ws.cell(row=1, column=col_idx, value=col_name)
+        cell.font = header_font
+        cell.fill = fill
+        ws.column_dimensions[cell.column_letter].width = width
+
+    # Ejemplo
+    example = {
+        'business_name': 'Bulonera Alvear S.A.',
+        'cuit': '30-12345678-9',
+        'trade_name': 'Bulonera Alvear',
+        'tax_condition': 'RI',
+        'email': 'ventas@bulonera.com',
+        'payment_term': '30',
+    }
+    for col_idx, (col_name, _, _, _) in enumerate(columns, 1):
+        ws.cell(row=2, column=col_idx, value=example.get(col_name, ''))
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="plantilla_importacion_proveedores.xlsx"'
+    wb.save(response)
+    return response
 
 
 # Importar models para uso en búsqueda

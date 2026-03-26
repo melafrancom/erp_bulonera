@@ -66,8 +66,9 @@ def download_invoice_pdf(request, pk):
         
     buffer = generate_invoice_pdf(invoice)
     
+    prefix = "Nota_de_Credito" if invoice.tipo_comprobante in (3, 8) else "Factura"
     response = HttpResponse(buffer, content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="Factura_{invoice.number}.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="{prefix}_{invoice.number}.pdf"'
     
     
     return response

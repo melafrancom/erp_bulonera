@@ -128,7 +128,7 @@ class Product(BaseModel):
         help_text="Stock Keeping Unit. Puede coincidir con el código."
     )
     other_codes = models.CharField(
-        "Otros códigos", max_length=255, blank=True, null=True,
+        "Otros códigos", max_length=255, blank=True, default='',
         help_text="Otros códigos de referencia (ej: viejo sistema), separados por comas."
     )
     name = models.CharField(

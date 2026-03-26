@@ -141,6 +141,7 @@ def product_list(request):
         exact_q = (
             Q(code__icontains=search) |
             Q(sku__icontains=search) |
+            Q(other_codes__icontains=search) |
             Q(description__icontains=search)
         )
         

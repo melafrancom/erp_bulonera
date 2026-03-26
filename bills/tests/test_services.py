@@ -93,3 +93,15 @@ class TestInvoiceDownloadView(TestCase):
         url = reverse('bills_web:invoice_pdf', args=[self.invoice.pk])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
+
+    def test_download_nota_credito_filename(self):
+        """Nota de crédito debe tener un nombre de archivo específico"""
+        self.invoice.tipo_comprobante = 3 # Nota de Crédito A
+        self.invoice.estado_fiscal = 'autorizada'
+        self.invoice.save()
+        
+        url = reverse('bills_web:invoice_pdf', args=[self.invoice.pk])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Nota_de_Credito', response['Content-Disposition'])
+        self.assertIn(self.invoice.number, response['Content-Disposition'])
