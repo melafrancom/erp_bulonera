@@ -132,6 +132,9 @@ else:
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
 
+# Aumentar límite para operaciones masivas en Admin (ej: borrar 14,000 items)
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 20000 
+
 ROOT_URLCONF = 'erp_crm_bulonera.urls'
 
 # Templates configuration - only include templates dir if it exists

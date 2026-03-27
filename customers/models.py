@@ -48,21 +48,25 @@ class CustomerSegment(BaseModel):
         return self.name
 
 
+# --- Validators ---
+
+def validate_cuit_checksum(value):
+    from common.utils import validate_cuit
+    clean_val = value.replace('-', '')
+    # Solo lanzar error de checksum si tratan de meter un CUIT de 11 digitos
+    if len(clean_val) == 11 and not validate_cuit(clean_val):
+        raise ValidationError('El CUIT/CUIL no es válido (dígito verificador incorrecto).')
+
+
 class Customer(BaseModel):
     """
     Main customer model for CRM functionality.
     Supports both individual persons and companies.
     """
     
-    # Tax Information
-    @staticmethod
-    def validate_cuit_checksum(value):
-        from common.utils import validate_cuit
-        clean_val = value.replace('-', '')
-        # Solo lanzar error de checksum si tratan de meter un CUIT de 11 digitos
-        if len(clean_val) == 11 and not validate_cuit(clean_val):
-            raise ValidationError('El CUIT/CUIL no es válido (dígito verificador incorrecto).')
-
+    # Restaurar referencia para compatibilidad con migraciones antiguas
+    validate_cuit_checksum = validate_cuit_checksum
+    
     # Customer Type Choices
     CUSTOMER_TYPE_CHOICES = [
         ('PERSON', 'Persona Física'),

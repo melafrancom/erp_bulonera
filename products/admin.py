@@ -95,7 +95,7 @@ class ProductAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Identificación', {
-            'fields': ('code', 'sku', 'name', 'slug', 'description')
+            'fields': ('code', 'sku', 'other_codes', 'name', 'slug', 'description')
         }),
         ('Clasificación', {
             'fields': ('category', 'subcategories')

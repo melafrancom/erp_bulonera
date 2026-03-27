@@ -370,6 +370,7 @@ class ProductImportService:
             'meta_keywords': 'meta_keywords', 'google_category': 'google_category',
             'condition': 'condition',
             'other codes': 'other_codes',
+            'other_codes': 'other_codes',
         }
         for csv_col, model_field in OPTIONAL_TEXT_FIELDS.items():
             val = row.get(csv_col)
