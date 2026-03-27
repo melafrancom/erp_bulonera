@@ -311,9 +311,13 @@ docker compose -f "$COMPOSE_FILE" run --rm -e DJANGO_SETTINGS_MODULE=erp_crm_bul
 echo "📦 Recolectando estáticos..."
 docker compose -f "$COMPOSE_FILE" run --rm -e DJANGO_SETTINGS_MODULE=erp_crm_bulonera.settings.production web python manage.py collectstatic --no-input
 
-# 5. Reiniciar servicios con la nueva imagen
+# 5. Reiniciar servicios y recrear contenedores si cambiaron
 echo "🔄 Reiniciando servicios..."
 docker compose -f "$COMPOSE_FILE" up -d
+
+# 6. Reiniciar Workers explícitamente (Garantiza recarga de código Python)
+echo "⚙️ Reiniciando Celery Workers..."
+docker compose -f "$COMPOSE_FILE" restart celery_worker celery_beat
 
 echo "✅ Deploy completado!"
 docker compose -f "$COMPOSE_FILE" ps
