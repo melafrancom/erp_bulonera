@@ -489,6 +489,7 @@ EMPRESA_CUIT = env('EMPRESA_CUIT', default='')
 EMPRESA_RAZON_SOCIAL = env('EMPRESA_RAZON_SOCIAL', default='')
 EMPRESA_PUNTO_VENTA = env.int('EMPRESA_PUNTO_VENTA', default=1)
 COMPANY_NAME = env('COMPANY_NAME', default='Nombre comercial')
+COMPANY_PHONE = env('COMPANY_PHONE', default='')
 
 # ============================================================================
 # Logging Configuration

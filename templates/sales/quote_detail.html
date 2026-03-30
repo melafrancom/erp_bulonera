@@ -13,7 +13,7 @@
 {% block mobile_title %}{{ quote.number }}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto">
+<div class="max-w-7xl mx-auto" x-data="{ shareModalOpen: false, activeTab: 'email', phone: '{{ quote.customer.phone|default:quote.customer_phone|default:'' }}' }">
   
   <!-- Header -->
   <div class="mb-6">
@@ -299,10 +299,25 @@
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Acciones</h3>
         
         <div class="space-y-3">
+          <!-- Botón Imprimir (Siempre visible) -->
+          <a href="{% url 'sales_web:quote_print' quote.id %}" target="_blank"
+             class="w-full inline-flex items-center justify-center px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition font-medium">
+            <i data-lucide="printer" class="w-4 h-4 mr-2"></i>
+            Impresión Rápida
+          </a>
+
+          {% if quote.status in 'draft,sent,accepted' %}
+          <button @click="shareModalOpen = true"
+                  class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
+            <i data-lucide="share-2" class="w-4 h-4 mr-2"></i>
+            Compartir
+          </button>
+          {% endif %}
+
           <!-- Acciones según estado -->
           {% if quote.status == 'draft' %}
             <a href="{% url 'sales_web:quote_update' quote.id %}" 
-               class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+               class="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium">
               <i data-lucide="edit" class="w-4 h-4 mr-2"></i>
               Editar
             </a>
@@ -313,6 +328,24 @@
                       class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
                 <i data-lucide="send" class="w-4 h-4 mr-2"></i>
                 Enviar al Cliente
+              </button>
+            </form>
+            <form method="post" action="{% url 'sales_web:quote_accept' quote.id %}">
+              {% csrf_token %}
+              <button type="submit"
+                      onclick="return confirm('¿Marcar este presupuesto como aceptado?')"
+                      class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
+                <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
+                Marcar Aceptado
+              </button>
+            </form>
+            <form method="post" action="{% url 'sales_web:quote_reject' quote.id %}">
+              {% csrf_token %}
+              <button type="submit"
+                      onclick="return confirm('¿Marcar este presupuesto como rechazado?')"
+                      class="w-full inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">
+                <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i>
+                Marcar Rechazado
               </button>
             </form>
             
@@ -369,5 +402,11 @@
 
   </div>
 
-</div>
+  <!-- Modal Compartir -->
+  {% if quote.status in 'draft,sent,accepted' %}
+    {% url 'sales_web:quote_send_email' quote.id as email_action %}
+    {% url 'sales_web:quote_public' quote.uuid as public_url %}
+    {% include 'sales/partials/_share_document_modal.html' with modal_title="Compartir Presupuesto" alpine_open_var="shareModalOpen" alpine_tab_var="activeTab" email_action_url=email_action public_doc_url=public_url default_email=quote.customer.email|default:quote.customer_email|default:"" default_phone=quote.customer.phone|default:quote.customer_phone|default:"" whatsapp_msg="Hola, te comparto el presupuesto solicitado. Podés verlo en el siguiente enlace:" %}
+  {% endif %}
+
 {% endblock %}

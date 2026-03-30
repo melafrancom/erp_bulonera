@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Presupuesto {{ quote.number }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 12px;
+            color: #000;
+            background: #fff;
+            margin: 0;
+            padding: 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .bold { font-weight: bold; }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .header h1 { font-size: 24px; margin: 0; }
+        .header p { margin: 2px 0; font-size: 14px; }
+        
+        .info-grid {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .info-box {
+            width: 48%;
+        }
+        .info-box p { margin: 4px 0; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f8f9fa;
+            color: #000;
+        }
+        .totals {
+            width: 50%;
+            margin-left: auto;
+        }
+        .totals th, .totals td {
+            border: none;
+            padding: 4px 8px;
+        }
+        .totals th { background: transparent; }
+        .border-top { border-top: 1px solid #000 !important; }
+        
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+        
+        @media print {
+            .no-print { display: none !important; }
+        }
+        
+        .print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .print-btn:hover { background: #1d4ed8; }
+    </style>
+</head>
+<body>
+
+    <button onclick="window.print()" class="no-print print-btn">🖨️ Imprimir A4 o Ticket</button>
+
+    <div class="header">
+        <div>
+            <h1>{{ company_name }}</h1>
+            {% if company_cuit %}<p>CUIT: {{ company_cuit }}</p>{% endif %}
+        </div>
+        <div class="text-right">
+            <h2>PRESUPUESTO Nº {{ quote.number }}</h2>
+            <p>Fecha: {{ quote.date|date:"d/m/Y" }}</p>
+            {% if quote.valid_until %}<p>Válido hasta: {{ quote.valid_until|date:"d/m/Y" }}</p>{% endif %}
+        </div>
+    </div>
+
+    <div class="info-grid">
+        <div class="info-box">
+            <p class="bold">Cliente:</p>
+            <p>{{ quote.customer_display }}</p>
+            {% if quote.customer_cuit %}<p>CUIT: {{ quote.customer_cuit }}</p>{% endif %}
+        </div>
+        <div class="info-box text-right">
+            <p>Vendedor: {{ quote.created_by.get_full_name|default:quote.created_by.username }}</p>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th class="text-center" style="width: 10%;">Cant.</th>
+                <th class="text-left" style="width: 50%;">Descripción</th>
+                <th class="text-right" style="width: 15%;">P. Unit.</th>
+                <th class="text-right" style="width: 10%;">Desc.</th>
+                <th class="text-right" style="width: 15%;">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td class="text-center">{{ item.quantity|floatformat:0 }}</td>
+                <td>
+                    {{ item.product.name }}
+                    {% if item.discount_reason %}<br><small>({{ item.discount_reason }})</small>{% endif %}
+                </td>
+                <td class="text-right">$ {{ item.unit_price|floatformat:2 }}</td>
+                <td class="text-right">
+                    {% if item.discount_amount > 0 %}
+                    -$ {{ item.discount_amount|floatformat:2 }}
+                    {% else %}—{% endif %}
+                </td>
+                <td class="text-right bold">$ {{ item.subtotal_with_discount|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">No hay items cargados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table class="totals">
+        <tr>
+            <th class="text-right">Subtotal:</th>
+            <td class="text-right">$ {{ quote.subtotal|floatformat:2 }}</td>
+        </tr>
+        {% if quote.discount > 0 %}
+        <tr>
+            <th class="text-right">Descuentos:</th>
+            <td class="text-right">-$ {{ quote.discount|floatformat:2 }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+            <th class="text-right">IVA:</th>
+            <td class="text-right">$ {{ quote.tax|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <th class="text-right border-top" style="font-size: 16px;">TOTAL:</th>
+            <td class="text-right border-top bold" style="font-size: 16px;">$ {{ quote.total|floatformat:2 }}</td>
+        </tr>
+    </table>
+
+    {% if quote.notes %}
+    <div style="margin-top: 30px; padding-top: 10px; border-top: 1px dotted #ccc;">
+        <p class="bold">Notas:</p>
+        <p>{{ quote.notes|linebreaksbr }}</p>
+    </div>
+    {% endif %}
+
+    <div class="footer print-text">
+        <p>Documento no válido como factura. {% if quote.valid_until %}Los precios se mantienen hasta el {{ quote.valid_until|date:"d/m/Y" }}.{% endif %}</p>
+        <p>Generado por ERP Bulonera Alvear</p>
+    </div>
+
+    <script>
+        // Auto-print al abrir
+        window.onload = function() {
+            setTimeout(() => window.print(), 300);
+        };
+    </script>
+</body>
+</html>

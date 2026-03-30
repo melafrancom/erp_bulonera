@@ -56,6 +56,49 @@ from django.contrib import messages
 from bills.pdf import generate_invoice_pdf
 from bills.services import reintentar_factura, anular_factura_y_venta
 from datetime import date
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
+import logging
+
+logger = logging.getLogger(__name__)
+
+def invoice_public_pdf(request, uuid):
+    """Vista pública para descargar PDF de la factura mediante UUID."""
+    invoice = get_object_or_404(Invoice, uuid=uuid)
+    
+    if invoice.estado_fiscal not in ('autorizada', 'anulada'):
+        raise Http404("El comprobante no está disponible para descarga.")
+        
+    buffer = generate_invoice_pdf(invoice)
+    prefix = "Nota_de_Credito" if invoice.tipo_comprobante in (3, 8, 85, 86, 87) else "Factura"
+    
+    response = HttpResponse(buffer.read(), content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{prefix}_{invoice.number}.pdf"'
+    return response
+
+@login_required
+@require_POST
+def invoice_send_email(request, pk):
+    """Envía la factura por email al destinatario provisto."""
+    invoice = get_object_or_404(Invoice, pk=pk)
+    recipient_email = request.POST.get('recipient_email', '').strip()
+    
+    if not recipient_email:
+        messages.error(request, 'El campo de email no puede estar vacío.')
+        return redirect('bills_web:invoice_detail', pk=pk)
+        
+    try:
+        from bills.tasks import send_invoice_email_task
+        send_invoice_email_task.delay(invoice.id, recipient_email)
+        messages.success(request, f'✅ Comprobante {invoice.number} encolado para enviar a {recipient_email}.')
+    except Exception as e:
+        logger.error('Error encolando email para factura %s: %s', invoice.id, e)
+        messages.error(request, 'No se pudo encolar el correo.')
+        
+    referer = request.META.get('HTTP_REFERER', '')
+    if 'ventas/ventas/' in referer and invoice.sale:
+        return redirect('sales_web:sale_detail', pk=invoice.sale.pk)
+    return redirect('bills_web:invoice_detail', pk=pk)
 
 def download_invoice_pdf(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
@@ -67,7 +110,7 @@ def download_invoice_pdf(request, pk):
     buffer = generate_invoice_pdf(invoice)
     
     prefix = "Nota_de_Credito" if invoice.tipo_comprobante in (3, 8) else "Factura"
-    response = HttpResponse(buffer, content_type='application/pdf')
+    response = HttpResponse(buffer.read(), content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{prefix}_{invoice.number}.pdf"'
     
     

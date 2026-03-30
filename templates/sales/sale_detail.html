@@ -13,7 +13,7 @@
 {% block mobile_title %}{{ sale.number }}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto">
+<div class="max-w-7xl mx-auto" x-data="{ shareInvoiceModalOpen: false, invoiceTab: 'email' }">
 
   <!-- ===== Header ===== -->
   <div class="mb-6">
@@ -710,6 +710,12 @@
     </div><!-- /Sidebar -->
 
   </div><!-- /Grid -->
+  
+  {% if invoice and invoice.estado_fiscal == 'autorizada' %}
+  {% url 'bills_web:invoice_send_email' invoice.id as email_action %}
+  {% url 'bills_web:invoice_public_pdf' invoice.uuid as public_url %}
+  {% include 'sales/partials/_share_document_modal.html' with modal_title="Compartir Factura" alpine_open_var="shareInvoiceModalOpen" alpine_tab_var="invoiceTab" email_action_url=email_action public_doc_url=public_url default_email=sale.customer.email|default:sale.customer_email|default:"" default_phone=sale.customer.phone|default:sale.customer_phone|default:"" whatsapp_msg="Hola, te adjunto la factura correspondiente a tu compra. Podés descargarla en el siguiente enlace:" %}
+  {% endif %}
 
 </div>
 {% endblock %}

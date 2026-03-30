@@ -1,5 +1,6 @@
 # sales/models.py
 
+import uuid
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
@@ -16,6 +17,7 @@ class Quote(BaseModel):
     """Presupuestos - Documento pre-venta"""
     
     # Identificación
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     number = models.CharField(max_length=20, unique=True, editable=False)
     date = models.DateField(auto_now_add=True)
     valid_until = models.DateField()

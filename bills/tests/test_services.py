@@ -105,3 +105,113 @@ class TestInvoiceDownloadView(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('Nota_de_Credito', response['Content-Disposition'])
         self.assertIn(self.invoice.number, response['Content-Disposition'])
+
+class TestRegistroManualTicket(TestCase):
+    """Pruebas para registro manual de tickets fiscales"""
+
+    def setUp(self):
+        from core.models import User
+        self.user = User.objects.create_user(username='testuser', password='password')
+
+    def test_get_next_ticket_number_returns_1_if_no_tickets(self):
+        from bills.services import get_next_ticket_number
+        num = get_next_ticket_number(punto_venta=1, tipo_comprobante=83)
+        self.assertEqual(num, 1)
+
+    def test_get_next_ticket_number_increments_from_last(self):
+        from bills.services import get_next_ticket_number
+        from bills.models import Invoice
+        Invoice.objects.create(
+            tipo_comprobante=83, punto_venta=1, numero_secuencial=150,
+            number='0001-00000150', comprobante_arca=None, total=100
+        )
+        num = get_next_ticket_number(punto_venta=1, tipo_comprobante=83)
+        self.assertEqual(num, 151)
+
+    def test_register_manual_ticket_creates_invoice_authorized(self):
+        from bills.services import register_manual_ticket
+        from sales.models import Sale, SaleItem, Product
+        from decimal import Decimal
+
+        sale = Sale.objects.create(
+            number='VTA-TEST-001',
+            status='confirmed',
+            created_by=self.user,
+        )
+        product = Product.objects.create(name='Tornillo', sku='T001', price=100)
+        SaleItem.objects.create(
+            sale=sale, product=product,
+            quantity=Decimal('10'), unit_price=Decimal('100'),
+            tax_percentage=Decimal('21'),
+        )
+
+        invoice = register_manual_ticket(
+            sale=sale,
+            user=self.user,
+            punto_venta=1,
+            numero_ticket=1234,
+            tipo_comprobante=83,
+        )
+
+        self.assertEqual(invoice.estado_fiscal, 'autorizada')
+        self.assertIsNone(invoice.comprobante_arca)
+        self.assertEqual(invoice.numero_secuencial, 1234)
+        self.assertEqual(invoice.tipo_comprobante, 83)
+        sale.refresh_from_db()
+        self.assertEqual(sale.fiscal_status, 'authorized')
+
+    def test_register_manual_ticket_fails_if_sale_not_confirmed(self):
+        from bills.services import register_manual_ticket
+        from sales.models import Sale
+
+        sale = Sale.objects.create(
+            number='VTA-TEST-002',
+            status='draft',
+            created_by=self.user,
+        )
+
+        with self.assertRaises(ValueError) as cm:
+            register_manual_ticket(
+                sale=sale, user=self.user, punto_venta=1,
+                numero_ticket=1234, tipo_comprobante=83
+            )
+        self.assertIn('debe estar confirmada', str(cm.exception))
+
+    def test_register_manual_ticket_fails_invalid_tipo(self):
+        from bills.services import register_manual_ticket
+        from sales.models import Sale
+
+        sale = Sale.objects.create(
+            number='VTA-TEST-003',
+            status='confirmed',
+            created_by=self.user,
+        )
+
+        with self.assertRaises(ValueError) as cm:
+            register_manual_ticket(
+                sale=sale, user=self.user, punto_venta=1,
+                numero_ticket=1234, tipo_comprobante=1
+            )
+        self.assertIn('no es un código de ticket válido', str(cm.exception))
+
+    def test_register_manual_ticket_fails_if_duplicate(self):
+        from bills.services import register_manual_ticket
+        from bills.models import Invoice
+        from sales.models import Sale
+        
+        sale = Sale.objects.create(
+            number='VTA-TEST-004',
+            status='confirmed',
+            created_by=self.user,
+        )
+        Invoice.objects.create(
+            sale=sale, number='A-0001', tipo_comprobante=1, total=100
+        )
+
+        with self.assertRaises(ValueError) as cm:
+            register_manual_ticket(
+                sale=sale, user=self.user, punto_venta=1,
+                numero_ticket=1234, tipo_comprobante=83
+            )
+        self.assertIn('ya tiene un comprobante registrado', str(cm.exception))
+

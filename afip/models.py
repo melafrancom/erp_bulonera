@@ -19,6 +19,9 @@ class TipoComprob(IntEnum):
     FACTURA_B = 6
     NOTA_DEBITO_B = 7
     NOTA_CREDITO_B = 8
+    TIQUE_FACTURA_A = 81
+    TIQUE_FACTURA_B = 82
+    TIQUE_CONSUMIDOR_FINAL = 83
     
     @classmethod
     def choices(cls):

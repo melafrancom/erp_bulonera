@@ -470,3 +470,150 @@ def anular_factura_y_venta(invoice_id, user):
                 
     return {'success': True, 'message': 'Factura y Venta anuladas correctamente (Nota de Crédito emitida si correspondía).'}
 
+def get_next_ticket_number(punto_venta: int, tipo_comprobante: int) -> int:
+    """
+    Consulta el último Invoice de tipo ticket registrado manualmente
+    para ese punto de venta y retorna el número siguiente.
+
+    Retorna 1 si no hay tickets previos.
+
+    Args:
+        punto_venta: Número de punto de venta (ej: 1, 2)
+        tipo_comprobante: 81, 82 o 83
+
+    Returns:
+        int: Número sugerido para el próximo ticket
+    """
+    from bills.models import Invoice
+    TIPOS_TICKET = [81, 82, 83]
+
+    ultimo = Invoice.objects.filter(
+        punto_venta=punto_venta,
+        tipo_comprobante__in=TIPOS_TICKET,
+        # Solo tickets manuales (sin comprobante ARCA asociado)
+        comprobante_arca__isnull=True,
+    ).aggregate(Max('numero_secuencial'))['numero_secuencial__max']
+
+    return (ultimo or 0) + 1
+
+def register_manual_ticket(
+    sale,
+    user,
+    punto_venta: int,
+    numero_ticket: int,
+    tipo_comprobante: int,
+):
+    """
+    Registra un ticket de controlador fiscal manualmente.
+    NO llama a WSFEv1 ni a ARCA. El hardware ya hizo ese trabajo.
+
+    Args:
+        sale: Instancia de sales.Sale (debe estar confirmada)
+        user: Usuario que registra
+        punto_venta: Número del punto de venta del controlador
+        numero_ticket: Número que imprimió la máquina fiscal
+        tipo_comprobante: 81 (Tique A), 82 (Tique B), 83 (CF)
+
+    Returns:
+        Invoice: La factura creada con estado 'autorizada'
+
+    Raises:
+        ValueError: Si la venta no está confirmada, si ya tiene factura,
+                    o si el tipo no es un código de ticket válido.
+    """
+    from bills.models import Invoice
+    from sales.models import Sale
+    
+    TIPOS_TICKET_VALIDOS = [81, 82, 83]
+
+    # --- Validaciones ---
+    if tipo_comprobante not in TIPOS_TICKET_VALIDOS:
+        raise ValueError(
+            f"Tipo {tipo_comprobante} no es un código de ticket válido. "
+            f"Usar: {TIPOS_TICKET_VALIDOS}"
+        )
+
+    if sale.status not in ['confirmed', 'in_preparation', 'ready', 'delivered']:
+        raise ValueError(
+            f"La venta {sale.number} debe estar confirmada para registrar un ticket. "
+            f"Estado actual: {sale.status}"
+        )
+
+    factura_previa = sale.facturas.filter(
+        tipo_comprobante__in=[1, 6, 81, 82, 83]
+    ).first()
+    if factura_previa:
+        raise ValueError(
+            f"La venta {sale.number} ya tiene un comprobante registrado: "
+            f"{factura_previa.number}"
+        )
+
+    if numero_ticket < 1:
+        raise ValueError("El número de ticket debe ser mayor a 0.")
+
+    # --- Obtener datos del cliente (mismo patrón que facturar_venta) ---
+    customer = sale.customer
+    if customer:
+        cliente_cuit         = customer.cuit_cuil.replace('-', '')
+        cliente_razon_social = customer.business_name
+        cliente_condicion_iva = customer.tax_condition
+        cliente_domicilio    = customer.billing_address or ''
+    else:
+        cliente_cuit          = getattr(sale, 'customer_cuit', '') or ''
+        cliente_cuit          = cliente_cuit.replace('-', '')
+        cliente_razon_social  = getattr(sale, 'customer_name', '') or 'Consumidor Final'
+        cliente_condicion_iva = 'CF'
+        cliente_domicilio     = ''
+
+    # --- Calcular montos desde SaleItems ---
+    items = sale.items.all().order_by('line_order')
+    if not items.exists():
+        raise ValueError(f"La venta {sale.number} no tiene items.")
+
+    total_neto      = Decimal('0')
+    total_iva       = Decimal('0')
+    total_descuento = Decimal('0')
+
+    for item in items:
+        total_neto      += item.subtotal_with_discount
+        total_iva       += item.tax_amount
+        total_descuento += item.discount_amount
+
+    monto_total = total_neto + total_iva
+
+    # --- Crear Invoice con estado 'autorizada' directamente ---
+    with transaction.atomic():
+        invoice = Invoice.objects.create(
+            sale=sale,
+            customer=customer,
+            emitida_por=user,
+            comprobante_arca=None,          # SIN comprobante ARCA (es manual)
+            tipo_comprobante=tipo_comprobante,
+            punto_venta=punto_venta,
+            numero_secuencial=numero_ticket,
+            number=f'{punto_venta:04d}-{numero_ticket:08d}',
+            cliente_cuit=cliente_cuit,
+            cliente_razon_social=cliente_razon_social,
+            cliente_condicion_iva=cliente_condicion_iva,
+            cliente_domicilio=cliente_domicilio,
+            subtotal=total_neto + total_descuento,
+            descuento_total=total_descuento,
+            neto_gravado=total_neto,
+            monto_iva=total_iva,
+            total=monto_total,
+            estado_fiscal='autorizada',     # DIRECTO: el hardware ya lo hizo
+            fecha_emision=date.today(),
+            observaciones='Registrado manualmente desde controlador fiscal.',
+        )
+
+        # Actualizar fiscal_status de la venta
+        Sale.objects.filter(pk=sale.pk).update(fiscal_status='authorized')
+
+    logger.info(
+        f'[BILLS] Ticket manual registrado: {invoice.number} '
+        f'(tipo={tipo_comprobante}) para venta {sale.number} '
+        f'por {user.username}'
+    )
+
+    return invoice
+

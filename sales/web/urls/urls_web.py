@@ -30,9 +30,13 @@ from sales.web.views.web_views import (
     quote_detail,
     quote_create,
     quote_update,
+    quote_print,
+    quote_public_view,
+    quote_public_pdf_view,
     sale_convert_from_quote,
     # Quote actions (POST only)
     quote_send,
+    quote_send_email,
     quote_accept,
     quote_reject,
     # Sales
@@ -44,6 +48,7 @@ from sales.web.views.web_views import (
     sale_cancel,
     sale_move_status,
     sale_invoice,
+    sale_register_ticket,
 )
 
 app_name = 'sales_web'
@@ -58,6 +63,9 @@ urlpatterns = [
     path('presupuestos/nuevo/',            quote_create, name='quote_create'),
     path('presupuestos/<int:pk>/',         quote_detail, name='quote_detail'),
     path('presupuestos/<int:pk>/editar/',  quote_update, name='quote_update'),
+    path('presupuestos/<int:pk>/imprimir/', quote_print, name='quote_print'),
+    path('presupuestos/publico/<uuid:uuid>/', quote_public_view, name='quote_public'),
+    path('presupuestos/publico/<uuid:uuid>/pdf/', quote_public_pdf_view, name='quote_public_pdf'),
 
     # Acción POST: convertir presupuesto en venta
     # Se usa <quote_pk> para distinguirlo del pk de sale en sale_detail
@@ -69,6 +77,7 @@ urlpatterns = [
 
     # Acciones POST sobre un presupuesto
     path('presupuestos/<int:pk>/enviar/',   quote_send,   name='quote_send'),
+    path('presupuestos/<int:pk>/enviar-email/', quote_send_email, name='quote_send_email'),
     path('presupuestos/<int:pk>/aceptar/',  quote_accept,  name='quote_accept'),
     path('presupuestos/<int:pk>/rechazar/', quote_reject,  name='quote_reject'),
 
@@ -82,4 +91,5 @@ urlpatterns = [
     path('ventas/<int:pk>/cancelar/',       sale_cancel,      name='sale_cancel'),
     path('ventas/<int:pk>/mover-estado/',   sale_move_status, name='sale_move_status'),
     path('ventas/<int:pk>/facturar/',       sale_invoice,     name='sale_invoice'),
+    path('ventas/<int:pk>/registrar-ticket/', sale_register_ticket, name='sale_register_ticket'),
 ]

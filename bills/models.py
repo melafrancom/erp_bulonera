@@ -1,5 +1,6 @@
 # bills/models.py
 
+import uuid
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -37,9 +38,16 @@ class Invoice(BaseModel):
         (6, 'Factura B'),
         (7, 'Nota de Débito B'),
         (8, 'Nota de Crédito B'),
+        (81, 'Tique Factura A'),
+        (82, 'Tique Factura B'),
+        (83, 'Tique a Consumidor Final'),
+        (85, 'Nota de Crédito Tique A'),
+        (86, 'Nota de Crédito Tique B'),
+        (87, 'Nota de Crédito Tique C'),
     ]
 
     # ── Relaciones ────────────────────────────────────────────────
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     sale = models.ForeignKey(
         'sales.Sale',
         on_delete=models.PROTECT,

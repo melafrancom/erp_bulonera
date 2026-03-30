@@ -36,10 +36,11 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import models
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
+from django.conf import settings
 
 from sales.models import Quote, QuoteItem, Sale, SaleItem
 from sales.services import cancel_sale, confirm_sale, convert_quote_to_sale, move_sale_status
@@ -430,9 +431,26 @@ def sale_detail(request, pk):
         except Quote.DoesNotExist:
             pass
     
-    invoice = sale.facturas.filter(tipo_comprobante__in=[1, 6]).first()
-    nota_credito = sale.facturas.filter(tipo_comprobante__in=[3, 8]).first()
+    invoice = sale.facturas.filter(tipo_comprobante__in=[1, 6, 81, 82, 83]).first()
+    nota_credito = sale.facturas.filter(tipo_comprobante__in=[3, 8, 85, 86, 87]).first()
     
+    # Datos para el modal de tickets fiscales
+    from bills.services import get_next_ticket_number
+    from afip.models import ConfiguracionARCA
+
+    ticket_config = None
+    try:
+        config = ConfiguracionARCA.objects.filter(activo=True).first()
+        if config:
+            ticket_config = {
+                'punto_venta': config.punto_venta,
+                'next_ticket_a':  get_next_ticket_number(config.punto_venta, 81),
+                'next_ticket_b':  get_next_ticket_number(config.punto_venta, 82),
+                'next_ticket_cf': get_next_ticket_number(config.punto_venta, 83),
+            }
+    except Exception:
+        pass  # Si no hay config ARCA, el modal pedirá el número sin sugerencia
+
     context = {
         'sale':              sale,
         'items':             sale.items.select_related('product').order_by('id'),
@@ -446,6 +464,12 @@ def sale_detail(request, pk):
         'next_status_label': next_status_label,
         'invoice':           invoice,
         'nota_credito':      nota_credito,
+        'ticket_config':     ticket_config,
+        'tipos_ticket': [
+            {'value': 81, 'label': 'Tique Factura A'},
+            {'value': 82, 'label': 'Tique Factura B'},
+            {'value': 83, 'label': 'Tique a Consumidor Final'},
+        ],
     }
 
     return render(request, 'sales/sale_detail.html', context)
@@ -732,8 +756,61 @@ def quote_send(request, pk):
 
     quote.status = 'sent'
     quote.save(update_fields=['status'])
-    messages.success(request, f'✅ Presupuesto {quote.number} marcado como enviado.')
+    
+    try:
+        from sales.tasks import send_quote_email_task
+        send_quote_email_task.delay(quote.id)
+        messages.success(request, f'✅ Presupuesto {quote.number} marcado como enviado y encolado para email.')
+    except Exception:
+        logger.exception("Error al encolar tarea de envío de email para presupuesto %s", quote.pk)
+        messages.warning(
+            request, 
+            f'⚠️ Presupuesto {quote.number} marcado como enviado, pero falló el envío automático por email.'
+        )
+
     logger.info('Quote %s sent by user %s', quote.number, request.user.username)
+    return redirect('sales_web:quote_detail', pk=pk)
+
+
+@login_required
+@require_POST
+def quote_send_email(request, pk):
+    """
+    POST /ventas/presupuestos/<pk>/enviar-email/
+    """
+    quote = get_object_or_404(Quote, pk=pk)
+
+    if not _owns_or_privileged(request.user, quote):
+        messages.error(request, 'No tenés acceso a este presupuesto.')
+        return redirect('sales_web:quote_list')
+
+    recipient_email = request.POST.get('recipient_email', '').strip()
+    if not recipient_email:
+        messages.error(request, 'Debes proporcionar un email de destino.')
+        return redirect('sales_web:quote_detail', pk=pk)
+        
+    if quote.status not in ('draft', 'sent', 'accepted'):
+        messages.warning(
+            request,
+            f'El presupuesto {quote.number} no puede compartirse '
+            f'(estado: {quote.get_status_display()}).'
+        )
+        return redirect('sales_web:quote_detail', pk=pk)
+
+    # Actualizar estado si es draft
+    if quote.status == 'draft':
+        quote.status = 'sent'
+        quote.save(update_fields=['status'])
+
+    try:
+        from sales.tasks import send_quote_email_task
+        send_quote_email_task.delay(quote.id, recipient_email)
+        messages.success(request, f'✅ Presupuesto {quote.number} encolado para enviar por email a {recipient_email}.')
+    except Exception:
+        logger.exception("Error al encolar tarea de envío de email para presupuesto %s", quote.pk)
+        messages.error(request, 'Hubo un error al intentar enviar el correo. Por favor intentá de nuevo.')
+
+    logger.info('Quote %s shared via email to %s by user %s', quote.number, recipient_email, request.user.username)
     return redirect('sales_web:quote_detail', pk=pk)
 
 
@@ -751,10 +828,10 @@ def quote_accept(request, pk):
         messages.error(request, 'No tenés acceso a este presupuesto.')
         return redirect('sales_web:quote_list')
 
-    if quote.status != 'sent':
+    if quote.status not in ('draft', 'sent'):
         messages.warning(
             request,
-            f'Solo los presupuestos enviados pueden aceptarse '
+            f'Solo los presupuestos en borrador o enviados pueden aceptarse '
             f'(estado actual: {quote.get_status_display()}).'
         )
         return redirect('sales_web:quote_detail', pk=pk)
@@ -782,10 +859,10 @@ def quote_reject(request, pk):
         messages.error(request, 'No tenés acceso a este presupuesto.')
         return redirect('sales_web:quote_list')
 
-    if quote.status != 'sent':
+    if quote.status not in ('draft', 'sent'):
         messages.warning(
             request,
-            f'Solo los presupuestos enviados pueden rechazarse '
+            f'Solo los presupuestos en borrador o enviados pueden rechazarse '
             f'(estado actual: {quote.get_status_display()}).'
         )
         return redirect('sales_web:quote_detail', pk=pk)
@@ -901,3 +978,133 @@ def sale_invoice(request, pk):
         messages.error(request, 'Ocurrió un error inesperado al intentar facturar.')
 
     return redirect('sales_web:sale_detail', pk=pk)
+
+@login_required
+@require_POST
+def sale_register_ticket(request, pk):
+    """
+    Registra un ticket de controlador fiscal para una venta.
+
+    POST /ventas/ventas/<pk>/registrar-ticket/
+
+    Body (form):
+        tipo_comprobante  (int): 81, 82 o 83
+        punto_venta       (int): Número de punto de venta
+        numero_ticket     (int): Número que imprimió la máquina
+
+    Permisos: can_manage_sales o rol privilegiado.
+    """
+    from bills.models import Invoice
+    sale = get_object_or_404(Sale, pk=pk)
+
+    if not _can_manage_sales(request.user):
+        messages.error(request, 'No tenés permisos para registrar tickets fiscales.')
+        return redirect('sales_web:sale_detail', pk=pk)
+
+    if not _owns_or_privileged(request.user, sale):
+        messages.error(request, 'No tenés acceso a esta venta.')
+        return redirect('sales_web:sale_list')
+
+    # Parsear y validar inputs del formulario
+    try:
+        tipo_comprobante = int(request.POST.get('tipo_comprobante', 0))
+        punto_venta      = int(request.POST.get('punto_venta', 0))
+        numero_ticket    = int(request.POST.get('numero_ticket', 0))
+    except (ValueError, TypeError):
+        messages.error(request, 'Los datos del formulario son inválidos.')
+        return redirect('sales_web:sale_detail', pk=pk)
+
+    try:
+        from bills.services import register_manual_ticket
+        invoice = register_manual_ticket(
+            sale=sale,
+            user=request.user,
+            punto_venta=punto_venta,
+            numero_ticket=numero_ticket,
+            tipo_comprobante=tipo_comprobante,
+        )
+        tipo_display = dict(Invoice.TIPO_COMPROBANTE_CHOICES).get(tipo_comprobante, str(tipo_comprobante))
+        messages.success(
+            request,
+            f'✅ {tipo_display} N° {invoice.number} registrado correctamente para {sale.number}.'
+        )
+        logger.info(
+            'Ticket manual %s registered for sale %s by user %s',
+            invoice.number, sale.number, request.user.username,
+        )
+    except ValueError as exc:
+        messages.error(request, f'❌ {exc}')
+        logger.warning(
+            'Failed to register ticket for sale %s by user %s: %s',
+            sale.number, request.user.username, exc,
+        )
+    except Exception:
+        logger.exception('Unexpected error registering ticket for sale %s', pk)
+        messages.error(request, 'Ocurrió un error inesperado. Intentá de nuevo.')
+
+    return redirect('sales_web:sale_detail', pk=pk)
+
+@login_required
+@require_GET
+def quote_print(request, pk):
+    """
+    Renderiza un HTML simplificado del presupuesto para impresión rápida (A4 o Ticket).
+    
+    GET /ventas/presupuestos/<pk>/imprimir/
+    """
+    quote = get_object_or_404(Quote, pk=pk)
+
+    if not _owns_or_privileged(request.user, quote):
+        messages.error(request, 'No tenés acceso a este presupuesto.')
+        return redirect('sales_web:quote_list')
+
+    context = {
+        'quote': quote,
+        'items': quote.items.select_related('product').order_by('line_order'),
+        'company_name': getattr(settings, 'COMPANY_NAME', 'BULONERA ALVEAR S.R.L.'),
+        'company_cuit': getattr(settings, 'EMPRESA_CUIT', '')
+    }
+
+    return render(request, 'sales/quote_print.html', context)
+
+@require_GET
+def quote_public_view(request, uuid):
+    """
+    Renderiza una vista pública del presupuesto (sólo lectura).
+    
+    GET /ventas/presupuestos/publico/<uuid>/
+    """
+    quote = get_object_or_404(Quote, uuid=uuid)
+
+    if quote.status == 'cancelled':
+        raise Http404("El presupuesto ha sido cancelado y ya no está disponible.")
+
+    context = {
+        'quote': quote,
+        'items': quote.items.select_related('product').order_by('line_order'),
+        'company_name': getattr(settings, 'COMPANY_NAME', 'BULONERA ALVEAR S.R.L.'),
+        'company_cuit': getattr(settings, 'EMPRESA_CUIT', ''),
+        'company_phone': getattr(settings, 'COMPANY_PHONE', '').replace('+', '').replace(' ', '').replace('-', '')
+    }
+
+    return render(request, 'sales/quote_public.html', context)
+
+@require_GET
+def quote_public_pdf_view(request, uuid):
+    """
+    Descargar o visualizar el presupuesto en PDF (público).
+    
+    GET /ventas/presupuestos/publico/<uuid>/pdf/
+    """
+    from sales.utils import generate_quote_pdf
+    
+    quote = get_object_or_404(Quote, uuid=uuid)
+
+    if quote.status == 'cancelled':
+        raise Http404("El presupuesto ha sido cancelado y ya no está disponible.")
+
+    pdf_buffer = generate_quote_pdf(quote)
+    
+    response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="Presupuesto_{quote.number}.pdf"'
+    return response
