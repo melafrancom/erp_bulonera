@@ -71,7 +71,7 @@ class TestInvoiceDownloadView(TestCase):
     def test_download_autorizada_ok(self):
         """Factura autorizada debe permitir descarga (200 OK)"""
         url = reverse('bills_web:invoice_pdf', args=[self.invoice.pk])
-        response = self.client.get(url)
+        response = self.client.get(url, secure=True)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'application/pdf')
 
@@ -81,7 +81,7 @@ class TestInvoiceDownloadView(TestCase):
         self.invoice.save()
         
         url = reverse('bills_web:invoice_pdf', args=[self.invoice.pk])
-        response = self.client.get(url)
+        response = self.client.get(url, secure=True)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'application/pdf')
 
@@ -91,7 +91,7 @@ class TestInvoiceDownloadView(TestCase):
         self.invoice.save()
         
         url = reverse('bills_web:invoice_pdf', args=[self.invoice.pk])
-        response = self.client.get(url)
+        response = self.client.get(url, secure=True)
         self.assertEqual(response.status_code, 404)
 
     def test_download_nota_credito_filename(self):
@@ -101,7 +101,7 @@ class TestInvoiceDownloadView(TestCase):
         self.invoice.save()
         
         url = reverse('bills_web:invoice_pdf', args=[self.invoice.pk])
-        response = self.client.get(url)
+        response = self.client.get(url, secure=True)
         self.assertEqual(response.status_code, 200)
         self.assertIn('Nota_de_Credito', response['Content-Disposition'])
         self.assertIn(self.invoice.number, response['Content-Disposition'])
@@ -214,4 +214,3 @@ class TestRegistroManualTicket(TestCase):
                 numero_ticket=1234, tipo_comprobante=83
             )
         self.assertIn('ya tiene un comprobante registrado', str(cm.exception))
-

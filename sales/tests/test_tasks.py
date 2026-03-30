@@ -2,6 +2,8 @@ import pytest
 from unittest.mock import patch, MagicMock
 from decimal import Decimal
 from django.core import mail
+from django.utils import timezone
+import datetime
 from sales.models import Quote, QuoteItem
 from products.models import Product
 from customers.models import Customer
@@ -31,7 +33,8 @@ def customer(db):
 def quote(db, product, customer):
     quote = Quote.objects.create(
         customer=customer,
-        status='draft'
+        status='draft',
+        valid_until=timezone.now().date() + datetime.timedelta(days=15)
     )
     QuoteItem.objects.create(
         quote=quote,
