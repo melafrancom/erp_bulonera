@@ -55,6 +55,28 @@ class InvoiceViewSet(AuditMixin, ModelViewSet):
             return FacturarVentaSerializer
         return InvoiceDetailSerializer
 
+    @action(detail=True, methods=['post'], url_path='send_email')
+    def send_email(self, request, pk=None):
+        """
+        Envía la factura por email usando una tarea Celery.
+        POST /api/v1/bills/bills/{id}/send-email/
+        Body: {"recipient_email": "cliente@example.com"}
+        """
+        invoice = self.get_object()
+        recipient_email = request.data.get('recipient_email', '').strip()
+
+        if not recipient_email:
+            recipient_email = invoice.customer.email if invoice.customer else None
+        
+        if not recipient_email:
+            return Response({'error': 'No se encontró un email de destino.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        from bills.tasks import send_invoice_email_task
+        send_invoice_email_task.delay(invoice.id, recipient_email)
+        return Response({
+            'message': f'Factura encolada para ser enviada a {recipient_email}.'
+        })
+
     # ── Acción: Facturar una venta ────────────────────────────
     @action(detail=False, methods=['post'], url_path='facturar')
     def facturar(self, request):

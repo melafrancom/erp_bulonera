@@ -49,6 +49,35 @@ class QuoteViewSet(AuditMixin, OwnerQuerysetMixin, viewsets.ModelViewSet):
         elif self.action in ['create', 'update', 'partial_update']:
             return QuoteCreateSerializer
         return QuoteSerializer  # Default (list)
+
+    def partial_update(self, request, *args, **kwargs):
+        """
+        Intercepta cambios de estado para ejecutar lógica de negocio.
+        """
+        new_status = request.data.get('status')
+        
+        if new_status:
+            # Extraer el estado para que no sea manejado por el serializer
+            data_copy = request.data.copy()
+            data_copy.pop('status')
+            
+            # Llamar a la acción correspondiente
+            response = None
+            if new_status == 'accepted':
+                response = self.accept(request, pk=kwargs.get('pk'))
+            elif new_status == 'rejected':
+                response = self.reject(request, pk=kwargs.get('pk'))
+            elif new_status == 'sent':
+                response = self.send(request, pk=kwargs.get('pk'))
+            
+            if response and status.is_client_error(response.status_code):
+                return response
+
+            request._full_data = data_copy # Hack para que super() no vea el status si ya se procesó
+        
+        if request.data:
+            return super().partial_update(request, *args, **kwargs)
+        return self.retrieve(request, *args, **kwargs)
     
     def get_queryset(self):
         """Filtros base (la lógica compleja se delega a QuoteFilter)"""
@@ -100,17 +129,32 @@ class QuoteViewSet(AuditMixin, OwnerQuerysetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        quote.status = 'sent'
-        quote.save(update_fields=['status'])
+        if quote.status == 'draft':
+            quote.status = 'sent'
+            quote.save(update_fields=['status'])
         
-        # TODO: Enviar email con PDF (Celery task)
-        # email = request.data.get('email') or quote.customer.email
-        # from sales.tasks import send_quote_email
-        # send_quote_email.delay(quote.id, email, request.data.get('message'))
+        return Response({'message': 'Presupuesto marcado como enviado.'})
+
+    @action(detail=True, methods=['post'], url_path='send_email')
+    def send_email(self, request, pk=None):
+        """
+        Envía el presupuesto por email usando una tarea Celery.
+        POST /api/v1/sales/quotes/{id}/send-email/
+        Body: {"recipient_email": "cliente@example.com"}
+        """
+        quote = self.get_object()
+        recipient_email = request.data.get('recipient_email', '').strip()
+
+        if not recipient_email:
+            recipient_email = quote.customer_email or (quote.customer.email if quote.customer else None)
         
+        if not recipient_email:
+            return Response({'error': 'No se encontró un email de destino.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        from sales.tasks import send_quote_email_task
+        send_quote_email_task.delay(quote.id, recipient_email)
         return Response({
-            'message': 'Presupuesto enviado exitosamente',
-            'quote': QuoteDetailSerializer(quote).data
+            'message': f'Presupuesto encolado para ser enviado a {recipient_email}.'
         })
     
     @action(detail=True, methods=['post'])
@@ -123,7 +167,7 @@ class QuoteViewSet(AuditMixin, OwnerQuerysetMixin, viewsets.ModelViewSet):
         """
         quote = self.get_object()
         
-        if quote.status != 'sent':
+        if quote.status not in ('draft', 'sent'):
             return Response(
                 {'error': 'Solo presupuestos enviados pueden aceptarse'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -153,7 +197,7 @@ class QuoteViewSet(AuditMixin, OwnerQuerysetMixin, viewsets.ModelViewSet):
         """
         quote = self.get_object()
         
-        if quote.status != 'sent':
+        if quote.status not in ('draft', 'sent'):
             return Response(
                 {'error': 'Solo presupuestos enviados pueden rechazarse'},
                 status=status.HTTP_400_BAD_REQUEST

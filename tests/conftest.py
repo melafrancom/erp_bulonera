@@ -252,3 +252,18 @@ def supplier(db, admin_user):
         payment_term=30,
         created_by=admin_user,
     )
+
+
+@pytest.fixture
+def invoice(db, sale_with_items, admin_user):
+    """Factura de prueba."""
+    from bills.models import Invoice
+    invoice = Invoice.objects.create(
+        sale=sale_with_items,
+        customer=sale_with_items.customer,
+        emitida_por=admin_user,
+        number='0001-00000001',
+        total=sale_with_items.total,
+        estado_fiscal='autorizada'
+    )
+    return invoice

@@ -67,12 +67,14 @@ class QuoteSerializer(serializers.ModelSerializer):
     """Serializer ligero para listados"""
     customer_display = serializers.CharField(read_only=True)  # usa la @property del modelo
     created_by_username = serializers.CharField(source='created_by.username', read_only=True)
+    public_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Quote
         fields = [
-            'id', 'number', 'date', 'valid_until', 'status',
+            'id', 'uuid', 'number', 'date', 'valid_until', 'status',
             'customer', 'customer_display',         # ← reemplaza customer_name
+            'public_url',
             'customer_name', 'customer_phone',      # ← campos walk-in
             'customer_email', 'customer_cuit',
             'created_by', 'created_by_username',
@@ -80,10 +82,16 @@ class QuoteSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
         read_only_fields = [
-            'id', 'number', 'customer_display', 'created_at', 'updated_at',
+            'id', 'uuid', 'number', 'customer_display', 'public_url', 'created_at', 'updated_at',
             '_cached_subtotal', '_cached_discount', '_cached_tax', '_cached_total'
         ]
 
+    def get_public_url(self, obj):
+        request = self.context.get('request')
+        if request and obj.uuid:
+            from django.urls import reverse
+            return request.build_absolute_uri(reverse('sales_web:quote_public', kwargs={'uuid': obj.uuid}))
+        return None
 
 class QuoteDetailSerializer(serializers.ModelSerializer):
     """Serializer detallado con items"""
@@ -91,6 +99,7 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
     customer_name = serializers.CharField(source='customer.business_name', read_only=True)
     created_by_username = serializers.CharField(source='created_by.username', read_only=True)
     items = QuoteItemSerializer(many=True, read_only=True)
+    public_url = serializers.SerializerMethodField()
     
     # Propiedades calculadas
     subtotal = serializers.SerializerMethodField()
@@ -102,8 +111,9 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quote
         fields = [
-            'id', 'number', 'date', 'valid_until', 'status',
+            'id', 'uuid', 'number', 'date', 'valid_until', 'status',
             'customer', 'customer_name',
+            'public_url',
             'created_by', 'created_by_username',
             'items',
             'notes', 'internal_notes',
@@ -115,11 +125,17 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
         read_only_fields = [
-            'id', 'number', 'created_at', 'updated_at',
+            'id', 'uuid', 'number', 'public_url', 'created_at', 'updated_at',
             '_cached_subtotal', '_cached_discount', '_cached_tax', '_cached_total',
             'subtotal', 'total', 'is_editable', 'can_be_converted',
             'days_until_expiry', 'converted_sale'
         ]
+    
+    def get_public_url(self, obj):
+        request = self.context.get('request')
+        if request and obj.uuid:
+            from django.urls import reverse
+            return request.build_absolute_uri(reverse('sales_web:quote_public', kwargs={'uuid': obj.uuid}))
     
     def get_subtotal(self, obj):
         return str(obj.subtotal)

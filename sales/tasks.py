@@ -14,12 +14,12 @@ logger = logging.getLogger(__name__)
     time_limit=120,
     soft_time_limit=90
 )
-def send_quote_email_task(self, quote_id: int):
+def send_quote_email_task(self, quote_id: int, recipient_email: str = None):
     """
     Genera el PDF del presupuesto en memoria y lo envía por email al cliente.
     Si falla, Celery reintenta automáticamente hasta 3 veces.
     """
-    logger.info("Iniciando envío de presupuesto %s", quote_id)
+    logger.info("Iniciando envío de presupuesto %s a %s", quote_id, recipient_email)
     
     try:
         quote = Quote.objects.select_related('customer').prefetch_related('items__product').get(id=quote_id)
@@ -27,7 +27,7 @@ def send_quote_email_task(self, quote_id: int):
         logger.error("Presupuesto %s no encontrado", quote_id)
         return
 
-    email_to = quote.customer_email or (quote.customer.email if quote.customer else None)
+    email_to = recipient_email or quote.customer_email or (quote.customer.email if quote.customer else None)
     
     if not email_to:
         logger.warning("Presupuesto %s no tiene email de destino. Imposible enviar.", quote_id)

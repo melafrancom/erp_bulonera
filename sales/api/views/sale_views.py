@@ -1,6 +1,6 @@
 # sales/api/views/sale_views.py
 
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -90,6 +90,41 @@ class SaleViewSet(AuditMixin, OwnerQuerysetMixin, viewsets.ModelViewSet):
         #     raise PermissionDenied('No puedes eliminar venta con pagos registrados')
         
         instance.delete(user=self.request.user)
+
+    @action(detail=True, methods=['post'], url_path='register_ticket')
+    def register_ticket(self, request, pk=None):
+        """
+        Registra un ticket de controlador fiscal para una venta.
+        POST /api/v1/sales/sales/{id}/register-ticket/
+        Body: {
+            "tipo_comprobante": 83,
+            "punto_venta": 1,
+            "numero_ticket": 1234
+        }
+        """
+        from bills.services import register_manual_ticket
+        
+        class TicketSerializer(serializers.Serializer):
+            tipo_comprobante = serializers.ChoiceField(choices=[81, 82, 83])
+            punto_venta = serializers.IntegerField(min_value=1)
+            numero_ticket = serializers.IntegerField(min_value=1)
+
+        sale = self.get_object()
+        serializer = TicketSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            invoice = register_manual_ticket(
+                sale=sale,
+                user=request.user,
+                **serializer.validated_data
+            )
+            return Response({
+                'message': f'Ticket {invoice.number} registrado exitosamente.',
+                'invoice_id': invoice.id
+            }, status=status.HTTP_201_CREATED)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
     # ========================================================================
     # ACCIONES CUSTOM - WORKFLOW

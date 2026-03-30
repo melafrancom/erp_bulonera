@@ -33,12 +33,14 @@ class InvoiceListSerializer(serializers.ModelSerializer):
     emitida_por_username = serializers.CharField(
         source='emitida_por.username', read_only=True, allow_null=True
     )
+    public_pdf_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
         fields = [
-            'id', 'number',
+            'id', 'uuid', 'number',
             'tipo_comprobante', 'tipo_comprobante_display',
+            'public_pdf_url',
             'punto_venta', 'numero_secuencial',
             'cliente_razon_social', 'cliente_cuit',
             'total', 'estado_fiscal',
@@ -50,7 +52,7 @@ class InvoiceListSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at',
         ]
         read_only_fields = [
-            'id', 'created_at', 'updated_at',
+            'id', 'uuid', 'public_pdf_url', 'created_at', 'updated_at',
             'cae', 'cae_vencimiento',
         ]
 
@@ -58,6 +60,13 @@ class InvoiceListSerializer(serializers.ModelSerializer):
         if obj.customer:
             return obj.customer.business_name
         return obj.cliente_razon_social
+    
+    def get_public_pdf_url(self, obj):
+        request = self.context.get('request')
+        if request and obj.uuid:
+            from django.urls import reverse
+            return request.build_absolute_uri(reverse('bills_web:invoice_public_pdf', kwargs={'uuid': obj.uuid}))
+        return None
 
 
 class InvoiceDetailSerializer(serializers.ModelSerializer):
@@ -80,12 +89,14 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
     )
 
     items = InvoiceItemSerializer(many=True, read_only=True)
+    public_pdf_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
         fields = [
-            'id', 'number',
+            'id', 'uuid', 'number',
             'tipo_comprobante', 'tipo_comprobante_display',
+            'public_pdf_url',
             'punto_venta', 'numero_secuencial',
             # Cliente
             'cliente_razon_social', 'cliente_cuit',
@@ -110,10 +121,16 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at',
         ]
         read_only_fields = [
-            'id', 'created_at', 'updated_at',
+            'id', 'uuid', 'public_pdf_url', 'created_at', 'updated_at',
             'cae', 'cae_vencimiento',
             'comprobante_arca_id', 'comprobante_arca_estado',
         ]
+    
+    def get_public_pdf_url(self, obj):
+        request = self.context.get('request')
+        if request and obj.uuid:
+            from django.urls import reverse
+            return request.build_absolute_uri(reverse('bills_web:invoice_public_pdf', kwargs={'uuid': obj.uuid}))
 
 
 class FacturarVentaSerializer(serializers.Serializer):
