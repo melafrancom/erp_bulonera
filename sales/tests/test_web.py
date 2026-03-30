@@ -56,14 +56,14 @@ class TestQuotePublicView:
     
     def test_public_view_displays_quote_anonymously(self, client, quote):
         url = reverse('sales_web:quote_public', kwargs={'uuid': quote.uuid})
-        response = client.get(url)
+        response = client.get(url, secure=True)
         
         assert response.status_code == 200
         assert str(quote.number) in response.content.decode('utf-8')
         
     def test_public_pdf_view_downloads_pdf(self, client, quote):
         url = reverse('sales_web:quote_public_pdf', kwargs={'uuid': quote.uuid})
-        response = client.get(url)
+        response = client.get(url, secure=True)
         
         assert response.status_code == 200
         assert response['Content-Type'] == 'application/pdf'
@@ -74,12 +74,12 @@ class TestQuotePublicView:
         quote.save(update_fields=['status'])
         
         url = reverse('sales_web:quote_public', kwargs={'uuid': quote.uuid})
-        response = client.get(url)
+        response = client.get(url, secure=True)
         assert response.status_code == 404
         
     def test_public_view_does_not_exist_returns_404(self, client):
         url = reverse('sales_web:quote_public', kwargs={'uuid': uuid.uuid4()})
-        response = client.get(url)
+        response = client.get(url, secure=True)
         assert response.status_code == 404
 
 @pytest.mark.django_db
@@ -90,7 +90,7 @@ class TestQuoteSendEmailView:
         client.force_login(admin_user)
         
         url = reverse('sales_web:quote_send_email', kwargs={'pk': quote.id})
-        response = client.post(url, {'recipient_email': 'test@example.com'})
+        response = client.post(url, {'recipient_email': 'test@example.com'}, secure=True)
         
         assert response.status_code == 302
         assert response.url == reverse('sales_web:quote_detail', kwargs={'pk': quote.id})
@@ -106,7 +106,7 @@ class TestQuoteSendEmailView:
         initial_status = quote.status
         
         url = reverse('sales_web:quote_send_email', kwargs={'pk': quote.id})
-        response = client.post(url, {'recipient_email': ''})
+        response = client.post(url, {'recipient_email': ''}, secure=True)
         
         assert response.status_code == 302
         mock_task.assert_not_called()
