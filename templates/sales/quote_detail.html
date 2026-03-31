@@ -301,6 +301,7 @@
         <div class="space-y-3">
           <!-- Botón Imprimir (Siempre visible) -->
           <a href="{% url 'sales_web:quote_print' quote.id %}" target="_blank"
+             @click="fetch('/api/v1/sales/quotes/{{ quote.id }}/mark_as_printed/', { method: 'POST', headers: { 'X-CSRFToken': '{{ csrf_token }}' } })"
              class="w-full inline-flex items-center justify-center px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition font-medium">
             <i data-lucide="printer" class="w-4 h-4 mr-2"></i>
             Impresión Rápida
@@ -406,7 +407,7 @@
   {% if quote.status in 'draft,sent,accepted' %}
     {% url 'sales_web:quote_send_email' quote.id as email_action %}
     {% url 'sales_web:quote_public' quote.uuid as public_url %}
-    {% include 'sales/partials/_share_document_modal.html' with modal_title="Compartir Presupuesto" alpine_open_var="shareModalOpen" alpine_tab_var="activeTab" email_action_url=email_action public_doc_url=public_url default_email=quote.customer.email|default:quote.customer_email|default:"" default_phone=quote.customer.phone|default:quote.customer_phone|default:"" whatsapp_msg="Hola, te comparto el presupuesto solicitado. Podés verlo en el siguiente enlace:" %}
+    {% include 'sales/partials/_share_document_modal.html' with modal_title="Compartir Presupuesto" alpine_open_var="shareModalOpen" alpine_tab_var="activeTab" email_action_url=email_action public_doc_url=public_url default_email=quote.customer.email|default:quote.customer_email|default:"" default_phone=quote.customer.phone|default:quote.customer_phone|default:"" whatsapp_msg="Hola, te comparto el presupuesto solicitado. Podés verlo en el siguiente enlace:" tracking_url_wa="/api/v1/sales/quotes/"|add:quote.id|add:"/mark_as_wa_sent/" %}
   {% endif %}
 
 {% endblock %}

@@ -22,24 +22,24 @@ Variables requeridas (pasadas mediante `with`):
      
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="{{ alpine_open_var }} = false"></div>
     
-    <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden" @click.stop>
+    <div class="relative bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden" @click.stop>
         <!-- Modal Header -->
-        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-            <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-900/50">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
                 <i data-lucide="share-2" class="w-5 h-5 text-indigo-600"></i>
                 {{ modal_title }}
             </h3>
-            <button @click="{{ alpine_open_var }} = false" class="text-gray-400 hover:text-gray-600 transition-colors">
+            <button @click="{{ alpine_open_var }} = false" class="text-gray-400 dark:text-slate-500 hover:text-gray-600 transition-colors">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
         
         <!-- Tabs -->
-        <div class="flex border-b border-gray-200">
-            <button @click="{{ alpine_tab_var }} = 'email'" :class="{'border-indigo-600 text-indigo-600': {{ alpine_tab_var }} === 'email', 'border-transparent text-gray-500 hover:text-gray-700': {{ alpine_tab_var }} !== 'email'}" class="flex-1 py-3 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-2">
+        <div class="flex border-b border-gray-200 dark:border-slate-700">
+            <button @click="{{ alpine_tab_var }} = 'email'" :class="{'border-indigo-600 text-indigo-600': {{ alpine_tab_var }} === 'email', 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:text-slate-200': {{ alpine_tab_var }} !== 'email'}" class="flex-1 py-3 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-2">
                 <i data-lucide="mail" class="w-4 h-4"></i> Correo
             </button>
-            <button @click="{{ alpine_tab_var }} = 'whatsapp'" :class="{'border-green-500 text-green-600': {{ alpine_tab_var }} === 'whatsapp', 'border-transparent text-gray-500 hover:text-gray-700': {{ alpine_tab_var }} !== 'whatsapp'}" class="flex-1 py-3 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-2">
+            <button @click="{{ alpine_tab_var }} = 'whatsapp'" :class="{'border-green-500 text-green-600': {{ alpine_tab_var }} === 'whatsapp', 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:text-slate-200': {{ alpine_tab_var }} !== 'whatsapp'}" class="flex-1 py-3 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-2">
                 <i data-lucide="message-circle" class="w-4 h-4"></i> WhatsApp
             </button>
         </div>
@@ -51,11 +51,11 @@ Variables requeridas (pasadas mediante `with`):
                 {% csrf_token %}
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Enviar a:</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">Enviar a:</label>
                         <input type="email" name="recipient_email" required
                                value="{{ default_email }}"
                                placeholder="cliente@ejemplo.com"
-                               class="w-full rounded-lg border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm text-sm">
+                               class="w-full rounded-lg border-gray-300 dark:border-slate-700/50 bg-white dark:bg-slate-900 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm text-sm">
                     </div>
                     <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium">
                         <i data-lucide="send" class="w-4 h-4"></i> Enviar Documento
@@ -76,15 +76,23 @@ Variables requeridas (pasadas mediante `with`):
                     }
                 }">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Número de WhatsApp:</label>
-                        <input type="tel" x-model="phone" placeholder="+54 9 11 1234-5678" class="w-full rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500 shadow-sm text-sm mb-3">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">Número de WhatsApp:</label>
+                        <input type="tel" x-model="phone" placeholder="+54 9 11 1234-5678" class="w-full rounded-lg border-gray-300 dark:border-slate-700/50 bg-white dark:bg-slate-900 focus:ring-green-500 focus:border-green-500 shadow-sm text-sm mb-3">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Mensaje adjunto:</label>
-                        <textarea x-model="message" rows="3" class="w-full rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500 shadow-sm text-sm resize-none"></textarea>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">Mensaje adjunto:</label>
+                        <textarea x-model="message" rows="3" class="w-full rounded-lg border-gray-300 dark:border-slate-700/50 bg-white dark:bg-slate-900 focus:ring-green-500 focus:border-green-500 shadow-sm text-sm resize-none"></textarea>
                     </div>
-                    <button @click="window.open(waLink, '_blank')" type="button" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#25D366] text-white rounded-lg hover:bg-[#128C7E] transition font-medium mt-1">
-                        <i data-lucide="external-link" class="w-4 h-4"></i> Abrir en WhatsApp
+                    <button @click="
+                        if (typeof tracking_url_wa !== 'undefined' && tracking_url_wa) {
+                            fetch(tracking_url_wa, {
+                                method: 'POST',
+                                headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+                            });
+                        }
+                        window.open(waLink, '_blank');
+                    " type="button" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#25D366] text-white rounded-lg hover:bg-[#128C7E] transition font-medium mt-1">
+                        <i data-lucide="external-link" class="h-4 h-4"></i> Abrir en WhatsApp
                     </button>
                 </div>
             </div>

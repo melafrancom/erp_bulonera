@@ -1,14 +1,13 @@
 {% load static %}
 
 <!-- Navbar Responsive -->
-<header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+<header class="bg-white dark:bg-slate-900 shadow-sm border-b border-gray-200 dark:border-slate-800 sticky top-0 z-30 transition-colors">
   <div class="px-4 md:px-6 py-3 md:py-4">
     
     <!-- Mobile Layout -->
     <div class="flex items-center justify-between lg:hidden">
       <!-- Menu Toggle Button -->
       <button @click="sidebarOpen = !sidebarOpen"
-              class="p-2 rounded-lg hover:bg-gray-100 transition-colors">
         <i data-lucide="menu" class="w-6 h-6 text-gray-700"></i>
       </button>
 
@@ -19,11 +18,14 @@
         </div>
       </a>
 
-      <!-- User Avatar Mobile -->
-      <a href="{% url 'core_web:profile' %}" 
-         class="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-md">
-        {{ user.first_name|slice:":1"|upper|default:"U" }}
-      </a>
+      <!-- User Avatar Mobile + Toggle -->
+      <div class="flex items-center space-x-2">
+        {% include 'includes/_dark_mode_toggle.html' %}
+        <a href="{% url 'core_web:profile' %}" 
+           class="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-md">
+          {{ user.first_name|slice:":1"|upper|default:"U" }}
+        </a>
+      </div>
     </div>
 
     <!-- Desktop Layout -->
@@ -35,13 +37,16 @@
 
       <!-- Search Bar -->
       <div class="flex-1 max-w-md">
-        <form action="{% url 'core_web:global_search' %}" method="GET" class="relative">
+        <form action="{% url 'core_web:global_search' %}" method="GET" class="relative text-slate-800 dark:text-slate-200">
           <input type="search" name="q"
                  placeholder="Buscar productos, clientes..."
-                 class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                 class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-colors">
           <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
         </form>
       </div>
+
+      <!-- Toggle Modo Oscuro -->
+      {% include 'includes/_dark_mode_toggle.html' %}
 
       <!-- Actions (Notifications + User Menu) -->
       <div class="flex items-center space-x-4">
@@ -73,14 +78,14 @@
           </button>
 
           <!-- Dropdown Menu -->
-          <div class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50">
+          <div class="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50">
             
             <!-- User Info en Dropdown -->
-            <div class="px-4 py-3 border-b border-gray-100">
-              <p class="text-sm font-semibold text-gray-800">
+            <div class="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
+              <p class="text-sm font-semibold text-gray-800 dark:text-slate-100">
                 {{ user.get_full_name|default:user.username }}
               </p>
-              <p class="text-xs text-gray-500">{{ user.email }}</p>
+              <p class="text-xs text-gray-500 dark:text-slate-400">{{ user.email }}</p>
             </div>
 
             <!-- Menu Items -->
@@ -112,7 +117,7 @@
               <form action="{% url 'core_web:logout' %}" method="post" class="block">
                 {% csrf_token %}
                 <button type="submit"
-                        class="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition text-left">
+                        class="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition text-left">
                   <i data-lucide="log-out" class="w-4 h-4 mr-3"></i>
                   Cerrar Sesión
                 </button>

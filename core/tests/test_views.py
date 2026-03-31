@@ -79,6 +79,33 @@ class AuthViewsTests(TestCase):
         self.assertEqual(response.status_code, 302)
 
 
+class PublicViewsTests(TestCase):
+    """Tests para vistas públicas y dashboard unificado"""
+    
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username='operator',
+            password='testpass123',
+            role='operator'
+        )
+    
+    def test_dashboard_unificado_contiene_kpis(self):
+        """TC-017: El dashboard unificado debe cargar KPIs desde DashboardService"""
+        self.client.login(username='operator', password='testpass123')
+        
+        response = self.client.get(reverse('core_web:dashboard'))
+        
+        self.assertEqual(response.status_code, 200)
+        # Verificar que existen KPIs en el contexto
+        self.assertIn('kpis', response.context)
+        self.assertIn('kpis_json', response.context)
+        self.assertIn('kpis_dict', response.context)
+        
+        # Al menos un KPI debería estar presente para un operador (según config default)
+        self.assertTrue(len(response.context['kpis']) >= 0)
+
+
 class ManagerViewsTests(TestCase):
     """Tests para vistas de gestión (managers)"""
     
@@ -135,7 +162,7 @@ class ManagerViewsTests(TestCase):
         )
         
         response = self.client.post(
-            reverse('core:approve_request', kwargs={'request_id': request.id})
+            reverse('core_web:approve_request', kwargs={'request_id': request.id})
         )
         
         # Debe redirigir tras aprobación

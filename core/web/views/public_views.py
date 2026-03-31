@@ -34,6 +34,11 @@ def home(request):
     return render(request, 'core/public/home_anonymous.html', context)
 
 
+import json
+from django.core.serializers.json import DjangoJSONEncoder
+from reports.services.dashboard_service import DashboardService
+
+
 # ================================
 # DASHBOARD
 # ================================
@@ -41,28 +46,40 @@ def home(request):
 @login_required
 def dashboard_view(request):
     """
-    Dashboard principal simple para todos los usuarios
-    - Total de usuarios
-    - Facturas/Ventas pendientes (cuando existan los modelos)
-    - Tareas pendientes del usuario
+    Dashboard principal unificado y operativo.
+    Consume KPIs de DashboardService según el rol del usuario.
     """
     user = request.user
+    service = DashboardService()
     
+    # Obtener KPIs según rol
+    kpis = service.get_dashboard_kpis(user)
+    
+    # Preparar KPIs para Alpine.js (datos crudos) y para lookup en template
+    kpis_data = [kpi.to_dict() for kpi in kpis]
+    kpis_dict = {kpi.key: kpi for kpi in kpis}
+    
+    # Segmentación para el Layout (Plan v8)
     context = {
         'user': user,
+        'user_role': getattr(user, 'role', 'viewer'),
         'current_time': timezone.now(),
+        'kpis_dict': kpis_dict, # Requerido por _kpi_card.html para comparar Hoy vs Mes
+        
+        # Agrupaciones para el template
+        'daily_sales_kpis': [kpis_dict.get(k) for k in ['invoiced_today', 'converted_today', 'direct_today'] if k in kpis_dict],
+        'daily_quotes_kpis': [kpis_dict.get(k) for k in ['printed_today', 'wa_today', 'email_today', 'confirmed_today', 'converted_q_today'] if k in kpis_dict],
+        
+        'monthly_sales_kpis': [kpis_dict.get(k) for k in ['invoiced_month', 'converted_month', 'direct_month'] if k in kpis_dict],
+        'monthly_quotes_kpis': [kpis_dict.get(k) for k in ['printed_month', 'wa_month', 'email_month', 'confirmed_month', 'converted_q_month'] if k in kpis_dict],
+        
+        'kpis_json': json.dumps(kpis_data, cls=DjangoJSONEncoder),
         'total_users': User.objects.filter(is_active=True).count(),
         
-        # Estadísticas del usuario
         'user_stats': {
             'last_login': user.last_login,
             'account_age': (timezone.now() - user.created_at).days if user.created_at else 0,
         },
-        
-        # TODO: Descomentar cuando existan los modelos
-        # 'pending_invoices': Invoice.objects.filter(status='pending').count(),
-        # 'recent_sales': Sale.objects.filter(user=user).order_by('-created_at')[:5],
-        # 'pending_tasks': Task.objects.filter(assigned_to=user, status='pending').count(),
     }
     
     return render(request, 'core/public/dashboard.html', context)

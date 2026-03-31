@@ -1,49 +1,78 @@
-{% load static humanize %}
-<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg transition-all duration-300 group">
-    <div class="flex items-center justify-between mb-4">
-        <div class="p-3 rounded-xl bg-{{ kpi.color }}-50 group-hover:scale-110 transition-transform duration-300">
-            <i data-lucide="{{ kpi.icon }}" class="h-6 w-6 text-{{ kpi.color }}-600"></i>
+{% load static humanize core_tags %}
+<!-- 
+    Tarjeta de KPI Reactiva
+    Utiliza Alpine.js (heredado del padre) para gestionar el estado de selección.
+-->
+<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 h-full flex flex-col group transition-all duration-300 relative">
+    
+    <!-- Checkbox Visual Indicator -->
+    <div class="absolute top-4 right-4 flex items-center justify-center transition-all duration-300"
+         :class="selectedKpis.includes('{{ kpi.key }}') ? 'scale-110' : 'scale-100'">
+        <div class="w-5 h-5 rounded-full border-2 transition-all duration-300 flex items-center justify-center"
+             :class="selectedKpis.includes('{{ kpi.key }}') ? 'bg-primary border-primary shadow-lg shadow-primary/30' : 'border-gray-200 dark:border-slate-600 bg-transparent'">
+            <i data-lucide="check" class="h-3 w-3 text-white transition-opacity duration-300"
+               :class="selectedKpis.includes('{{ kpi.key }}') ? 'opacity-100' : 'opacity-0'"></i>
         </div>
-        {% if kpi.trend %}
-        <div class="flex items-center space-x-1 {% if kpi.trend == 'up' %}text-emerald-600{% elif kpi.trend == 'down' %}text-rose-600{% else %}text-gray-400{% endif %} bg-opacity-10 px-2 py-1 rounded-lg text-xs font-bold">
-            {% if kpi.trend == 'up' %}
-                <i data-lucide="trending-up" class="h-3 w-3"></i>
-            {% elif kpi.trend == 'down' %}
-                <i data-lucide="trending-down" class="h-3 w-3"></i>
+    </div>
+
+    <div class="flex items-center justify-between mb-4 pr-8">
+        <div class="p-3 rounded-xl bg-{{ kpi.color }}-50 dark:bg-{{ kpi.color }}-900/20 group-hover:scale-110 transition-transform duration-300">
+            <i data-lucide="{{ kpi.icon }}" class="h-6 w-6 text-{{ kpi.color }}-600 dark:text-{{ kpi.color }}-400"></i>
+        </div>
+        
+        <div class="flex items-center space-x-2">
+            {% if kpi.is_monthly %}
+                {% with key_today=kpi.key|replace:"month,today" %}
+                {% with kpi_today=kpis_dict|get_item:key_today %}
+                    {% if kpi_today %}
+                    <div class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-1 rounded-lg text-[10px] font-bold border border-slate-200 dark:border-slate-600 shadow-sm" title="Total Hoy">
+                        Hoy: {% if kpi.unit == '$' %}${% endif %}{{ kpi_today.value|floatformat:0|intcomma }}
+                    </div>
+                    {% endif %}
+                {% endwith %}
+                {% endwith %}
             {% endif %}
-            <span>{{ kpi.trend|capfirst }}</span>
+
+            {% if kpi.trend %}
+            <div class="flex items-center space-x-1 {% if kpi.trend == 'up' %}text-emerald-600 dark:text-emerald-400{% elif kpi.trend == 'down' %}text-rose-600 dark:text-rose-400{% else %}text-gray-400{% endif %} bg-opacity-10 px-2 py-1 rounded-lg text-xs font-bold">
+                {% if kpi.trend == 'up' %}
+                    <i data-lucide="trending-up" class="h-3 w-3"></i>
+                {% elif kpi.trend == 'down' %}
+                    <i data-lucide="trending-down" class="h-3 w-3"></i>
+                {% endif %}
+                <span>{{ kpi.trend|capfirst }}</span>
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
     
-    <div>
-        <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">{{ kpi.label }}</h3>
+    <div class="flex-grow">
+        <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{{ kpi.label }}</h3>
         <div class="flex items-baseline mt-1 space-x-1">
-            <span class="text-3xl font-extrabold text-gray-900">
+            <span class="text-3xl font-extrabold text-gray-900 dark:text-white group-hover:text-primary transition-colors">
                 {% if kpi.unit == '$' %}${% endif %}{{ kpi.value|floatformat:2|intcomma }}
             </span>
             {% if kpi.unit != '$' %}
-            <span class="text-sm font-medium text-gray-400">{{ kpi.unit }}</span>
-            {% endif %}
-        </div>
-        
-        <div class="mt-4 flex items-center justify-between">
-            <p class="text-sm text-gray-400 italic">
-                {{ kpi.secondary_value }}
-            </p>
-            {% if kpi.detail_url and kpi.detail_url != '#' %}
-            <a href="{{ kpi.detail_url }}" class="text-{{ kpi.color }}-600 hover:text-{{ kpi.color }}-700 text-sm font-semibold flex items-center group/link">
-                Ver más
-                <i data-lucide="chevron-right" class="h-4 w-4 ml-1 group-hover/link:translate-x-1 transition-transform"></i>
-            </a>
+            <span class="text-sm font-medium text-gray-400 dark:text-gray-500">{{ kpi.unit }}</span>
             {% endif %}
         </div>
     </div>
+
+    <div class="mt-6 pt-4 border-t border-gray-50 dark:border-slate-700 flex items-center justify-between">
+        <p class="text-sm text-gray-400 dark:text-gray-500 italic max-w-[60%]">
+            {{ kpi.secondary_value }}
+        </p>
+        {% if kpi.detail_url and kpi.detail_url != '#' %}
+        <a href="{{ kpi.detail_url }}" class="text-{{ kpi.color }}-600 dark:text-{{ kpi.color }}-400 hover:underline text-sm font-semibold flex items-center group/link">
+            <span>Ver</span>
+            <i data-lucide="external-link" class="h-3.5 w-3.5 ml-1.5 opacity-0 group-hover/link:opacity-100 transition-opacity"></i>
+        </a>
+        {% endif %}
+    </div>
     
     {% if kpi.cached %}
-    <div class="mt-2 text-[10px] text-gray-300 flex items-center">
-        <i data-lucide="clock" class="h-3 w-3 mr-1"></i>
-        Cacheado
+    <div class="absolute bottom-4 right-4 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-full p-1 border border-gray-100 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" title="Dato cacheado">
+        <i data-lucide="zap" class="h-3 w-3 text-amber-500 animate-pulse"></i>
     </div>
     {% endif %}
 </div>

@@ -3,38 +3,82 @@
 # Cada entrada: {key, label, service_method, roles}
 # service_method es un string que apunta a la clase y método en reports.services
 AVAILABLE_KPIS = {
-    'sales_today': {
-        'service': 'SalesKPIService.get_sales_today',
+    # --- VENTAS DIARIAS ---
+    'invoiced_today': {
+        'service': 'SalesKPIService.get_invoiced_sales_today',
         'roles': ['admin', 'manager', 'operator'],
     },
-    'sales_month': {
-        'service': 'SalesKPIService.get_sales_month',
-        'roles': ['admin', 'manager'],
-    },
-    'quotes_today': {
-        'service': 'QuoteKPIService.get_quotes_today',
+    'converted_today': {
+        'service': 'SalesKPIService.get_converted_sales_today',
         'roles': ['admin', 'manager', 'operator'],
     },
-    'quotes_month': {
-        'service': 'QuoteKPIService.get_quotes_month',
+    'direct_today': {
+        'service': 'SalesKPIService.get_direct_sales_today',
+        'roles': ['admin', 'manager', 'operator'],
+    },
+
+    # --- PRESUPUESTOS DIARIOS ---
+    'printed_today': {
+        'service': 'QuoteKPIService.get_printed_quotes_today',
+        'roles': ['admin', 'manager', 'operator'],
+    },
+    'wa_today': {
+        'service': 'QuoteKPIService.get_sent_wa_quotes_today',
+        'roles': ['admin', 'manager', 'operator'],
+    },
+    'email_today': {
+        'service': 'QuoteKPIService.get_sent_email_quotes_today',
+        'roles': ['admin', 'manager', 'operator'],
+    },
+    'confirmed_today': {
+        'service': 'QuoteKPIService.get_confirmed_quotes_today',
+        'roles': ['admin', 'manager', 'operator'],
+    },
+    'converted_q_today': {
+        'service': 'QuoteKPIService.get_converted_quotes_today',
+        'roles': ['admin', 'manager', 'operator'],
+    },
+
+    # --- VENTAS MENSUALES ---
+    'invoiced_month': {
+        'service': 'SalesKPIService.get_invoiced_sales_month',
         'roles': ['admin', 'manager'],
     },
-    # Stubs for Fase 2 - Comentados o incluidos según se desee
+    'converted_month': {
+        'service': 'SalesKPIService.get_converted_sales_month',
+        'roles': ['admin', 'manager'],
+    },
+    'direct_month': {
+        'service': 'SalesKPIService.get_direct_sales_month',
+        'roles': ['admin', 'manager'],
+    },
+
+    # --- PRESUPUESTOS MENSUALES ---
+    'printed_month': {
+        'service': 'QuoteKPIService.get_printed_quotes_month',
+        'roles': ['admin', 'manager'],
+    },
+    'wa_month': {
+        'service': 'QuoteKPIService.get_sent_wa_quotes_month',
+        'roles': ['admin', 'manager'],
+    },
+    'email_month': {
+        'service': 'QuoteKPIService.get_sent_email_quotes_month',
+        'roles': ['admin', 'manager'],
+    },
+    'confirmed_month': {
+        'service': 'QuoteKPIService.get_confirmed_quotes_month',
+        'roles': ['admin', 'manager'],
+    },
+    'converted_q_month': {
+        'service': 'QuoteKPIService.get_converted_quotes_month',
+        'roles': ['admin', 'manager'],
+    },
+
+    # Otros KPIs auxiliares
     'low_stock': {
         'service': 'stock_kpis.get_low_stock_products',
         'roles': ['admin', 'manager', 'operator'],
-    },
-    'top_customers': {
-        'service': 'customer_kpis.get_top_customers',
-        'roles': ['admin', 'manager'],
-    },
-    'customers_debt': {
-        'service': 'customer_kpis.get_customers_with_debt',
-        'roles': ['admin', 'manager'],
-    },
-    'monthly_revenue': {
-        'service': 'financial_kpis.get_monthly_revenue',
-        'roles': ['admin', 'manager'],
     },
 }
 

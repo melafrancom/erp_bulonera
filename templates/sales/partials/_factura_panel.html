@@ -9,11 +9,11 @@ Variables:
   can_invoice → bool (calculado en la vista)
 {% endcomment %}
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
 
     <!-- Encabezado -->
     <div class="flex items-center justify-between mb-4">
-        <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+        <h3 class="text-sm font-semibold text-gray-700 dark:text-slate-200 flex items-center gap-2">
             <i data-lucide="file-text" class="w-4 h-4 text-blue-600"></i>
             Facturación Electrónica (ARCA/AFIP)
         </h3>
@@ -33,12 +33,12 @@ Variables:
                     <i data-lucide="x-circle" class="w-3 h-3"></i> Rechazada por ARCA
                 </span>
             {% else %}
-                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-slate-900/50 text-gray-600 dark:text-slate-300">
                     {{ invoice.get_estado_fiscal_display }}
                 </span>
             {% endif %}
         {% elif can_invoice %}
-            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-slate-900/50 text-gray-600 dark:text-slate-300">
                 Sin facturar
             </span>
         {% endif %}
@@ -48,35 +48,35 @@ Variables:
         <!-- Factura existente -->
         <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm mb-5">
             <div>
-                <dt class="text-xs text-gray-400 uppercase tracking-wide">Número</dt>
-                <dd class="font-semibold text-gray-900 mt-0.5">{{ invoice.number }}</dd>
+                <dt class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide">Número</dt>
+                <dd class="font-semibold text-gray-900 dark:text-slate-100 mt-0.5">{{ invoice.number }}</dd>
             </div>
             <div>
-                <dt class="text-xs text-gray-400 uppercase tracking-wide">Tipo</dt>
-                <dd class="font-medium text-gray-900 mt-0.5">{{ invoice.get_tipo_comprobante_display }}</dd>
+                <dt class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide">Tipo</dt>
+                <dd class="font-medium text-gray-900 dark:text-slate-100 mt-0.5">{{ invoice.get_tipo_comprobante_display }}</dd>
             </div>
             {% if invoice.cae %}
             <div>
-                <dt class="text-xs text-gray-400 uppercase tracking-wide">CAE</dt>
-                <dd class="font-mono text-xs text-gray-700 mt-0.5 break-all">{{ invoice.cae }}</dd>
+                <dt class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide">CAE</dt>
+                <dd class="font-mono text-xs text-gray-700 dark:text-slate-200 mt-0.5 break-all">{{ invoice.cae }}</dd>
             </div>
             <div>
-                <dt class="text-xs text-gray-400 uppercase tracking-wide">Vto. CAE</dt>
-                <dd class="font-medium text-gray-900 mt-0.5">{{ invoice.cae_vencimiento|date:"d/m/Y" }}</dd>
+                <dt class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide">Vto. CAE</dt>
+                <dd class="font-medium text-gray-900 dark:text-slate-100 mt-0.5">{{ invoice.cae_vencimiento|date:"d/m/Y" }}</dd>
             </div>
             {% endif %}
             <div>
-                <dt class="text-xs text-gray-400 uppercase tracking-wide">Fecha emisión</dt>
-                <dd class="font-medium text-gray-900 mt-0.5">{{ invoice.fecha_emision|date:"d/m/Y" }}</dd>
+                <dt class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide">Fecha emisión</dt>
+                <dd class="font-medium text-gray-900 dark:text-slate-100 mt-0.5">{{ invoice.fecha_emision|date:"d/m/Y" }}</dd>
             </div>
             <div>
-                <dt class="text-xs text-gray-400 uppercase tracking-wide">Total facturado</dt>
-                <dd class="font-semibold text-gray-900 mt-0.5">$ {{ invoice.total|floatformat:2 }}</dd>
+                <dt class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide">Total facturado</dt>
+                <dd class="font-semibold text-gray-900 dark:text-slate-100 mt-0.5">$ {{ invoice.total|floatformat:2 }}</dd>
             </div>
             {% if invoice.observaciones_afip and invoice.estado_fiscal == 'autorizada' %}
             <div class="col-span-2">
-                <dt class="text-xs text-gray-400 uppercase tracking-wide">Observaciones ARCA</dt>
-                <dd class="text-xs text-gray-600 mt-0.5 italic">{{ invoice.observaciones_afip }}</dd>
+                <dt class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide">Observaciones ARCA</dt>
+                <dd class="text-xs text-gray-600 dark:text-slate-300 mt-0.5 italic">{{ invoice.observaciones_afip }}</dd>
             </div>
             {% endif %}
         </dl>
@@ -175,7 +175,7 @@ Variables:
 
     {% elif can_invoice %}
         <!-- Sin factura — botón de emisión -->
-        <p class="text-sm text-gray-500 mb-4">
+        <p class="text-sm text-gray-500 dark:text-slate-400 mb-4">
             Esta venta aún no tiene comprobante electrónico.
             Al emitirla se enviará a ARCA/AFIP y obtendrá el CAE automáticamente.
         </p>
@@ -205,7 +205,7 @@ Variables:
                 <div class="absolute inset-0 bg-black/50" @click="open = false"></div>
 
                 <!-- Dialog -->
-                <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6" @click.stop>
+                <div class="relative bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md p-6" @click.stop>
 
                     <!-- Ícono + título -->
                     <div class="flex items-start gap-3 mb-5">
@@ -213,8 +213,8 @@ Variables:
                             <i data-lucide="file-text" class="w-5 h-5 text-blue-600"></i>
                         </div>
                         <div>
-                            <h3 class="font-semibold text-gray-900">Emitir Factura Electrónica</h3>
-                            <p class="text-sm text-gray-500 mt-1">
+                            <h3 class="font-semibold text-gray-900 dark:text-slate-100">Emitir Factura Electrónica</h3>
+                            <p class="text-sm text-gray-500 dark:text-slate-400 mt-1">
                                 El comprobante se enviará a ARCA/AFIP y se obtendrá el CAE de forma inmediata.
                                 <strong>Esta acción no se puede deshacer</strong> sin emitir una Nota de Crédito.
                             </p>
@@ -222,18 +222,18 @@ Variables:
                     </div>
 
                     <!-- Resumen de la venta -->
-                    <div class="bg-gray-50 rounded-lg p-4 mb-5 space-y-2 text-sm">
+                    <div class="bg-gray-50 dark:bg-slate-900/50 rounded-lg p-4 mb-5 space-y-2 text-sm">
                         <div class="flex justify-between">
-                            <span class="text-gray-500">Venta</span>
-                            <span class="font-semibold text-gray-900">{{ sale.number }}</span>
+                            <span class="text-gray-500 dark:text-slate-400">Venta</span>
+                            <span class="font-semibold text-gray-900 dark:text-slate-100">{{ sale.number }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-500">Cliente</span>
-                            <span class="font-medium text-gray-900">{{ sale.customer_display }}</span>
+                            <span class="text-gray-500 dark:text-slate-400">Cliente</span>
+                            <span class="font-medium text-gray-900 dark:text-slate-100">{{ sale.customer_display }}</span>
                         </div>
-                        <div class="flex justify-between pt-2 border-t border-gray-200">
-                            <span class="text-gray-500">Total a facturar</span>
-                            <span class="font-bold text-gray-900">$ {{ sale.total|floatformat:2 }}</span>
+                        <div class="flex justify-between pt-2 border-t border-gray-200 dark:border-slate-700">
+                            <span class="text-gray-500 dark:text-slate-400">Total a facturar</span>
+                            <span class="font-bold text-gray-900 dark:text-slate-100">$ {{ sale.total|floatformat:2 }}</span>
                         </div>
                     </div>
 
@@ -243,7 +243,7 @@ Variables:
                         <div class="flex gap-3 justify-end">
                             <button type="button"
                                     @click="open = false"
-                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700/50 rounded-lg hover:bg-gray-50 dark:bg-slate-900/50 transition-colors">
                                 Cancelar
                             </button>
                             <button type="submit"
@@ -268,7 +268,7 @@ Variables:
                 get numeroSugerido() { return this.sugerencias[this.tipo] || ''; }
             }">
                 <button @click="openTicket = true"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors">
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-slate-900/50 hover:bg-gray-200 text-gray-700 dark:text-slate-200 text-sm font-medium rounded-lg transition-colors">
                     <i data-lucide="printer" class="w-4 h-4"></i>
                     Registrar Ticket Fiscal
                 </button>
@@ -279,13 +279,13 @@ Variables:
                      <!-- Backdrop -->
                      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="openTicket = false" x-transition.opacity></div>
                      <!-- Dialog -->
-                     <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6" @click.stop x-transition>
+                     <div class="relative bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md p-6" @click.stop x-transition>
                          <div class="flex items-start gap-3 mb-4">
-                             <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                                 <i data-lucide="printer" class="w-5 h-5 text-gray-600"></i>
+                             <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gray-100 dark:bg-slate-900/50 flex items-center justify-center">
+                                 <i data-lucide="printer" class="w-5 h-5 text-gray-600 dark:text-slate-300"></i>
                              </div>
                              <div>
-                                 <h3 class="font-semibold text-gray-900">Registrar Ticket de Controlador Fiscal</h3>
+                                 <h3 class="font-semibold text-gray-900 dark:text-slate-100">Registrar Ticket de Controlador Fiscal</h3>
                                  <p class="text-sm text-amber-700 mt-2 bg-amber-50 p-2.5 rounded border border-amber-200">
                                      <i data-lucide="alert-triangle" class="w-4 h-4 inline mb-0.5"></i>
                                      Esta acción NO envía datos a AFIP. Usá esta opción SOLO si facturaste desde el controlador fiscal físico.
@@ -296,8 +296,8 @@ Variables:
                              {% csrf_token %}
                              <div class="space-y-4 mb-6">
                                  <div>
-                                     <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Ticket</label>
-                                     <select name="tipo_comprobante" x-model="tipo" class="w-full rounded-lg border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500">
+                                     <label class="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">Tipo de Ticket</label>
+                                     <select name="tipo_comprobante" x-model="tipo" class="w-full rounded-lg border-gray-300 dark:border-slate-700/50 text-sm focus:ring-blue-500 focus:border-blue-500">
                                          {% for tipo in tipos_ticket %}
                                              <option value="{{ tipo.value }}" {% if tipo.value == 83 %}selected{% endif %}>{{ tipo.label }}</option>
                                          {% empty %}
@@ -309,17 +309,17 @@ Variables:
                                  </div>
                                  <div class="grid grid-cols-2 gap-4">
                                      <div>
-                                         <label class="block text-sm font-medium text-gray-700 mb-1">Punto de Venta</label>
-                                         <input type="number" name="punto_venta" value="{{ ticket_config.punto_venta|default:1 }}" required class="w-full rounded-lg border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500">
+                                         <label class="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">Punto de Venta</label>
+                                         <input type="number" name="punto_venta" value="{{ ticket_config.punto_venta|default:1 }}" required class="w-full rounded-lg border-gray-300 dark:border-slate-700/50 text-sm focus:ring-blue-500 focus:border-blue-500">
                                      </div>
                                      <div>
-                                         <label class="block text-sm font-medium text-gray-700 mb-1">Número de Ticket</label>
-                                         <input type="number" name="numero_ticket" x-model="numeroSugerido" required placeholder="Ej: 1234" class="w-full rounded-lg border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500">
+                                         <label class="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">Número de Ticket</label>
+                                         <input type="number" name="numero_ticket" x-model="numeroSugerido" required placeholder="Ej: 1234" class="w-full rounded-lg border-gray-300 dark:border-slate-700/50 text-sm focus:ring-blue-500 focus:border-blue-500">
                                      </div>
                                  </div>
                              </div>
                              <div class="flex gap-3 justify-end">
-                                 <button type="button" @click="openTicket = false" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                 <button type="button" @click="openTicket = false" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700/50 rounded-lg hover:bg-gray-50 dark:bg-slate-900/50 transition-colors">
                                      Cancelar
                                  </button>
                                  <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
@@ -335,7 +335,7 @@ Variables:
 
     {% else %}
         <!-- Venta no facturable todavía -->
-        <p class="text-sm text-gray-400 italic">
+        <p class="text-sm text-gray-400 dark:text-slate-500 italic">
             La facturación estará disponible cuando la venta sea confirmada o entregada.
         </p>
     {% endif %}

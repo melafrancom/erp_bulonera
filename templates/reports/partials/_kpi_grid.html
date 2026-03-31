@@ -1,6 +1,21 @@
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<div x-ref="kpiGrid" class="grid grid-cols-1 {{ grid_cols|default:'md:grid-cols-2 lg:grid-cols-4' }} gap-6">
     {% for kpi in kpis %}
-        {% include "reports/partials/_kpi_card.html" with kpi=kpi %}
+        <div 
+            @click="
+                if (selectedKpis.includes('{{ kpi.key }}')) {
+                    selectedKpis = selectedKpis.filter(k => k !== '{{ kpi.key }}');
+                } else {
+                    selectedKpis.push('{{ kpi.key }}');
+                }
+            "
+            data-key="{{ kpi.key }}"
+            data-value="{{ kpi.value }}"
+            data-unit="{{ kpi.unit }}"
+            :class="selectedKpis.includes('{{ kpi.key }}') ? 'ring-2 ring-primary border-transparent shadow-lg scale-[1.02]' : 'border-gray-100'"
+            class="transition-all duration-300 cursor-pointer rounded-2xl relative"
+        >
+            {% include "reports/partials/_kpi_card.html" with kpi=kpi %}
+        </div>
     {% empty %}
         <div class="col-span-full py-12 flex flex-col items-center justify-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
             <i data-lucide="bar-chart" class="h-12 w-12 text-gray-300 mb-4"></i>

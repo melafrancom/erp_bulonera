@@ -153,9 +153,33 @@ class QuoteViewSet(AuditMixin, OwnerQuerysetMixin, viewsets.ModelViewSet):
 
         from sales.tasks import send_quote_email_task
         send_quote_email_task.delay(quote.id, recipient_email)
+        
+        # Marcar como enviado por email (Plan v8)
+        if not quote.sent_via_email:
+            quote.sent_via_email = True
+            quote.save(update_fields=['sent_via_email'])
+            
         return Response({
             'message': f'Presupuesto encolado para ser enviado a {recipient_email}.'
         })
+
+    @action(detail=True, methods=['post'], url_path='mark_as_printed')
+    def mark_as_printed(self, request, pk=None):
+        """Marca el presupuesto como impreso físicamente."""
+        quote = self.get_object()
+        if not quote.is_printed:
+            quote.is_printed = True
+            quote.save(update_fields=['is_printed'])
+        return Response({'message': 'Presupuesto marcado como impreso.'})
+
+    @action(detail=True, methods=['post'], url_path='mark_as_wa_sent')
+    def mark_as_wa_sent(self, request, pk=None):
+        """Marca el presupuesto como enviado por WhatsApp."""
+        quote = self.get_object()
+        if not quote.sent_via_wa:
+            quote.sent_via_wa = True
+            quote.save(update_fields=['sent_via_wa'])
+        return Response({'message': 'Presupuesto marcado como enviado por WhatsApp.'})
     
     @action(detail=True, methods=['post'])
     @audit_log(action_or_func='quote_accepted')

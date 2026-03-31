@@ -49,6 +49,11 @@ class Quote(BaseModel):
         ('cancelled', 'Cancelado'),  # ← Nuevo estado
     ], default='draft', db_index=True)
     
+    # Trazabilidad de distribución (Nuevos campos Plan v8)
+    is_printed = models.BooleanField(default=False, help_text='Impreso físicamente en local')
+    sent_via_wa = models.BooleanField(default=False, help_text='Compartido vía WhatsApp')
+    sent_via_email = models.BooleanField(default=False, help_text='Enviado por Correo Electrónico')
+    
     # Información adicional
     notes = models.TextField(blank=True)
     internal_notes = models.TextField(blank=True)  # ← Notas internas no visibles para cliente

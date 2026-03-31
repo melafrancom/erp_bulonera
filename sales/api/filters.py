@@ -62,6 +62,27 @@ class SaleFilter(FilterSet):
     class Meta:
         model = Sale
         fields = ['status', 'customer']
+
+    # Filtros Segmentación Plan v8
+    origin = ChoiceFilter(
+        choices=[('direct', 'Venta Directa'), ('converted', 'Desde Presupuesto')],
+        method='filter_origin',
+        label='Origen de Venta'
+    )
+    
+    has_invoice = BooleanFilter(
+        field_name='facturas',
+        lookup_expr='isnull',
+        exclude=True,
+        label='Tiene Factura Fiscal'
+    )
+
+    def filter_origin(self, queryset, name, value):
+        if value == 'direct':
+            return queryset.filter(quote__isnull=True)
+        elif value == 'converted':
+            return queryset.filter(quote__isnull=False)
+        return queryset
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -113,6 +134,26 @@ class QuoteFilter(FilterSet):
     class Meta:
         model = Quote
         fields = ['status', 'customer']
+
+    # Filtros Trazabilidad Plan v8
+    channel = ChoiceFilter(
+        choices=[
+            ('printed', 'Impreso'),
+            ('wa', 'WhatsApp'),
+            ('email', 'Correo'),
+        ],
+        method='filter_channel',
+        label='Canal de Distribución'
+    )
+
+    def filter_channel(self, queryset, name, value):
+        if value == 'printed':
+            return queryset.filter(is_printed=True)
+        elif value == 'wa':
+            return queryset.filter(sent_via_wa=True)
+        elif value == 'email':
+            return queryset.filter(sent_via_email=True)
+        return queryset
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

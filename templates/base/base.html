@@ -37,6 +37,7 @@
     <!-- Tailwind Config Inline -->
     <script>
       tailwind.config = {
+        darkMode: 'class',
         theme: {
           extend: {
             colors: {
@@ -70,6 +71,18 @@
     <!-- Chart.js (opcional) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- FOUC Prevention para Modo Oscuro -->
+    <script>
+      (function() {
+        const theme = localStorage.getItem('theme');
+        if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      })();
+    </script>
+
     <!-- Custom CSS Files -->
     <link rel="stylesheet" href="{% static 'css/base.css' %}" />
     <link rel="stylesheet" href="{% static 'css/forms.css' %}" />
@@ -98,34 +111,85 @@
       }
 
       .nav-item {
-        @apply flex items-center space-x-3 px-3 py-2.5 rounded-lg text-blue-100 hover:bg-white/10 transition-all duration-200 mb-1;
-      }
-
-      .nav-item.active {
-        @apply bg-white/20 text-white font-medium;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem; /* space-x-3 */
+        padding: 0.625rem 0.75rem; /* px-3 py-2.5 */
+        border-radius: 0.5rem; /* rounded-lg */
+        color: theme('colors.blue.100');
+        transition-property: all;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 200ms;
+        margin-bottom: 0.25rem; /* mb-1 */
       }
 
       .nav-item:hover {
-        @apply text-white;
+        background-color: rgba(255, 255, 255, 0.1); /* hover:bg-white/10 */
+        color: white;
+      }
+
+      .nav-item.active {
+        background-color: rgba(255, 255, 255, 0.2); /* bg-white/20 */
+        color: white;
+        font-weight: 500;
       }
       
       /* Transiciones suaves para sidebar */
       .sidebar-transition {
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
+
+      /* Dark Mode Sidebar */
+      .dark .sidebar {
+        background: linear-gradient(135deg, theme('colors.slate.900') 0%, theme('colors.slate.800') 100%);
+        border-right: 1px solid theme('colors.slate.700');
+      }
+
+      .dark .sidebar .nav-item {
+        color: theme('colors.slate.400');
+      }
+
+      .dark .sidebar .nav-item:hover {
+        background-color: rgba(51, 65, 85, 0.5); /* hover:bg-slate-700/50 */
+        color: theme('colors.slate.100');
+      }
+
+      .dark .sidebar .nav-item.active {
+        background-color: theme('colors.slate.700');
+        color: white;
+        font-weight: 600;
+      }
+
+      .dark .sidebar p.text-blue-200 {
+        color: theme('colors.slate.500');
+        font-weight: 700;
+      }
     </style>
 
     {% block extra_css %}{% endblock %}
   </head>
   
-  <body class="flex flex-col bg-gray-50 font-sans">
+  <body class="flex flex-col bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 font-sans transition-colors duration-200"
+        x-data="{ 
+           sidebarOpen: false,
+           darkMode: localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches),
+           toggleDarkMode() {
+               this.darkMode = !this.darkMode;
+               localStorage.setItem('theme', this.darkMode ? 'dark' : 'light');
+               if (this.darkMode) {
+                   document.documentElement.classList.add('dark');
+               } else {
+                   document.documentElement.classList.remove('dark');
+               }
+           }
+        }">
     <!-- Barra de estado de conexión (gestionada por connection-status.js) -->
     <div id="connection-status-bar" class="hidden" role="status" aria-live="polite"></div>
     
     {% if user.is_authenticated %}
       {% include 'includes/pwa.html' %}
-      <!-- Layout con Alpine.js para control del sidebar -->
-      <div x-data="{ sidebarOpen: false }" class="flex min-h-screen w-full">
+      <!-- Layout con Alpine.js para control del sidebar (darkMode ya está en body) -->
+      <div class="flex min-h-screen w-full">
         
         <!-- Overlay oscuro (solo mobile) -->
         <div x-show="sidebarOpen" 
@@ -149,7 +213,7 @@
           {% include 'includes/navbar.html' %}
 
           <!-- Page Content -->
-          <main class="flex-1 p-4 md:p-6 bg-gray-100 overflow-x-hidden">
+          <main class="flex-1 p-4 md:p-6 bg-gray-100 dark:bg-slate-900 overflow-x-hidden">
             {% include 'includes/alerts.html' %} 
             {% block content %}
             <!-- Content will be injected here -->
@@ -159,8 +223,12 @@
         </div>
 
         <!-- Bottom Navigation (solo mobile PWA) -->
-        <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-30 safe-area-bottom">
+        <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 z-30 safe-area-bottom transition-colors">
           <div class="flex items-center justify-around py-2">
+            <!-- Toggle Modo Oscuro Mobile -->
+            <div class="flex flex-col items-center py-2 px-3">
+              {% include 'includes/_dark_mode_toggle.html' %}
+            </div>
             {% if user.is_manager or user.is_superuser or user.is_admin %}
             <a href="{% url 'core_web:managers_dashboard' %}" 
                class="flex flex-col items-center py-2 px-3 text-gray-600 hover:text-blue-600 transition {% if request.resolver_match.url_name == 'dashboard' %}text-blue-600{% endif %}">

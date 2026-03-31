@@ -1,0 +1,12 @@
+<!-- Toggle Modo Oscuro Minimalista -->
+<button 
+  @click="toggleDarkMode()" 
+  class="p-2 rounded-lg text-slate-500 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+  title="Alternar modo oscuro"
+  aria-label="Alternar modo oscuro"
+>
+  <!-- Icono Sol (se muestra en modo oscuro) -->
+  <i data-lucide="sun" x-show="darkMode" x-cloak class="w-5 h-5"></i>
+  <!-- Icono Luna (se muestra en modo claro) -->
+  <i data-lucide="moon" x-show="!darkMode" x-cloak class="w-5 h-5"></i>
+</button>

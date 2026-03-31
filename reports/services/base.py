@@ -18,6 +18,7 @@ class KPIResult:
     trend: Optional[str] = None  # 'up', 'down', 'neutral'
     detail_url: str = '#'        # URL para "ver más"
     cached: bool = False         # Indica si vino de caché (útil para debug)
+    is_monthly: bool = False     # Indica si es un KPI de acumulación mensual
 
     def to_dict(self):
         return asdict(self)
