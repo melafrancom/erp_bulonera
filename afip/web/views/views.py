@@ -44,6 +44,43 @@ def afip_dashboard(request):
     return render(request, 'afip/dashboard.html', context)
 
 
+@login_required
+def solicitar_token_wsaa(request, pk):
+    """
+    Solicita un token WSAA nuevo para la configuración indicada.
+    
+    POST-only. Redirige al dashboard con mensaje de éxito/error.
+    """
+    if request.method != 'POST':
+        return redirect('afip_web:dashboard')
+    
+    config = get_object_or_404(ConfiguracionARCA, pk=pk)
+    
+    try:
+        from afip.clients.wsaa_client import WSAAClient
+        
+        client = WSAAClient(
+            ambiente=config.ambiente,
+            cert_path=config.ruta_certificado,
+            cuit=config.empresa_cuit,
+        )
+        resultado = client.obtener_ticket_acceso(servicio='wsfe', usar_cache=False)
+        
+        if resultado['success']:
+            expiration_str = resultado['expiration'].strftime('%d/%m/%Y %H:%M') if resultado['expiration'] else 'N/A'
+            messages.success(
+                request,
+                f"✅ Token WSAA obtenido para {config.razon_social}. Expira: {expiration_str}"
+            )
+        else:
+            error_msg = resultado.get('error', 'Error desconocido')
+            messages.error(request, f"❌ Error WSAA: {error_msg}")
+    except Exception as e:
+        messages.error(request, f"❌ Error inesperado: {str(e)}")
+    
+    return redirect('afip_web:dashboard')
+
+
 class ConfiguracionCreateView(LoginRequiredMixin, AdminRequiredMixin, CreateView):
     model = ConfiguracionARCA
     template_name = 'afip/config_form.html'
