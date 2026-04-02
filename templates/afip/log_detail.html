@@ -1,85 +1,134 @@
 {% extends 'base/base.html' %}
 {% load static %}
 
-{% block title %}Log #{{ log.pk }} - AFIP{% endblock %}
+{% block title %}Log #{{ log.pk }} | ERP Bulonera Alvear{% endblock %}
 
 {% block breadcrumb_items %}
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <a href="{% url 'afip_web:dashboard' %}" class="text-gray-600 hover:text-gray-900">AFIP</a>
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <a href="{% url 'afip_web:log_list' %}" class="text-gray-600 hover:text-gray-900">Logs</a>
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <span class="text-gray-900 font-medium">#{{ log.pk }}</span>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <a href="{% url 'afip_web:dashboard' %}" class="text-gray-500 dark:text-slate-400 font-bold hover:text-gray-900 dark:hover:text-slate-100 transition-colors tracking-tight">AFIP</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <a href="{% url 'afip_web:log_list' %}" class="text-gray-500 dark:text-slate-400 font-bold hover:text-gray-900 dark:hover:text-slate-100 transition-colors tracking-tight">Logs</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <span class="text-gray-900 dark:text-slate-100 font-black tracking-tight">#{{ log.pk }}</span>
 {% endblock %}
 
+{% block mobile_title %}Log #{{ log.pk }}{% endblock %}
+
 {% block content %}
-<div class="max-w-5xl mx-auto">
-  <div class="mb-6 flex items-center justify-between">
-    <h1 class="text-2xl font-bold text-gray-900">Detalle de Log #{{ log.pk }}</h1>
-    <a href="{% url 'afip_web:log_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-gray-700 font-medium">
-      <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Volver
-    </a>
+<div class="max-w-6xl mx-auto px-4 pb-24">
+  
+  <div class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <div>
+      <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight flex items-center gap-4 transition-colors">
+        <span class="flex items-center justify-center w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl shadow-sm">
+           <i data-lucide="file-json" class="w-7 h-7"></i>
+        </span>
+        Detalle de Log #{{ log.pk }}
+      </h1>
+      <p class="mt-4 text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest pl-1">Información técnica de la transacción</p>
+    </div>
+    
+    <div class="flex items-center gap-3">
+        <a href="{% url 'afip_web:log_list' %}" class="inline-flex items-center px-6 py-4 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-2xl text-sm font-black hover:bg-gray-200 dark:hover:bg-slate-700 transition-all active:scale-95 uppercase tracking-widest">
+            <i data-lucide="arrow-left" class="w-5 h-5 mr-3"></i> Volver
+        </a>
+    </div>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
 
     <!-- Info General -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <h3 class="text-base font-semibold text-gray-900 mb-4">Información General</h3>
-      <dl class="space-y-3">
-        <div class="flex justify-between">
-          <dt class="text-sm text-gray-500">Tipo</dt>
-          <dd class="text-sm font-medium {% if 'ERROR' in log.tipo %}text-red-600{% else %}text-gray-900{% endif %}">{{ log.get_tipo_display }}</dd>
+    <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-slate-700 p-8 transition-colors">
+      <h3 class="text-lg font-black text-gray-900 dark:text-slate-100 mb-8 flex items-center gap-3">
+        <span class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl text-blue-600 dark:text-blue-400">
+           <i data-lucide="info" class="w-5 h-5"></i>
+        </span>
+        Información General
+      </h3>
+      
+      <div class="space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 dark:bg-slate-900/50 rounded-2xl border border-gray-100 dark:border-slate-700/50">
+          <span class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1 sm:mb-0">Tipo</span>
+          <span class="text-sm font-black {% if 'ERROR' in log.tipo %}text-red-600 dark:text-red-400{% else %}text-gray-900 dark:text-slate-100{% endif %}">{{ log.get_tipo_display }}</span>
         </div>
-        <div class="flex justify-between">
-          <dt class="text-sm text-gray-500">Fecha/Hora</dt>
-          <dd class="text-sm text-gray-900">{{ log.timestamp|date:"d/m/Y H:i:s" }}</dd>
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 dark:bg-slate-900/50 rounded-2xl border border-gray-100 dark:border-slate-700/50">
+          <span class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1 sm:mb-0">Fecha / Hora</span>
+          <span class="text-sm font-black text-gray-900 dark:text-slate-100 tabular-nums">{{ log.timestamp|date:"d/m/Y H:i:s" }}</span>
         </div>
-        <div class="flex justify-between">
-          <dt class="text-sm text-gray-500">CUIT</dt>
-          <dd class="text-sm text-gray-900">{{ log.cuit }}</dd>
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 dark:bg-slate-900/50 rounded-2xl border border-gray-100 dark:border-slate-700/50">
+          <span class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1 sm:mb-0">CUIT Registrado</span>
+          <span class="text-sm font-black text-indigo-600 dark:text-indigo-400 tabular-nums tracking-widest">{{ log.cuit }}</span>
         </div>
-        <div class="flex justify-between">
-          <dt class="text-sm text-gray-500">Servicio</dt>
-          <dd class="text-sm text-gray-900">{{ log.servicio }}</dd>
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 dark:bg-slate-900/50 rounded-2xl border border-gray-100 dark:border-slate-700/50">
+          <span class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1 sm:mb-0">Servicio AFIP</span>
+          <span class="text-xs font-black text-gray-600 dark:text-slate-300 tracking-widest uppercase">{{ log.servicio|default:"-" }}</span>
         </div>
-        <div class="flex justify-between">
-          <dt class="text-sm text-gray-500">Response Code</dt>
-          <dd class="text-sm font-medium {% if log.response_code == 200 %}text-green-600{% else %}text-red-600{% endif %}">{{ log.response_code|default:"—" }}</dd>
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 dark:bg-slate-900/50 rounded-2xl border border-gray-100 dark:border-slate-700/50">
+          <span class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1 sm:mb-0">HTTP Response</span>
+          {% if log.response_code %}
+            <span class="inline-flex items-center justify-center px-4 py-1.5 rounded-lg text-xs font-black {% if log.response_code == 200 %}bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 ring-1 ring-emerald-500/30{% else %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 ring-1 ring-red-500/30{% endif %} tabular-nums">{{ log.response_code }}</span>
+          {% else %}
+            <span class="text-sm font-black text-gray-400 dark:text-slate-600">—</span>
+          {% endif %}
         </div>
+        
         {% if log.comprobante %}
-        <div class="flex justify-between">
-          <dt class="text-sm text-gray-500">Comprobante</dt>
-          <dd class="text-sm text-blue-600">{{ log.comprobante.numero_completo }}</dd>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 dark:bg-slate-900/50 rounded-2xl border border-gray-100 dark:border-slate-700/50">
+          <span class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1 sm:mb-0">Comprobante</span>
+          <a href="#" class="text-sm font-black text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 hover:underline">{{ log.comprobante.numero_completo }}</a>
         </div>
         {% endif %}
-      </dl>
+      </div>
     </div>
 
-    <!-- Error -->
+    <!-- Error Zone -->
     {% if log.error %}
-    <div class="bg-red-50 rounded-xl shadow-sm border border-red-200 p-6">
-      <h3 class="text-base font-semibold text-red-800 mb-3 flex items-center gap-2">
-        <i data-lucide="alert-triangle" class="w-5 h-5"></i> Error
+    <div class="bg-red-50 dark:bg-red-900/10 rounded-[2.5rem] shadow-sm border border-red-100 dark:border-red-900/30 p-8 transition-colors flex flex-col">
+      <h3 class="text-lg font-black text-red-700 dark:text-red-400 mb-8 flex items-center gap-3">
+        <span class="p-2 bg-red-100 dark:bg-red-900/30 rounded-xl text-red-600 dark:text-red-400">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        </span>
+        Detalle del Error
       </h3>
-      <pre class="text-sm text-red-700 whitespace-pre-wrap break-all bg-red-100 rounded-lg p-4">{{ log.error }}</pre>
+      <div class="flex-1 bg-white dark:bg-slate-900 rounded-3xl p-6 border border-red-100 dark:border-red-900/30 shadow-inner overflow-hidden flex flex-col">
+          <pre class="text-xs text-red-700 dark:text-red-400/90 whitespace-pre-wrap break-all font-mono leading-relaxed overflow-y-auto w-full">{{ log.error }}</pre>
+      </div>
+    </div>
+    {% else %}
+    <div class="bg-gray-50 dark:bg-slate-900/30 rounded-[2.5rem] border border-dashed border-gray-200 dark:border-slate-700 hidden lg:flex flex-col items-center justify-center p-8 transition-colors">
+        <div class="w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+            <i data-lucide="check-circle" class="w-8 h-8 text-emerald-500"></i>
+        </div>
+        <p class="text-sm font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-center">Transacción sin<br>errores detectados</p>
     </div>
     {% endif %}
   </div>
 
   <!-- Request / Response XML -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
     {% if log.request_xml %}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <h3 class="text-base font-semibold text-gray-900 mb-3">Request XML</h3>
-      <pre class="text-xs text-gray-700 whitespace-pre-wrap break-all bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto font-mono">{{ log.request_xml }}</pre>
+    <div class="bg-gray-900 dark:bg-[#0a0f1c] rounded-[2.5rem] shadow-xl border border-gray-800 dark:border-slate-800 p-8 transition-colors relative focus-within:ring-2 focus-within:ring-blue-500/50">
+      <h3 class="text-sm font-black text-gray-300 dark:text-slate-300 mb-6 flex items-center gap-3 uppercase tracking-widest">
+        <i data-lucide="send" class="w-4 h-4 text-blue-400"></i> Request XML
+      </h3>
+      <div class="bg-black/50 rounded-2xl p-5 shadow-inner overflow-hidden border border-gray-800/50 text-blue-300 dark:text-blue-400">
+        <pre class="text-[11px] whitespace-pre-wrap break-all max-h-96 overflow-y-auto font-mono leading-relaxed tracking-tight">{{ log.request_xml }}</pre>
+      </div>
     </div>
     {% endif %}
 
     {% if log.response_xml %}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <h3 class="text-base font-semibold text-gray-900 mb-3">Response XML</h3>
-      <pre class="text-xs text-gray-700 whitespace-pre-wrap break-all bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto font-mono">{{ log.response_xml }}</pre>
+    <div class="bg-gray-900 dark:bg-[#0a0f1c] rounded-[2.5rem] shadow-xl border border-gray-800 dark:border-slate-800 p-8 transition-colors relative focus-within:ring-2 focus-within:ring-emerald-500/50">
+      <h3 class="text-sm font-black text-gray-300 dark:text-slate-300 mb-6 flex items-center gap-3 uppercase tracking-widest">
+        <i data-lucide="reply" class="w-4 h-4 text-emerald-400"></i> Response XML
+      </h3>
+      <div class="bg-black/50 rounded-2xl p-5 shadow-inner overflow-hidden border border-gray-800/50 text-emerald-300 dark:text-emerald-400">
+        <pre class="text-[11px] whitespace-pre-wrap break-all max-h-96 overflow-y-auto font-mono leading-relaxed tracking-tight">{{ log.response_xml }}</pre>
+      </div>
     </div>
     {% endif %}
   </div>

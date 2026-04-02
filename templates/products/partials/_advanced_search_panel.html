@@ -1,27 +1,27 @@
 <!-- ===== SECCIÓN: Buscador Avanzado de Productos ===== -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-  <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white flex justify-between items-center cursor-pointer" @click="productSearch.showPanel = !productSearch.showPanel">
-    <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
-      <span class="inline-flex items-center justify-center w-7 h-7 bg-indigo-100 rounded-lg">
-        <i data-lucide="search" class="w-4 h-4 text-indigo-600"></i>
+<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden mb-6 transition-colors">
+  <div class="px-6 py-4 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-gray-50 to-white dark:from-slate-800 dark:to-slate-800 flex justify-between items-center cursor-pointer" @click="productSearch.showPanel = !productSearch.showPanel">
+    <h3 class="text-base font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
+      <span class="inline-flex items-center justify-center w-7 h-7 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+        <i data-lucide="search" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
       </span>
       {{ search_title|default:"Buscador Avanzado de Productos" }}
     </h3>
-    <i data-lucide="chevron-down" class="w-5 h-5 text-gray-400 transition-transform" :class="{'rotate-180': productSearch.showPanel}"></i>
+    <i data-lucide="chevron-down" class="w-5 h-5 text-gray-400 dark:text-slate-500 transition-transform" :class="{'rotate-180': productSearch.showPanel}"></i>
   </div>
   
   <div x-show="productSearch.showPanel" x-transition x-cloak class="p-6 space-y-4">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 transition-colors">
       <div class="md:col-span-2">
-        <label class="block text-xs font-semibold text-gray-700 mb-1.5 tracking-wide">Buscar</label>
-        <div class="relative">
-          <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
-          <input type="text" x-model="productSearch.query" @keyup.enter="searchProducts()" placeholder="Nombre, código, SKU..." class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors pl-9">
+        <label class="block text-xs font-semibold text-gray-700 dark:text-slate-400 mb-1.5 tracking-wide">Buscar</label>
+        <div class="relative group">
+          <i data-lucide="search" class="w-4 h-4 text-gray-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 group-focus-within:text-blue-500 transition-colors"></i>
+          <input type="text" x-model="productSearch.query" @keyup.enter="searchProducts()" placeholder="Nombre, código, SKU..." class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm shadow-sm outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:ring-1 focus:ring-blue-500 transition-all pl-9 text-gray-900 dark:text-slate-100">
         </div>
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1.5 tracking-wide">Categoría</label>
-        <select x-model="productSearch.category" @change="searchProducts()" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors bg-white">
+        <label class="block text-xs font-semibold text-gray-700 dark:text-slate-400 mb-1.5 tracking-wide">Categoría</label>
+        <select x-model="productSearch.category" @change="searchProducts()" class="w-full rounded-lg border border-gray-300 dark:border-slate-700 px-3 py-2 text-sm shadow-sm outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:ring-1 focus:ring-blue-500 transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100">
           <option value="">Todas</option>
           {% for cat in categories %}
           <option value="{{ cat.id }}">{{ cat.name }}</option>
@@ -29,8 +29,8 @@
         </select>
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1.5 tracking-wide">Subcategoría</label>
-        <select x-model="productSearch.subcategory" @change="searchProducts()" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors bg-white">
+        <label class="block text-xs font-semibold text-gray-700 dark:text-slate-400 mb-1.5 tracking-wide">Subcategoría</label>
+        <select x-model="productSearch.subcategory" @change="searchProducts()" class="w-full rounded-lg border border-gray-300 dark:border-slate-700 px-3 py-2 text-sm shadow-sm outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:ring-1 focus:ring-blue-500 transition-all bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100">
           <option value="">Todas</option>
           {% for sub in subcategories %}
           <option value="{{ sub.id }}">{{ sub.name }}</option>
@@ -38,45 +38,47 @@
         </select>
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1.5 tracking-wide">Marca</label>
-        <input type="text" x-model="productSearch.brand" @keyup.enter="searchProducts()" placeholder="Ej: Bahco" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors">
+        <label class="block text-xs font-semibold text-gray-700 dark:text-slate-400 mb-1.5 tracking-wide">Marca</label>
+        <input type="text" x-model="productSearch.brand" @keyup.enter="searchProducts()" placeholder="Ej: Bahco" class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm shadow-sm outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:ring-1 focus:ring-blue-500 transition-all text-gray-900 dark:text-slate-100">
       </div>
       <div>
-         <label class="block text-xs font-semibold text-gray-700 mb-1.5 tracking-wide">Proveedor</label>
-         <input type="text" x-model="productSearch.supplier" @keyup.enter="searchProducts()" placeholder="Ej: Bulonera" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors">
+         <label class="block text-xs font-semibold text-gray-700 dark:text-slate-400 mb-1.5 tracking-wide">Proveedor</label>
+         <input type="text" x-model="productSearch.supplier" @keyup.enter="searchProducts()" placeholder="Ej: Bulonera" class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm shadow-sm outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:ring-1 focus:ring-blue-500 transition-all text-gray-900 dark:text-slate-100">
       </div>
       <div class="md:col-span-2 flex items-end justify-end">
-        <button type="button" @click="searchProducts()" class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 flex items-center gap-2 transition">
-          <span x-show="!productSearch.isSearching"><i data-lucide="search" class="w-4 h-4"></i> Buscar</span>
+        <button type="button" @click="searchProducts()" class="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 flex items-center gap-2 transition shadow-sm shadow-blue-500/20">
+          <span x-show="!productSearch.isSearching" class="flex items-center gap-2">
+            <i data-lucide="search" class="w-4 h-4"></i> Buscar
+          </span>
           <span x-show="productSearch.isSearching" class="animate-pulse" x-cloak>Buscando...</span>
         </button>
       </div>
     </div>
 
     <!-- Resultados -->
-    <div x-show="productSearch.results.length > 0" x-cloak class="mt-4 border border-gray-200 rounded-lg overflow-hidden">
+    <div x-show="productSearch.results.length > 0" x-cloak class="mt-4 border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
       <div class="max-h-64 overflow-y-auto">
-        <table class="min-w-full divide-y divide-gray-200 text-sm w-full text-left">
-          <thead class="bg-gray-50 sticky top-0 z-10">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700 text-sm w-full text-left">
+          <thead class="bg-gray-50 dark:bg-slate-800 sticky top-0 z-10">
             <tr>
-              <th class="px-4 py-2 font-medium text-gray-500">Cód/SKU</th>
-              <th class="px-4 py-2 font-medium text-gray-500">Producto</th>
-              <th class="px-4 py-2 font-medium text-gray-500 text-right">Precio</th>
-              <th class="px-4 py-2 font-medium text-gray-500 text-right">Stock</th>
-              <th class="px-4 py-2 font-medium text-gray-500 text-center">Acción</th>
+              <th class="px-4 py-2 font-medium text-gray-500 dark:text-slate-400">Cód/SKU</th>
+              <th class="px-4 py-2 font-medium text-gray-500 dark:text-slate-400">Producto</th>
+              <th class="px-4 py-2 font-medium text-gray-500 dark:text-slate-400 text-right">Precio</th>
+              <th class="px-4 py-2 font-medium text-gray-500 dark:text-slate-400 text-right">Stock</th>
+              <th class="px-4 py-2 font-medium text-gray-500 dark:text-slate-400 text-center">Acción</th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
             <template x-for="prod in productSearch.results" :key="prod.id">
-              <tr class="hover:bg-gray-50 transition">
-                <td class="px-4 py-2 font-mono text-xs text-gray-500" x-text="prod.code || prod.sku"></td>
-                <td class="px-4 py-2 font-medium text-gray-900" x-text="prod.name"></td>
-                <td class="px-4 py-2 text-right text-gray-700" x-text="'$' + formatNumber(prod.price)"></td>
+              <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition">
+                <td class="px-4 py-2 font-mono text-xs text-gray-500 dark:text-slate-400" x-text="prod.code || prod.sku"></td>
+                <td class="px-4 py-2 font-medium text-gray-900 dark:text-slate-100" x-text="prod.name"></td>
+                <td class="px-4 py-2 text-right text-gray-700 dark:text-slate-300" x-text="'$' + formatNumber(prod.price)"></td>
                 <td class="px-4 py-2 text-right">
-                  <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium" :class="prod.stock_quantity > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" x-text="prod.stock_quantity > 0 ? prod.stock_quantity : 'Sin stock'"></span>
+                  <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium" :class="prod.stock_quantity > 0 ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'" x-text="prod.stock_quantity > 0 ? prod.stock_quantity : 'Sin stock'"></span>
                 </td>
                 <td class="px-4 py-2 text-center">
-                  <button type="button" @click="{{ add_to_action|default:'addProductToSale' }}(prod)" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded flex items-center gap-1 mx-auto text-xs font-semibold">
+                  <button type="button" @click="{{ add_to_action|default:'addProductToSale' }}(prod)" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 px-3 py-1.5 rounded flex items-center gap-1 mx-auto text-xs font-semibold transition">
                     <i data-lucide="plus" class="w-3 h-3"></i> Agregar
                   </button>
                 </td>
@@ -86,7 +88,7 @@
         </table>
       </div>
     </div>
-    <div x-show="productSearch.results.length === 0 && productSearch.query" x-cloak class="text-center text-gray-500 text-sm mt-4">
+    <div x-show="productSearch.results.length === 0 && productSearch.query" x-cloak class="text-center text-gray-500 dark:text-slate-400 text-sm mt-4">
        No se encontraron productos probá usando otros filtros.
     </div>
   </div>

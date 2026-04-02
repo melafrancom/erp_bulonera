@@ -4,10 +4,10 @@
 {% block title %}Venta {{ sale.number }} - ERP Bulonera Alvear{% endblock %}
 
 {% block breadcrumb_items %}
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <a href="{% url 'sales_web:sale_list' %}" class="text-gray-600 hover:text-gray-900">Ventas</a>
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <span class="text-gray-900 font-medium">{{ sale.number }}</span>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <a href="{% url 'sales_web:sale_list' %}" class="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100">Ventas</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <span class="text-gray-900 dark:text-slate-100 font-medium">{{ sale.number }}</span>
 {% endblock %}
 
 {% block mobile_title %}{{ sale.number }}{% endblock %}
@@ -23,7 +23,7 @@
           <div class="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-sm">
             <i data-lucide="shopping-cart" class="w-5 h-5 text-white"></i>
           </div>
-          <h1 class="text-2xl md:text-3xl font-bold text-gray-900">
+          <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-slate-100">
             Venta {{ sale.number }}
           </h1>
         </div>
@@ -32,69 +32,69 @@
         <div class="flex flex-wrap items-center gap-2 mt-3">
           <!-- Badge: Estado Comercial -->
           {% if sale.status == 'draft' %}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-200">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-700/50">
               <i data-lucide="edit-3" class="w-3 h-3"></i>{{ sale.get_status_display }}
             </span>
           {% elif sale.status == 'confirmed' %}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-700/50">
               <i data-lucide="check-circle" class="w-3 h-3"></i>{{ sale.get_status_display }}
             </span>
           {% elif sale.status == 'in_preparation' %}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-200">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border border-orange-200 dark:border-orange-700/50">
               <i data-lucide="package" class="w-3 h-3"></i>{{ sale.get_status_display }}
             </span>
           {% elif sale.status == 'ready' %}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-700/50">
               <i data-lucide="box" class="w-3 h-3"></i>{{ sale.get_status_display }}
             </span>
           {% elif sale.status == 'delivered' %}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-700/50">
               <i data-lucide="truck" class="w-3 h-3"></i>{{ sale.get_status_display }}
             </span>
           {% elif sale.status == 'cancelled' %}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-700/50">
               <i data-lucide="x-circle" class="w-3 h-3"></i>{{ sale.get_status_display }}
             </span>
           {% else %}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-slate-900/30 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700/50">
               {{ sale.get_status_display }}
             </span>
           {% endif %}
 
           <!-- Badge: Estado de Pago -->
           {% if sale.payment_status == 'paid' %}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50">
               <i data-lucide="dollar-sign" class="w-3 h-3"></i>{{ sale.get_payment_status_display }}
             </span>
           {% elif sale.payment_status == 'partially_paid' %}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-100 text-cyan-800 border border-cyan-200">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-100 dark:bg-cyan-900/30 text-cyan-800 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-700/50">
               <i data-lucide="dollar-sign" class="w-3 h-3"></i>{{ sale.get_payment_status_display }}
             </span>
           {% elif sale.payment_status == 'overpaid' %}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-violet-100 text-violet-800 border border-violet-200">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-violet-100 dark:bg-violet-900/30 text-violet-800 dark:text-violet-300 border border-violet-200 dark:border-violet-700/50">
               <i data-lucide="dollar-sign" class="w-3 h-3"></i>{{ sale.get_payment_status_display }}
             </span>
           {% else %}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-700/50">
               <i data-lucide="alert-circle" class="w-3 h-3"></i>{{ sale.get_payment_status_display }}
             </span>
           {% endif %}
 
           <!-- Badge: Estado Fiscal -->
           {% if sale.fiscal_status == 'authorized' %}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-teal-100 text-teal-800 border border-teal-200">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-300 border border-teal-200 dark:border-teal-700/50">
               <i data-lucide="file-check" class="w-3 h-3"></i>Fiscal: {{ sale.get_fiscal_status_display }}
             </span>
           {% elif sale.fiscal_status == 'pending' %}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50">
               <i data-lucide="file-clock" class="w-3 h-3"></i>Fiscal: {{ sale.get_fiscal_status_display }}
             </span>
           {% elif sale.fiscal_status == 'rejected' or sale.fiscal_status == 'cancelled' %}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 dark:bg-rose-900/30 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-700/50">
               <i data-lucide="file-x" class="w-3 h-3"></i>Fiscal: {{ sale.get_fiscal_status_display }}
             </span>
           {% elif sale.fiscal_status == 'not_required' %}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-slate-900/30 text-gray-600 dark:text-slate-400 border border-gray-200 dark:border-slate-700/50">
               <i data-lucide="file-minus" class="w-3 h-3"></i>Fiscal: {{ sale.get_fiscal_status_display }}
             </span>
           {% endif %}
@@ -102,18 +102,18 @@
           <!-- Badge: Originado desde presupuesto -->
           {% if sale.quote %}
           <a href="{% url 'sales_web:quote_detail' sale.quote.id %}"
-             class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition">
+             class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition">
             <i data-lucide="link" class="w-3 h-3"></i>
             Pres. {{ sale.quote.number }}
           </a>
           {% endif %}
 
-          <span class="text-sm text-gray-400">{{ sale.date|date:"d/m/Y" }}</span>
+          <span class="text-sm text-gray-400 dark:text-slate-500">{{ sale.date|date:"d/m/Y" }}</span>
         </div>
       </div>
 
       <a href="{% url 'sales_web:sale_list' %}"
-         class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-gray-700 font-medium flex-shrink-0">
+         class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition text-gray-700 dark:text-slate-300 font-medium flex-shrink-0">
         <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
         Volver
       </a>
@@ -127,17 +127,17 @@
     <div class="lg:col-span-2 space-y-6">
 
       <!-- Card de Cliente -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
-            <span class="inline-flex items-center justify-center w-7 h-7 bg-blue-100 rounded-lg">
-              <i data-lucide="user" class="w-4 h-4 text-blue-600"></i>
+          <h3 class="text-base font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
+            <span class="inline-flex items-center justify-center w-7 h-7 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <i data-lucide="user" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
             </span>
             Cliente
           </h3>
           {% if sale.customer %}
           <a href="{% url 'customers:customer_detail' sale.customer.id %}"
-             class="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 font-medium">
+             class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 font-medium">
             Ver perfil
             <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
           </a>
@@ -146,18 +146,18 @@
         {% if sale.customer %}
         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
           <div>
-            <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Razón Social</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900">{{ sale.customer.business_name }}</dd>
+            <dt class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">Razón Social</dt>
+            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-slate-100">{{ sale.customer.business_name }}</dd>
           </div>
           <div>
-            <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">CUIT/CUIL</dt>
-            <dd class="mt-1 text-sm text-gray-900">{{ sale.customer.cuit_cuil }}</dd>
+            <dt class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">CUIT/CUIL</dt>
+            <dd class="mt-1 text-sm text-gray-900 dark:text-slate-100">{{ sale.customer.cuit_cuil }}</dd>
           </div>
           {% if sale.customer.email %}
           <div>
-            <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Email</dt>
+            <dt class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">Email</dt>
             <dd class="mt-1">
-              <a href="mailto:{{ sale.customer.email }}" class="text-sm text-blue-600 hover:text-blue-700">
+              <a href="mailto:{{ sale.customer.email }}" class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
                 {{ sale.customer.email }}
               </a>
             </dd>
@@ -165,9 +165,9 @@
           {% endif %}
           {% if sale.customer.phone %}
           <div>
-            <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Teléfono</dt>
+            <dt class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">Teléfono</dt>
             <dd class="mt-1">
-              <a href="tel:{{ sale.customer.phone }}" class="text-sm text-blue-600 hover:text-blue-700">
+              <a href="tel:{{ sale.customer.phone }}" class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
                 {{ sale.customer.phone }}
               </a>
             </dd>
@@ -190,77 +190,77 @@
       </div>
 
       <!-- Tabla de Items -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
-          <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
-            <span class="inline-flex items-center justify-center w-7 h-7 bg-purple-100 rounded-lg">
-              <i data-lucide="package" class="w-4 h-4 text-purple-600"></i>
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-gray-50 to-white dark:from-slate-800/50 dark:to-slate-800">
+          <h3 class="text-base font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
+            <span class="inline-flex items-center justify-center w-7 h-7 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+              <i data-lucide="package" class="w-4 h-4 text-purple-600 dark:text-purple-400"></i>
             </span>
             Items de la Venta
           </h3>
         </div>
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-100">
-            <thead class="bg-gray-50">
+          <table class="min-w-full divide-y divide-gray-100 dark:divide-slate-700">
+            <thead class="bg-gray-50 dark:bg-slate-800/50">
               <tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cant.</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Precio Unit.</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Producto</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Cant.</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider hidden sm:table-cell">Precio Unit.</th>
                 {% if user.is_manager or user.is_admin or user.is_superuser %}
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider hidden lg:table-cell">
                   <span class="inline-flex items-center gap-1">
-                    <i data-lucide="lock" class="w-3 h-3 text-yellow-500"></i>
+                    <i data-lucide="lock" class="w-3 h-3 text-yellow-500 dark:text-yellow-400"></i>
                     Costo Unit.
                   </span>
                 </th>
                 {% endif %}
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Descuento</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">IVA</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell">Descuento</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell">IVA</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Total</th>
                 {% if user.is_manager or user.is_admin or user.is_superuser %}
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider hidden lg:table-cell">
                   <span class="inline-flex items-center gap-1">
-                    <i data-lucide="trending-up" class="w-3 h-3 text-green-500"></i>
+                    <i data-lucide="trending-up" class="w-3 h-3 text-green-500 dark:text-green-400"></i>
                     Ganancia
                   </span>
                 </th>
                 {% endif %}
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-50">
+            <tbody class="divide-y divide-gray-50 dark:divide-slate-700/50">
               {% for item in sale.items.all %}
-              <tr class="hover:bg-gray-50/50">
+              <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-700/30">
                 <td class="px-4 py-4">
-                  <div class="text-sm font-medium text-gray-900">{{ item.product.name }}</div>
-                  <div class="text-xs text-gray-400 mt-0.5">SKU: {{ item.product.sku }}</div>
+                  <div class="text-sm font-medium text-gray-900 dark:text-slate-100">{{ item.product.name }}</div>
+                  <div class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">SKU: {{ item.product.sku }}</div>
                   {% if item.discount_reason %}
                   <div class="text-xs text-orange-600 mt-0.5">{{ item.discount_reason }}</div>
                   {% endif %}
                   {% if item.notes %}
-                  <div class="text-xs text-gray-400 mt-1 italic">{{ item.notes|truncatewords:8 }}</div>
+                  <div class="text-xs text-gray-400 dark:text-slate-500 mt-1 italic">{{ item.notes|truncatewords:8 }}</div>
                   {% endif %}
                 </td>
-                <td class="px-4 py-4 text-right text-sm text-gray-900">{{ item.quantity|floatformat:0 }}</td>
-                <td class="px-4 py-4 text-right text-sm text-gray-900 hidden sm:table-cell">${{ item.unit_price|floatformat:2 }}</td>
+                <td class="px-4 py-4 text-right text-sm text-gray-900 dark:text-slate-100">{{ item.quantity|floatformat:0 }}</td>
+                <td class="px-4 py-4 text-right text-sm text-gray-900 dark:text-slate-100 hidden sm:table-cell">${{ item.unit_price|floatformat:2 }}</td>
                 {% if user.is_manager or user.is_admin or user.is_superuser %}
-                <td class="px-4 py-4 text-right text-sm text-gray-500 hidden lg:table-cell">${{ item.unit_cost|floatformat:2 }}</td>
+                <td class="px-4 py-4 text-right text-sm text-gray-500 dark:text-slate-400 hidden lg:table-cell">${{ item.unit_cost|floatformat:2 }}</td>
                 {% endif %}
                 <td class="px-4 py-4 text-right text-sm hidden md:table-cell">
                   {% if item.discount_type != 'none' %}
-                    <span class="text-red-500 font-medium">
+                    <span class="text-red-500 dark:text-red-400 font-medium">
                       {% if item.discount_type == 'percentage' %}{{ item.discount_value }}%
                       {% else %}-${{ item.discount_value|floatformat:2 }}{% endif %}
                     </span>
-                    <div class="text-xs text-red-400">-${{ item.discount_amount|floatformat:2 }}</div>
+                    <div class="text-xs text-red-400 dark:text-red-500/80">-${{ item.discount_amount|floatformat:2 }}</div>
                   {% else %}
-                    <span class="text-gray-300">—</span>
+                    <span class="text-gray-300 dark:text-slate-600">—</span>
                   {% endif %}
                 </td>
-                <td class="px-4 py-4 text-right text-sm text-gray-900 hidden md:table-cell">
+                <td class="px-4 py-4 text-right text-sm text-gray-900 dark:text-slate-100 hidden md:table-cell">
                   {% if item.tax_percentage > 0 %}{{ item.tax_percentage }}%
-                  {% else %}<span class="text-gray-300">—</span>{% endif %}
+                  {% else %}<span class="text-gray-300 dark:text-slate-600">—</span>{% endif %}
                 </td>
-                <td class="px-4 py-4 text-right text-sm font-semibold text-gray-900">${{ item.total|floatformat:2 }}</td>
+                <td class="px-4 py-4 text-right text-sm font-semibold text-gray-900 dark:text-slate-100">${{ item.total|floatformat:2 }}</td>
                 {% if user.is_manager or user.is_admin or user.is_superuser %}
                 <td class="px-4 py-4 text-right hidden lg:table-cell">
                   <span class="text-sm font-medium {% if item.profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
@@ -277,15 +277,15 @@
               </tr>
               {% endfor %}
             </tbody>
-            <tfoot class="bg-gray-50 border-t border-gray-200">
+            <tfoot class="bg-gray-50 dark:bg-slate-800/50 border-t border-gray-200 dark:border-slate-700">
               <tr>
-                <td colspan="{% if user.is_manager or user.is_admin or user.is_superuser %}5{% else %}4{% endif %}" class="px-4 py-3 text-right text-sm font-bold text-gray-900 hidden md:table-cell">
+                <td colspan="{% if user.is_manager or user.is_admin or user.is_superuser %}5{% else %}4{% endif %}" class="px-4 py-3 text-right text-sm font-bold text-gray-900 dark:text-slate-100 hidden md:table-cell">
                   Total General:
                 </td>
-                <td colspan="3" class="px-4 py-3 text-right text-xl font-bold text-blue-600 md:hidden">
+                <td colspan="3" class="px-4 py-3 text-right text-xl font-bold text-blue-600 dark:text-blue-400 md:hidden">
                   Total:
                 </td>
-                <td class="px-4 py-3 text-right text-xl font-bold text-blue-600">
+                <td class="px-4 py-3 text-right text-xl font-bold text-blue-600 dark:text-blue-300">
                   ${{ sale.total|floatformat:2 }}
                 </td>
                 {% if user.is_manager or user.is_admin or user.is_superuser %}
@@ -301,47 +301,47 @@
 
       <!-- Notas de la venta -->
       {% if sale.notes %}
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span class="inline-flex items-center justify-center w-7 h-7 bg-green-100 rounded-lg">
-            <i data-lucide="message-square" class="w-4 h-4 text-green-600"></i>
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
+        <h3 class="text-base font-semibold text-gray-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+          <span class="inline-flex items-center justify-center w-7 h-7 bg-green-100 dark:bg-green-900/30 rounded-lg">
+            <i data-lucide="message-square" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
           </span>
           Notas
         </h3>
-        <p class="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{{ sale.notes }}</p>
+        <p class="text-sm text-gray-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">{{ sale.notes }}</p>
       </div>
       {% endif %}
 
       <!-- Notas Internas (solo managers/admin) -->
       {% if user.is_manager or user.is_admin or user.is_superuser %}
         {% if sale.internal_notes %}
-        <div class="bg-yellow-50 rounded-xl border border-yellow-200 p-6">
-          <h3 class="text-base font-semibold text-yellow-900 mb-4 flex items-center gap-2">
-            <span class="inline-flex items-center justify-center w-7 h-7 bg-yellow-200 rounded-lg">
-              <i data-lucide="lock" class="w-4 h-4 text-yellow-700"></i>
+        <div class="bg-yellow-50 dark:bg-yellow-900/10 rounded-xl border border-yellow-200 dark:border-yellow-700/30 p-6">
+          <h3 class="text-base font-semibold text-yellow-900 dark:text-yellow-300 mb-4 flex items-center gap-2">
+            <span class="inline-flex items-center justify-center w-7 h-7 bg-yellow-200 dark:bg-yellow-800/40 rounded-lg">
+              <i data-lucide="lock" class="w-4 h-4 text-yellow-700 dark:text-yellow-400"></i>
             </span>
             Notas Internas (Privadas)
           </h3>
-          <p class="text-sm text-yellow-800 whitespace-pre-line leading-relaxed">{{ sale.internal_notes }}</p>
+          <p class="text-sm text-yellow-800 dark:text-yellow-400/90 whitespace-pre-line leading-relaxed">{{ sale.internal_notes }}</p>
         </div>
         {% endif %}
       {% endif %}
 
       <!-- Info de Auditoría -->
-      <div class="bg-gray-50 rounded-xl border border-gray-200 p-5">
-        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Auditoría</h4>
+      <div class="bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-200 dark:border-slate-700 p-5">
+        <h4 class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-3">Auditoría</h4>
         <dl class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
           <div>
-            <dt class="text-gray-400 text-xs">Creado por</dt>
-            <dd class="text-gray-900 font-medium mt-0.5">{{ sale.created_by.get_full_name|default:sale.created_by.username }}</dd>
+            <dt class="text-gray-400 dark:text-slate-500 text-xs">Creado por</dt>
+            <dd class="text-gray-900 dark:text-slate-100 font-medium mt-0.5">{{ sale.created_by.get_full_name|default:sale.created_by.username }}</dd>
           </div>
           <div>
-            <dt class="text-gray-400 text-xs">Fecha de creación</dt>
-            <dd class="text-gray-900 mt-0.5">{{ sale.created_at|date:"d/m/Y H:i" }}</dd>
+            <dt class="text-gray-400 dark:text-slate-500 text-xs">Fecha de creación</dt>
+            <dd class="text-gray-900 dark:text-slate-100 mt-0.5">{{ sale.created_at|date:"d/m/Y H:i" }}</dd>
           </div>
           <div>
-            <dt class="text-gray-400 text-xs">Última modificación</dt>
-            <dd class="text-gray-900 mt-0.5">{{ sale.updated_at|date:"d/m/Y H:i" }}</dd>
+            <dt class="text-gray-400 dark:text-slate-500 text-xs">Última modificación</dt>
+            <dd class="text-gray-900 dark:text-slate-100 mt-0.5">{{ sale.updated_at|date:"d/m/Y H:i" }}</dd>
           </div>
         </dl>
       </div>
@@ -352,26 +352,26 @@
     <div class="space-y-6">
 
       <!-- Card Totales -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="text-base font-semibold text-gray-900 mb-4">Resumen</h3>
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
+        <h3 class="text-base font-semibold text-gray-900 dark:text-slate-100 mb-4">Resumen</h3>
         <dl class="space-y-3">
           <div class="flex justify-between text-sm">
-            <dt class="text-gray-500">Subtotal:</dt>
-            <dd class="font-medium text-gray-900">${{ sale.subtotal|floatformat:2 }}</dd>
+            <dt class="text-gray-500 dark:text-slate-400">Subtotal:</dt>
+            <dd class="font-medium text-gray-900 dark:text-slate-100">${{ sale.subtotal|floatformat:2 }}</dd>
           </div>
-          <div class="flex justify-between text-lg font-bold border-t border-gray-200 pt-3 mt-1">
-            <dt class="text-gray-900">Total:</dt>
-            <dd class="text-blue-600">${{ sale.total|floatformat:2 }}</dd>
+          <div class="flex justify-between text-lg font-bold border-t border-gray-200 dark:border-slate-700 pt-3 mt-1">
+            <dt class="text-gray-900 dark:text-slate-100">Total:</dt>
+            <dd class="text-blue-600 dark:text-blue-400">${{ sale.total|floatformat:2 }}</dd>
           </div>
 
           <!-- Ganancia Total (solo managers/admin) -->
           {% if user.is_manager or user.is_admin or user.is_superuser %}
-          <div class="flex justify-between text-sm border-t border-dashed border-gray-200 pt-3 mt-1">
-            <dt class="text-gray-500 flex items-center gap-1">
-              <i data-lucide="lock" class="w-3 h-3 text-yellow-500"></i>
+          <div class="flex justify-between text-sm border-t border-dashed border-gray-200 dark:border-slate-700 pt-3 mt-1">
+            <dt class="text-gray-500 dark:text-slate-400 flex items-center gap-1">
+              <i data-lucide="lock" class="w-3 h-3 text-yellow-500 dark:text-yellow-400"></i>
               Ganancia bruta:
             </dt>
-            <dd class="font-semibold text-gray-600">
+            <dd class="font-semibold text-gray-600 dark:text-slate-400">
               <!-- Ganancia se calculará cuando se implemente -->
               —
             </dd>
@@ -382,8 +382,8 @@
       <!-- Panel de factura -->
       {% include 'sales/partials/_factura_panel.html' with sale=sale invoice=invoice can_invoice=can_invoice %}
       <!-- Card de Acciones -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="text-base font-semibold text-gray-900 mb-4">Acciones</h3>
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
+        <h3 class="text-base font-semibold text-gray-900 dark:text-slate-100 mb-4">Acciones</h3>
         <div class="space-y-2.5">
 
           {% if sale.status == 'draft' %}
@@ -397,7 +397,7 @@
               </button>
             </form>
             <a href="{% url 'sales_web:sale_create' %}"
-               class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl hover:bg-blue-100 transition font-medium text-sm">
+               class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/30 transition font-medium text-sm">
               <i data-lucide="edit" class="w-4 h-4"></i>
               Editar
             </a>
@@ -405,7 +405,7 @@
               {% csrf_token %}
               <button type="submit"
                       onclick="return confirm('¿Cancelar esta venta? Esta acción no se puede deshacer.')"
-                      class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 text-red-700 border border-red-200 rounded-xl hover:bg-red-100 transition font-medium text-sm">
+                      class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/50 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition font-medium text-sm">
                 <i data-lucide="x-circle" class="w-4 h-4"></i>
                 Cancelar Venta
               </button>
@@ -427,7 +427,7 @@
               {% csrf_token %}
               <button type="submit"
                       onclick="return confirm('¿Cancelar esta venta?')"
-                      class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 text-red-700 border border-red-200 rounded-xl hover:bg-red-100 transition font-medium text-sm">
+                      class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/50 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition font-medium text-sm">
                 <i data-lucide="x-circle" class="w-4 h-4"></i>
                 Cancelar
               </button>
@@ -448,7 +448,7 @@
               {% csrf_token %}
               <button type="submit"
                       onclick="return confirm('¿Cancelar esta venta?')"
-                      class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 text-red-700 border border-red-200 rounded-xl hover:bg-red-100 transition font-medium text-sm">
+                      class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/50 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition font-medium text-sm">
                 <i data-lucide="x-circle" class="w-4 h-4"></i>
                 Cancelar
               </button>
@@ -468,13 +468,13 @@
 
           {% elif sale.status == 'delivered' %}
             <a href="#"
-               class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition font-medium text-sm">
+               class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-300 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 transition font-medium text-sm">
               <i data-lucide="file-text" class="w-4 h-4"></i>
               Ver Factura
             </a>
 
           {% elif sale.status == 'cancelled' %}
-            <div class="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+            <div class="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/50 rounded-xl text-sm text-red-700 dark:text-red-400">
               <i data-lucide="x-circle" class="w-4 h-4 flex-shrink-0"></i>
               Esta venta fue cancelada.
             </div>
@@ -484,9 +484,9 @@
       </div>
 
       <!-- ===== Timeline de Estados ===== -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="text-base font-semibold text-gray-900 mb-5 flex items-center gap-2">
-          <i data-lucide="git-branch" class="w-5 h-5 text-gray-400"></i>
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
+        <h3 class="text-base font-semibold text-gray-900 dark:text-slate-100 mb-5 flex items-center gap-2">
+          <i data-lucide="git-branch" class="w-5 h-5 text-gray-400 dark:text-slate-500"></i>
           Progreso
         </h3>
 
@@ -497,7 +497,7 @@
 
         <div class="relative">
           <!-- Línea vertical de fondo -->
-          <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+          <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-slate-700"></div>
 
           <div class="space-y-1">
 
@@ -505,27 +505,27 @@
             <div class="relative flex items-start gap-4 pb-5">
               <div class="relative z-10 flex-shrink-0">
                 {% if sale.status == 'cancelled' %}
-                  <div class="w-8 h-8 rounded-full border-2 border-gray-200 bg-white flex items-center justify-center">
-                    <i data-lucide="minus" class="w-3.5 h-3.5 text-gray-300"></i>
+                  <div class="w-8 h-8 rounded-full border-2 border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center">
+                    <i data-lucide="minus" class="w-3.5 h-3.5 text-gray-300 dark:text-slate-600"></i>
                   </div>
                 {% elif sale.status == 'draft' %}
-                  <div class="w-8 h-8 rounded-full border-2 border-yellow-400 bg-yellow-50 flex items-center justify-center ring-4 ring-yellow-100">
-                    <i data-lucide="edit-3" class="w-3.5 h-3.5 text-yellow-600"></i>
+                  <div class="w-8 h-8 rounded-full border-2 border-yellow-400 dark:border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 flex items-center justify-center ring-4 ring-yellow-100 dark:ring-yellow-900/10">
+                    <i data-lucide="edit-3" class="w-3.5 h-3.5 text-yellow-600 dark:text-yellow-400"></i>
                   </div>
                 {% else %}
-                  <div class="w-8 h-8 rounded-full border-2 border-green-500 bg-green-500 flex items-center justify-center">
+                  <div class="w-8 h-8 rounded-full border-2 border-green-500 dark:border-green-600 bg-green-500 flex items-center justify-center ring-4 ring-green-100 dark:ring-green-900/20">
                     <i data-lucide="check" class="w-3.5 h-3.5 text-white"></i>
                   </div>
                 {% endif %}
               </div>
               <div class="pt-1 min-w-0">
-                <p class="text-sm font-medium {% if sale.status == 'draft' %}text-yellow-700{% elif sale.status != 'cancelled' %}text-gray-900{% else %}text-gray-400{% endif %}">
+                <p class="text-sm font-medium {% if sale.status == 'draft' %}text-yellow-700 dark:text-yellow-400{% elif sale.status != 'cancelled' %}text-gray-900 dark:text-slate-100{% else %}text-gray-400 dark:text-slate-500{% endif %}">
                   Borrador
                 </p>
                 {% if sale.status == 'draft' %}
-                <p class="text-xs text-yellow-600 mt-0.5">Estado actual</p>
+                <p class="text-xs text-yellow-600 dark:text-yellow-500 mt-0.5">Estado actual</p>
                 {% elif sale.status != 'cancelled' %}
-                <p class="text-xs text-gray-400 mt-0.5">Completado</p>
+                <p class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">Completado</p>
                 {% endif %}
               </div>
             </div>
@@ -534,25 +534,25 @@
             <div class="relative flex items-start gap-4 pb-5">
               <div class="relative z-10 flex-shrink-0">
                 {% if sale.status == 'draft' or sale.status == 'cancelled' %}
-                  <div class="w-8 h-8 rounded-full border-2 border-gray-200 bg-white flex items-center justify-center">
-                    <i data-lucide="circle" class="w-3 h-3 text-gray-300"></i>
+                  <div class="w-8 h-8 rounded-full border-2 border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center">
+                    <i data-lucide="circle" class="w-3 h-3 text-gray-300 dark:text-slate-600"></i>
                   </div>
                 {% elif sale.status == 'confirmed' %}
-                  <div class="w-8 h-8 rounded-full border-2 border-blue-500 bg-blue-50 flex items-center justify-center ring-4 ring-blue-100">
-                    <i data-lucide="check-circle" class="w-3.5 h-3.5 text-blue-600"></i>
+                  <div class="w-8 h-8 rounded-full border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center ring-4 ring-blue-100 dark:ring-blue-900/10">
+                    <i data-lucide="check-circle" class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400"></i>
                   </div>
                 {% else %}
-                  <div class="w-8 h-8 rounded-full border-2 border-green-500 bg-green-500 flex items-center justify-center">
+                  <div class="w-8 h-8 rounded-full border-2 border-green-500 dark:border-green-600 bg-green-500 flex items-center justify-center ring-4 ring-green-100 dark:ring-green-900/20">
                     <i data-lucide="check" class="w-3.5 h-3.5 text-white"></i>
                   </div>
                 {% endif %}
               </div>
               <div class="pt-1">
-                <p class="text-sm font-medium {% if sale.status == 'confirmed' %}text-blue-700{% elif sale.status not in 'draft,cancelled' %}text-gray-900{% else %}text-gray-400{% endif %}">
+                <p class="text-sm font-medium {% if sale.status == 'confirmed' %}text-blue-700 dark:text-blue-400{% elif sale.status not in 'draft,cancelled' %}text-gray-900 dark:text-slate-100{% else %}text-gray-400 dark:text-slate-500{% endif %}">
                   Confirmado
                 </p>
                 {% if sale.status == 'confirmed' %}
-                <p class="text-xs text-blue-600 mt-0.5">Estado actual</p>
+                <p class="text-xs text-blue-600 dark:text-blue-500 mt-0.5">Estado actual</p>
                 {% endif %}
               </div>
             </div>
@@ -561,25 +561,25 @@
             <div class="relative flex items-start gap-4 pb-5">
               <div class="relative z-10 flex-shrink-0">
                 {% if sale.status in 'draft,confirmed,cancelled' %}
-                  <div class="w-8 h-8 rounded-full border-2 border-gray-200 bg-white flex items-center justify-center">
-                    <i data-lucide="circle" class="w-3 h-3 text-gray-300"></i>
+                  <div class="w-8 h-8 rounded-full border-2 border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center">
+                    <i data-lucide="circle" class="w-3 h-3 text-gray-300 dark:text-slate-600"></i>
                   </div>
                 {% elif sale.status == 'in_preparation' %}
-                  <div class="w-8 h-8 rounded-full border-2 border-orange-500 bg-orange-50 flex items-center justify-center ring-4 ring-orange-100">
-                    <i data-lucide="package" class="w-3.5 h-3.5 text-orange-600"></i>
+                  <div class="w-8 h-8 rounded-full border-2 border-orange-500 bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center ring-4 ring-orange-100 dark:ring-orange-900/10">
+                    <i data-lucide="package" class="w-3.5 h-3.5 text-orange-600 dark:text-orange-400"></i>
                   </div>
                 {% else %}
-                  <div class="w-8 h-8 rounded-full border-2 border-green-500 bg-green-500 flex items-center justify-center">
+                  <div class="w-8 h-8 rounded-full border-2 border-green-500 dark:border-green-600 bg-green-500 flex items-center justify-center ring-4 ring-green-100 dark:ring-green-900/20">
                     <i data-lucide="check" class="w-3.5 h-3.5 text-white"></i>
                   </div>
                 {% endif %}
               </div>
               <div class="pt-1">
-                <p class="text-sm font-medium {% if sale.status == 'in_preparation' %}text-orange-700{% elif sale.status in 'ready,delivered' %}text-gray-900{% else %}text-gray-400{% endif %}">
+                <p class="text-sm font-medium {% if sale.status == 'in_preparation' %}text-orange-700 dark:text-orange-400{% elif sale.status in 'ready,delivered' %}text-gray-900 dark:text-slate-100{% else %}text-gray-400 dark:text-slate-500{% endif %}">
                   En Preparación
                 </p>
                 {% if sale.status == 'in_preparation' %}
-                <p class="text-xs text-orange-600 mt-0.5">Estado actual</p>
+                <p class="text-xs text-orange-600 dark:text-orange-500 mt-0.5">Estado actual</p>
                 {% endif %}
               </div>
             </div>
@@ -588,25 +588,25 @@
             <div class="relative flex items-start gap-4 pb-5">
               <div class="relative z-10 flex-shrink-0">
                 {% if sale.status not in 'ready,delivered' %}
-                  <div class="w-8 h-8 rounded-full border-2 border-gray-200 bg-white flex items-center justify-center">
-                    <i data-lucide="circle" class="w-3 h-3 text-gray-300"></i>
+                  <div class="w-8 h-8 rounded-full border-2 border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center">
+                    <i data-lucide="circle" class="w-3 h-3 text-gray-300 dark:text-slate-600"></i>
                   </div>
                 {% elif sale.status == 'ready' %}
-                  <div class="w-8 h-8 rounded-full border-2 border-purple-500 bg-purple-50 flex items-center justify-center ring-4 ring-purple-100">
-                    <i data-lucide="box" class="w-3.5 h-3.5 text-purple-600"></i>
+                  <div class="w-8 h-8 rounded-full border-2 border-purple-500 bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center ring-4 ring-purple-100 dark:ring-purple-900/10">
+                    <i data-lucide="box" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"></i>
                   </div>
                 {% else %}
-                  <div class="w-8 h-8 rounded-full border-2 border-green-500 bg-green-500 flex items-center justify-center">
+                  <div class="w-8 h-8 rounded-full border-2 border-green-500 dark:border-green-600 bg-green-500 flex items-center justify-center ring-4 ring-green-100 dark:ring-green-900/20">
                     <i data-lucide="check" class="w-3.5 h-3.5 text-white"></i>
                   </div>
                 {% endif %}
               </div>
               <div class="pt-1">
-                <p class="text-sm font-medium {% if sale.status == 'ready' %}text-purple-700{% elif sale.status == 'delivered' %}text-gray-900{% else %}text-gray-400{% endif %}">
+                <p class="text-sm font-medium {% if sale.status == 'ready' %}text-purple-700 dark:text-purple-400{% elif sale.status == 'delivered' %}text-gray-900 dark:text-slate-100{% else %}text-gray-400 dark:text-slate-500{% endif %}">
                   Listo para Entrega
                 </p>
                 {% if sale.status == 'ready' %}
-                <p class="text-xs text-purple-600 mt-0.5">Estado actual</p>
+                <p class="text-xs text-purple-600 dark:text-purple-500 mt-0.5">Estado actual</p>
                 {% endif %}
               </div>
             </div>
@@ -615,36 +615,36 @@
             <div class="relative flex items-start gap-4">
               <div class="relative z-10 flex-shrink-0">
                 {% if sale.status == 'delivered' %}
-                  <div class="w-8 h-8 rounded-full border-2 border-green-500 bg-green-500 flex items-center justify-center ring-4 ring-green-100">
+                  <div class="w-8 h-8 rounded-full border-2 border-green-500 bg-green-500 flex items-center justify-center ring-4 ring-green-100 dark:ring-green-900/20">
                     <i data-lucide="truck" class="w-3.5 h-3.5 text-white"></i>
                   </div>
                 {% else %}
-                  <div class="w-8 h-8 rounded-full border-2 border-gray-200 bg-white flex items-center justify-center">
-                    <i data-lucide="circle" class="w-3 h-3 text-gray-300"></i>
+                  <div class="w-8 h-8 rounded-full border-2 border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center">
+                    <i data-lucide="circle" class="w-3 h-3 text-gray-300 dark:text-slate-600"></i>
                   </div>
                 {% endif %}
               </div>
               <div class="pt-1">
-                <p class="text-sm font-medium {% if sale.status == 'delivered' %}text-green-700{% else %}text-gray-400{% endif %}">
+                <p class="text-sm font-medium {% if sale.status == 'delivered' %}text-green-700 dark:text-green-400{% else %}text-gray-400 dark:text-slate-500{% endif %}">
                   Entregado
                 </p>
                 {% if sale.status == 'delivered' %}
-                <p class="text-xs text-green-600 mt-0.5">¡Completado!</p>
+                <p class="text-xs text-green-600 dark:text-green-500 mt-0.5">¡Completado!</p>
                 {% endif %}
               </div>
             </div>
 
             <!-- Estado: Cancelado (sólo se muestra si está cancelado) -->
             {% if sale.status == 'cancelled' %}
-            <div class="relative flex items-start gap-4 mt-3 pt-3 border-t border-red-100">
+            <div class="relative flex items-start gap-4 mt-3 pt-3 border-t border-red-100 dark:border-red-900/30">
               <div class="relative z-10 flex-shrink-0">
-                <div class="w-8 h-8 rounded-full border-2 border-red-500 bg-red-50 flex items-center justify-center ring-4 ring-red-100">
-                  <i data-lucide="x" class="w-3.5 h-3.5 text-red-600"></i>
+                <div class="w-8 h-8 rounded-full border-2 border-red-500 bg-red-50 dark:bg-red-900/20 flex items-center justify-center ring-4 ring-red-100 dark:ring-red-900/10">
+                  <i data-lucide="x" class="w-3.5 h-3.5 text-red-600 dark:text-red-400"></i>
                 </div>
               </div>
               <div class="pt-1">
-                <p class="text-sm font-semibold text-red-700">Cancelado</p>
-                <p class="text-xs text-red-500 mt-0.5">Esta venta fue cancelada</p>
+                <p class="text-sm font-semibold text-red-700 dark:text-red-400">Cancelado</p>
+                <p class="text-xs text-red-500 dark:text-red-500/80 mt-0.5">Esta venta fue cancelada</p>
               </div>
             </div>
             {% endif %}
@@ -654,44 +654,44 @@
       </div>
 
       <!-- ===== Card de Pagos (placeholder) ===== -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
-            <span class="inline-flex items-center justify-center w-7 h-7 bg-emerald-100 rounded-lg">
-              <i data-lucide="credit-card" class="w-4 h-4 text-emerald-600"></i>
+          <h3 class="text-base font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
+            <span class="inline-flex items-center justify-center w-7 h-7 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+              <i data-lucide="credit-card" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
             </span>
             Pagos
           </h3>
 
           <!-- Badge estado de pago -->
           {% if sale.payment_status == 'paid' %}
-            <span class="text-xs font-semibold px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full">Pagado</span>
+            <span class="text-xs font-semibold px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">Pagado</span>
           {% elif sale.payment_status == 'partially_paid' %}
-            <span class="text-xs font-semibold px-2 py-1 bg-cyan-100 text-cyan-700 rounded-full">Pago Parcial</span>
+            <span class="text-xs font-semibold px-2 py-1 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 rounded-full">Pago Parcial</span>
           {% else %}
-            <span class="text-xs font-semibold px-2 py-1 bg-red-100 text-red-700 rounded-full">Sin Pago</span>
+            <span class="text-xs font-semibold px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full">Sin Pago</span>
           {% endif %}
         </div>
 
         <!-- Resumen de pago -->
         <div class="space-y-3 mb-4">
           <div class="flex justify-between text-sm">
-            <span class="text-gray-500">Total a cobrar:</span>
-            <span class="font-semibold text-gray-900">${{ sale.total|floatformat:2 }}</span>
+            <span class="text-gray-500 dark:text-slate-400">Total a cobrar:</span>
+            <span class="font-semibold text-gray-900 dark:text-slate-100">${{ sale.total|floatformat:2 }}</span>
           </div>
           <div class="flex justify-between text-sm">
-            <span class="text-gray-500">Cobrado:</span>
-            <span class="font-semibold text-emerald-600">$0,00</span>
+            <span class="text-gray-500 dark:text-slate-400">Cobrado:</span>
+            <span class="font-semibold text-emerald-600 dark:text-emerald-400">$0,00</span>
           </div>
-          <div class="flex justify-between text-sm border-t border-gray-100 pt-3">
-            <span class="text-gray-500">Saldo pendiente:</span>
-            <span class="font-bold text-red-600">${{ sale.total|floatformat:2 }}</span>
+          <div class="flex justify-between text-sm border-t border-gray-100 dark:border-slate-700 pt-3">
+            <span class="text-gray-500 dark:text-slate-400">Saldo pendiente:</span>
+            <span class="font-bold text-red-600 dark:text-red-400">${{ sale.total|floatformat:2 }}</span>
           </div>
         </div>
 
         <!-- Historial de pagos (placeholder) -->
-        <div class="bg-gray-50 rounded-lg p-3 mb-4">
-          <p class="text-xs text-gray-400 text-center">
+        <div class="bg-gray-50 dark:bg-slate-900/50 rounded-lg p-3 mb-4">
+          <p class="text-xs text-gray-400 dark:text-slate-500 text-center">
             <i data-lucide="clock" class="w-4 h-4 inline mb-0.5"></i><br>
             El historial de pagos estará disponible próximamente.
           </p>
@@ -700,7 +700,7 @@
         <!-- Botón registrar pago -->
         {% if sale.payment_status != 'paid' and sale.status != 'cancelled' %}
         <a href="#"
-           class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl hover:bg-emerald-100 transition font-medium text-sm">
+           class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition font-medium text-sm">
           <i data-lucide="plus-circle" class="w-4 h-4"></i>
           Registrar Pago
         </a>

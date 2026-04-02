@@ -1,183 +1,227 @@
 {% extends 'base/base.html' %}
 {% load static %}
 
-{% block title %}AFIP/ARCA - ERP Bulonera Alvear{% endblock %}
+{% block title %}AFIP / ARCA | ERP Bulonera Alvear{% endblock %}
 
 {% block breadcrumb_items %}
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <span class="text-gray-900 font-medium">AFIP / ARCA</span>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <span class="text-gray-900 dark:text-slate-100 font-black tracking-tight">AFIP / ARCA</span>
 {% endblock %}
 
 {% block mobile_title %}AFIP{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto">
+<div class="max-w-7xl mx-auto px-4 pb-24">
 
   <!-- Header -->
-  <div class="mb-6">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
-      <div>
-        <div class="flex items-center gap-3 mb-1">
-          <div class="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl shadow-sm">
-            <i data-lucide="shield-check" class="w-5 h-5 text-white"></i>
-          </div>
-          <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Panel AFIP / ARCA</h1>
-        </div>
-        <p class="text-gray-600">Configuración de certificados, monitoreo y consulta de CUITs</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <a href="{% url 'afip_web:consultar_cuit' %}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
-          <i data-lucide="search" class="w-4 h-4 mr-2"></i>
-          Consultar CUIT
-        </a>
-      </div>
+  <div class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <div>
+      <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight flex items-center gap-4 transition-colors">
+        <span class="flex items-center justify-center w-12 h-12 bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 rounded-2xl shadow-sm">
+           <i data-lucide="shield-check" class="w-7 h-7"></i>
+        </span>
+        Panel AFIP / ARCA
+      </h1>
+      <p class="mt-4 text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest pl-1">Configuración de certificados, monitoreo y Padrón</p>
+    </div>
+    
+    <div class="flex items-center gap-3">
+      <a href="{% url 'afip_web:consultar_cuit' %}" class="inline-flex items-center px-6 py-4 bg-gray-900 dark:bg-slate-100 text-white dark:text-gray-900 rounded-2xl hover:bg-gray-800 dark:hover:bg-white transition-all text-sm font-black uppercase tracking-widest shadow-xl shadow-gray-900/10 dark:shadow-white/10 active:scale-95">
+        <i data-lucide="search" class="w-5 h-5 mr-3"></i> Consultar CUIT
+      </a>
     </div>
   </div>
 
   <!-- Grid de Cards -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
 
     <!-- Card: Estado de Conexión -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center gap-3 mb-4">
-        <div class="p-2 bg-teal-100 rounded-lg">
-          <i data-lucide="wifi" class="w-5 h-5 text-teal-600"></i>
-        </div>
-        <h3 class="text-base font-semibold text-gray-900">Estado de Conexión</h3>
+    <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-slate-700 p-8 transition-colors flex flex-col justify-between">
+      <div>
+          <div class="flex items-center justify-between gap-3 mb-8">
+            <h3 class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Estado de Conexión</h3>
+            <div class="w-10 h-10 bg-teal-50 dark:bg-teal-900/20 rounded-[1rem] flex items-center justify-center text-teal-600 dark:text-teal-400">
+              <i data-lucide="wifi" class="w-5 h-5"></i>
+            </div>
+          </div>
+          {% if tokens %}
+            {% with token=tokens.0 %}
+            {% if token.esta_vigente %}
+              <div class="flex items-center gap-3 mb-4">
+                <span class="flex h-4 w-4 relative">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white dark:border-slate-800"></span>
+                </span>
+                <span class="text-xl font-black text-gray-900 dark:text-slate-100 tracking-tight">WSAA Vigente</span>
+              </div>
+              <div class="space-y-3 bg-gray-50 dark:bg-slate-900/50 p-4 rounded-3xl border border-gray-100 dark:border-slate-700/50">
+                <div>
+                    <p class="text-[10px] text-gray-400 dark:text-slate-500 font-black uppercase tracking-[0.2em] mb-1">Servicio Activo</p>
+                    <p class="text-sm font-bold text-gray-900 dark:text-slate-100 uppercase tracking-widest">{{ token.servicio }} <span class="text-emerald-600 dark:text-emerald-400 ml-1">[{{ token.ambiente }}]</span></p>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-400 dark:text-slate-500 font-black uppercase tracking-[0.2em] mb-1">Expiración</p>
+                    <p class="text-sm font-bold text-gray-900 dark:text-slate-100 tabular-nums">{{ token.expira_en|date:"d/m/Y H:i" }}</p>
+                </div>
+              </div>
+            {% else %}
+              <div class="flex items-center gap-3 mb-4">
+                <span class="flex h-4 w-4 relative">
+                  <span class="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-white dark:border-slate-800 shadow-sm"></span>
+                </span>
+                <span class="text-xl font-black text-red-600 dark:text-red-400 tracking-tight">Token Expirado</span>
+              </div>
+              <p class="text-sm font-bold text-gray-500 dark:text-slate-400 bg-red-50 dark:bg-red-900/10 p-4 rounded-3xl tabular-nums border border-red-100 dark:border-red-900/30">Vencido: <span class="text-red-700 dark:text-red-300">{{ token.expira_en|date:"d/m/Y H:i" }}</span></p>
+            {% endif %}
+            {% endwith %}
+          {% else %}
+            <div class="flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-900/50 p-6 rounded-3xl border border-dashed border-gray-300 dark:border-slate-600 h-full">
+              <span class="w-12 h-12 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-sm mb-3">
+                 <span class="w-3 h-3 bg-gray-400 dark:bg-slate-500 rounded-full"></span>
+              </span>
+              <span class="text-sm text-gray-500 dark:text-slate-400 font-bold uppercase tracking-widest text-center">Sin tokens<br>registrados</span>
+            </div>
+          {% endif %}
       </div>
-      {% if tokens %}
-        {% with token=tokens.0 %}
-        {% if token.esta_vigente %}
-          <div class="flex items-center gap-2 mb-2">
-            <span class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
-            <span class="text-sm font-medium text-green-700">Token WSAA vigente</span>
-          </div>
-          <p class="text-xs text-gray-500">Servicio: {{ token.servicio }} ({{ token.ambiente }})</p>
-          <p class="text-xs text-gray-500">Expira: {{ token.expira_en|date:"d/m/Y H:i" }}</p>
-        {% else %}
-          <div class="flex items-center gap-2 mb-2">
-            <span class="w-3 h-3 bg-red-500 rounded-full"></span>
-            <span class="text-sm font-medium text-red-700">Token expirado</span>
-          </div>
-          <p class="text-xs text-gray-500">Expiró: {{ token.expira_en|date:"d/m/Y H:i" }}</p>
-        {% endif %}
-        {% endwith %}
-      {% else %}
-        <div class="flex items-center gap-2">
-          <span class="w-3 h-3 bg-gray-400 rounded-full"></span>
-          <span class="text-sm text-gray-500">Sin tokens registrados</span>
-        </div>
-      {% endif %}
     </div>
 
     <!-- Card: Accesos Rápidos -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center gap-3 mb-4">
-        <div class="p-2 bg-blue-100 rounded-lg">
-          <i data-lucide="zap" class="w-5 h-5 text-blue-600"></i>
+    <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-slate-700 p-8 transition-colors">
+      <div class="flex items-center justify-between gap-3 mb-8">
+        <h3 class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Accesos Rápidos</h3>
+        <div class="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/20 rounded-[1rem] flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+          <i data-lucide="zap" class="w-5 h-5"></i>
         </div>
-        <h3 class="text-base font-semibold text-gray-900">Accesos Rápidos</h3>
       </div>
-      <div class="space-y-2">
-        <a href="{% url 'afip_web:log_list' %}" class="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline">
-          <i data-lucide="scroll-text" class="w-4 h-4"></i> Monitor de Logs AFIP
+      <div class="space-y-4">
+        <a href="{% url 'afip_web:log_list' %}" class="flex items-center gap-4 p-4 rounded-3xl bg-gray-50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-700 hover:shadow-lg dark:hover:shadow-black/20 text-sm text-gray-900 dark:text-slate-100 font-black tracking-tight transition-all active:scale-[0.98] group group/link border border-transparent hover:border-indigo-100 dark:hover:border-indigo-900/50">
+          <div class="w-10 h-10 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center text-indigo-500 shadow-sm group-hover/link:bg-indigo-50 dark:group-hover/link:bg-indigo-900/30 transition-colors">
+              <i data-lucide="scroll-text" class="w-5 h-5"></i>
+          </div>
+          Monitor de Logs AFIP
+          <i data-lucide="arrow-right" class="w-4 h-4 ml-auto text-gray-300 dark:text-slate-600 group-hover/link:text-indigo-500 group-hover/link:translate-x-1 transition-all"></i>
         </a>
-        <a href="{% url 'afip_web:consultar_cuit' %}" class="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline">
-          <i data-lucide="user-search" class="w-4 h-4"></i> Consultar CUIT en Padrón
+        <a href="{% url 'afip_web:consultar_cuit' %}" class="flex items-center gap-4 p-4 rounded-3xl bg-gray-50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-700 hover:shadow-lg dark:hover:shadow-black/20 text-sm text-gray-900 dark:text-slate-100 font-black tracking-tight transition-all active:scale-[0.98] group group/link border border-transparent hover:border-indigo-100 dark:hover:border-indigo-900/50">
+          <div class="w-10 h-10 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center text-indigo-500 shadow-sm group-hover/link:bg-indigo-50 dark:group-hover/link:bg-indigo-900/30 transition-colors">
+              <i data-lucide="user-search" class="w-5 h-5"></i>
+          </div>
+          Padrón de Contribuyentes
+          <i data-lucide="arrow-right" class="w-4 h-4 ml-auto text-gray-300 dark:text-slate-600 group-hover/link:text-indigo-500 group-hover/link:translate-x-1 transition-all"></i>
         </a>
-        <a href="{% url 'bills_web:invoice_list' %}" class="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline">
-          <i data-lucide="file-text" class="w-4 h-4"></i> Facturas Emitidas
+        <a href="{% url 'bills_web:invoice_list' %}" class="flex items-center gap-4 p-4 rounded-3xl bg-gray-50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-700 hover:shadow-lg dark:hover:shadow-black/20 text-sm text-gray-900 dark:text-slate-100 font-black tracking-tight transition-all active:scale-[0.98] group group/link border border-transparent hover:border-indigo-100 dark:hover:border-indigo-900/50">
+          <div class="w-10 h-10 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center text-indigo-500 shadow-sm group-hover/link:bg-indigo-50 dark:group-hover/link:bg-indigo-900/30 transition-colors">
+              <i data-lucide="file-text" class="w-5 h-5"></i>
+          </div>
+          Facturas Emitidas
+          <i data-lucide="arrow-right" class="w-4 h-4 ml-auto text-gray-300 dark:text-slate-600 group-hover/link:text-indigo-500 group-hover/link:translate-x-1 transition-all"></i>
         </a>
       </div>
     </div>
 
     <!-- Card: Logs Recientes -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-3">
-          <div class="p-2 bg-amber-100 rounded-lg">
-            <i data-lucide="activity" class="w-5 h-5 text-amber-600"></i>
-          </div>
-          <h3 class="text-base font-semibold text-gray-900">Actividad Reciente</h3>
-        </div>
-        <a href="{% url 'afip_web:log_list' %}" class="text-xs text-blue-600 hover:underline">Ver todo</a>
+    <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-slate-700 p-8 transition-colors">
+      <div class="flex items-center justify-between mb-8">
+        <h3 class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Registro 24Hs</h3>
+        <a href="{% url 'afip_web:log_list' %}" class="w-10 h-10 bg-amber-50 dark:bg-amber-900/20 rounded-[1rem] flex items-center justify-center text-amber-600 dark:text-amber-400 hover:scale-110 transition-transform cursor-pointer shadow-sm">
+          <i data-lucide="activity" class="w-5 h-5"></i>
+        </a>
       </div>
-      {% if logs_recientes %}
-      <ul class="space-y-2">
-        {% for log in logs_recientes|slice:":5" %}
-        <li class="flex items-center justify-between text-sm">
-          <span class="{% if 'ERROR' in log.tipo %}text-red-600{% else %}text-gray-700{% endif %} truncate">
-            {{ log.get_tipo_display }}
-          </span>
-          <span class="text-xs text-gray-400 flex-shrink-0 ml-2">{{ log.timestamp|date:"d/m H:i" }}</span>
-        </li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p class="text-sm text-gray-400">Sin actividad registrada.</p>
-      {% endif %}
+      
+      <div class="bg-gray-50 dark:bg-slate-900/50 rounded-3xl p-5 border border-gray-100 dark:border-slate-700/50">
+          {% if logs_recientes %}
+          <ul class="space-y-4">
+            {% for log in logs_recientes|slice:":5" %}
+            <li class="flex items-center justify-between text-sm py-1 border-b border-gray-200 dark:border-slate-700/50 last:border-0">
+              <div class="flex items-center gap-3 truncate pr-4">
+                 {% if 'ERROR' in log.tipo %}
+                    <span class="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 shadow-sm shadow-red-500/50"></span>
+                    <span class="text-red-700 dark:text-red-400 font-black uppercase tracking-widest text-[10px] truncate">{{ log.get_tipo_display }}</span>
+                 {% else %}
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0 shadow-sm shadow-emerald-500/50"></span>
+                    <span class="text-gray-900 dark:text-slate-200 font-bold uppercase tracking-widest text-[10px] truncate">{{ log.get_tipo_display }}</span>
+                 {% endif %}
+              </div>
+              <span class="text-[10px] text-gray-400 dark:text-slate-500 font-black uppercase tracking-wider flex-shrink-0 tabular-nums ml-auto">{{ log.timestamp|date:"d/m H:i" }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <div class="flex flex-col items-center justify-center py-8">
+            <i data-lucide="check-circle" class="w-8 h-8 text-gray-300 dark:text-slate-600 mb-2"></i>
+            <p class="text-[10px] text-gray-400 dark:text-slate-500 font-black uppercase tracking-widest text-center">Sin actividad<br>registrada</p>
+          </div>
+          {% endif %}
+      </div>
     </div>
   </div>
 
   <!-- Configuraciones Registradas -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-      <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
-        <i data-lucide="settings" class="w-5 h-5 text-gray-500"></i>
-        Configuraciones de Empresas
+  <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden transition-colors">
+    <div class="px-8 py-6 border-b border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <h3 class="text-lg font-black text-gray-900 dark:text-slate-100 flex items-center gap-3 transition-colors tracking-tight">
+        <span class="w-10 h-10 rounded-xl bg-gray-100 dark:bg-slate-800 flex items-center justify-center text-gray-500 dark:text-slate-400 shadow-inner">
+            <i data-lucide="settings" class="w-5 h-5"></i>
+        </span>
+        Configuraciones de Empresa
       </h3>
-      <a href="{% url 'afip_web:config_create' %}" class="inline-flex items-center px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition font-medium">
-        <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Nueva
+      <a href="{% url 'afip_web:config_create' %}" class="inline-flex items-center px-6 py-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 text-sm rounded-2xl hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all font-black uppercase tracking-widest shadow-sm active:scale-95">
+        <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Nueva Empresa
       </a>
     </div>
 
     <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+      <table class="min-w-full divide-y divide-gray-100 dark:divide-slate-700/50">
+        <thead class="bg-white dark:bg-slate-800">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">CUIT Empresa</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Razón Social</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Ambiente</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">PV</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+            <th class="px-8 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">CUIT Empresa</th>
+            <th class="px-8 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Razón Social</th>
+            <th class="px-8 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] hidden sm:table-cell">Ambiente</th>
+            <th class="px-8 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] hidden md:table-cell text-center">PV</th>
+            <th class="px-8 py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Estado</th>
+            <th class="px-8 py-5 text-right text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Acciones</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-200">
+        <tbody class="divide-y divide-gray-100 dark:divide-slate-700/50 bg-white dark:bg-slate-800">
           {% for config in configs %}
-          <tr class="hover:bg-gray-50 transition">
-            <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ config.empresa_cuit }}</td>
-            <td class="px-6 py-4 text-sm text-gray-700">{{ config.razon_social }}</td>
-            <td class="px-6 py-4 text-sm hidden sm:table-cell">
+          <tr class="hover:bg-gray-50/80 dark:hover:bg-slate-700/30 transition-colors group">
+            <td class="px-8 py-6 text-sm font-black text-gray-900 dark:text-slate-100 tabular-nums">
+                <span class="inline-flex items-center px-3 py-1 rounded-lg bg-gray-50 dark:bg-slate-900 shadow-inner border border-gray-100 dark:border-slate-700">{{ config.empresa_cuit }}</span>
+            </td>
+            <td class="px-8 py-6 text-sm font-bold text-gray-700 dark:text-slate-300">{{ config.razon_social }}</td>
+            <td class="px-8 py-6 text-sm hidden sm:table-cell">
               {% if config.ambiente == 'produccion' %}
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Producción</span>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 uppercase tracking-widest ring-1 ring-emerald-500/30 shadow-sm shadow-emerald-500/10">Prod</span>
               {% else %}
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Homologación</span>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 uppercase tracking-widest ring-1 ring-amber-500/30 shadow-sm">Homol</span>
               {% endif %}
             </td>
-            <td class="px-6 py-4 text-sm text-gray-700 hidden md:table-cell">{{ config.punto_venta }}</td>
-            <td class="px-6 py-4 text-sm">
+            <td class="px-8 py-6 text-sm text-center text-gray-600 dark:text-slate-400 font-bold hidden md:table-cell tabular-nums">
+                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-50 dark:bg-slate-900 font-black shadow-inner border border-gray-100 dark:border-slate-700">{{ config.punto_venta }}</span>
+            </td>
+            <td class="px-8 py-6 text-sm text-center">
               {% if config.activo %}
-                <span class="inline-flex items-center gap-1 text-green-600"><i data-lucide="check-circle" class="w-4 h-4"></i> Activo</span>
+                <span class="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-black tracking-widest uppercase text-[10px]"><i data-lucide="check-circle" class="w-4 h-4"></i> Activa</span>
               {% else %}
-                <span class="inline-flex items-center gap-1 text-red-500"><i data-lucide="x-circle" class="w-4 h-4"></i> Inactivo</span>
+                <span class="inline-flex items-center gap-1.5 text-red-500 dark:text-red-400 font-black tracking-widest uppercase text-[10px]"><i data-lucide="x-circle" class="w-4 h-4"></i> Inactiva</span>
               {% endif %}
             </td>
-            <td class="px-6 py-4 text-right">
-              <a href="{% url 'afip_web:config_update' config.pk %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                <i data-lucide="pencil" class="w-4 h-4 inline"></i> Editar
-              </a>
+            <td class="px-8 py-6 text-right">
+              <div class="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
+                <a href="{% url 'afip_web:config_update' config.pk %}" class="w-10 h-10 rounded-xl bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-500 dark:text-slate-400 hover:bg-indigo-100 hover:text-indigo-600 dark:hover:bg-indigo-900/50 dark:hover:text-indigo-400 transition-colors shadow-sm" title="Editar">
+                  <i data-lucide="pencil" class="w-4 h-4"></i>
+                </a>
+              </div>
             </td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="6" class="px-6 py-12 text-center text-gray-500">
-              <div class="flex flex-col items-center">
-                <div class="bg-gray-100 rounded-full p-3 mb-3">
-                  <i data-lucide="shield-off" class="w-6 h-6 text-gray-400"></i>
-                </div>
-                <p class="text-lg font-medium text-gray-900">Sin configuración AFIP</p>
-                <p class="text-sm mt-1">Creá una nueva configuración para empezar a facturar.</p>
+            <td colspan="6" class="px-8 py-24 text-center">
+              <div class="flex flex-col items-center justify-center opacity-80">
+                 <div class="w-20 h-20 bg-gray-50 dark:bg-slate-800 rounded-[2rem] flex flex-col items-center justify-center mb-6 shadow-inner">
+                    <i data-lucide="shield-off" class="w-10 h-10 text-gray-300 dark:text-slate-600"></i>
+                 </div>
+                 <h3 class="text-xl font-black text-gray-900 dark:text-slate-100 mb-2">Sin configuración AFIP</h3>
+                 <p class="text-sm font-bold text-gray-500 dark:text-slate-500">Creá una nueva configuración para empezar a facturar.</p>
               </div>
             </td>
           </tr>

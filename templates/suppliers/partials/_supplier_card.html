@@ -3,65 +3,77 @@
   Uso: { % include 'suppliers/partials/_supplier_card.html' with supplier=s % }
   Card de proveedor para vista mobile. Touch-friendly.
 -->
-<article class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-3 hover:shadow-md transition-shadow">
+<article class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-5 mb-4 hover:shadow-blue-500/10 transition-all relative overflow-hidden group">
+  
+  <!-- Decorative Accent -->
+  <div class="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 -mr-8 -mt-8 rounded-full transition-transform group-hover:scale-150"></div>
 
   <!-- Header: Razón Social + Condición IVA -->
-  <div class="flex justify-between items-start gap-2 mb-2">
-    <div class="min-w-0">
-      <h3 class="text-base font-semibold text-gray-900 leading-tight truncate">
+  <div class="flex justify-between items-start gap-3 mb-4 relative">
+    <div class="min-w-0 flex-1">
+      <h3 class="text-base font-black text-gray-900 dark:text-slate-100 leading-tight truncate px-1">
         {{ supplier.business_name }}
       </h3>
       {% if supplier.trade_name %}
-        <p class="text-xs text-gray-500 truncate">{{ supplier.trade_name }}</p>
+        <p class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mt-1 truncate px-1">{{ supplier.trade_name }}</p>
       {% endif %}
     </div>
-    <span class="inline-flex items-center shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full
-      {% if supplier.tax_condition == 'RI' %}bg-blue-100 text-blue-800
-      {% elif supplier.tax_condition == 'MONO' %}bg-yellow-100 text-yellow-800
-      {% else %}bg-gray-100 text-gray-700{% endif %}">
-      {{ supplier.get_tax_condition_display }}
+    <span class="inline-flex items-center shrink-0 px-2 py-1 text-[10px] font-black rounded-lg uppercase tracking-widest transition-colors
+      {% if supplier.tax_condition == 'RI' %}bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 ring-1 ring-blue-600/20
+      {% elif supplier.tax_condition == 'MONO' %}bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 ring-1 ring-amber-600/20
+      {% else %}bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400 ring-1 ring-gray-400/20{% endif %}">
+      {{ supplier.tax_condition }}
     </span>
   </div>
 
   <!-- Info básica -->
-  <div class="text-sm text-gray-600 space-y-0.5">
-    <p><span class="font-medium text-gray-700">CUIT:</span> {{ supplier.cuit }}</p>
+  <div class="grid grid-cols-2 gap-4 mb-4 relative p-1">
+    <div>
+      <p class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">Identificador</p>
+      <p class="text-xs font-mono font-bold text-gray-700 dark:text-slate-300">{{ supplier.cuit }}</p>
+    </div>
     {% if supplier.phone %}
-      <p><span class="font-medium text-gray-700">Tel:</span> {{ supplier.phone }}</p>
-    {% endif %}
-    {% if supplier.city %}
-      <p><span class="font-medium text-gray-700">Ciudad:</span> {{ supplier.city }}{% if supplier.state %}, {{ supplier.state }}{% endif %}</p>
+    <div>
+      <p class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">Contacto</p>
+      <p class="text-xs font-bold text-gray-700 dark:text-slate-300 truncate">{{ supplier.phone }}</p>
+    </div>
     {% endif %}
   </div>
 
   <!-- Tags -->
   {% if supplier.tags.all %}
-  <div class="flex flex-wrap gap-1 mt-2">
+  <div class="flex flex-wrap gap-1.5 mb-4 relative px-1">
     {% for tag in supplier.tags.all %}
-      <span class="inline-block px-2 py-0.5 text-xs font-medium rounded-full text-white"
-            style="background-color: {{ tag.color }}">
-        {{ tag.name }}
+      <span class="inline-block px-2 py-0.5 text-[9px] font-black rounded-md text-white shadow-sm"
+            style="background-color: {{ tag.color }}; border: 1px solid rgba(255,255,255,0.1);">
+        {{ tag.name|upper }}
       </span>
     {% endfor %}
   </div>
   {% endif %}
 
-  <!-- Deuda -->
-  {% if supplier.has_debt %}
-  <div class="mt-2 pt-2 border-t border-gray-100">
-    <div class="flex items-center justify-between text-sm">
-      <span class="text-gray-500">Deuda actual</span>
-      <span class="font-semibold text-red-700">${{ supplier.current_debt|floatformat:2 }}</span>
+  <!-- Deuda / Balance -->
+  <div class="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700/50 relative">
+    <div class="flex items-center justify-between">
+      <span class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Balance Global</span>
+      {% if supplier.has_debt %}
+        <span class="text-sm font-black text-red-600 dark:text-red-400 tabular-nums bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded-lg active:scale-95 transition-transform cursor-default ring-1 ring-red-500/10">
+          ${{ supplier.current_debt|floatformat:2 }}
+        </span>
+      {% else %}
+        <span class="text-sm font-black text-emerald-600 dark:text-emerald-400 tabular-nums bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-lg transition-colors ring-1 ring-emerald-500/10">
+          $0.00
+        </span>
+      {% endif %}
     </div>
   </div>
-  {% endif %}
 
   <!-- Botón detalle -->
-  <div class="mt-3">
+  <div class="mt-5">
     <a href="{% url 'suppliers_web:supplier_detail' supplier.pk %}"
-       class="flex items-center justify-center w-full px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 transition">
+       class="flex items-center justify-center w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-700 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:from-blue-700 hover:to-indigo-800 active:scale-[0.98] transition-all shadow-lg shadow-blue-500/20">
       <i data-lucide="eye" class="w-4 h-4 mr-2"></i>
-      Ver Detalle
+      Ficha Comercial
     </a>
   </div>
 </article>

@@ -1,64 +1,88 @@
 {% extends 'base/base.html' %}
-{% load static %}
+{% load static widget_tweaks %}
 
-{% block title %}{% if object %}Editar{% else %}Nueva{% endif %} Configuración AFIP{% endblock %}
+{% block title %}{% if object %}Editar{% else %}Nueva{% endif %} Configuración AFIP | ERP Bulonera Alvear{% endblock %}
 
 {% block breadcrumb_items %}
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <a href="{% url 'afip_web:dashboard' %}" class="text-gray-600 hover:text-gray-900">AFIP</a>
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <span class="text-gray-900 font-medium">{% if object %}Editar{% else %}Nueva{% endif %} Configuración</span>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <a href="{% url 'afip_web:dashboard' %}" class="text-gray-500 dark:text-slate-400 font-bold hover:text-gray-900 dark:hover:text-slate-100 transition-colors tracking-tight">AFIP</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <span class="text-gray-900 dark:text-slate-100 font-black tracking-tight">{% if object %}Editar{% else %}Nueva{% endif %} Configuración</span>
 {% endblock %}
 
+{% block mobile_title %}{% if object %}Editar{% else %}Nueva{% endif %} Configuración{% endblock %}
+
 {% block content %}
-<div class="max-w-3xl mx-auto">
-  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-    <div class="flex items-center gap-3 mb-6">
-      <div class="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl shadow-sm">
-        <i data-lucide="settings" class="w-5 h-5 text-white"></i>
+<div class="max-w-3xl mx-auto px-4 pb-24">
+  <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden transition-colors">
+    <!-- Header Decorativo del Formulario -->
+    <div class="px-8 py-8 border-b border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50 relative overflow-hidden">
+      <!-- Decoracion fondo -->
+      <div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-teal-500/5 dark:bg-teal-500/10 blur-2xl"></div>
+
+      <div class="flex items-center gap-4 relative z-10">
+        <div class="inline-flex items-center justify-center w-12 h-12 bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 rounded-2xl shadow-sm ring-1 ring-teal-500/20">
+          <i data-lucide="settings" class="w-6 h-6"></i>
+        </div>
+        <div>
+           <h1 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-slate-100 tracking-tight transition-colors">{% if object %}Editar{% else %}Nueva{% endif %} Configuración AFIP</h1>
+           <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mt-1">{% if object %}Actualización de certificado o punto de venta{% else %}Alta de nueva empresa fiscal{% endif %}</p>
+        </div>
       </div>
-      <h1 class="text-2xl font-bold text-gray-900">{% if object %}Editar{% else %}Nueva{% endif %} Configuración AFIP</h1>
     </div>
 
-    <form method="post" class="space-y-6">
+    <form method="post" class="p-8 space-y-6 bg-white dark:bg-slate-800">
       {% csrf_token %}
 
-      {% for field in form %}
-      <div>
-        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-          {{ field.label }}
-          {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
-        </label>
-        
-        {% if field.field.widget.input_type == 'checkbox' %}
-          <div class="flex items-center gap-2">
-            {{ field }}
-            <span class="text-sm text-gray-500">{{ field.help_text }}</span>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {% for field in form %}
+          <div class="transition-all {% if field.name in 'ruta_certificado,password_certificado' %}md:col-span-2{% endif %}">
+            <label for="{{ field.id_for_label }}" class="block text-[11px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 transition-colors">
+              {{ field.label }}
+              {% if field.field.required %}<span class="text-red-500 dark:text-red-400">*</span>{% endif %}
+            </label>
+            
+            {% if field.field.widget.input_type == 'checkbox' %}
+              <div class="flex items-center gap-4 p-5 bg-gray-50 dark:bg-slate-900/50 rounded-2xl border border-gray-100 dark:border-slate-700/50 transition-colors hover:border-teal-300 dark:hover:border-teal-500/50 group cursor-pointer" onclick="document.getElementById('{{ field.id_for_label }}').click()">
+                <div class="flex items-center h-5">
+                  {{ field|add_class:"w-5 h-5 text-teal-600 dark:text-teal-500 bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600 rounded focus:ring-teal-500 dark:focus:ring-teal-400 dark:ring-offset-slate-900 transition-all cursor-pointer" }}
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-sm font-black text-gray-900 dark:text-slate-200">{{ field.label }}</span>
+                    {% if field.help_text %}
+                    <span class="text-xs text-gray-500 dark:text-slate-400 font-bold mt-0.5">{{ field.help_text }}</span>
+                    {% endif %}
+                </div>
+              </div>
+            {% else %}
+              <div class="relative group">
+                {% if field.name == 'ambiente' %}
+                    {{ field|add_class:"w-full px-5 py-4 bg-gray-50 dark:bg-slate-900/50 border-none rounded-2xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 outline-none transition-all appearance-none shadow-inner" }}
+                    <i data-lucide="chevron-down" class="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none group-focus-within:text-teal-500 transition-colors"></i>
+                {% else %}
+                    {{ field|add_class:"w-full px-5 py-4 bg-gray-50 dark:bg-slate-900/50 border-none rounded-2xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-slate-600 shadow-inner" }}
+                {% endif %}
+              </div>
+              {% if field.help_text and field.field.widget.input_type != 'checkbox' %}
+              <p class="text-[10px] text-gray-500 dark:text-slate-500 mt-2 font-bold uppercase tracking-wider">{{ field.help_text }}</p>
+              {% endif %}
+            {% endif %}
+            
+            {% if field.errors %}
+            <p class="text-[11px] text-red-600 dark:text-red-400 mt-2 font-black tracking-wide flex items-center gap-1.5 uppercase">
+              <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> {{ field.errors.0 }}
+            </p>
+            {% endif %}
           </div>
-        {% else %}
-          <input type="{{ field.field.widget.input_type|default:'text' }}" 
-                 name="{{ field.html_name }}" 
-                 id="{{ field.id_for_label }}" 
-                 value="{{ field.value|default:'' }}"
-                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
-                 {% if field.field.required %}required{% endif %}>
-          {% if field.help_text %}
-          <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
-          {% endif %}
-        {% endif %}
-        
-        {% if field.errors %}
-        <p class="text-sm text-red-600 mt-1">{{ field.errors.0 }}</p>
-        {% endif %}
+        {% endfor %}
       </div>
-      {% endfor %}
 
-      <div class="flex items-center justify-between pt-4 border-t border-gray-200">
-        <a href="{% url 'afip_web:dashboard' %}" class="px-4 py-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition font-medium">
+      <div class="flex flex-col-reverse sm:flex-row items-center justify-end gap-4 pt-8 mt-8 border-t border-gray-100 dark:border-slate-700/50 transition-colors">
+        <a href="{% url 'afip_web:dashboard' %}" class="w-full sm:w-auto px-8 py-4 text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 rounded-2xl hover:bg-gray-100 dark:hover:bg-slate-700 transition-all font-black text-sm uppercase tracking-widest text-center active:scale-95">
           Cancelar
         </a>
-        <button type="submit" class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition font-medium">
-          {% if object %}Guardar Cambios{% else %}Crear Configuración{% endif %}
+        <button type="submit" class="w-full sm:w-auto px-8 py-4 bg-teal-600 dark:bg-teal-500 text-white rounded-2xl hover:bg-teal-700 dark:hover:bg-teal-400 transition-all font-black text-sm uppercase tracking-widest shadow-xl shadow-teal-600/20 dark:shadow-teal-500/10 active:scale-95 flex items-center justify-center">
+          <i data-lucide="save" class="w-4 h-4 mr-2"></i> {% if object %}Guardar Cambios{% else %}Crear Configuración{% endif %}
         </button>
       </div>
     </form>

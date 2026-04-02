@@ -15,9 +15,8 @@ class TestInventoryWebViews:
         client.force_login(normal_user)
         url = reverse('inventory_web:dashboard')
         response = client.get(url)
-        # Debería redirigir o dar 403 porque requiere can_manage_inventory
-        assert response.status_code == 302
-        assert '/accounts/login/' in response.url or '?next=' in response.url
+        # Debería dar 403 porque requiere can_manage_inventory y está autenticado
+        assert response.status_code == 403
         
     def test_stock_movement_list_view(self, client, inventory_manager):
         client.force_login(inventory_manager)

@@ -186,13 +186,15 @@ class SaleItemFactory(DjangoModelFactory):
     unit_price = 100
 
 
-class StockFactory(DjangoModelFactory):
-    """Factory para Stock."""
+class StockMovementFactory(DjangoModelFactory):
+    """Factory para StockMovement."""
     class Meta:
-        model = 'inventory.Stock'
+        model = 'inventory.StockMovement'
     
     product = factory.SubFactory(ProductFactory)
-    quantity = 100
+    movement_type = 'ENTRY'
+    quantity = 10
+    reference = 'TEST-FACTORY'
 
 
 class PaymentFactory(DjangoModelFactory):
@@ -200,7 +202,7 @@ class PaymentFactory(DjangoModelFactory):
     class Meta:
         model = 'payments.Payment'
     
-    amount = 1000
+    amount = factory.Faker('pydecimal', left_digits=4, right_digits=2, positive=True, min_value=100)
     status = 'pending'
 
 
@@ -209,5 +211,9 @@ class InvoiceFactory(DjangoModelFactory):
     class Meta:
         model = 'bills.Invoice'
     
-    number = factory.Sequence(lambda n: f'FACT-{n:04d}')
-    total = 5000
+    number = factory.Sequence(lambda n: f'0001-{n:08d}')
+    total = factory.Faker('pydecimal', left_digits=5, right_digits=2, positive=True, min_value=100)
+    estado_fiscal = 'borrador'
+    tipo_comprobante = 6 # Factura B
+    punto_venta = 1
+    numero_secuencial = factory.Sequence(lambda n: n + 1)

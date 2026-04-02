@@ -21,15 +21,15 @@ Variables:
         <!-- Chip de estado -->
         {% if invoice %}
             {% if invoice.estado_fiscal == 'autorizada' %}
-                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
                     <i data-lucide="check-circle" class="w-3 h-3"></i> Autorizada
                 </span>
             {% elif invoice.estado_fiscal == 'pendiente' %}
-                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
                     <i data-lucide="clock" class="w-3 h-3"></i> Pendiente ARCA
                 </span>
             {% elif invoice.estado_fiscal == 'rechazada' %}
-                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
                     <i data-lucide="x-circle" class="w-3 h-3"></i> Rechazada por ARCA
                 </span>
             {% else %}
@@ -101,15 +101,15 @@ Variables:
                 {% csrf_token %}
                 <button type="submit"
                         onclick="return confirm('ATENCIÓN: Se emitirá una Nota de Crédito en ARCA y se cancelará la venta asociada devolviendo el stock. ¿Proceder?')"
-                        class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 text-sm font-medium rounded-lg transition-colors">
+                        class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-800/50 text-sm font-medium rounded-lg transition-colors">
                     <i data-lucide="ban" class="w-4 h-4"></i>
                     Anular (Nota Cr.)
                 </button>
             </form>
         </div>
         {% elif invoice.estado_fiscal == 'anulada' %}
-        <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mt-4">
-            <p class="text-sm text-orange-700 font-medium mb-3">
+        <div class="bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800/50 rounded-lg p-4 mt-4">
+            <p class="text-sm text-orange-700 dark:text-orange-400 font-medium mb-3">
                 <i data-lucide="alert-triangle" class="w-4 h-4 inline mr-1"></i>
                 Esta factura fue anulada mediante una Nota de Crédito. Ambos comprobantes siguen siendo válidos ante AFIP.
             </p>
@@ -129,8 +129,8 @@ Variables:
             </div>
         </div>
         {% elif invoice.estado_fiscal == 'pendiente' %}
-        <div class="bg-yellow-50 border border-yellow-100 rounded-lg p-4">
-            <p class="text-xs text-yellow-700 font-medium mb-3">
+        <div class="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-100 dark:border-yellow-800/30 rounded-lg p-4">
+            <p class="text-xs text-yellow-700 dark:text-yellow-400 font-medium mb-3">
                 <i data-lucide="clock" class="w-4 h-4 inline mr-1"></i>
                 El comprobante está pendiente o esperando respuesta de ARCA.
             </p>
@@ -145,14 +145,14 @@ Variables:
             </form>
         </div>
         {% elif invoice.estado_fiscal == 'rechazada' %}
-        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/50 rounded-lg p-4">
             <div class="flex items-start gap-3 mb-3">
-                <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 mt-0.5"></i>
+                <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5"></i>
                 <div>
-                    <p class="text-sm text-red-700 font-bold mb-1">
+                    <p class="text-sm text-red-700 dark:text-red-400 font-bold mb-1">
                         ARCA rechazó el comprobante
                     </p>
-                    <p class="text-xs text-red-600">
+                    <p class="text-xs text-red-600 dark:text-red-400/80">
                         {% if invoice.observaciones_afip %}
                             {{ invoice.observaciones_afip }}
                         {% else %}
@@ -209,8 +209,8 @@ Variables:
 
                     <!-- Ícono + título -->
                     <div class="flex items-start gap-3 mb-5">
-                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <i data-lucide="file-text" class="w-5 h-5 text-blue-600"></i>
+                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                            <i data-lucide="file-text" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
                         </div>
                         <div>
                             <h3 class="font-semibold text-gray-900 dark:text-slate-100">Emitir Factura Electrónica</h3>
@@ -285,12 +285,12 @@ Variables:
                                  <i data-lucide="printer" class="w-5 h-5 text-gray-600 dark:text-slate-300"></i>
                              </div>
                              <div>
-                                 <h3 class="font-semibold text-gray-900 dark:text-slate-100">Registrar Ticket de Controlador Fiscal</h3>
-                                 <p class="text-sm text-amber-700 mt-2 bg-amber-50 p-2.5 rounded border border-amber-200">
-                                     <i data-lucide="alert-triangle" class="w-4 h-4 inline mb-0.5"></i>
-                                     Esta acción NO envía datos a AFIP. Usá esta opción SOLO si facturaste desde el controlador fiscal físico.
-                                 </p>
-                             </div>
+                                <h3 class="font-semibold text-gray-900 dark:text-slate-100">Registrar Ticket de Controlador Fiscal</h3>
+                                <p class="text-sm text-amber-700 dark:text-amber-400 mt-2 bg-amber-50 dark:bg-amber-900/10 p-2.5 rounded border border-amber-200 dark:border-amber-800/50">
+                                    <i data-lucide="alert-triangle" class="w-4 h-4 inline mb-0.5"></i>
+                                    Esta acción NO envía datos a AFIP. Usá esta opción SOLO si facturaste desde el controlador fiscal físico.
+                                </p>
+                            </div>
                          </div>
                          <form method="post" action="{% url 'sales_web:sale_register_ticket' sale.pk %}">
                              {% csrf_token %}

@@ -92,6 +92,8 @@ sudo ~/backup_databases.sh
 
 
 
+
+
 sudo nano /usr/local/bin/erp_status.sh
 
 #!/bin/bash

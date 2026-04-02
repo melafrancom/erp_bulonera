@@ -1,321 +1,273 @@
 {% extends 'base/base.html' %}
 {% load static %}
 
-{% block title %}{{ title }} - Proveedores | ERP Bulonera Alvear{% endblock %}
+{% block title %}{% if supplier %}Edición Maestría: {{ supplier.business_name }}{% else %}Alta de Nuevo Proveedor{% endif %} | ERP Bulonera Alvear{% endblock %}
 
 {% block breadcrumb_items %}
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <a href="{% url 'suppliers_web:supplier_list' %}" class="text-gray-600 hover:text-gray-900 transition">Proveedores</a>
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <span class="text-gray-900 font-medium">{% if supplier %}Editar Proveedor{% else %}Nuevo Proveedor{% endif %}</span>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <a href="{% url 'suppliers_web:supplier_list' %}" class="text-gray-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-bold">Proveedores</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <span class="text-gray-900 dark:text-slate-100 font-black tracking-tight">{% if supplier %}Actualizar Registro{% else %}Nuevo Registro{% endif %}</span>
 {% endblock %}
 
-{% block mobile_title %}{{ title }}{% endblock %}
+{% block mobile_title %}{% if supplier %}Editar Proveedor{% else %}Nuevo Proveedor{% endif %}{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto pb-12">
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
 
-  <!-- Header -->
-  <div class="flex items-center gap-3 mb-6">
-    <a href="{% if supplier %}{% url 'suppliers_web:supplier_detail' supplier.pk %}{% else %}{% url 'suppliers_web:supplier_list' %}{% endif %}" 
-       class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition" title="Volver">
-      <i data-lucide="arrow-left" class="w-5 h-5"></i>
-    </a>
+  <!-- ═══════════════════════════════════════════════════════════════════
+       HEADER: Contexto de edición
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
-      {% if supplier %}
-        <p class="text-sm text-gray-500">Editando datos de {{ supplier.business_name }}</p>
-      {% else %}
-        <p class="text-sm text-gray-500">Completá los datos para dar de alta un nuevo proveedor</p>
-      {% endif %}
+      <a href="{% if supplier %}{% url 'suppliers_web:supplier_detail' supplier.pk %}{% else %}{% url 'suppliers_web:supplier_list' %}{% endif %}" class="inline-flex items-center text-[10px] font-black text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 uppercase tracking-[0.2em] transition-all mb-4 group">
+        <i data-lucide="arrow-left" class="w-3 h-3 mr-2 group-hover:-translate-x-1 transition-transform"></i>
+        Abortar y Volver
+      </a>
+      <div class="flex items-center gap-4">
+        <div class="p-3 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl shadow-lg ring-4 ring-indigo-500/10">
+          <i data-lucide="{% if supplier %}pencil-line{% else %}user-plus{% endif %}" class="w-6 h-6 text-white"></i>
+        </div>
+        <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight">
+          {% if supplier %}Ficha de Proveedor{% else %}Registro Comercial{% endif %}
+        </h1>
+      </div>
+    </div>
+    <div class="hidden md:block">
+      <p class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-right">
+        Campos con <span class="text-red-500">*</span> son críticos
+      </p>
     </div>
   </div>
 
-  <form method="POST" action="" id="supplierForm" class="space-y-6">
+  <form method="POST" action="" id="supplierForm" class="space-y-8" novalidate>
     {% csrf_token %}
 
-    <!-- Errores generales del formulario -->
-    {% if form.non_field_errors %}
-    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
-      <div class="flex">
-        <div class="flex-shrink-0">
-          <i data-lucide="alert-circle" class="h-5 w-5 text-red-500"></i>
-        </div>
-        <div class="ml-3">
-          <h3 class="text-sm font-medium text-red-800">Se encontraron errores:</h3>
-          <ul class="mt-1 text-sm text-red-700 list-disc list-inside">
-            {% for error in form.non_field_errors %}
-              <li>{{ error }}</li>
-            {% endfor %}
-          </ul>
+    <!-- ALERTA DE ERRORES -->
+    {% if form.errors %}
+    <div class="bg-red-50 dark:bg-red-900/10 border-2 border-red-200 dark:border-red-900/30 p-6 rounded-[2rem] animate-pulse">
+      <div class="flex items-center gap-4">
+        <i data-lucide="alert-triangle" class="w-8 h-8 text-red-500"></i>
+        <div>
+          <h3 class="text-sm font-black text-red-800 dark:text-red-400 uppercase tracking-widest">Inconsistencia de Datos</h3>
+          <p class="text-xs font-bold text-red-600 dark:text-red-500 mt-1">Por favor, revise los campos resaltados en rojo.</p>
         </div>
       </div>
     </div>
     {% endif %}
 
-    <!-- 1️⃣ IDENTIFICACIÓN Y DATOS FISCALES -->
-    <section class="bg-white rounded-xl shadow-sm border border-gray-200 lg:p-6 p-4">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        <i data-lucide="building" class="w-5 h-5 text-blue-600"></i>
-        Identificación y Datos Fiscales
-      </h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        
+    <!-- SECCIÓN 1: Identidad Fiscal y Legal -->
+    <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden transition-colors">
+      <div class="px-8 py-6 border-b border-gray-100 dark:border-slate-700/50 bg-gray-50/50 dark:bg-slate-900/30 flex items-center gap-3">
+        <i data-lucide="building" class="w-5 h-5 text-indigo-500"></i>
+        <h2 class="text-sm font-black text-gray-900 dark:text-slate-100 uppercase tracking-widest">Entidad y Fiscalidad</h2>
+      </div>
+      
+      <div class="p-8 xl:p-10 grid grid-cols-1 md:grid-cols-2 gap-8">
         <div class="md:col-span-2">
-          <label for="{{ form.business_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-            Razón Social <span class="text-red-500">*</span>
-          </label>
+          <label for="{{ form.business_name.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Razón Social <span class="text-red-500">*</span></label>
           {{ form.business_name }}
           {% if form.business_name.errors %}
-            <p class="mt-1 text-xs text-red-600">{{ form.business_name.errors.0 }}</p>
-          {% elif form.business_name.help_text %}
-            <p class="mt-1 text-xs text-gray-500">{{ form.business_name.help_text }}</p>
+            <p class="mt-2 text-[10px] font-bold text-red-500 uppercase tracking-tight">{{ form.business_name.errors.0 }}</p>
           {% endif %}
         </div>
 
         <div>
-          <label for="{{ form.trade_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-            Nombre Comercial
-          </label>
+          <label for="{{ form.trade_name.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Nombre de Fantasía</label>
           {{ form.trade_name }}
           {% if form.trade_name.errors %}
-            <p class="mt-1 text-xs text-red-600">{{ form.trade_name.errors.0 }}</p>
+            <p class="mt-2 text-[10px] font-bold text-red-500 uppercase tracking-tight">{{ form.trade_name.errors.0 }}</p>
           {% endif %}
         </div>
 
-        <div>
-           <!-- Espacio vacío en desktop para alinear o podés poner otro campo -->
-        </div>
+        <div></div> <!-- Spacer -->
 
         <div>
-          <label for="{{ form.cuit.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-            CUIT <span class="text-red-500">*</span>
-          </label>
+          <label for="{{ form.cuit.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">CUIT <span class="text-red-500">*</span></label>
           {{ form.cuit }}
-          <p id="cuitError" class="mt-1 text-xs text-red-600 hidden">Formato inválido. Debe ser XX-XXXXXXXX-X</p>
+          <p id="cuitError" class="mt-2 text-[10px] font-bold text-red-500 uppercase tracking-widest hidden">Formato Inválido (XX-XXXXXXXX-X)</p>
           {% if form.cuit.errors %}
-            <p class="mt-1 text-xs text-red-600">{{ form.cuit.errors.0 }}</p>
-          {% elif form.cuit.help_text %}
-            <p class="mt-1 text-xs text-gray-500">{{ form.cuit.help_text }}</p>
+            <p class="mt-2 text-[10px] font-bold text-red-500 uppercase tracking-tight">{{ form.cuit.errors.0 }}</p>
           {% endif %}
         </div>
 
         <div>
-          <label for="{{ form.tax_condition.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-            Condición IVA <span class="text-red-500">*</span>
-          </label>
+          <label for="{{ form.tax_condition.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Condición Frente al IVA <span class="text-red-500">*</span></label>
           {{ form.tax_condition }}
           {% if form.tax_condition.errors %}
-            <p class="mt-1 text-xs text-red-600">{{ form.tax_condition.errors.0 }}</p>
+            <p class="mt-2 text-[10px] font-bold text-red-500 uppercase tracking-tight">{{ form.tax_condition.errors.0 }}</p>
           {% endif %}
         </div>
 
-        <!-- Tags -->
-        <div class="md:col-span-2 mt-2 pt-4 border-t border-gray-100">
-          <label class="block text-sm font-medium text-gray-700 mb-2">Etiquetas de Clasificación</label>
-          <div class="flex flex-wrap gap-3">
+        <!-- Tags / Clasificación (Multi-select refined) -->
+        <div class="md:col-span-2 pt-8 border-t border-gray-100 dark:border-slate-700/50">
+          <label class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-4 ml-1">Tags de Clasificación Comercial</label>
+          <div class="flex flex-wrap gap-4">
             {% for checkbox in form.tags %}
-              <label class="inline-flex items-center cursor-pointer group">
-                 {{ checkbox.tag }}
-                 <span class="ml-2 text-sm text-gray-700 group-hover:text-blue-600">{{ checkbox.choice_label }}</span>
+              <label class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-900 rounded-2xl cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all border border-gray-100 dark:border-slate-800 shadow-inner group">
+                <span class="custom-checkbox">{{ checkbox.tag }}</span>
+                <span class="text-xs font-bold text-gray-700 dark:text-slate-300 group-hover:text-blue-600 transition-colors">{{ checkbox.choice_label|upper }}</span>
               </label>
             {% endfor %}
           </div>
         </div>
-
       </div>
-    </section>
+    </div>
 
-    <!-- 2️⃣ CONTACTO Y DIRECCIÓN -->
-    <section class="bg-white rounded-xl shadow-sm border border-gray-200 lg:p-6 p-4">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+    <!-- SECCIÓN 2: Localización y Logística -->
+    <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden transition-colors">
+      <div class="px-8 py-6 border-b border-gray-100 dark:border-slate-700/50 bg-gray-50/50 dark:bg-slate-900/30 flex items-center gap-3">
         <i data-lucide="map-pin" class="w-5 h-5 text-red-500"></i>
-        Contacto y Dirección
-      </h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        
-        <div class="md:col-span-2">
-          <h3 class="text-sm font-medium text-gray-900 mb-2 pb-1 border-b border-gray-100">Datos de Contacto</h3>
-        </div>
-
-        <div>
-          <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Email Principal</label>
-          {{ form.email }}
-          {% if form.email.errors %}<p class="mt-1 text-xs text-red-600">{{ form.email.errors.0 }}</p>{% endif %}
-        </div>
-        
-        <div>
-          <label for="{{ form.website.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Sitio Web</label>
-          {{ form.website }}
-          {% if form.website.errors %}<p class="mt-1 text-xs text-red-600">{{ form.website.errors.0 }}</p>{% endif %}
-        </div>
-
-        <div>
-          <label for="{{ form.phone.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Teléfono Fijo</label>
-          {{ form.phone }}
-          {% if form.phone.errors %}<p class="mt-1 text-xs text-red-600">{{ form.phone.errors.0 }}</p>{% endif %}
-        </div>
-
-        <div>
-          <label for="{{ form.mobile.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Celular</label>
-          {{ form.mobile }}
-          {% if form.mobile.errors %}<p class="mt-1 text-xs text-red-600">{{ form.mobile.errors.0 }}</p>{% endif %}
-        </div>
-
-        <div class="md:col-span-2 mt-4">
-          <h3 class="text-sm font-medium text-gray-900 mb-2 pb-1 border-b border-gray-100">Ubicación física</h3>
-        </div>
-
-        <div class="md:col-span-2">
-          <label for="{{ form.address.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
-          {{ form.address }}
-          {% if form.address.errors %}<p class="mt-1 text-xs text-red-600">{{ form.address.errors.0 }}</p>{% endif %}
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 md:col-span-2">
-          <div>
-            <label for="{{ form.city.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
-            {{ form.city }}
-            {% if form.city.errors %}<p class="mt-1 text-xs text-red-600">{{ form.city.errors.0 }}</p>{% endif %}
-          </div>
-          <div>
-            <label for="{{ form.state.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Provincia</label>
-            {{ form.state }}
-            {% if form.state.errors %}<p class="mt-1 text-xs text-red-600">{{ form.state.errors.0 }}</p>{% endif %}
-          </div>
-          <div>
-            <label for="{{ form.zip_code.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Código Postal</label>
-            {{ form.zip_code }}
-            {% if form.zip_code.errors %}<p class="mt-1 text-xs text-red-600">{{ form.zip_code.errors.0 }}</p>{% endif %}
-          </div>
-        </div>
-
+        <h2 class="text-sm font-black text-gray-900 dark:text-slate-100 uppercase tracking-widest">Base de Operaciones</h2>
       </div>
-    </section>
+      
+      <div class="p-8 xl:p-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="md:col-span-2">
+          <label for="{{ form.address.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Domicilio Legal / Calle</label>
+          {{ form.address }}
+        </div>
+        
+        <div>
+          <label for="{{ form.city.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Ciudad</label>
+          {{ form.city }}
+        </div>
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <label for="{{ form.state.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Provincia</label>
+            {{ form.state }}
+          </div>
+          <div>
+            <label for="{{ form.zip_code.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">C.P.</label>
+            {{ form.zip_code }}
+          </div>
+        </div>
+      </div>
+    </div>
 
-    <!-- 3️⃣ CONTACTO COMERCIAL Y BANCOS -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <!-- Vendedor / Representante -->
-      <section class="bg-white rounded-xl shadow-sm border border-gray-200 lg:p-6 p-4">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <i data-lucide="briefcase" class="w-5 h-5 text-orange-600"></i>
-          Contacto Comercial
-        </h2>
-        <div class="space-y-4">
+    <!-- SECCIÓN 3: Contacto y Gestión Bancaria -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      
+      <!-- Contacto de Ventas -->
+      <section class="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="px-8 py-6 border-b border-gray-100 dark:border-slate-700/50 bg-gray-50/50 dark:bg-slate-900/30 flex items-center gap-3">
+          <i data-lucide="briefcase" class="w-5 h-5 text-orange-500"></i>
+          <h2 class="text-sm font-black text-gray-900 dark:text-slate-100 uppercase tracking-widest">Persona de Contacto</h2>
+        </div>
+        <div class="p-8 space-y-6">
           <div>
-            <label for="{{ form.contact_person.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Nombre (Vendedor/Rep.)</label>
+            <label for="{{ form.contact_person.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Nombre Completo</label>
             {{ form.contact_person }}
-            {% if form.contact_person.errors %}<p class="mt-1 text-xs text-red-600">{{ form.contact_person.errors.0 }}</p>{% endif %}
           </div>
           <div>
-            <label for="{{ form.contact_email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Email del contacto</label>
+            <label for="{{ form.contact_email.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Email Profesional</label>
             {{ form.contact_email }}
-            {% if form.contact_email.errors %}<p class="mt-1 text-xs text-red-600">{{ form.contact_email.errors.0 }}</p>{% endif %}
           </div>
           <div>
-            <label for="{{ form.contact_phone.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Teléfono del contacto</label>
+            <label for="{{ form.contact_phone.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Teléfono Directo</label>
             {{ form.contact_phone }}
-            {% if form.contact_phone.errors %}<p class="mt-1 text-xs text-red-600">{{ form.contact_phone.errors.0 }}</p>{% endif %}
           </div>
         </div>
       </section>
 
-      <!-- Datos Bancarios -->
-      <section class="bg-white rounded-xl shadow-sm border border-gray-200 lg:p-6 p-4">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <i data-lucide="landmark" class="w-5 h-5 text-green-600"></i>
-          Datos Bancarios
-        </h2>
-        <div class="space-y-4">
+      <!-- Tesorería / Bancos -->
+      <section class="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="px-8 py-6 border-b border-gray-100 dark:border-slate-700/50 bg-gray-50/50 dark:bg-slate-900/30 flex items-center gap-3">
+          <i data-lucide="landmark" class="w-5 h-5 text-emerald-500"></i>
+          <h2 class="text-sm font-black text-gray-900 dark:text-slate-100 uppercase tracking-widest">Información Bancaria</h2>
+        </div>
+        <div class="p-8 space-y-6">
           <div>
-            <label for="{{ form.bank_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Banco</label>
+            <label for="{{ form.bank_name.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Entidad Financiera</label>
             {{ form.bank_name }}
-            {% if form.bank_name.errors %}<p class="mt-1 text-xs text-red-600">{{ form.bank_name.errors.0 }}</p>{% endif %}
           </div>
           <div>
-            <label for="{{ form.cbu.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">CBU (22 dígitos)</label>
+            <label for="{{ form.cbu.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">CBU de la Cuenta</label>
             {{ form.cbu }}
-            {% if form.cbu.errors %}<p class="mt-1 text-xs text-red-600">{{ form.cbu.errors.0 }}</p>{% endif %}
           </div>
           <div>
-            <label for="{{ form.bank_alias.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Alias Bancario</label>
+            <label for="{{ form.bank_alias.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Alias Bancario</label>
             {{ form.bank_alias }}
-            {% if form.bank_alias.errors %}<p class="mt-1 text-xs text-red-600">{{ form.bank_alias.errors.0 }}</p>{% endif %}
           </div>
         </div>
       </section>
     </div>
 
-    <!-- 4️⃣ CONDICIONES COMERCIALES Y EXTRAS -->
-    <section class="bg-white rounded-xl shadow-sm border border-gray-200 lg:p-6 p-4">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        <i data-lucide="handshake" class="w-5 h-5 text-purple-600"></i>
-        Condiciones Comerciales
-      </h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        
+    <!-- SECCIÓN 4: Condiciones Comerciales -->
+    <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div class="px-8 py-6 border-b border-gray-100 dark:border-slate-700/50 bg-gray-50/50 dark:bg-slate-900/30 flex items-center gap-3">
+        <i data-lucide="handshake" class="w-5 h-5 text-purple-500"></i>
+        <h2 class="text-sm font-black text-gray-900 dark:text-slate-100 uppercase tracking-widest">Acuerdo y Condiciones</h2>
+      </div>
+      
+      <div class="p-8 xl:p-10 grid grid-cols-1 md:grid-cols-4 gap-8">
         <div>
-          <label for="{{ form.payment_term.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Plazo de pago (días)</label>
+          <label for="{{ form.payment_term.id_for_label }}" class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">Plazo de Pago</label>
           {{ form.payment_term }}
-          {% if form.payment_term.help_text %}<p class="mt-1 text-xs text-gray-500">{{ form.payment_term.help_text }}</p>{% endif %}
-          {% if form.payment_term.errors %}<p class="mt-1 text-xs text-red-600">{{ form.payment_term.errors.0 }}</p>{% endif %}
         </div>
-
         <div>
-          <label for="{{ form.payment_day_of_month.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Día de pago mensual</label>
+          <label for="{{ form.payment_day_of_month.id_for_label }}" class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">Día de Pago</label>
           {{ form.payment_day_of_month }}
-          {% if form.payment_day_of_month.help_text %}<p class="mt-1 text-xs text-gray-500">{{ form.payment_day_of_month.help_text }}</p>{% endif %}
-          {% if form.payment_day_of_month.errors %}<p class="mt-1 text-xs text-red-600">{{ form.payment_day_of_month.errors.0 }}</p>{% endif %}
         </div>
-
         <div>
-          <label for="{{ form.early_payment_discount.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Descuento pronto pago (%)</label>
+          <label for="{{ form.early_payment_discount.id_for_label }}" class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">% Pronto Pago</label>
           {{ form.early_payment_discount }}
-          {% if form.early_payment_discount.errors %}<p class="mt-1 text-xs text-red-600">{{ form.early_payment_discount.errors.0 }}</p>{% endif %}
         </div>
-
         <div>
-          <label for="{{ form.delivery_days.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Plazo entrega (días)</label>
+          <label for="{{ form.delivery_days.id_for_label }}" class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">Lead Time</label>
           {{ form.delivery_days }}
-          {% if form.delivery_days.errors %}<p class="mt-1 text-xs text-red-600">{{ form.delivery_days.errors.0 }}</p>{% endif %}
         </div>
 
-        <div class="md:col-span-2 mt-2 pt-4 border-t border-gray-100">
-          <label for="{{ form.last_price_list_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Fecha de última lista de precios</label>
+        <div class="md:col-span-2 pt-4 border-t border-gray-50 dark:border-slate-700/50">
+          <label for="{{ form.last_price_list_date.id_for_label }}" class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">Última Lista de Precios</label>
           {{ form.last_price_list_date }}
-          {% if form.last_price_list_date.errors %}<p class="mt-1 text-xs text-red-600">{{ form.last_price_list_date.errors.0 }}</p>{% endif %}
         </div>
 
-        <div class="md:col-span-2">
-          <label for="{{ form.notes.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
-          {{ form.notes }}
-          {% if form.notes.errors %}<p class="mt-1 text-xs text-red-600">{{ form.notes.errors.0 }}</p>{% endif %}
-        </div>
-
-        <div class="md:col-span-2 mt-2">
-          <label class="inline-flex items-center cursor-pointer">
+        <div class="md:col-span-2 flex items-center pt-8">
+          <label class="flex items-center gap-3 p-4 bg-gray-50 dark:bg-slate-900 border-2 border-dashed border-gray-200 dark:border-slate-700/50 rounded-2xl cursor-pointer hover:border-indigo-500/50 transition-all group w-full shadow-inner">
             {{ form.is_active }}
-            <span class="ml-2 text-sm font-medium text-gray-800">Proveedor activo</span>
+            <div class="flex flex-col">
+              <span class="text-xs font-black text-gray-700 dark:text-slate-300 uppercase tracking-tighter group-hover:text-indigo-600 transition-colors">Estado de Relación</span>
+              <span class="text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase">Activar para permitir transacciones</span>
+            </div>
           </label>
         </div>
 
+        <div class="md:col-span-4">
+          <label for="{{ form.notes.id_for_label }}" class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">Notas Administrativas</label>
+          {{ form.notes }}
+        </div>
       </div>
-    </section>
+    </div>
 
-    <!-- ESTADO FLOTANTE INFERIOR -->
-    <div class="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20 flex justify-end gap-3 rounded-t-xl md:rounded-lg">
-      <a href="{% if supplier %}{% url 'suppliers_web:supplier_detail' supplier.pk %}{% else %}{% url 'suppliers_web:supplier_list' %}{% endif %}" 
-         class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
-        Cancelar
-      </a>
-      <button type="submit" id="submitBtn" class="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition flex items-center shadow-sm">
-        <i data-lucide="save" class="w-4 h-4 mr-2"></i>
-        Guardar Proveedor
-      </button>
+    <!-- BOTONES DE ACCIÓN (Floating Style) -->
+    <div class="sticky bottom-8 left-0 right-0 z-40 px-4 md:px-0">
+      <div class="max-w-xl mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-gray-200 dark:border-slate-700 p-2 rounded-[2rem] shadow-2xl flex gap-x-3 transition-colors">
+        <a href="{% if supplier %}{% url 'suppliers_web:supplier_detail' supplier.pk %}{% else %}{% url 'suppliers_web:supplier_list' %}{% endif %}" 
+           class="flex-1 inline-flex items-center justify-center px-8 py-4 bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 rounded-2xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-all text-[10px] font-black uppercase tracking-widest">
+          Descartar
+        </a>
+        <button type="submit" id="submitBtn" class="flex-[2] inline-flex items-center justify-center px-10 py-4 bg-gradient-to-r from-indigo-600 to-blue-700 text-white rounded-2xl hover:from-indigo-700 hover:to-blue-800 active:scale-95 transition-all text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20">
+          <i data-lucide="save" class="w-4 h-4 mr-3"></i>
+          {% if supplier %}Actualizar Ficha{% else %}Registrar Proveedor{% endif %}
+        </button>
+      </div>
     </div>
 
   </form>
 </div>
+
+<style>
+  /* Custom form styling to inject Bulonera Pattern into Django form fields */
+  input[type="text"], input[type="email"], input[type="url"], input[type="number"], input[type="date"], select, textarea {
+    @apply w-full px-5 py-4 bg-gray-50 dark:bg-slate-900 border-2 border-transparent dark:border-slate-800 rounded-2xl focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition-all font-bold text-sm text-gray-900 dark:text-slate-100 outline-none placeholder:text-gray-300 dark:placeholder:text-slate-700 shadow-inner !important;
+  }
+  textarea {
+    @apply min-h-[120px] !important;
+  }
+  input[type="checkbox"] {
+    @apply rounded-lg border-gray-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500 h-6 w-6 bg-white dark:bg-slate-900 transition-all !important;
+  }
+</style>
 {% endblock %}
 
 {% block extra_js %}

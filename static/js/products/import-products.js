@@ -74,8 +74,8 @@ document.addEventListener('DOMContentLoaded', function () {
     fileSizeDisplay.textContent = formatSize(file.size);
     defaultState.classList.add('hidden');
     selectedState.classList.remove('hidden');
-    dropZone.classList.add('border-green-400', 'bg-green-50');
-    dropZone.classList.remove('border-gray-300');
+    dropZone.classList.add('border-emerald-400', 'dark:border-emerald-500', 'bg-emerald-50/30', 'dark:bg-emerald-900/10');
+    dropZone.classList.remove('border-gray-100', 'dark:border-slate-900', 'bg-white', 'dark:bg-slate-800');
     submitBtn.disabled = false;
   }
 
@@ -86,8 +86,8 @@ document.addEventListener('DOMContentLoaded', function () {
     fileInput.value = '';
     defaultState.classList.remove('hidden');
     selectedState.classList.add('hidden');
-    dropZone.classList.remove('border-green-400', 'bg-green-50');
-    dropZone.classList.add('border-gray-300');
+    dropZone.classList.remove('border-emerald-400', 'dark:border-emerald-500', 'bg-emerald-50/30', 'dark:bg-emerald-900/10');
+    dropZone.classList.add('border-gray-100', 'dark:border-slate-900', 'bg-white', 'dark:bg-slate-800');
     submitBtn.disabled = true;
   }
 

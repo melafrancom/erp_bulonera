@@ -5,97 +5,139 @@
 
 {% block breadcrumb_items %}
   <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <a href="{% url 'inventory_web:dashboard' %}" class="text-gray-600 hover:text-gray-900">Inventario</a>
+  <a href="{% url 'inventory_web:dashboard' %}" class="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 transition-colors font-bold">Inventario</a>
   <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <a href="{% url 'inventory_web:count_list' %}" class="text-gray-600 hover:text-gray-900">Conteos</a>
+  <a href="{% url 'inventory_web:count_list' %}" class="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 transition-colors font-bold">Auditorías</a>
   <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <span class="text-gray-900 font-medium">Detalle Conteo #{{ count.id }}</span>
+  <span class="text-gray-900 dark:text-slate-100 font-black transition-colors">Auditoría #{{ count.id }}</span>
 {% endblock %}
 
 {% block content %}
 <div class="max-w-6xl mx-auto" x-data="countDetail({{ count.id }}, '{{ count.status }}')">
   
-  <div class="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+  <div class="mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
     <div>
-      <div class="flex items-center gap-3 mb-2">
-        <h1 class="text-2xl font-bold text-gray-900">Auditoría #{{ count.id }}</h1>
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium"
+      <div class="flex items-center gap-4 mb-2">
+        <div class="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-2xl shadow-lg ring-4 ring-indigo-500/10">
+          <i data-lucide="eye" class="w-6 h-6 text-white"></i>
+        </div>
+        <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight transition-colors">Auditoría #{{ count.id }}</h1>
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-black ring-1 transition-colors"
               :class="{
-                'bg-yellow-100 text-yellow-800': countObj.status === 'draft',
-                'bg-blue-100 text-blue-800': countObj.status === 'in_progress',
-                'bg-green-100 text-green-800': countObj.status === 'completed',
-                'bg-red-100 text-red-800': countObj.status === 'cancelled'
+                'bg-amber-100 text-amber-700 ring-amber-600/20 dark:bg-amber-900/30 dark:text-amber-400': countObj.status === 'draft',
+                'bg-blue-100 text-blue-700 ring-blue-600/20 dark:bg-blue-900/30 dark:text-blue-400': countObj.status === 'in_progress',
+                'bg-emerald-100 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-900/30 dark:text-emerald-400': countObj.status === 'completed',
+                'bg-red-100 text-red-700 ring-red-600/20 dark:bg-red-900/30 dark:text-red-400': countObj.status === 'cancelled'
               }" x-text="countObj.status_display || 'Cargando...'"></span>
       </div>
-      <p class="text-gray-600">Fecha Programada: {{ count.count_date }}</p>
+      <p class="text-gray-600 dark:text-slate-400 font-medium transition-colors">Programada para: <span class="font-black tabular-nums">{{ count.count_date }}</span></p>
     </div>
     
-    <div class="flex gap-2" x-show="countObj.status === 'in_progress'">
-      <button @click="completeCount" :disabled="loading" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
-        <i data-lucide="check" class="w-4 h-4 mr-2"></i>
+    <div class="flex gap-3" x-show="countObj.status === 'in_progress'">
+      <button @click="completeCount" :disabled="loading" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-black uppercase tracking-widest text-xs rounded-xl hover:from-emerald-700 hover:to-teal-800 transition-all shadow-xl shadow-emerald-500/20 group">
+        <i data-lucide="check-circle" class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform"></i>
         Finalizar e Impactar Stock
       </button>
     </div>
   </div>
 
   <!-- Form Agregar Item -->
-  <div class="bg-gray-50 rounded-xl border border-gray-200 p-4 mb-6" x-show="countObj.status === 'in_progress'">
-    <h3 class="text-md font-semibold text-gray-900 mb-3">Agregar Producto al Conteo</h3>
-    <form @submit.prevent="addItem" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-      <div class="md:col-span-1">
-        <label class="block text-sm text-gray-700 mb-1">ID Producto</label>
-        <input type="number" x-model.number="newItem.product_id" required min="1" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">
+  <div class="bg-white dark:bg-slate-800 rounded-3xl border border-gray-200 dark:border-slate-700 p-8 shadow-sm mb-8 transition-colors relative overflow-hidden" x-show="countObj.status === 'in_progress'">
+    <div class="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl"></div>
+    
+    <h3 class="text-lg font-black text-gray-900 dark:text-slate-100 mb-6 flex items-center gap-2">
+      <i data-lucide="plus-circle" class="w-5 h-5 text-indigo-500"></i>
+      Agregar Producto al Conteo
+    </h3>
+    
+    <form @submit.prevent="addItem" class="relative grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+      <div class="group">
+        <label class="block text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2 group-focus-within:text-indigo-500 transition-colors">ID Producto</label>
+        <input type="number" x-model.number="newItem.product_id" required min="1" 
+               class="w-full px-4 py-3 border border-gray-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold shadow-sm">
       </div>
-      <div class="md:col-span-1">
-        <label class="block text-sm text-gray-700 mb-1">Cant. Esperada (Sistema)</label>
-        <input type="number" x-model.number="newItem.expected" required class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">
+      
+      <div class="group">
+        <label class="block text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2 group-focus-within:text-indigo-500 transition-colors">Cant. Sistema</label>
+        <input type="number" x-model.number="newItem.expected" required 
+               class="w-full px-4 py-3 border border-gray-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold tabular-nums shadow-sm">
       </div>
-      <div class="md:col-span-1">
-        <label class="block text-sm text-gray-700 mb-1">Cant. Contada Físicamente</label>
-        <input type="number" x-model.number="newItem.counted" required class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">
+      
+      <div class="group">
+        <label class="block text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2 group-focus-within:text-indigo-500 transition-colors">Cant. Física</label>
+        <input type="number" x-model.number="newItem.counted" required 
+               class="w-full px-4 py-3 border border-gray-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold tabular-nums shadow-sm">
       </div>
+      
       <div>
-        <button type="submit" class="w-full h-[42px] bg-blue-600 text-white rounded font-medium hover:bg-blue-700" :disabled="loading">Añadir Muestra</button>
+        <button type="submit" class="w-full py-3.5 bg-indigo-600 dark:bg-indigo-500 text-white font-black uppercase tracking-widest text-xs rounded-xl hover:bg-indigo-700 dark:hover:bg-indigo-400 transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50" :disabled="loading">
+          <span x-show="!loading">Registrar Muestra</span>
+          <span x-show="loading" class="flex items-center justify-center">
+            <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          </span>
+        </button>
       </div>
     </form>
-    <p class="text-xs text-red-600 mt-2" x-show="addError" x-text="addError"></p>
+    
+    <div x-show="addError" x-cloak class="mt-4 p-3 bg-red-100 dark:bg-red-900/30 border-l-4 border-red-500 rounded-lg flex items-center gap-2">
+      <i data-lucide="alert-circle" class="w-4 h-4 text-red-600 dark:text-red-400 shrink-0"></i>
+      <p class="text-xs font-bold text-red-700 dark:text-red-400" x-text="addError"></p>
+    </div>
   </div>
 
   <!-- Lista de Items -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden transition-colors">
     <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+        <thead class="bg-gray-50/50 dark:bg-slate-900/50">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Esperado</th>
-            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Contado</th>
-            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Diferencia</th>
-            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" x-show="countObj.status === 'in_progress'">Eliminar</th>
+            <th class="px-8 py-4 text-left text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest">Descripción del Producto</th>
+            <th class="px-8 py-4 text-right text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest tabular-nums">Esperado</th>
+            <th class="px-8 py-4 text-right text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest tabular-nums">Contado</th>
+            <th class="px-8 py-4 text-right text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest tabular-nums">Diferencia</th>
+            <th class="px-8 py-4 text-right text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest" x-show="countObj.status === 'in_progress'">Acción</th>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+        <tbody class="divide-y divide-gray-200 dark:divide-slate-700 bg-white dark:bg-slate-800">
           <template x-for="item in items" :key="item.id">
-            <tr class="hover:bg-gray-50">
-              <td class="px-6 py-4">
-                <div class="text-sm font-medium text-gray-900" x-text="item.product_name || ('Prod #' + item.product)"></div>
+            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-all group">
+              <td class="px-8 py-5">
+                <div class="text-sm font-black text-gray-900 dark:text-slate-100 transition-colors" x-text="item.product_name || ('Prod #' + item.product)"></div>
+                <div class="text-[10px] font-bold text-gray-400 dark:text-slate-600 uppercase tracking-tighter mt-0.5" x-text="'Ref: ' + (item.product_code || item.product)"></div>
               </td>
-              <td class="px-6 py-4 text-right text-sm text-gray-500" x-text="item.expected_quantity"></td>
-              <td class="px-6 py-4 text-right text-sm font-medium text-gray-900" x-text="item.counted_quantity"></td>
-              <td class="px-6 py-4 text-right text-sm font-bold" 
-                  :class="{'text-red-600': item.difference < 0, 'text-green-600': item.difference > 0, 'text-gray-400': item.difference === 0}">
-                <span x-text="item.difference > 0 ? '+' + item.difference : item.difference"></span>
+              <td class="px-8 py-5 text-right text-sm font-bold text-gray-500 dark:text-slate-500 tabular-nums" x-text="item.expected_quantity"></td>
+              <td class="px-8 py-5 text-right text-sm font-black text-gray-900 dark:text-slate-100 tabular-nums" x-text="item.counted_quantity"></td>
+              <td class="px-8 py-5 text-right">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black ring-1 tabular-nums transition-colors" 
+                      :class="{
+                        'bg-red-100 text-red-700 ring-red-600/20 dark:bg-red-900/30 dark:text-red-400': item.difference < 0, 
+                        'bg-emerald-100 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-900/30 dark:text-emerald-400': item.difference > 0, 
+                        'bg-gray-100 text-gray-500 ring-gray-400/20 dark:bg-slate-900/50 dark:text-slate-500': item.difference === 0
+                      }">
+                  <span x-text="item.difference > 0 ? '+' + item.difference : item.difference"></span>
+                </span>
               </td>
-              <td class="px-6 py-4 text-right" x-show="countObj.status === 'in_progress'">
-                <button @click="deleteItem(item.id)" class="text-red-500 hover:text-red-700 border border-transparent hover:border-red-200 rounded p-1">
+              <td class="px-8 py-5 text-right" x-show="countObj.status === 'in_progress'">
+                <button @click="deleteItem(item.id)" class="inline-flex items-center justify-center p-2 text-red-500 hover:text-red-700 bg-red-50 dark:bg-red-900/20 rounded-xl transition-all hover:scale-110 active:scale-95">
                   <i data-lucide="trash-2" class="w-4 h-4"></i>
                 </button>
               </td>
             </tr>
           </template>
-          <tr x-show="items.length === 0">
-            <td colspan="5" class="px-6 py-12 text-center text-gray-500">Aún no se han agregado muestras a este conteo.</td>
-          </tr>
+          
+          <template x-if="items.length === 0">
+            <tr>
+              <td colspan="5" class="px-8 py-24 text-center">
+                <div class="flex flex-col items-center justify-center">
+                  <div class="p-4 bg-gray-50 dark:bg-slate-900 rounded-full mb-4">
+                    <i data-lucide="box-select" class="w-10 h-10 text-gray-300 dark:text-slate-600"></i>
+                  </div>
+                  <p class="text-xl font-black text-gray-900 dark:text-slate-100">Sin registros de auditoría</p>
+                  <p class="text-sm font-medium text-gray-500 dark:text-slate-500 mt-1 italic">Agregá productos para iniciar la conciliación.</p>
+                </div>
+              </td>
+            </tr>
+          </template>
         </tbody>
       </table>
     </div>

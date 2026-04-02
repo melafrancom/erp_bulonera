@@ -3,151 +3,154 @@
   Uso: { .. % include 'products/partials/_product_card.html' with product=p % .. }
   Card de producto para vista mobile. Touch-friendly (botones > 44px). 
 -->
-<article class="rounded-xl shadow-sm border p-4 mb-3 transition-shadow {% if product.match_score > 0 %}bg-green-50 border-green-200 hover:shadow-md{% else %}bg-white border-gray-200 hover:shadow-md{% endif %}">
+<article class="rounded-2xl shadow-sm border p-5 mb-4 transition-all relative overflow-hidden group {% if product.match_score > 0 %}bg-emerald-50/30 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800/30 hover:shadow-emerald-500/10{% else %}bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:shadow-blue-500/10{% endif %}">
   
+  <!-- Decorative Accent -->
+  <div class="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 -mr-8 -mt-8 rounded-full transition-transform group-hover:scale-150"></div>
+
   <!-- Header: Nombre -->
-  <div class="flex justify-between items-start gap-2 mb-2">
-    <h3 class="text-base font-semibold text-gray-900 leading-tight flex-1">
-      {{ product.name|truncatewords:10 }}
+  <div class="flex justify-between items-start gap-3 mb-4 relative">
+    <h3 class="text-base font-black text-gray-900 dark:text-slate-100 leading-tight flex-1 transition-colors">
+      {{ product.name|truncatewords:12 }}
     </h3>
-    {% if product.profit_margin_percentage > 0 %}
-      <span class="inline-flex items-center shrink-0 px-2 py-0.5 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
-        ↑ {{ product.profit_margin_percentage|floatformat:1 }}%
-      </span>
-    {% elif product.profit_margin_percentage < 0 %}
-      <span class="inline-flex items-center shrink-0 px-2 py-0.5 text-xs font-semibold text-red-800 bg-red-100 rounded-full">
-        ↓ {{ product.profit_margin_percentage|floatformat:1 }}%
-      </span>
-    {% else %}
-      <span class="inline-flex items-center shrink-0 px-2 py-0.5 text-xs font-semibold text-gray-600 bg-gray-100 rounded-full">
-        0%
-      </span>
-    {% endif %}
+    <div class="shrink-0">
+      {% if product.profit_margin_percentage > 0 %}
+        <span class="inline-flex items-center px-2 py-1 text-[10px] font-black text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 ring-1 ring-emerald-600/20 rounded-lg tabular-nums">
+          ↑ {{ product.profit_margin_percentage|floatformat:1 }}%
+        </span>
+      {% elif product.profit_margin_percentage < 0 %}
+        <span class="inline-flex items-center px-2 py-1 text-[10px] font-black text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/30 ring-1 ring-red-600/20 rounded-lg tabular-nums">
+          ↓ {{ product.profit_margin_percentage|floatformat:1 }}%
+        </span>
+      {% else %}
+        <span class="inline-flex items-center px-2 py-1 text-[10px] font-black text-gray-600 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 ring-1 ring-gray-400/20 rounded-lg">
+          0%
+        </span>
+      {% endif %}
+    </div>
   </div>
 
   <!-- Info básica -->
-  <div class="text-sm text-gray-600 space-y-0.5">
-    <p><span class="font-medium text-gray-700">Proveedor:</span> {{ product.supplier.business_name|default:"—" }}</p>
-    <p><span class="font-medium text-gray-700">Código:</span> {{ product.code }}</p>
+  <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs mb-5 relative">
+    <div class="flex flex-col">
+      <span class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Proveedor</span>
+      <span class="font-bold text-gray-700 dark:text-slate-300 truncate">{{ product.supplier.business_name|default:"Propio" }}</span>
+    </div>
+    <div class="flex flex-col">
+      <span class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Código</span>
+      <span class="font-black text-indigo-600 dark:text-indigo-400 tabular-nums">#{{ product.code }}</span>
+    </div>
     {% if product.category %}
-      <p><span class="font-medium text-gray-700">Categoría:</span> {{ product.category.name }}</p>
+    <div class="flex flex-col">
+      <span class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Categoría</span>
+      <span class="font-bold text-gray-700 dark:text-slate-300 truncate">{{ product.category.name }}</span>
+    </div>
     {% endif %}
     {% if product.brand %}
-      <p><span class="font-medium text-gray-700">Marca:</span> {{ product.brand }}</p>
+    <div class="flex flex-col">
+      <span class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Marca</span>
+      <span class="font-bold text-gray-700 dark:text-slate-300 truncate">{{ product.brand }}</span>
+    </div>
     {% endif %}
   </div>
 
   <!-- Precios -->
-  <div class="mt-3 pt-3 border-t border-gray-100">
-    <div class="grid grid-cols-3 gap-2 text-sm text-center">
-      <div class="bg-gray-50 rounded p-1.5 flex flex-col justify-center">
-        <p class="text-gray-500 text-[10px] uppercase leading-tight mb-0.5">Costo<br/>s/IVA</p>
-        <p class="font-semibold text-gray-700">${{ product.cost|floatformat:2 }}</p>
+  <div class="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700/50 relative">
+    <div class="grid grid-cols-3 gap-3">
+      <div class="bg-gray-50 dark:bg-slate-900/50 rounded-xl p-3 flex flex-col items-center justify-center transition-colors">
+        <span class="text-[8px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-tighter text-center leading-tight">Costo<br/>s/IVA</span>
+        <span class="font-bold text-gray-700 dark:text-slate-300 tabular-nums text-xs mt-1">${{ product.cost|floatformat:2 }}</span>
       </div>
-      <div class="bg-blue-50 rounded p-1.5 flex flex-col justify-center">
-        <p class="text-blue-600 text-[10px] uppercase leading-tight mb-0.5">Venta<br/>s/IVA</p>
-        <p class="font-semibold text-blue-700">${{ product.price|floatformat:2 }}</p>
+      <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 flex flex-col items-center justify-center transition-colors">
+        <span class="text-[8px] font-black text-blue-500 dark:text-blue-400 uppercase tracking-tighter text-center leading-tight">Venta<br/>s/IVA</span>
+        <span class="font-black text-blue-700 dark:text-blue-300 tabular-nums text-xs mt-1">${{ product.price|floatformat:2 }}</span>
       </div>
-      <div class="bg-green-50 rounded p-1.5 flex flex-col justify-center border border-green-100">
-        <p class="text-green-600 text-[10px] uppercase leading-tight mb-0.5">Venta<br/>c/IVA</p>
-        <p class="font-bold text-green-700">${{ product.base_price_with_tax|floatformat:2 }}</p>
+      <div class="bg-emerald-100/50 dark:bg-emerald-900/30 rounded-xl p-3 flex flex-col items-center justify-center border border-emerald-200 dark:border-emerald-800/30 transition-colors">
+        <span class="text-[8px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-tighter text-center leading-tight">Venta<br/>c/IVA</span>
+        <span class="font-black text-emerald-700 dark:text-emerald-300 tabular-nums text-sm mt-1 mb-0.5">${{ product.base_price_with_tax|floatformat:2 }}</span>
       </div>
     </div>
   </div>
 
   <!-- Botones Acción -->
-  <div class="mt-4 flex gap-2">
+  <div class="mt-5 flex gap-3 relative">
     <button type="button" onclick="toggleRow('mobile-details-{{ product.pk }}')"
-            class="flex items-center justify-center px-3 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition focus:outline-none shrink-0"
+            class="flex items-center justify-center w-12 h-12 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-600 transition-all focus:outline-none shrink-0 group/btn"
             aria-expanded="false" aria-controls="mobile-details-{{ product.pk }}">
-      <i data-lucide="plus-circle" class="w-5 h-5" id="mobile-icon-{{ product.pk }}"></i>
+      <i data-lucide="plus-circle" class="w-5 h-5 transition-transform group-aria-expanded/btn:rotate-180 group-aria-expanded/btn:text-blue-500" id="mobile-icon-{{ product.pk }}"></i>
     </button>
     
     <a href="{% url 'products:product_detail' product.pk %}"
-       class="flex-1 flex items-center justify-center px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
+       class="flex-1 flex items-center justify-center px-4 h-12 bg-gradient-to-r from-blue-600 to-indigo-700 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:from-blue-700 hover:to-indigo-800 transition-all shadow-lg shadow-blue-500/20 active:scale-[0.98]">
       <i data-lucide="eye" class="w-4 h-4 mr-2"></i>
-      Detalle Completo
+      Ficha Técnica
     </a>
   </div>
 
   <!-- SECCIÓN OCULTA EXPANDIBLE -->
-  <div id="mobile-details-{{ product.pk }}" class="hidden mt-4 pt-4 border-t border-gray-100">
+  <div id="mobile-details-{{ product.pk }}" class="hidden mt-6 pt-6 border-t border-gray-200 dark:border-slate-700/50 relative">
     <!-- Info Técnica -->
-    <div class="mb-5">
-      <h4 class="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-        <i data-lucide="info" class="w-4 h-4 text-blue-600"></i> Info Técnica
+    <div class="mb-6">
+      <h4 class="text-xs font-black text-gray-900 dark:text-slate-100 mb-3 flex items-center gap-2 uppercase tracking-widest">
+        <i data-lucide="info" class="w-4 h-4 text-blue-500"></i> Atributos Técnicos
       </h4>
-      <div class="bg-gray-50 rounded-lg p-3 text-xs text-gray-600 space-y-1.5">
-        <div class="flex justify-between items-center border-b border-gray-200 pb-1">
-          <span class="text-gray-500">SKU</span>
-          <span class="font-medium text-gray-900">{{ product.sku|default:"—" }}</span>
+      <div class="space-y-2">
+        <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-slate-700/50">
+          <span class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-tight">SKU Interno</span>
+          <span class="text-xs font-bold text-gray-900 dark:text-slate-200 tabular-nums">{{ product.sku|default:"—" }}</span>
         </div>
-        <div class="flex justify-between items-center border-b border-gray-200 pb-1">
-          <span class="text-gray-500">Cód. Barras</span>
-          <span class="font-medium text-gray-900">{{ product.barcode|default:"—" }}</span>
+        <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-slate-700/50">
+          <span class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-tight">EAN / Barras</span>
+          <span class="text-xs font-bold text-gray-900 dark:text-slate-200 tabular-nums">{{ product.barcode|default:"—" }}</span>
         </div>
-        <div class="flex justify-between items-center border-b border-gray-200 pb-1">
-          <span class="text-gray-500">Código QR</span>
-          <span class="font-medium text-gray-900">{{ product.qr_code|default:"—" }}</span>
+        <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-slate-700/50">
+          <span class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-tight">Stock Real</span>
+          <span class="text-xs font-black {% if product.stock_quantity > 0 %}text-emerald-600 dark:text-emerald-400{% else %}text-red-500{% endif %} tabular-nums">{{ product.stock_quantity|default:"0" }} und.</span>
         </div>
-        <div class="flex justify-between items-center border-b border-gray-200 pb-1">
-          <span class="text-gray-500">Ctrl. Stock</span>
-          <span class="font-medium {% if product.stock_control_enabled %}text-green-700{% else %}text-gray-600{% endif %}">
-            {{ product.stock_control_enabled|yesno:"Sí,No" }}
-          </span>
-        </div>
-        <div class="flex justify-between items-center border-b border-gray-200 pb-1">
-          <span class="text-gray-500">Stock Actual</span>
-          <span class="font-medium text-gray-900">{{ product.stock_quantity|default:"0" }}</span>
-        </div>
-        <div class="flex justify-between items-center border-b border-gray-200 pb-1">
-          <span class="text-gray-500">IVA</span>
-          <span class="font-medium text-gray-900">{{ product.tax_rate|floatformat:1 }}%</span>
-        </div>
-        <div class="flex justify-between items-center">
-          <span class="text-gray-500">Últ. Compra</span>
-          <span class="font-medium text-gray-900">{{ product.last_purchase_date|date:"d/m/Y"|default:"—" }}</span>
+        <div class="flex justify-between items-center py-2">
+          <span class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-tight">Alicuota IVA</span>
+          <span class="text-xs font-bold text-gray-900 dark:text-slate-200 tabular-nums">{{ product.tax_rate|floatformat:1 }}%</span>
         </div>
       </div>
     </div>
 
     <!-- Listas de Precio -->
     <div>
-      <h4 class="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-        <i data-lucide="receipt" class="w-4 h-4 text-purple-600"></i> Listas de Precio
+      <h4 class="text-xs font-black text-gray-900 dark:text-slate-100 mb-3 flex items-center gap-2 uppercase tracking-widest">
+        <i data-lucide="receipt" class="w-4 h-4 text-purple-500"></i> Multi-tarifas
       </h4>
       
       {% if product.computed_prices %}
-      <div class="overflow-x-auto border border-gray-200 rounded-lg">
-        <table class="min-w-full divide-y divide-gray-200 text-[11px]">
-          <thead class="bg-gray-100">
-            <tr>
-              <th class="px-2 py-1.5 text-left font-medium text-gray-600">Lista</th>
-              <th class="px-2 py-1.5 text-right font-medium text-gray-600">%</th>
-              <th class="px-2 py-1.5 text-right font-medium text-gray-600">s/IVA</th>
-              <th class="px-2 py-1.5 text-right font-medium text-gray-600">c/IVA</th>
+      <div class="bg-gray-50 dark:bg-slate-900/50 rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-700/50 transition-colors">
+        <table class="w-full text-[10px] border-collapse">
+          <thead>
+            <tr class="bg-gray-100 dark:bg-slate-900">
+              <th class="px-3 py-2 text-left font-black text-gray-500 dark:text-slate-400 uppercase tracking-tighter">Lista</th>
+              <th class="px-3 py-2 text-right font-black text-gray-500 dark:text-slate-400 uppercase tracking-tighter">Impacto</th>
+              <th class="px-3 py-2 text-right font-black text-gray-500 dark:text-slate-400 uppercase tracking-tighter">c/IVA</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100 bg-white">
+          <tbody class="divide-y divide-gray-200/50 dark:divide-slate-700/50">
             {% for cp in product.computed_prices %}
-            <tr>
-              <td class="px-2 py-1.5 text-gray-900 font-medium whitespace-nowrap">{{ cp.list_name }}</td>
-              <td class="px-2 py-1.5 text-right whitespace-nowrap">
+            <tr class="hover:bg-white dark:hover:bg-slate-800 transition-colors">
+              <td class="px-3 py-3 font-bold text-gray-700 dark:text-slate-300 whitespace-nowrap">{{ cp.list_name }}</td>
+              <td class="px-3 py-3 text-right">
                 {% if cp.type == 'SURCHARGE' %}
-                  <span class="text-green-700">+{{ cp.percentage|floatformat:0 }}%</span>
+                  <span class="text-emerald-600 dark:text-emerald-400 font-black tabular-nums">+{{ cp.percentage|floatformat:0 }}%</span>
                 {% else %}
-                  <span class="text-red-700">-{{ cp.percentage|floatformat:0 }}%</span>
+                  <span class="text-red-500 font-black tabular-nums">-{{ cp.percentage|floatformat:0 }}%</span>
                 {% endif %}
               </td>
-              <td class="px-2 py-1.5 text-right text-gray-700 whitespace-nowrap">${{ cp.price_without_tax|floatformat:2 }}</td>
-              <td class="px-2 py-1.5 text-right text-gray-900 font-medium whitespace-nowrap">${{ cp.price_with_tax|floatformat:2 }}</td>
+              <td class="px-3 py-3 text-right font-black text-gray-900 dark:text-slate-100 tabular-nums whitespace-nowrap">${{ cp.price_with_tax|floatformat:2 }}</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
       {% else %}
-      <p class="text-xs text-gray-500 italic bg-gray-50 p-2 rounded">No hay listas de precio activas.</p>
+      <div class="p-4 bg-gray-50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-gray-300 dark:border-slate-700 text-center">
+        <p class="text-[10px] font-bold text-gray-400 dark:text-slate-500 italic uppercase">Sin tarifas secundarias</p>
+      </div>
       {% endif %}
     </div>
   </div>

@@ -1,159 +1,186 @@
 {% extends 'base/base.html' %}
 {% load static %}
 
-{% block title %}Importar Productos - ERP Bulonera Alvear{% endblock %}
+{% block title %}Importar Productos | ERP Bulonera Alvear{% endblock %}
 
 {% block breadcrumb_items %}
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <a href="{% url 'products:product_list' %}" class="text-gray-600 hover:text-gray-900">Productos</a>
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <span class="text-gray-900 font-medium">Importar</span>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <a href="{% url 'products:product_list' %}" class="text-gray-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-bold">Productos</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <span class="text-gray-900 dark:text-slate-100 font-black tracking-tight">Importar Catálogo</span>
 {% endblock %}
 
 {% block mobile_title %}Importar Productos{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto">
+<div class="max-w-4xl mx-auto px-4 pb-24">
 
-  <!-- Header -->
-  <div class="mb-6">
-    <a href="{% url 'products:product_list' %}" class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition mb-2">
-      <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Volver a Productos
-    </a>
-    <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-      <i data-lucide="upload" class="w-6 h-6 text-blue-600"></i>
-      Importar Productos desde Excel
-    </h1>
+  <!-- Header Section -->
+  <div class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <div>
+      <a href="{% url 'products:product_list' %}" class="inline-flex items-center text-[10px] font-black text-gray-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 uppercase tracking-[0.2em] transition-all mb-4 group">
+        <i data-lucide="arrow-left" class="w-3 h-3 mr-2 group-hover:-translate-x-1 transition-transform"></i>
+        Volver al Catálogo
+      </a>
+      <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight flex items-center gap-4">
+        <span class="flex items-center justify-center w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl text-indigo-600 dark:text-indigo-400">
+           <i data-lucide="upload-cloud" class="w-7 h-7"></i>
+        </span>
+        Importar desde Excel
+      </h1>
+    </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════════
-       INSTRUCCIONES
-       ═══════════════════════════════════════════════════════════════════ -->
-  <section class="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-4">
-    <h2 class="text-base font-semibold text-blue-900 mb-3 flex items-center gap-2">
-      <i data-lucide="info" class="w-5 h-5"></i>
-      Instrucciones
-    </h2>
-    <ol class="text-sm text-blue-800 space-y-2 list-decimal list-inside">
-      <li>
-        Descargá la plantilla Excel con el formato correcto:
-        <a href="{% url 'products:download_import_template' %}" class="inline-flex items-center ml-1 text-blue-700 underline font-medium hover:text-blue-900">
-          <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i>
-          Descargar Plantilla
-        </a>
-      </li>
-      <li>Completá los datos de los productos:
-        <ul class="ml-5 mt-1 space-y-0.5 list-disc text-blue-700">
-          <li><strong>Obligatorios:</strong> code, price</li>
-          <li><strong>Opcionales:</strong> name, category, diameter, length, brand, stock, etc.</li>
-        </ul>
-      </li>
-      <li>Guardá el archivo y subilo a continuación.</li>
-    </ol>
-  </section>
-
-  <!-- ═══════════════════════════════════════════════════════════════════
-       FORMULARIO DE UPLOAD
-       ═══════════════════════════════════════════════════════════════════ -->
-  <form method="POST" enctype="multipart/form-data" id="importForm">
-    {% csrf_token %}
-
-    <!-- Zona de Drag & Drop -->
-    <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        <i data-lucide="file-up" class="w-5 h-5 text-blue-600"></i>
-        Subir Archivo
-      </h2>
-
-      <div id="dropZone"
-           class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer
-                  hover:border-blue-400 hover:bg-blue-50 transition-all duration-200"
-           role="button" tabindex="0" aria-label="Seleccionar archivo para importar">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    
+    <!-- Left Column: Instructions & Template -->
+    <div class="lg:col-span-1 space-y-6">
+      <section class="bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/20 rounded-[2rem] p-6 transition-colors">
+        <h2 class="text-xs font-black text-indigo-900 dark:text-indigo-400 mb-6 flex items-center gap-2 uppercase tracking-widest">
+          <i data-lucide="book-open" class="w-4 h-4 text-indigo-500"></i>
+          Guía Rápida
+        </h2>
         
-        <!-- Estado sin archivo -->
-        <div id="dropZoneDefault">
-          <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i data-lucide="upload-cloud" class="w-8 h-8 text-gray-400"></i>
+        <div class="space-y-6">
+          <div class="relative pl-8">
+            <span class="absolute left-0 top-0 flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white text-[10px] font-black">1</span>
+            <p class="text-xs font-bold text-gray-700 dark:text-slate-300 leading-relaxed">
+              Descargá la plantilla oficial para asegurar la compatibilidad de columnas.
+            </p>
+            <a href="{% url 'products:download_import_template' %}" class="inline-flex items-center mt-3 text-[10px] font-black text-indigo-600 dark:text-indigo-400 hover:underline uppercase tracking-wider group">
+              <i data-lucide="download" class="w-3 h-3 mr-2 group-hover:translate-y-0.5 transition-transform"></i>
+              Bajar Plantilla
+            </a>
           </div>
-          <p class="text-gray-700 font-medium">Arrastrá tu archivo aquí</p>
-          <p class="text-sm text-gray-500 mt-1">o hacé clic para seleccionar</p>
-          <p class="text-xs text-gray-400 mt-3">Formatos: .xlsx, .csv &middot; Tamaño máximo: 10 MB</p>
+
+          <div class="relative pl-8">
+            <span class="absolute left-0 top-0 flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white text-[10px] font-black">2</span>
+            <p class="text-xs font-bold text-gray-700 dark:text-slate-300 leading-relaxed">
+              Completá los campos obligatorios: <span class="text-indigo-600 dark:text-indigo-400 font-black italic">code</span> y <span class="text-indigo-600 dark:text-indigo-400 font-black italic">price</span>.
+            </p>
+          </div>
+
+          <div class="relative pl-8">
+            <span class="absolute left-0 top-0 flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white text-[10px] font-black">3</span>
+            <p class="text-xs font-bold text-gray-700 dark:text-slate-300 leading-relaxed">
+              Subí el archivo y el sistema comenzará el procesamiento masivo.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div class="p-6 bg-white dark:bg-slate-800 rounded-[2rem] border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden relative">
+        <div class="absolute -top-10 -right-10 w-24 h-24 bg-blue-500/5 rounded-full blur-xl"></div>
+        <h3 class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+          Soporte
+        </h3>
+        <p class="text-xs font-bold text-gray-600 dark:text-slate-400 leading-relaxed">
+          Recordá que los códigos deben ser únicos. Si el producto ya existe, podés elegir actualizarlo automáticamente.
+        </p>
+      </div>
+    </div>
+
+    <!-- Right Column: Form & Config -->
+    <div class="lg:col-span-2">
+      <form method="POST" enctype="multipart/form-data" id="importForm" class="space-y-6">
+        {% csrf_token %}
+
+        <!-- Dropzone Area -->
+        <div id="dropZone"
+             class="group relative bg-white dark:bg-slate-800 border-4 border-dashed border-gray-100 dark:border-slate-900 rounded-[3rem] p-12 text-center cursor-pointer transition-all hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50/30 dark:hover:bg-indigo-900/5"
+             role="button" tabindex="0">
+          
+          <!-- Default State -->
+          <div id="dropZoneDefault">
+            <div class="w-20 h-20 bg-gray-50 dark:bg-slate-900 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
+              <i data-lucide="cloud-lightning" class="w-10 h-10 text-indigo-500"></i>
+            </div>
+            <h2 class="text-xl font-black text-gray-900 dark:text-slate-100 tracking-tight transition-colors">Suelte el archivo aquí</h2>
+            <p class="text-sm font-bold text-gray-400 dark:text-slate-500 mt-2">o haga clic para explorar sus documentos</p>
+            
+            <div class="mt-8 flex justify-center gap-4">
+               <span class="px-4 py-1.5 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400 text-[10px] font-black rounded-full uppercase tracking-tighter">.XLSX</span>
+               <span class="px-4 py-1.5 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400 text-[10px] font-black rounded-full uppercase tracking-tighter">.CSV</span>
+            </div>
+          </div>
+
+          <!-- Selected State -->
+          <div id="dropZoneSelected" class="hidden animate-in fade-in zoom-in duration-300">
+            <div class="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-3xl flex items-center justify-center mx-auto mb-6">
+              <i data-lucide="file-check" class="w-10 h-10 text-emerald-600 dark:text-emerald-500"></i>
+            </div>
+            <h2 class="text-xl font-black text-emerald-900 dark:text-emerald-400 tracking-tight truncate px-4" id="selectedFileName">archivo_catalogo.xlsx</h2>
+            <p class="text-sm font-bold text-emerald-600/60 dark:text-emerald-500/60 mt-1 uppercase tracking-widest tabular-nums" id="selectedFileSize">2.4 MB</p>
+            <button type="button" id="clearFileBtn"
+                    class="mt-6 text-xs font-black text-red-500 hover:text-red-700 dark:hover:text-red-400 flex items-center justify-center mx-auto uppercase tracking-widest gap-2">
+              <i data-lucide="trash-2" class="w-4 h-4 text-red-500"></i>
+              Remover Archivo
+            </button>
+          </div>
+          
+          <!-- Hidden Input -->
+          <input type="file" name="file" id="fileInput" accept=".xlsx,.csv" class="hidden">
         </div>
 
-        <!-- Estado con archivo seleccionado -->
-        <div id="dropZoneSelected" class="hidden">
-          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i data-lucide="file-check" class="w-8 h-8 text-green-600"></i>
+        <!-- Error Feedback -->
+        <div id="fileError" class="hidden p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-2xl flex items-center gap-4">
+          <div class="shrink-0 w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center">
+             <i data-lucide="alert-circle" class="w-5 h-5"></i>
           </div>
-          <p class="text-green-700 font-medium" id="selectedFileName">archivo.xlsx</p>
-          <p class="text-sm text-gray-500 mt-1" id="selectedFileSize">0 KB</p>
-          <button type="button" id="clearFileBtn"
-                  class="mt-2 text-sm text-red-600 hover:text-red-800 underline">
-            Quitar archivo
+          <p id="fileErrorMsg" class="text-xs font-bold text-red-700 dark:text-red-400"></p>
+        </div>
+
+        <!-- Options Card -->
+        <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-gray-200 dark:border-slate-700 p-8 transition-colors">
+          <h3 class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+             <i data-lucide="toggle-right" class="w-4 h-4"></i>
+             Parámetros de Importación
+          </h3>
+          
+          <div class="space-y-6">
+            <label class="flex items-start gap-5 cursor-pointer group">
+              <div class="relative flex items-center">
+                <input type="checkbox" name="update_existing" value="true" checked
+                       class="peer appearance-none w-10 h-10 bg-gray-50 dark:bg-slate-900 border-2 border-transparent dark:border-slate-700 rounded-2xl checked:bg-indigo-600 dark:checked:bg-indigo-500 transition-all cursor-pointer shadow-inner">
+                <i data-lucide="check" class="absolute pointer-events-none opacity-0 peer-checked:opacity-100 w-5 h-5 text-white left-1/2 -translate-x-1/2 transition-opacity"></i>
+              </div>
+              <div class="flex-1">
+                <span class="block text-sm font-black text-gray-900 dark:text-slate-100 mb-1 group-hover:text-indigo-600 transition-colors">Actualizar Existentes</span>
+                <span class="text-xs font-medium text-gray-400 dark:text-slate-500">Si un código ya está en la base, sobrescribe sus datos actuales.</span>
+              </div>
+            </label>
+
+            <label class="flex items-start gap-5 cursor-pointer group pt-6 border-t border-gray-50 dark:border-slate-700/30">
+              <div class="relative flex items-center">
+                <input type="checkbox" name="create_categories" value="true" checked
+                       class="peer appearance-none w-10 h-10 bg-gray-50 dark:bg-slate-900 border-2 border-transparent dark:border-slate-700 rounded-2xl checked:bg-indigo-600 dark:checked:bg-indigo-500 transition-all cursor-pointer shadow-inner">
+                <i data-lucide="check" class="absolute pointer-events-none opacity-0 peer-checked:opacity-100 w-5 h-5 text-white left-1/2 -translate-x-1/2 transition-opacity"></i>
+              </div>
+              <div class="flex-1">
+                <span class="block text-sm font-black text-gray-900 dark:text-slate-100 mb-1 group-hover:text-indigo-600 transition-colors">Sincronizar Estructura</span>
+                <span class="text-xs font-medium text-gray-400 dark:text-slate-500">Crea automáticamente categorías y subcategorías que no figuren en sistema.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Submission Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 pt-4 transition-colors">
+           <button type="submit" id="submitBtn" disabled
+                   class="flex-1 inline-flex items-center justify-center px-10 py-5 bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-[2rem] hover:from-emerald-700 hover:to-teal-800 active:scale-95 transition-all text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-500/20 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed">
+            <i data-lucide="zap" class="w-4 h-4 mr-3" id="submitIcon"></i>
+            <span id="submitText">Procesar Importación</span>
+            
+            <svg id="submitSpinner" class="hidden animate-spin h-5 w-5 ml-4" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
           </button>
         </div>
-      </div>
-
-      <!-- Input file oculto -->
-      <input type="file" name="file" id="fileInput"
-             accept=".xlsx,.csv"
-             class="hidden"
-             aria-label="Seleccionar archivo">
-
-      <!-- Error de validación -->
-      <p id="fileError" class="hidden mt-3 text-sm text-red-600 flex items-center gap-1">
-        <i data-lucide="alert-circle" class="w-4 h-4"></i>
-        <span id="fileErrorMsg"></span>
-      </p>
-    </section>
-
-    <!-- Opciones de importación -->
-    <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        <i data-lucide="settings" class="w-5 h-5 text-gray-600"></i>
-        Opciones de Importación
-      </h2>
-      <div class="space-y-3">
-        <label class="flex items-center gap-3 cursor-pointer">
-          <input type="checkbox" name="update_existing" value="true" checked
-                 class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-5 w-5">
-          <div>
-            <span class="text-sm font-medium text-gray-700">Actualizar productos existentes</span>
-            <p class="text-xs text-gray-500">Si el código ya existe, actualiza sus datos</p>
-          </div>
-        </label>
-
-        <label class="flex items-center gap-3 cursor-pointer">
-          <input type="checkbox" name="create_categories" value="true" checked
-                 class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-5 w-5">
-          <div>
-            <span class="text-sm font-medium text-gray-700">Crear categorías si no existen</span>
-            <p class="text-xs text-gray-500">Genera nuevas categorías automáticamente</p>
-          </div>
-        </label>
-      </div>
-    </section>
-
-    <!-- Botones -->
-    <div class="flex flex-col sm:flex-row gap-3 mb-8">
-      <button type="submit" id="submitBtn" disabled
-              class="inline-flex items-center justify-center px-6 py-3 bg-green-600 text-white rounded-lg 
-                     hover:bg-green-700 active:bg-green-800 transition text-sm font-medium
-                     disabled:opacity-50 disabled:cursor-not-allowed order-1 sm:order-2">
-        <i data-lucide="upload" class="w-4 h-4 mr-2" id="submitIcon"></i>
-        <span id="submitText">Importar Productos</span>
-        <!-- Spinner (oculto) -->
-        <svg id="submitSpinner" class="hidden animate-spin w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-        </svg>
-      </button>
-      <a href="{% url 'products:product_list' %}"
-         class="inline-flex items-center justify-center px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-medium order-2 sm:order-1">
-        Cancelar
-      </a>
+      </form>
     </div>
-  </form>
+  </div>
 
 </div>
 {% endblock %}

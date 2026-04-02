@@ -1,168 +1,97 @@
 {% extends 'base/base.html' %}
 {% load static %}
 
-{% block title %}Factura {{ invoice.number }} - ERP Bulonera Alvear{% endblock %}
+{% block title %}Factura {{ invoice.number }} | ERP Bulonera Alvear{% endblock %}
 
 {% block breadcrumb_items %}
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <a href="{% url 'bills_web:invoice_list' %}" class="text-gray-600 hover:text-gray-900">Facturas</a>
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <span class="text-gray-900 font-medium">{{ invoice.number }}</span>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <a href="{% url 'bills_web:invoice_list' %}" class="text-gray-500 dark:text-slate-400 font-bold hover:text-gray-900 dark:hover:text-slate-100 transition-colors tracking-tight">Facturas</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <span class="text-gray-900 dark:text-slate-100 font-black tracking-tight">{{ invoice.number }}</span>
 {% endblock %}
 
 {% block mobile_title %}Factura {{ invoice.number }}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto">
+<div class="max-w-7xl mx-auto px-4 pb-24">
 
-  <!-- ===== Header ===== -->
-  <div class="mb-6">
-    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-2">
-      <div>
-        <div class="flex items-center gap-3 mb-1">
-          <div class="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-sm">
-            <i data-lucide="file-text" class="w-5 h-5 text-white"></i>
-          </div>
-          <h1 class="text-2xl md:text-3xl font-bold text-gray-900">
-            Factura {{ invoice.get_tipo_comprobante_display }} {{ invoice.number }}
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+    <div>
+      <div class="flex items-center gap-4 mb-2">
+          <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight flex items-center transition-colors">
+              {{ invoice.get_tipo_comprobante_display }} {{ invoice.number }}
           </h1>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2 mt-3">
-          <!-- Badge: Estado Fiscal -->
-          {% if invoice.estado_fiscal == 'borrador' %}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">
-              <i data-lucide="file" class="w-3 h-3"></i>Borrador
-            </span>
-          {% elif invoice.estado_fiscal == 'pendiente' %}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-200">
-              <i data-lucide="clock" class="w-3 h-3"></i>Pendiente en AFIP
-            </span>
-          {% elif invoice.estado_fiscal == 'autorizada' %}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
-              <i data-lucide="check-circle" class="w-3 h-3"></i>Autorizada (CAE)
-            </span>
+          {% if invoice.estado_fiscal == 'autorizada' %}
+              <span class="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 uppercase tracking-widest ring-1 ring-emerald-500/30 shadow-sm">
+                  <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> Autorizada
+              </span>
           {% elif invoice.estado_fiscal == 'rechazada' %}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
-              <i data-lucide="x-circle" class="w-3 h-3"></i>Rechazada por AFIP
-            </span>
-          {% elif invoice.estado_fiscal == 'anulada' %}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-200">
-              <i data-lucide="rotate-ccw" class="w-3 h-3"></i>Anulada (NC)
-            </span>
+              <span class="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 uppercase tracking-widest ring-1 ring-red-500/30 shadow-sm">
+                  <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i> Rechazada
+              </span>
+          {% else %}
+              <span class="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 uppercase tracking-widest ring-1 ring-gray-600/20 shadow-sm">
+                  <i data-lucide="file" class="w-4 h-4 mr-2"></i> {{ invoice.get_estado_fiscal_display }}
+              </span>
           {% endif %}
-
-          <span class="text-sm text-gray-400">Emisión: {{ invoice.fecha_emision|date:"d/m/Y" }}</span>
-        </div>
       </div>
+      <p class="text-sm font-bold text-gray-500 dark:text-slate-400 mt-2 uppercase tracking-widest pl-1">Emitida el <span class="text-gray-700 dark:text-slate-300">{{ invoice.fecha_emision|date:"d/m/Y H:i" }}</span></p>
+    </div>
 
-      <div class="flex items-center gap-2">
-        {% if invoice.estado_fiscal == 'autorizada' %}
-        <a href="{% url 'bills_web:invoice_pdf' invoice.id %}" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium flex-shrink-0">
-          <i data-lucide="download" class="w-4 h-4 mr-2"></i>
-          Descargar PDF
-        </a>
-        {% endif %}
-        <a href="{% url 'bills_web:invoice_list' %}"
-           class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-gray-700 font-medium flex-shrink-0">
-          <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
-          Atrás
-        </a>
-      </div>
+    <div class="flex items-center gap-3">
+      {% if invoice.estado_fiscal == 'autorizada' %}
+      <a href="{% url 'bills_web:invoice_pdf' invoice.id %}" target="_blank" 
+         class="inline-flex items-center px-6 py-4 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl text-sm font-black text-gray-900 dark:text-slate-100 hover:bg-gray-50 dark:hover:bg-slate-700/80 transition-all shadow-sm active:scale-95 uppercase tracking-widest">
+        <i data-lucide="download" class="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400"></i> Descargar PDF
+      </a>
+      {% endif %}
+      <a href="{% url 'bills_web:invoice_list' %}" 
+         class="inline-flex items-center px-6 py-4 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-2xl text-sm font-black hover:bg-gray-200 dark:hover:bg-slate-700 transition-all active:scale-95 uppercase tracking-widest">
+        <i data-lucide="arrow-left" class="w-5 h-5 mr-2"></i> Volver
+      </a>
     </div>
   </div>
 
-  <!-- Grid 2 Columnas -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-    <!-- ===== Contenido Principal (2/3) ===== -->
-    <div class="lg:col-span-2 space-y-6">
-
-      <!-- Card de Cliente (Snapshot) -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
-            <span class="inline-flex items-center justify-center w-7 h-7 bg-blue-100 rounded-lg">
-              <i data-lucide="user" class="w-4 h-4 text-blue-600"></i>
-            </span>
-            Datos del Receptor (Snapshot)
-          </h3>
-          {% if invoice.customer %}
-          <a href="{% url 'customers:customer_detail' invoice.customer.id %}"
-             class="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 font-medium">
-            Ver Ficha
-            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-          </a>
-          {% endif %}
-        </div>
-        
-        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-          <div>
-            <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Razón Social</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900">{{ invoice.cliente_razon_social }}</dd>
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Main Content -->
+    <div class="lg:col-span-2 space-y-8">
+      
+      <!-- Detalle de Items -->
+      <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden transition-colors">
+        <div class="px-8 py-6 border-b border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50 flex items-center justify-between">
+          <h2 class="text-lg font-black text-gray-900 dark:text-slate-100 tracking-tight">Conceptos Facturados</h2>
+          <div class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+             <i data-lucide="list" class="w-5 h-5"></i>
           </div>
-          <div>
-            <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">CUIT</dt>
-            <dd class="mt-1 text-sm text-gray-900">{{ invoice.cliente_cuit|default:"Consumidor Final" }}</dd>
-          </div>
-          <div>
-            <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Condición frente al IVA</dt>
-            <dd class="mt-1 text-sm text-gray-900">{{ invoice.cliente_condicion_iva }}</dd>
-          </div>
-          <div>
-            <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Domicilio Fiscal</dt>
-            <dd class="mt-1 text-sm text-gray-900">{{ invoice.cliente_domicilio|default:"-" }}</dd>
-          </div>
-        </dl>
-      </div>
-
-      <!-- Tabla de Items Facturados -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
-            <span class="inline-flex items-center justify-center w-7 h-7 bg-purple-100 rounded-lg">
-              <i data-lucide="list" class="w-4 h-4 text-purple-600"></i>
-            </span>
-            Detalle de Items
-          </h3>
         </div>
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-100">
-            <thead class="bg-gray-50">
+          <table class="min-w-full divide-y divide-gray-100 dark:divide-slate-700/50 pl-2">
+            <thead class="bg-white dark:bg-slate-800">
               <tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto / Servicio</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cant.</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Precio Unit.</th>
-                {% if invoice.descuento_total > 0 %}
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Desc.</th>
-                {% endif %}
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">IVA</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                <th scope="col" class="px-8 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Descripción</th>
+                <th scope="col" class="px-8 py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Cant.</th>
+                <th scope="col" class="px-8 py-5 text-right text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">P. Unitario</th>
+                <th scope="col" class="px-8 py-5 text-right text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">IVA</th>
+                <th scope="col" class="px-8 py-5 text-right text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Subtotal</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-50">
+            <tbody class="divide-y divide-gray-100 dark:divide-slate-700/50">
               {% for item in invoice.items.all %}
-              <tr class="hover:bg-gray-50/50">
-                <td class="px-4 py-4">
-                  <div class="text-sm font-medium text-gray-900">{{ item.producto_nombre }}</div>
-                  {% if item.producto_codigo %}
-                  <div class="text-xs text-gray-400 mt-0.5">Cód: {{ item.producto_codigo }}</div>
-                  {% endif %}
+              <tr class="hover:bg-gray-50/80 dark:hover:bg-slate-700/30 transition-colors">
+                <td class="px-8 py-6">
+                    <span class="text-sm font-black text-gray-900 dark:text-slate-100">{{ item.descripcion|default:item.producto_nombre }}</span>
                 </td>
-                <td class="px-4 py-4 text-right text-sm text-gray-900">{{ item.cantidad|floatformat:0 }}</td>
-                <td class="px-4 py-4 text-right text-sm text-gray-900">${{ item.precio_unitario|floatformat:2 }}</td>
-                {% if invoice.descuento_total > 0 %}
-                <td class="px-4 py-4 text-right text-sm text-gray-500 hidden sm:table-cell">${{ item.descuento|floatformat:2 }}</td>
-                {% endif %}
-                <td class="px-4 py-4 text-right text-sm text-gray-500 hidden md:table-cell">
-                  {{ item.alicuota_iva|floatformat:0 }}%
-                  {% if item.monto_iva > 0 %}(${{ item.monto_iva|floatformat:2 }}){% endif %}
+                <td class="px-8 py-6 text-center text-sm font-bold text-gray-600 dark:text-slate-400 tabular-nums">{{ item.cantidad|floatformat:0 }}</td>
+                <td class="px-8 py-6 text-right text-sm font-bold text-gray-600 dark:text-slate-400 tabular-nums">${{ item.precio_unitario|floatformat:2 }}</td>
+                <td class="px-8 py-6 text-right">
+                    <span class="inline-flex items-center justify-center px-2 py-1 rounded-md bg-gray-100 dark:bg-slate-700 text-[10px] font-black text-gray-600 dark:text-slate-300 tabular-nums">{{ item.alicuota_iva|floatformat:0 }}%</span>
                 </td>
-                <td class="px-4 py-4 text-right text-sm font-semibold text-gray-900">${{ item.total|floatformat:2 }}</td>
+                <td class="px-8 py-6 text-right text-lg font-black text-gray-900 dark:text-slate-100 tabular-nums">${{ item.total|floatformat:2 }}</td>
               </tr>
               {% empty %}
               <tr>
-                <td colspan="6" class="px-4 py-8 text-center text-gray-500">No hay items registrados.</td>
+                 <td colspan="5" class="px-8 py-16 text-center text-gray-500 dark:text-slate-500 font-medium">No hay items registrados.</td>
               </tr>
               {% endfor %}
             </tbody>
@@ -170,95 +99,106 @@
         </div>
       </div>
 
+      <!-- Fiscal Data -->
+      <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-slate-700 p-8 transition-colors">
+        <h2 class="text-lg font-black text-gray-900 dark:text-slate-100 mb-8 flex items-center gap-3">
+          <span class="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-xl text-purple-600 dark:text-purple-400">
+            <i data-lucide="shield-check" class="w-5 h-5"></i>
+          </span>
+          Datos Fiscales (AFIP)
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8 bg-gray-50 dark:bg-slate-900/50 p-6 rounded-3xl border border-gray-100 dark:border-slate-700/50">
+          <div>
+            <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2">CAE / CAI</p>
+            <p class="text-xl font-black text-gray-900 dark:text-slate-100 tabular-nums tracking-wider">{{ invoice.cae|default:"-" }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2">Vto. CAE / CAI</p>
+            <div class="flex items-center gap-2">
+                <i data-lucide="calendar" class="w-5 h-5 text-gray-400 dark:text-slate-500"></i>
+                <p class="text-lg font-black text-gray-900 dark:text-slate-100 tabular-nums">{{ invoice.cae_vencimiento|date:"d/m/Y"|default:"-" }}</p>
+            </div>
+          </div>
+          <div class="md:col-span-2">
+            <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2">Observaciones Fiscales</p>
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-200 dark:border-slate-700">
+                <p class="text-sm font-medium text-gray-700 dark:text-slate-300 italic leading-relaxed">{{ invoice.observaciones|default:"Sin observaciones registradas por la AFIP." }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- ===== Sidebar (1/3) ===== -->
-    <div class="space-y-6">
-
-      <!-- Resumen de Totales -->
-      <div class="bg-gray-50 rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
-          <h3 class="text-base font-semibold text-gray-900">Resumen y Montos</h3>
-        </div>
-        <div class="p-6">
-          <dl class="space-y-3">
-            <div class="flex items-center justify-between">
-              <dt class="text-sm text-gray-600">Subtotal</dt>
-              <dd class="text-sm font-medium text-gray-900">${{ invoice.subtotal|floatformat:2 }}</dd>
+    <!-- Sidebar -->
+    <div class="space-y-8">
+      <!-- Totals Card -->
+      <div class="bg-gray-900 dark:bg-slate-800 rounded-[2.5rem] shadow-xl shadow-gray-900/10 border border-gray-800 dark:border-slate-700 p-8 transition-colors relative overflow-hidden">
+        <!-- Decoracion fondo -->
+        <div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white/5 blur-2xl"></div>
+        
+        <h2 class="text-lg font-black text-white dark:text-slate-100 mb-8 relative z-10 flex items-center gap-3">
+            <i data-lucide="calculator" class="w-5 h-5 text-indigo-400"></i>
+            Resumen de Importes
+        </h2>
+        <div class="space-y-6 relative z-10">
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-400 font-bold uppercase tracking-widest text-[11px]">Neto Gravado</span>
+            <span class="text-gray-200 font-black tabular-nums">${{ invoice.neto_gravado|floatformat:2 }}</span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-400 font-bold uppercase tracking-widest text-[11px]">IVA Total</span>
+            <span class="text-gray-200 font-black tabular-nums">${{ invoice.monto_iva|floatformat:2 }}</span>
+          </div>
+          <div class="pt-6 border-t border-gray-700/50">
+            <div class="flex flex-col gap-2">
+              <span class="text-[11px] font-bold text-indigo-400 uppercase tracking-[0.2em]">Total Comprobante</span>
+              <span class="text-4xl sm:text-5xl font-black text-white tabular-nums tracking-tight">${{ invoice.total|floatformat:2 }}</span>
             </div>
-            
-            {% if invoice.descuento_total > 0 %}
-            <div class="flex items-center justify-between text-green-600">
-              <dt class="text-sm">Descuentos</dt>
-              <dd class="text-sm font-medium">-${{ invoice.descuento_total|floatformat:2 }}</dd>
-            </div>
-            {% endif %}
-
-            <div class="flex items-center justify-between">
-              <dt class="text-sm text-gray-600">Neto Gravado</dt>
-              <dd class="text-sm font-medium text-gray-900">${{ invoice.neto_gravado|floatformat:2 }}</dd>
-            </div>
-
-            <div class="flex items-center justify-between">
-              <dt class="text-sm text-gray-600">Total IVA</dt>
-              <dd class="text-sm font-medium text-gray-900">${{ invoice.monto_iva|floatformat:2 }}</dd>
-            </div>
-            
-            {% if invoice.monto_no_gravado > 0 %}
-            <div class="flex items-center justify-between">
-              <dt class="text-sm text-gray-600">No Gravado</dt>
-              <dd class="text-sm font-medium text-gray-900">${{ invoice.monto_no_gravado|floatformat:2 }}</dd>
-            </div>
-            {% endif %}
-
-            <div class="pt-4 border-t border-gray-200 flex items-center justify-between">
-              <dt class="text-base font-bold text-gray-900">Total Final</dt>
-              <dd class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-                ${{ invoice.total|floatformat:2 }}
-              </dd>
-            </div>
-          </dl>
+          </div>
         </div>
       </div>
 
-      <!-- Datos de Sistema y Vinculaciones -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="text-base font-semibold text-gray-900 mb-4">Información Fiscal</h3>
-        <dl class="space-y-3">
-          {% if invoice.cae %}
+      <!-- Customer Card -->
+      <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-slate-700 p-8 transition-colors">
+        <h2 class="text-lg font-black text-gray-900 dark:text-slate-100 mb-8 flex items-center gap-3">
+          <span class="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl text-emerald-600 dark:text-emerald-400">
+             <i data-lucide="user" class="w-5 h-5"></i>
+          </span>
+          Datos del Cliente
+        </h2>
+        <div class="space-y-6">
           <div>
-            <dt class="text-xs font-medium text-gray-500 uppercase">CAE AFIP</dt>
-            <dd class="mt-1 text-sm font-bold text-teal-700 tracking-wide">{{ invoice.cae }}</dd>
+            <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2">Razón Social</p>
+            <p class="text-base font-black text-gray-900 dark:text-slate-100">{{ invoice.cliente_razon_social }}</p>
           </div>
-          {% endif %}
           
-          {% if invoice.cae_vencimiento %}
-          <div>
-            <dt class="text-xs font-medium text-gray-500 uppercase">Vencimiento CAE</dt>
-            <dd class="mt-1 text-sm text-gray-900">{{ invoice.cae_vencimiento|date:"d/m/Y" }}</dd>
+          <div class="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700/50">
+              <div class="grid grid-cols-1 gap-5">
+                  <div>
+                      <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1">CUIT</p>
+                      <p class="text-sm font-bold text-gray-900 dark:text-slate-100 tabular-nums">{{ invoice.cliente_cuit|default:"-" }}</p>
+                  </div>
+                  <div>
+                      <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1">Condición IVA</p>
+                      <p class="text-sm font-bold text-gray-900 dark:text-slate-200">{{ invoice.cliente_condicion_iva|default:"-" }}</p>
+                  </div>
+              </div>
           </div>
-          {% endif %}
-
+          
           <div>
-            <dt class="text-xs font-medium text-gray-500 uppercase">Venta Origen</dt>
+            <dt class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2">Venta Origen</dt>
             {% if invoice.sale %}
-              <dd class="mt-1 text-sm">
-                <a href="{% url 'sales_web:sale_detail' invoice.sale.id %}" class="text-blue-600 hover:text-blue-800 font-medium">
-                  {{ invoice.sale.number }}
+              <dd class="mt-1">
+                <a href="{% url 'sales_web:sale_detail' invoice.sale.id %}" class="inline-flex items-center px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors font-bold text-sm tracking-tight">
+                  <i data-lucide="shopping-cart" class="w-4 h-4 mr-2"></i> Operación {{ invoice.sale.number }}
                 </a>
               </dd>
             {% else %}
-              <dd class="mt-1 text-sm text-gray-500">Ninguna</dd>
+              <dd class="mt-1 text-sm font-bold text-gray-500 dark:text-slate-500 bg-gray-50 dark:bg-slate-900/50 inline-flex px-3 py-1 rounded-lg">Ninguna / Factura Manual</dd>
             {% endif %}
           </div>
-          
-          <div>
-            <dt class="text-xs font-medium text-gray-500 uppercase">Emitido Por</dt>
-            <dd class="mt-1 text-sm text-gray-900">{{ invoice.emitida_por|default:"Sistema" }}</dd>
-          </div>
-        </dl>
+        </div>
       </div>
-
     </div>
   </div>
 </div>

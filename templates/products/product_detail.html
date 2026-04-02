@@ -1,358 +1,363 @@
 {% extends 'base/base.html' %}
 {% load static %}
 
-{% block title %}{{ product.code }} - {{ product.name }} | ERP Bulonera Alvear{% endblock %}
+{% block title %}Ficha Técnica: {{ product.name|truncatechars:20 }} | ERP Bulonera Alvear{% endblock %}
 
 {% block breadcrumb_items %}
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <a href="{% url 'products:product_list' %}" class="text-gray-600 hover:text-gray-900">Productos</a>
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <span class="text-gray-900 font-medium">{{ product.code }}</span>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <a href="{% url 'products:product_list' %}" class="text-gray-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-bold">Catálogo</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <span class="text-gray-900 dark:text-slate-100 font-black tracking-tight">{{ product.code }}</span>
 {% endblock %}
 
-{% block mobile_title %}Detalle Producto{% endblock %}
+{% block mobile_title %}Detalle de Producto{% endblock %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
   <!-- ═══════════════════════════════════════════════════════════════════
-       HEADER: Volver + Acciones
+       HEADER: Contexto + Acciones Maestras
        ═══════════════════════════════════════════════════════════════════ -->
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-    <a href="{% url 'products:product_list' %}"
-       class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition">
-      <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i>
-      Volver a Productos
-    </a>
-    <div class="flex gap-2">
-      <a href="{% url 'products:product_edit' product.pk %}"
-         class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium">
-        <i data-lucide="pencil" class="w-4 h-4 mr-2"></i>
-        Editar
+  <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-10">
+    <div class="relative group">
+      <!-- Trace back link -->
+      <a href="{% url 'products:product_list' %}" class="inline-flex items-center text-[10px] font-black text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 uppercase tracking-[0.2em] transition-all mb-4 group/back">
+        <i data-lucide="arrow-left" class="w-3 h-3 mr-2 group-hover/back:-translate-x-1 transition-transform"></i>
+        Regresar al Listado
       </a>
-      <button type="button" onclick="confirmDelete()"
-              class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium">
-        <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i>
+      
+      <div class="flex items-start gap-4">
+        <div class="hidden sm:flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-[1.25rem] shadow-xl shadow-blue-500/20 ring-4 ring-blue-500/10">
+          <i data-lucide="box" class="w-7 h-7 text-white"></i>
+        </div>
+        <div>
+          <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight leading-none mb-3">
+            {{ product.name|default:product.code }}
+          </h1>
+          <div class="flex flex-wrap items-center gap-3 text-sm">
+            <span class="inline-flex items-center px-3 py-1 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-lg font-black text-[10px] uppercase tracking-widest ring-1 ring-gray-200 dark:ring-slate-700">
+              ID: {{ product.code }}
+            </span>
+            {% if product.sku %}
+            <span class="inline-flex items-center px-3 py-1 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 rounded-lg font-black text-[10px] uppercase tracking-widest ring-1 ring-indigo-200 dark:ring-indigo-800/30">
+              SKU: {{ product.sku }}
+            </span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel de Control del Producto -->
+    <div class="flex items-center gap-3 bg-white dark:bg-slate-900/50 p-2 rounded-2xl border border-gray-100 dark:border-slate-800/50 shadow-sm backdrop-blur-xl">
+      <a href="{% url 'products:product_edit' product.pk %}"
+         class="inline-flex items-center px-6 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 rounded-xl hover:bg-blue-600 hover:text-white dark:hover:bg-blue-500 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm active:scale-95 group">
+        <i data-lucide="edit-3" class="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform"></i>
+        Editar Ficha
+      </a>
+      <button onclick="confirmDelete()"
+              class="inline-flex items-center px-6 py-3 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-600 hover:text-white dark:hover:bg-red-500 transition-all font-black text-[10px] uppercase tracking-widest active:scale-95 group">
+        <i data-lucide="trash-2" class="w-4 h-4 mr-2 group-hover:shake transition-transform"></i>
         Eliminar
       </button>
     </div>
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════════════
-       1️⃣ ENCABEZADO DEL PRODUCTO
+       GRID PRINCIPAL: Ficha de ingeniería
        ═══════════════════════════════════════════════════════════════════ -->
-  <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4" aria-label="Información principal">
-    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-      <!-- Info principal -->
-      <div class="flex-1">
-        <h1 class="text-xl md:text-2xl font-bold text-gray-900 mb-2">{{ product.name }}</h1>
-        <div class="flex flex-wrap gap-3 text-sm text-gray-600">
-          <span class="inline-flex items-center gap-1">
-            <i data-lucide="hash" class="w-3.5 h-3.5"></i>
-            <strong>Código:</strong> {{ product.code }}
-          </span>
-          <span class="inline-flex items-center gap-1">
-            <i data-lucide="tag" class="w-3.5 h-3.5"></i>
-            <strong>SKU:</strong> {{ product.sku|default:"—" }}
-          </span>
-          {% if product.category %}
-          <span class="inline-flex items-center gap-1">
-            <i data-lucide="folder" class="w-3.5 h-3.5"></i>
-            {{ product.category.name }}
-          </span>
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+    
+    <!-- Columna Izquierda: Núcleo Técnico -->
+    <div class="lg:col-span-2 space-y-8">
+      
+      <!-- Panel: ADN del Producto -->
+      <section class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-200 dark:border-slate-700 p-8 xl:p-10 transition-all relative overflow-hidden group/card">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 -mr-16 -mt-16 rounded-full blur-3xl transition-all group-hover/card:scale-150"></div>
+        
+        <div class="flex items-center gap-3 mb-8">
+          <div class="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-2xl">
+            <i data-lucide="fingerprint" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i>
+          </div>
+          <h2 class="text-xl font-black text-gray-900 dark:text-slate-100 uppercase tracking-tight">Atributos del Catálogo</h2>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-8">
+          <div class="group/item">
+            <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 group-hover/item:text-blue-500 transition-colors">Categoría Maestra</p>
+            <p class="text-base font-bold text-gray-900 dark:text-slate-100">{{ product.category.name|default:"Sin Clasificar" }}</p>
+          </div>
+          <div class="group/item">
+            <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 group-hover/item:text-blue-500 transition-colors">Marca / Fabricante</p>
+            <p class="text-base font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide">{{ product.brand|default:"Marca Genérica" }}</p>
+          </div>
+          <div class="group/item sm:col-span-2">
+            <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 group-hover/item:text-blue-500 transition-colors">Categorías Secundarias (Tags)</p>
+            <div class="flex flex-wrap gap-2">
+              {% for sub in product.subcategories.all %}
+                <span class="px-3 py-1.5 bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-slate-400 rounded-xl font-bold text-xs border border-gray-100 dark:border-slate-800 transition-all hover:border-blue-300 dark:hover:border-blue-800">{{ sub.name }}</span>
+              {% empty %}
+                <span class="text-xs text-gray-400 italic">No hay etiquetas vinculadas</span>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="group/item">
+            <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 group-hover/item:text-blue-500 transition-colors">Origen de Mercadería</p>
+            <p class="text-base font-bold text-gray-900 dark:text-slate-100">{{ product.origin|default:"Nacional" }}</p>
+          </div>
+          <div class="group/item">
+            <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 group-hover/item:text-blue-500 transition-colors">Códigos Alternativos</p>
+            <p class="text-base font-mono font-bold text-gray-600 dark:text-slate-400">{{ product.other_codes|default:"—" }}</p>
+          </div>
+        </div>
+
+        {% if product.description %}
+        <div class="mt-12 pt-8 border-t border-gray-100 dark:border-slate-700/50">
+          <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-4">Memoria Descriptiva</p>
+          <div class="text-gray-700 dark:text-slate-300 text-sm leading-relaxed prose dark:prose-invert max-w-none font-medium">
+            {{ product.description|linebreaks }}
+          </div>
+        </div>
+        {% endif %}
+      </section>
+
+      <!-- Panel: Ingeniería y Medidas -->
+      {% if product.diameter or product.length or product.material or product.grade or product.norm or product.colour %}
+      <section class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-200 dark:border-slate-700 p-8 xl:p-10 transition-colors relative overflow-hidden group/eng">
+        <div class="absolute bottom-0 left-0 w-32 h-32 bg-orange-500/5 -ml-16 -mb-16 rounded-full blur-3xl group-hover/eng:scale-150 transition-all"></div>
+        
+        <div class="flex items-center gap-3 mb-8">
+          <div class="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-2xl">
+            <i data-lucide="wrench" class="w-6 h-6 text-orange-600 dark:text-orange-400"></i>
+          </div>
+          <h2 class="text-xl font-black text-gray-900 dark:text-slate-100 uppercase tracking-tight">Especificaciones de Ingeniería</h2>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-y-8 gap-x-6">
+          {% if product.diameter %}
+          <div class="group/item">
+            <p class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1 group-hover/item:text-orange-500">Diámetro</p>
+            <p class="text-base font-bold text-gray-900 dark:text-slate-100 tabular-nums">{{ product.diameter }}</p>
+          </div>
+          {% endif %}
+          {% if product.length %}
+          <div class="group/item">
+            <p class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1 group-hover/item:text-orange-500">Largo / Prof.</p>
+            <p class="text-base font-bold text-gray-900 dark:text-slate-100 tabular-nums">{{ product.length }}</p>
+          </div>
+          {% endif %}
+          {% if product.material %}
+          <div class="group/item">
+            <p class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1 group-hover/item:text-orange-500">Composición</p>
+            <p class="text-base font-bold text-gray-900 dark:text-slate-100">{{ product.material }}</p>
+          </div>
+          {% endif %}
+          {% if product.grade %}
+          <div class="group/item">
+            <p class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1 group-hover/item:text-orange-500">Grado / Calidad</p>
+            <p class="text-base font-bold text-orange-600 dark:text-orange-400">{{ product.grade }}</p>
+          </div>
+          {% endif %}
+          {% if product.norm %}
+          <div class="group/item">
+            <p class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1 group-hover/item:text-orange-500">Normativa ISO/DIN</p>
+            <p class="text-base font-black text-gray-900 dark:text-slate-100 uppercase">{{ product.norm }}</p>
+          </div>
+          {% endif %}
+          {% if product.colour %}
+          <div class="group/item">
+            <p class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1 group-hover/item:text-orange-500">Acabado / Color</p>
+            <p class="text-base font-bold text-gray-900 dark:text-slate-100">{{ product.colour }}</p>
+          </div>
           {% endif %}
         </div>
-      </div>
+      </section>
+      {% endif %}
+    </div>
 
-      <!-- Badge ganancia -->
-      <div class="shrink-0">
-        {% if product.profit_margin_percentage > 0 %}
-          <div class="inline-flex items-center px-3 py-1.5 rounded-lg bg-green-100 text-green-800">
-            <i data-lucide="trending-up" class="w-4 h-4 mr-1.5"></i>
-            <span class="text-lg font-bold">{{ product.profit_margin_percentage|floatformat:2 }}%</span>
+    <!-- Columna Derecha: KPI & Centro de Costos -->
+    <div class="space-y-8">
+      
+      <!-- Card: Almacén y Disponibilidad -->
+      <section class="bg-gray-900 dark:bg-slate-800 rounded-[2.5rem] shadow-2xl shadow-indigo-500/10 p-8 transition-all group/stock relative overflow-hidden">
+        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-white/5 rounded-full blur-2xl group-hover/stock:scale-150 transition-transform"></div>
+        
+        <div class="flex items-center justify-between mb-8">
+          <div class="p-3 bg-white/10 rounded-2xl">
+            <i data-lucide="package" class="w-6 h-6 text-white"></i>
           </div>
-        {% elif product.profit_margin_percentage < 0 %}
-          <div class="inline-flex items-center px-3 py-1.5 rounded-lg bg-red-100 text-red-800">
-            <i data-lucide="trending-down" class="w-4 h-4 mr-1.5"></i>
-            <span class="text-lg font-bold">{{ product.profit_margin_percentage|floatformat:2 }}%</span>
+          {% if product.stock_control_enabled %}
+            <span class="inline-flex px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-[9px] font-black uppercase tracking-[0.15em] ring-1 ring-emerald-500/30">Auto-Control</span>
+          {% endif %}
+        </div>
+
+        <div class="flex items-end gap-3 mb-8">
+          <span class="text-6xl font-black text-white ml-1 tabular-nums leading-none tracking-tighter">{{ product.stock_quantity|floatformat:0 }}</span>
+          <span class="text-indigo-300 font-black text-xs uppercase tracking-widest mb-2">{{ product.get_unit_of_sale_display }}</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-8">
+          <div class="bg-white/5 rounded-2xl p-4 transition-colors hover:bg-white/10">
+            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Mínimo Crítico</p>
+            <p class="text-xl font-bold text-white tabular-nums">{{ product.min_stock|floatformat:0 }}</p>
+          </div>
+          <div class="bg-white/5 rounded-2xl p-4 transition-colors hover:bg-white/10">
+            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Unidad Venta</p>
+            <p class="text-xl font-bold text-white tabular-nums">{{ product.min_sale_unit|floatformat:0 }}</p>
+          </div>
+        </div>
+
+        <a href="{% url 'inventory_web:adjustment_form' %}?product={{ product.id }}"
+           class="w-full flex items-center justify-center gap-3 py-4 bg-white text-gray-900 rounded-2xl transition-all font-black text-[10px] uppercase tracking-widest hover:bg-indigo-50 hover:scale-[1.02] active:scale-95 shadow-xl shadow-white/5">
+          <i data-lucide="refresh-ccw" class="w-4 h-4"></i>
+          Gestionar Inventario
+        </a>
+      </section>
+
+      <!-- Panel: Análisis de Costo & Margen -->
+      <section class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-200 dark:border-slate-700 p-8 transition-colors relative overflow-hidden group/pricing">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 -mr-16 -mt-16 rounded-full blur-3xl group-hover/pricing:scale-150 transition-all"></div>
+        
+        <h2 class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.25em] mb-8 flex items-center gap-2">
+          <i data-lucide="trending-up" class="w-4 h-4"></i> Inteligencia Comercial
+        </h2>
+        
+        <div class="space-y-8">
+          <div class="flex justify-between items-end">
+            <div>
+              <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-tight mb-2">Costo s/IVA</p>
+              <p class="text-3xl font-black text-gray-900 dark:text-slate-100 tabular-nums transition-colors">${{ product.cost|floatformat:2 }}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-tight mb-2">Impuesto</p>
+              <p class="text-xl font-bold text-gray-500 dark:text-slate-400 tabular-nums transition-colors">{{ product.tax_rate|floatformat:1 }}%</p>
+            </div>
+          </div>
+
+          <div class="relative">
+            <div class="bg-emerald-600 dark:bg-emerald-500 rounded-3xl p-6 text-white shadow-2xl shadow-emerald-500/20 transform group-hover/pricing:scale-[1.02] transition-transform">
+              <p class="text-[10px] font-black opacity-70 uppercase tracking-[0.2em] mb-2 text-center">Consumidor Final (Final c/IVA)</p>
+              <p class="text-5xl font-black text-center tabular-nums leading-none tracking-tight">${{ product.base_price_with_tax|floatformat:2 }}</p>
+              <div class="mt-4 pt-4 border-t border-white/10 flex justify-between items-center text-[10px] font-black uppercase tracking-tighter">
+                <span>Remanente s/IVA</span>
+                <span class="tabular-nums">${{ product.price|floatformat:2 }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-gray-50 dark:bg-slate-900/50 rounded-2xl p-5 border border-gray-100 dark:border-slate-800 transition-colors">
+            <div class="flex justify-between items-center">
+              <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Rentabilidad Proyectada</p>
+              <div class="flex items-center gap-2">
+                <span class="text-xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums transition-colors">{{ product.profit_margin_percentage|floatformat:1 }}%</span>
+                <i data-lucide="arrow-up-right" class="w-5 h-5 text-emerald-500"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Proveedor Compacto -->
+      <section class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-200 dark:border-slate-700 p-8 transition-colors">
+        <h2 class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.25em] mb-6">Origen Logístico</h2>
+        {% if product.supplier %}
+          <div class="flex items-center gap-5 group cursor-pointer" onclick="window.location='{% url 'suppliers:supplier_detail' product.supplier.pk %}'">
+            <div class="w-14 h-14 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+              <i data-lucide="building-2" class="w-6 h-6 text-indigo-600 dark:text-indigo-400"></i>
+            </div>
+            <div class="overflow-hidden">
+              <p class="text-lg font-black text-gray-900 dark:text-slate-100 leading-tight truncate group-hover:text-blue-600 transition-colors">{{ product.supplier.business_name }}</p>
+              <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mt-1">CUIT: {{ product.supplier.cuit }}</p>
+            </div>
           </div>
         {% else %}
-          <div class="inline-flex items-center px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700">
-            <span class="text-lg font-bold">0%</span>
+          <div class="flex items-center gap-4 text-gray-400 italic">
+            <i data-lucide="help-circle" class="w-8 h-8 opacity-50"></i>
+            <span class="text-sm font-bold">Sin vinculación directa</span>
           </div>
         {% endif %}
-      </div>
+      </section>
     </div>
-
-    <!-- Precios principales -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5 pt-4 border-t border-gray-100">
-      <div class="text-center p-3 bg-gray-50 rounded-lg">
-        <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Costo (sin IVA)</p>
-        <p class="text-xl font-bold text-gray-700">${{ price_data.base_price.cost_price|floatformat:2 }}</p>
-      </div>
-      <div class="text-center p-3 bg-blue-50 rounded-lg">
-        <p class="text-xs text-blue-600 uppercase tracking-wider mb-1">Venta (sin IVA)</p>
-        <p class="text-xl font-bold text-blue-700">${{ price_data.base_price.sale_price_without_tax|floatformat:2 }}</p>
-      </div>
-      <div class="text-center p-3 bg-green-50 rounded-lg">
-        <p class="text-xs text-green-600 uppercase tracking-wider mb-1">Venta (con IVA)</p>
-        <p class="text-xl font-bold text-green-700">${{ price_data.base_price.sale_price_with_tax|floatformat:2 }}</p>
-      </div>
-    </div>
-  </section>
+  </div>
 
   <!-- ═══════════════════════════════════════════════════════════════════
-       2️⃣ INFORMACIÓN GENERAL
+       PANEL INFERIOR: Tarifario y Activos Digitales
        ═══════════════════════════════════════════════════════════════════ -->
-  <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4" aria-label="Información general">
-    <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-      <i data-lucide="info" class="w-5 h-5 text-blue-600"></i>
-      Información General
-    </h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-      
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Código de Barra</span>
-        <span class="text-gray-900 font-medium">{{ product.barcode|default:"—" }}</span>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+    
+    <!-- Tablero de Multi-precios -->
+    <section class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden transition-colors">
+      <div class="px-8 py-6 border-b border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/30 flex justify-between items-center">
+        <h2 class="text-sm font-black text-gray-900 dark:text-slate-100 uppercase tracking-widest flex items-center gap-2">
+          <i data-lucide="layers-2" class="w-5 h-5 text-blue-500"></i> Matriz de Tarifas
+        </h2>
+        <span class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-tighter">Sincronizado vía API</span>
       </div>
 
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Código QR</span>
-        <span class="text-gray-900 font-medium">{{ product.qr_code|default:"—" }}</span>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead class="bg-gray-100/50 dark:bg-slate-900 text-gray-400 dark:text-slate-500">
+            <tr>
+              <th class="px-8 py-4 text-[10px] font-black uppercase tracking-widest">Segmento</th>
+              <th class="px-8 py-4 text-center text-[10px] font-black uppercase tracking-widest">Ajuste</th>
+              <th class="px-8 py-4 text-right text-[10px] font-black uppercase tracking-widest">Precio Final</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 dark:divide-slate-700/50 transition-colors">
+            {% for cp in computed_prices %}
+            <tr class="hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors">
+              <td class="px-8 py-4 font-bold text-gray-700 dark:text-slate-300">{{ cp.list_name }}</td>
+              <td class="px-8 py-4 text-center">
+                {% if cp.type == 'SURCHARGE' %}
+                  <span class="inline-flex px-2 py-1 bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-lg text-[10px] font-black tabular-nums">+{{ cp.percentage|floatformat:1 }}%</span>
+                {% else %}
+                  <span class="inline-flex px-2 py-1 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg text-[10px] font-black tabular-nums">-{{ cp.percentage|floatformat:1 }}%</span>
+                {% endif %}
+              </td>
+              <td class="px-8 py-4 text-right text-gray-900 dark:text-slate-100 font-black tabular-nums">${{ cp.price_with_tax|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="3" class="px-8 py-10 text-center text-gray-400 font-bold italic text-xs">No hay tarifas dinámicas activas</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
+    </section>
 
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Proveedor</span>
-        <span class="text-gray-900 font-medium">
-          {% if product.supplier %}
-            <a href="{% url 'suppliers_web:supplier_detail' product.supplier.pk %}" class="text-blue-600 hover:underline">
-              {{ product.supplier.display_name }}
-            </a>
-          {% else %}
-            —
-          {% endif %}
-        </span>
-      </div>
+    <!-- Activos Digitales: Barcode & QR -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <!-- Tag: Barcode -->
+      <section class="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-gray-200 dark:border-slate-700 shadow-sm flex flex-col items-center group/barcode transition-all">
+        <h3 class="text-xs font-black text-gray-400 dark:text-slate-500 mb-8 self-start flex items-center gap-2 uppercase tracking-widest group-hover/barcode:text-blue-500 transition-colors">
+          <i data-lucide="barcode" class="w-4 h-4"></i> EAN / Estándar
+        </h3>
+        {% if product.barcode %}
+          <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-inner mb-6 transition-transform group-hover/barcode:scale-110">
+            <img src="{% url 'products:generate_barcode' product.pk %}" alt="Barcode {{ product.barcode }}" class="h-20">
+          </div>
+          <p class="font-mono text-gray-900 dark:text-slate-100 font-black tracking-widest text-lg">{{ product.barcode }}</p>
+        {% else %}
+          <div class="py-12 text-gray-300 dark:text-slate-600 italic text-xs font-black uppercase text-center tracking-widest">Sin Código EAN</div>
+        {% endif %}
+      </section>
 
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Marca</span>
-        <span class="text-gray-900 font-medium">{{ product.brand|default:"—" }}</span>
-      </div>
-
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Unidad de Venta</span>
-        <span class="text-gray-900 font-medium">{{ product.get_unit_of_sale_display }}</span>
-      </div>
-
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Unid. Mínima Venta</span>
-        <span class="text-gray-900 font-medium">{{ product.min_sale_unit }}</span>
-      </div>
-
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Control de Stock</span>
-        <span>
-          {% if product.stock_control_enabled %}
-            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-              <i data-lucide="check" class="w-3 h-3 mr-1"></i> Activo
-            </span>
-          {% else %}
-            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-              <i data-lucide="x" class="w-3 h-3 mr-1"></i> Inactivo
-            </span>
-          {% endif %}
-        </span>
-      </div>
-
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Stock Actual</span>
-        <span class="text-gray-900 font-medium">{{ product.stock_quantity }} {{ product.get_unit_of_sale_display|lower }}s</span>
-      </div>
-
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Stock Mínimo</span>
-        <span class="text-gray-900 font-medium">{{ product.min_stock }}</span>
-      </div>
-
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">IVA</span>
-        <span class="text-gray-900 font-medium">{{ product.tax_rate|floatformat:1 }}%</span>
-      </div>
-
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Fecha Última Compra</span>
-        <span class="text-gray-900 font-medium">
-          {% if product.last_purchase_date %}
-            {{ product.last_purchase_date|date:"d/m/Y" }}
-          {% else %}
-            —
-          {% endif %}
-        </span>
-      </div>
-
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Estado</span>
-        <span class="text-gray-900 font-medium">{{ product.get_condition_display }}</span>
-      </div>
-
+      <!-- Tag: QR -->
+      <section class="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-gray-200 dark:border-slate-700 shadow-sm flex flex-col items-center group/qr transition-all">
+        <h3 class="text-xs font-black text-gray-400 dark:text-slate-500 mb-8 self-start flex items-center gap-2 uppercase tracking-widest group-hover/qr:text-indigo-500 transition-colors">
+          <i data-lucide="qr-code" class="w-4 h-4"></i> Acceso Rápido
+        </h3>
+        {% if product.qr_code %}
+          <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-inner mb-6 transition-transform group-hover/qr:scale-110">
+            <img src="{% url 'products:generate_qr' product.pk %}" alt="QR {{ product.code }}" class="w-20 h-20 opacity-80 group-hover:opacity-100 transition-opacity">
+          </div>
+          <p class="font-mono text-gray-900 dark:text-slate-100 font-black tracking-widest text-lg">{{ product.code }}</p>
+        {% else %}
+          <div class="py-12 text-gray-300 dark:text-slate-600 italic text-xs font-black uppercase text-center tracking-widest">QR Deshabilitado</div>
+        {% endif %}
+      </section>
     </div>
-  </section>
-
-  <!-- ═══════════════════════════════════════════════════════════════════
-       3️⃣ LISTAS DE PRECIOS
-       ═══════════════════════════════════════════════════════════════════ -->
-  {% if price_data.price_lists %}
-  <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4" aria-label="Listas de precios">
-    <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-      <i data-lucide="receipt" class="w-5 h-5 text-purple-600"></i>
-      Listas de Precios
-    </h2>
-    <div class="overflow-x-auto -mx-5 px-5">
-      <table class="min-w-full divide-y divide-gray-200 text-sm">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">Lista</th>
-            <th class="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase">Bon/Rec</th>
-            <th class="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase">Precio s/IVA</th>
-            <th class="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase">Precio c/IVA</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-          {% for pl in price_data.price_lists %}
-          <tr class="hover:bg-gray-50">
-            <td class="px-4 py-2.5 font-medium text-gray-900">{{ pl.name }}</td>
-            <td class="px-4 py-2.5 text-right">
-              {% if pl.type == 'SURCHARGE' %}
-                <span class="text-green-700 font-medium">+{{ pl.percentage|floatformat:2 }}%</span>
-              {% else %}
-                <span class="text-red-700 font-medium">-{{ pl.percentage|floatformat:2 }}%</span>
-              {% endif %}
-            </td>
-            <td class="px-4 py-2.5 text-right text-gray-900">${{ pl.price_without_tax|floatformat:2 }}</td>
-            <td class="px-4 py-2.5 text-right text-gray-900 font-medium">${{ pl.price_with_tax|floatformat:2 }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </section>
-  {% endif %}
-
-  <!-- ═══════════════════════════════════════════════════════════════════
-       4️⃣ ESPECIFICACIONES TÉCNICAS (condicional)
-       ═══════════════════════════════════════════════════════════════════ -->
-  {% if product.diameter or product.length or product.material or product.grade or product.norm or product.colour or product.product_type or product.form or product.thread_format or product.origin %}
-  <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4" aria-label="Especificaciones técnicas">
-    <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-      <i data-lucide="wrench" class="w-5 h-5 text-orange-600"></i>
-      Especificaciones Técnicas
-    </h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-      {% if product.diameter %}
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Diámetro</span>
-        <span class="text-gray-900 font-medium">{{ product.diameter }}</span>
-      </div>
-      {% endif %}
-
-      {% if product.length %}
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Longitud</span>
-        <span class="text-gray-900 font-medium">{{ product.length }}</span>
-      </div>
-      {% endif %}
-
-      {% if product.material %}
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Material</span>
-        <span class="text-gray-900 font-medium">{{ product.material }}</span>
-      </div>
-      {% endif %}
-
-      {% if product.grade %}
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Grado</span>
-        <span class="text-gray-900 font-medium">{{ product.grade }}</span>
-      </div>
-      {% endif %}
-
-      {% if product.norm %}
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Norma</span>
-        <span class="text-gray-900 font-medium">{{ product.norm }}</span>
-      </div>
-      {% endif %}
-
-      {% if product.colour %}
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Color</span>
-        <span class="text-gray-900 font-medium">{{ product.colour }}</span>
-      </div>
-      {% endif %}
-
-      {% if product.product_type %}
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Tipo</span>
-        <span class="text-gray-900 font-medium">{{ product.product_type }}</span>
-      </div>
-      {% endif %}
-
-      {% if product.form %}
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Forma</span>
-        <span class="text-gray-900 font-medium">{{ product.form }}</span>
-      </div>
-      {% endif %}
-
-      {% if product.thread_format %}
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Formato Rosca</span>
-        <span class="text-gray-900 font-medium">{{ product.thread_format }}</span>
-      </div>
-      {% endif %}
-
-      {% if product.origin %}
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Origen</span>
-        <span class="text-gray-900 font-medium">{{ product.origin }}</span>
-      </div>
-      {% endif %}
-    </div>
-  </section>
-  {% endif %}
-
-  <!-- ═══════════════════════════════════════════════════════════════════
-       5️⃣ DESCRIPCIÓN (si existe)
-       ═══════════════════════════════════════════════════════════════════ -->
-  {% if product.description %}
-  <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4" aria-label="Descripción">
-    <h2 class="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-      <i data-lucide="file-text" class="w-5 h-5 text-gray-600"></i>
-      Descripción
-    </h2>
-    <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{{ product.description }}</p>
-  </section>
-  {% endif %}
-
-  <!-- ═══════════════════════════════════════════════════════════════════
-       ACCIONES INFERIORES
-       ═══════════════════════════════════════════════════════════════════ -->
-  <div class="flex flex-wrap gap-2 mb-8">
-    <a href="{% url 'products:product_list' %}"
-       class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-medium">
-      <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
-      Volver
-    </a>
-    <a href="{% url 'products:product_edit' product.pk %}"
-       class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium">
-      <i data-lucide="pencil" class="w-4 h-4 mr-2"></i>
-      Editar
-    </a>
-    <button type="button" onclick="confirmDelete()"
-            class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium">
-      <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i>
-      Eliminar
-    </button>
   </div>
 
 </div>
@@ -360,18 +365,12 @@
 
 {% block extra_js %}
 <script>
-  /**
-   * Confirmación de eliminación de producto.
-   * Usa confirm nativo para simplicidad y accesibilidad.
-   */
   function confirmDelete() {
-    if (confirm('¿Estás seguro de que querés eliminar este producto?\nEsta acción no se puede deshacer.')) {
-      // Crear form dinámico para POST al endpoint de delete
+    if (confirm('⚠️ ADVERTENCIA CRÍTICA\n\n¿Estás absolutamente seguro de que querés eliminar este producto? Esta acción eliminará permanentemente la ficha del catálogo y no podrá revertirse.')) {
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = '{% url "products:product_delete" product.pk %}';
 
-      // CSRF token
       const csrf = document.createElement('input');
       csrf.type = 'hidden';
       csrf.name = 'csrfmiddlewaretoken';

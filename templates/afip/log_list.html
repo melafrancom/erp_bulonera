@@ -1,116 +1,150 @@
 {% extends 'base/base.html' %}
 {% load static %}
 
-{% block title %}Monitor de Logs AFIP{% endblock %}
+{% block title %}Monitor de Logs AFIP | ERP Bulonera Alvear{% endblock %}
 
 {% block breadcrumb_items %}
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <a href="{% url 'afip_web:dashboard' %}" class="text-gray-600 hover:text-gray-900">AFIP</a>
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <span class="text-gray-900 font-medium">Logs</span>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <a href="{% url 'afip_web:dashboard' %}" class="text-gray-500 dark:text-slate-400 font-bold hover:text-gray-900 dark:hover:text-slate-100 transition-colors tracking-tight">AFIP</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <span class="text-gray-900 dark:text-slate-100 font-black tracking-tight">Logs Operativos</span>
 {% endblock %}
 
 {% block mobile_title %}Logs AFIP{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto">
-  <div class="mb-6">
-    <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Monitor de Logs AFIP/ARCA</h1>
-    <p class="text-gray-600">Registro de todas las transacciones con la AFIP</p>
+<div class="max-w-7xl mx-auto px-4 pb-24">
+  
+  <div class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <div>
+      <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight flex items-center gap-4 transition-colors">
+        <span class="flex items-center justify-center w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl shadow-sm">
+           <i data-lucide="scroll-text" class="w-7 h-7"></i>
+        </span>
+        Monitor de Logs AFIP
+      </h1>
+      <p class="mt-4 text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest pl-1">Registro detallado de transacciones y eventos fiscales</p>
+    </div>
   </div>
 
   <!-- Filtros -->
-  <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-col sm:flex-row gap-4 items-center">
-    <form method="get" class="w-full flex flex-col sm:flex-row gap-4">
-      <div class="flex-1 relative">
-        <i data-lucide="search" class="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-        <input type="text" name="search" value="{{ search }}" placeholder="Buscar por CUIT, error, servicio..."
-               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+  <div class="bg-white dark:bg-slate-800 p-5 rounded-[2rem] shadow-sm border border-gray-100 dark:border-slate-700 mb-8 transition-colors">
+    <form method="get" class="w-full flex flex-col md:flex-row gap-4">
+      <div class="flex-1 relative group">
+        <i data-lucide="search" class="w-5 h-5 absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500 group-focus-within:text-indigo-500 transition-colors"></i>
+        <input type="text" name="search" value="{{ search }}" placeholder="Buscar por CUIT, error o servicio..."
+               class="w-full pl-12 pr-6 py-4 bg-gray-50 dark:bg-slate-900/50 border-none rounded-2xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 transition-all placeholder-gray-400 dark:placeholder-slate-600 shadow-inner">
       </div>
-      <div class="sm:w-64">
-        <select name="tipo" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white outline-none transition" onchange="this.form.submit()">
-          <option value="">Todos los Tipos</option>
+      <div class="md:w-72 relative">
+        <select name="tipo" class="w-full px-6 py-4 bg-gray-50 dark:bg-slate-900/50 border-none rounded-2xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 transition-all appearance-none cursor-pointer shadow-inner" onchange="this.form.submit()">
+          <option value="" class="dark:bg-slate-800">Todos los Eventos</option>
           {% for cod, label in tipo_choices %}
-            <option value="{{ cod }}" {% if tipo_filter == cod %}selected{% endif %}>{{ label }}</option>
+            <option value="{{ cod }}" {% if tipo_filter == cod %}selected{% endif %} class="dark:bg-slate-800">{{ label }}</option>
           {% endfor %}
         </select>
+        <i data-lucide="chevron-down" class="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none group-hover:text-indigo-500 transition-colors"></i>
       </div>
-      <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">Filtrar</button>
+      
+      <button type="submit" class="px-8 py-4 bg-gray-900 dark:bg-slate-100 text-white dark:text-gray-900 rounded-2xl hover:bg-gray-800 dark:hover:bg-white transition-all text-sm font-black uppercase tracking-widest shadow-xl shadow-gray-900/10 dark:shadow-white/10 active:scale-95 flex items-center justify-center">
+        Filtrar
+      </button>
+      
       {% if search or tipo_filter %}
-      <a href="{% url 'afip_web:log_list' %}" class="px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition inline-flex items-center">
-        <i data-lucide="x" class="w-4 h-4 mr-1"></i> Limpiar
+      <a href="{% url 'afip_web:log_list' %}" class="px-6 py-4 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-2xl transition-all inline-flex items-center justify-center text-sm font-black uppercase tracking-widest active:scale-95">
+        <i data-lucide="x" class="w-4 h-4 mr-2"></i> Limpiar
       </a>
       {% endif %}
     </form>
   </div>
 
   <!-- Tabla de Logs -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden transition-colors">
     <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+      <table class="min-w-full divide-y divide-gray-100 dark:divide-slate-700/50">
+        <thead class="bg-gray-50/50 dark:bg-slate-900/50">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha/Hora</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">CUIT</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Servicio</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden xl:table-cell">Código</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Error</th>
-            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Detalle</th>
+            <th class="px-8 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] w-32">Fecha/Hora</th>
+            <th class="px-8 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Transacción</th>
+            <th class="px-8 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] hidden md:table-cell">Reg. CUIT</th>
+            <th class="px-8 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] hidden lg:table-cell">Servicio</th>
+            <th class="px-8 py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Status</th>
+            <th class="px-8 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] min-w-[200px]">Detalle/Error</th>
+            <th class="px-8 py-5 relative"><span class="sr-only">Ver</span></th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-200">
+        <tbody class="divide-y divide-gray-100 dark:divide-slate-700/50 bg-white dark:bg-slate-800">
           {% for log in logs %}
-          <tr class="hover:bg-gray-50 transition">
-            <td class="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{{ log.timestamp|date:"d/m/Y H:i:s" }}</td>
-            <td class="px-6 py-4 whitespace-nowrap">
+          <tr class="hover:bg-gray-50/80 dark:hover:bg-slate-700/30 transition-colors group">
+            <td class="px-8 py-6 whitespace-nowrap">
+                <div class="text-sm font-black text-gray-900 dark:text-slate-100 tabular-nums">{{ log.timestamp|date:"H:i:s" }}</div>
+                <div class="text-[10px] font-bold text-gray-500 dark:text-slate-500 mt-1 uppercase tracking-widest">{{ log.timestamp|date:"d M Y" }}</div>
+            </td>
+            
+            <td class="px-8 py-6 whitespace-nowrap">
               {% if 'ERROR' in log.tipo %}
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                  <i data-lucide="alert-triangle" class="w-3 h-3 mr-1"></i> {{ log.get_tipo_display }}
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 uppercase tracking-widest ring-1 ring-red-500/30 shadow-sm">
+                  <i data-lucide="alert-circle" class="w-3 h-3 mr-1.5 animate-pulse"></i> {{ log.get_tipo_display }}
                 </span>
               {% elif log.tipo == 'FE_AUTORIZAR' %}
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  <i data-lucide="check-circle" class="w-3 h-3 mr-1"></i> {{ log.get_tipo_display }}
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 uppercase tracking-widest ring-1 ring-emerald-500/30 shadow-sm shadow-emerald-500/10">
+                  <i data-lucide="check-circle" class="w-3 h-3 mr-1.5"></i> {{ log.get_tipo_display }}
                 </span>
               {% else %}
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  <i data-lucide="info" class="w-3 h-3 mr-1"></i> {{ log.get_tipo_display }}
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 uppercase tracking-widest ring-1 ring-indigo-500/30 shadow-sm">
+                  <i data-lucide="info" class="w-3 h-3 mr-1.5"></i> {{ log.get_tipo_display }}
                 </span>
               {% endif %}
             </td>
-            <td class="px-6 py-4 text-sm text-gray-700 hidden md:table-cell">{{ log.cuit }}</td>
-            <td class="px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">{{ log.servicio }}</td>
-            <td class="px-6 py-4 text-sm hidden xl:table-cell">
+
+            <td class="px-8 py-6 hidden md:table-cell">
+               {% if log.cuit %}
+                 <span class="inline-flex items-center justify-center px-2 py-1 rounded-lg bg-gray-50 dark:bg-slate-900 shadow-inner border border-gray-100 dark:border-slate-700 text-xs font-bold text-gray-600 dark:text-slate-400 tabular-nums">{{ log.cuit }}</span>
+               {% else %}
+                 <span class="text-gray-300 dark:text-slate-600 text-sm">—</span>
+               {% endif %}
+            </td>
+            
+            <td class="px-8 py-6 hidden lg:table-cell">
+                <span class="text-xs font-black text-gray-500 dark:text-slate-400 tracking-wider uppercase">{{ log.servicio|default:"-" }}</span>
+            </td>
+            
+            <td class="px-8 py-6 text-center">
               {% if log.response_code %}
-                <span class="{% if log.response_code == 200 %}text-green-600{% else %}text-red-600{% endif %} font-medium">{{ log.response_code }}</span>
+                {% if log.response_code == 200 %}
+                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-black border border-emerald-100 dark:border-emerald-800/30 shadow-sm">{{ log.response_code }}</span>
+                {% else %}
+                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-black border border-red-100 dark:border-red-800/30 shadow-sm">{{ log.response_code }}</span>
+                {% endif %}
               {% else %}
-                <span class="text-gray-400">—</span>
+                <span class="text-gray-300 dark:text-slate-600">—</span>
               {% endif %}
             </td>
-            <td class="px-6 py-4 text-sm">
+            
+            <td class="px-8 py-6">
               {% if log.error %}
-                <span class="text-red-600 truncate block max-w-xs" title="{{ log.error }}">{{ log.error|truncatewords:8 }}</span>
+                <div class="text-xs font-bold text-red-600 dark:text-red-400 line-clamp-2 leading-relaxed max-w-[300px]" title="{{ log.error }}">{{ log.error }}</div>
               {% else %}
-                <span class="text-gray-400">—</span>
+                <span class="text-xs font-bold text-gray-400 dark:text-slate-500 italic">Ok</span>
               {% endif %}
             </td>
-            <td class="px-6 py-4 text-right">
-              <a href="{% url 'afip_web:log_detail' log.pk %}" class="text-blue-600 hover:text-blue-800">
-                <i data-lucide="eye" class="w-4 h-4 inline"></i>
+            
+            <td class="px-8 py-6 text-right">
+              <a href="{% url 'afip_web:log_detail' log.pk %}" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-500 dark:text-slate-400 hover:bg-indigo-100 hover:text-indigo-600 dark:hover:bg-indigo-900/50 dark:hover:text-indigo-400 transition-colors shadow-sm ml-auto opacity-100 md:opacity-0 md:group-hover:opacity-100" title="Ver detalle">
+                <i data-lucide="eye" class="w-4 h-4"></i>
               </a>
             </td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="7" class="px-6 py-12 text-center text-gray-500">
-              <div class="flex flex-col items-center">
-                <div class="bg-gray-100 rounded-full p-3 mb-3">
-                  <i data-lucide="scroll-text" class="w-6 h-6 text-gray-400"></i>
+             <td colspan="7" class="px-8 py-24 text-center">
+                <div class="flex flex-col items-center justify-center opacity-80">
+                   <div class="w-20 h-20 bg-gray-50 dark:bg-slate-800 rounded-[2rem] flex flex-col items-center justify-center mb-6 shadow-inner">
+                      <i data-lucide="scroll-text" class="w-10 h-10 text-gray-300 dark:text-slate-600"></i>
+                   </div>
+                   <h3 class="text-xl font-black text-gray-900 dark:text-slate-100 mb-2">Sin registros de actividad</h3>
+                   <p class="text-sm font-bold text-gray-500 dark:text-slate-500">Los logs aparecerán aquí cuando se realicen transacciones con AFIP.</p>
                 </div>
-                <p class="text-lg font-medium text-gray-900">Sin registros</p>
-                <p class="text-sm mt-1">Los logs aparecerán aquí cuando se realicen transacciones con AFIP.</p>
-              </div>
-            </td>
+             </td>
           </tr>
           {% endfor %}
         </tbody>
@@ -119,20 +153,24 @@
 
     <!-- Paginación -->
     {% if is_paginated %}
-    <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-      <div class="flex items-center justify-between">
-        <p class="text-sm text-gray-700">
-          Página <span class="font-medium">{{ page_obj.number }}</span> de <span class="font-medium">{{ paginator.num_pages }}</span>
+    <div class="bg-gray-50/50 dark:bg-slate-900/30 px-8 py-5 border-t border-gray-100 dark:border-slate-700/50 transition-colors">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+        <p class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">
+          Página <span class="text-gray-900 dark:text-slate-100 font-black">{{ page_obj.number }}</span> de <span class="text-gray-900 dark:text-slate-100 font-black">{{ paginator.num_pages }}</span>
         </p>
-        <nav class="inline-flex rounded-md shadow-sm -space-x-px">
+        
+        <nav class="flex items-center gap-2" aria-label="Pagination">
           {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if tipo_filter %}&tipo={{ tipo_filter }}{% endif %}" class="px-3 py-2 border border-gray-300 bg-white text-sm text-gray-500 hover:bg-gray-50 rounded-l-md">
-              <i data-lucide="chevron-left" class="h-4 w-4"></i>
+            <a href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if tipo_filter %}&tipo={{ tipo_filter }}{% endif %}" 
+               class="p-2 rounded-xl bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 border border-gray-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500/50 transition-all shadow-sm active:scale-95">
+              <i data-lucide="chevron-left" class="h-5 w-5"></i>
             </a>
           {% endif %}
+          
           {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if tipo_filter %}&tipo={{ tipo_filter }}{% endif %}" class="px-3 py-2 border border-gray-300 bg-white text-sm text-gray-500 hover:bg-gray-50 rounded-r-md">
-              <i data-lucide="chevron-right" class="h-4 w-4"></i>
+            <a href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if tipo_filter %}&tipo={{ tipo_filter }}{% endif %}" 
+               class="p-2 rounded-xl bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 border border-gray-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500/50 transition-all shadow-sm active:scale-95">
+              <i data-lucide="chevron-right" class="h-5 w-5"></i>
             </a>
           {% endif %}
         </nav>

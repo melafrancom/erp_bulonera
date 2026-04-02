@@ -2,92 +2,109 @@
   Partial: _product_filters.html
   Uso: include 'products/partials/_product_filters.html' 
   Panel de filtros con collapse en mobile (Alpine.js).
-  Variables de contexto esperadas: categories, subcategories, search,
-  category_filter, subcategory_filter, brand_filter, supplier_filter
 -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4"
+<div class="bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-gray-200 dark:border-slate-700 p-6 mb-8 transition-all hover:shadow-md relative overflow-hidden"
      x-data="{ open: false }">
   
-  <!-- Toggle (mobile) -->
+  <!-- Subtle Glow Decoration -->
+  <div class="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl"></div>
+
+  <!-- Toggle button for mobile -->
   <button @click="open = !open"
-          class="flex items-center justify-between w-full md:hidden text-left"
+          class="flex items-center justify-between w-full md:hidden text-left group"
           type="button"
-          aria-expanded="false"
           :aria-expanded="open">
-    <span class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-      <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
-      Filtros
+    <span class="flex items-center gap-3 text-sm font-black text-gray-700 dark:text-slate-300 uppercase tracking-[0.2em] transition-colors group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+      <i data-lucide="sliders-horizontal" class="w-4 h-4 transition-transform group-hover:rotate-12"></i>
+      Filtros de Búsqueda
     </span>
-    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform" :class="open && 'rotate-180'"></i>
+    <div class="p-2 bg-gray-50 dark:bg-slate-900 rounded-xl group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/20 transition-colors">
+      <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 dark:text-slate-500 transition-transform duration-300" :class="open && 'rotate-180'"></i>
+    </div>
   </button>
 
-  <!-- Filtros (siempre visible en desktop, colapsable en mobile) -->
-  <div :class="open ? '' : 'hidden'" class="md:block mt-3 md:mt-0">
+  <!-- Filters Content -->
+  <div x-show="open" x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0 -translate-y-2"
+       x-transition:enter-end="opacity-100 translate-y-0"
+       class="md:block mt-6 md:mt-0" :class="{'block': open, 'hidden': !open}">
+    
     <form method="GET" action="{% url 'products:product_list' %}" id="filterForm">
-      
-      <!-- Mantener búsqueda actual -->
+      <!-- Preserve global search -->
       <input type="hidden" name="search" value="{{ search }}">
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         
         <!-- Categoría -->
-        <div>
-          <label for="filter-category" class="block text-xs font-medium text-gray-600 mb-1">Categoría</label>
-          <select id="filter-category" name="category"
-                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
-            <option value="">Todas</option>
-            {% for cat in categories %}
-              <option value="{{ cat.id }}" {% if cat.id|stringformat:"s" == category_filter %}selected{% endif %}>
-                {{ cat.name }}
-              </option>
-            {% endfor %}
-          </select>
+        <div class="space-y-2">
+          <label for="filter-category" class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Categoría Principal</label>
+          <div class="relative group">
+            <select id="filter-category" name="category"
+                    class="w-full px-5 py-3.5 bg-gray-50 dark:bg-slate-900 border-2 border-transparent dark:border-slate-800 rounded-2xl focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition-all font-bold text-sm text-gray-900 dark:text-slate-100 outline-none appearance-none shadow-inner">
+              <option value="">Todas las categorías</option>
+              {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if cat.id|stringformat:"s" == category_filter %}selected{% endif %}>
+                  {{ cat.name }}
+                </option>
+              {% endfor %}
+            </select>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-indigo-500 transition-colors"></i>
+          </div>
         </div>
 
         <!-- Subcategoría -->
-        <div>
-          <label for="filter-subcategory" class="block text-xs font-medium text-gray-600 mb-1">Subcategoría</label>
-          <select id="filter-subcategory" name="subcategory"
-                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
-            <option value="">Todas</option>
-            {% for subcat in subcategories %}
-              <option value="{{ subcat.id }}" {% if subcat.id|stringformat:"s" == subcategory_filter %}selected{% endif %}>
-                {{ subcat.name }}
-              </option>
-            {% endfor %}
-          </select>
+        <div class="space-y-2">
+          <label for="filter-subcategory" class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Sub-categoría</label>
+          <div class="relative group">
+            <select id="filter-subcategory" name="subcategory"
+                    class="w-full px-5 py-3.5 bg-gray-50 dark:bg-slate-900 border-2 border-transparent dark:border-slate-800 rounded-2xl focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition-all font-bold text-sm text-gray-900 dark:text-slate-100 outline-none appearance-none shadow-inner">
+              <option value="">Todas las sub-categorías</option>
+              {% for subcat in subcategories %}
+                <option value="{{ subcat.id }}" {% if subcat.id|stringformat:"s" == subcategory_filter %}selected{% endif %}>
+                  {{ subcat.name }}
+                </option>
+              {% endfor %}
+            </select>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-indigo-500 transition-colors"></i>
+          </div>
         </div>
 
         <!-- Marca -->
-        <div>
-          <label for="filter-brand" class="block text-xs font-medium text-gray-600 mb-1">Marca</label>
-          <input type="text" id="filter-brand" name="brand"
-                 value="{{ brand_filter }}"
-                 placeholder="Filtrar marca..."
-                 class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        <div class="space-y-2">
+          <label for="filter-brand" class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Marca / Fabricante</label>
+          <div class="relative group">
+            <i data-lucide="tag" class="w-4 h-4 text-gray-400 absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none group-focus-within:text-indigo-500 transition-colors"></i>
+            <input type="text" id="filter-brand" name="brand"
+                   value="{{ brand_filter }}"
+                   placeholder="Ej: Bahco, Bosch..."
+                   class="w-full pl-12 pr-5 py-3.5 bg-gray-50 dark:bg-slate-900 border-2 border-transparent dark:border-slate-800 rounded-2xl focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition-all font-bold text-sm text-gray-900 dark:text-slate-100 outline-none shadow-inner placeholder:text-gray-300 dark:placeholder:text-slate-700">
+          </div>
         </div>
 
         <!-- Proveedor -->
-        <div>
-          <label for="filter-supplier" class="block text-xs font-medium text-gray-600 mb-1">Proveedor</label>
-          <input type="text" id="filter-supplier" name="supplier"
-                 value="{{ supplier_filter }}"
-                 placeholder="Filtrar proveedor..."
-                 class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        <div class="space-y-2">
+          <label for="filter-supplier" class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Proveedor Originario</label>
+          <div class="relative group">
+            <i data-lucide="truck" class="w-4 h-4 text-gray-400 absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none group-focus-within:text-indigo-500 transition-colors"></i>
+            <input type="text" id="filter-supplier" name="supplier"
+                   value="{{ supplier_filter }}"
+                   placeholder="Buscar proveedor..."
+                   class="w-full pl-12 pr-5 py-3.5 bg-gray-50 dark:bg-slate-900 border-2 border-transparent dark:border-slate-800 rounded-2xl focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition-all font-bold text-sm text-gray-900 dark:text-slate-100 outline-none shadow-inner placeholder:text-gray-300 dark:placeholder:text-slate-700">
+          </div>
         </div>
       </div>
 
-      <!-- Botones -->
-      <div class="flex flex-wrap gap-2 mt-3">
+      <!-- Action Buttons -->
+      <div class="flex flex-wrap items-center gap-4 mt-8 pt-6 border-t border-gray-100 dark:border-slate-700/50 transition-colors">
         <button type="submit"
-                class="inline-flex items-center px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-          <i data-lucide="filter" class="w-4 h-4 mr-1.5"></i>
-          Aplicar
+                class="inline-flex items-center px-10 py-3.5 text-[10px] font-black uppercase tracking-[0.2em] bg-gradient-to-r from-indigo-600 to-blue-700 text-white rounded-2xl hover:from-indigo-700 hover:to-blue-800 transition-all shadow-xl shadow-indigo-500/20 active:scale-95 group">
+          <i data-lucide="filter" class="w-4 h-4 mr-2.5 group-hover:rotate-12 transition-transform"></i>
+          Filtrar Catálogo
         </button>
         <a href="{% url 'products:product_list' %}"
-           class="inline-flex items-center px-4 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
-          <i data-lucide="x" class="w-4 h-4 mr-1.5"></i>
-          Limpiar
+           class="inline-flex items-center px-8 py-3.5 text-[10px] font-black uppercase tracking-[0.2em] bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 rounded-2xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-all active:scale-95">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5 mr-2.5"></i>
+          Limpiar Búsqueda
         </a>
       </div>
     </form>

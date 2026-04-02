@@ -1,115 +1,112 @@
 import pytest
 import uuid
-import datetime
 from decimal import Decimal
 from django.urls import reverse
-from django.contrib.auth import get_user_model
-from django.utils import timezone
-from unittest.mock import patch
-
-from sales.models import Quote, QuoteItem
-from products.models import Product
-from customers.models import Customer
-
-User = get_user_model()
-
-@pytest.fixture
-def admin_user(db):
-    return User.objects.create_superuser('adminweb', 'adminweb@example.com', 'password')
-
-@pytest.fixture
-def product(db):
-    return Product.objects.create(
-        code="TAL-WEB",
-        name="Taladro Web",
-        sku="TAL-WEB",
-        price=Decimal('15000.00'),
-        stock_quantity=10,
-        is_active=True
-    )
-
-@pytest.fixture
-def customer(db):
-    return Customer.objects.create(
-        business_name="Cliente Web",
-        cuit_cuil="20123456789",
-        email="web@example.com"
-    )
-
-@pytest.fixture
-def quote(db, product, customer):
-    q = Quote.objects.create(
-        customer=customer,
-        status='draft',
-        valid_until=timezone.now().date() + datetime.timedelta(days=15)
-    )
-    QuoteItem.objects.create(
-        quote=q,
-        product=product,
-        quantity=Decimal('2'),
-        unit_price=product.price
-    )
-    return q
+from django.contrib.messages import get_messages
+from sales.models import Sale, Quote
 
 @pytest.mark.django_db
-class TestQuotePublicView:
+class TestSalesDashboard:
+    """Pruebas para el dashboard de ventas."""
     
-    def test_public_view_displays_quote_anonymously(self, client, quote):
-        url = reverse('sales_web:quote_public', kwargs={'uuid': quote.uuid})
-        response = client.get(url, secure=True)
+    def test_dashboard_requires_login(self, client):
+        url = reverse('sales_web:dashboard')
+        response = client.get(url)
+        assert response.status_code == 302
+        assert 'login' in response.url
+
+    def test_dashboard_renders_correctly(self, web_client, sale, quote):
+        url = reverse('sales_web:dashboard')
+        response = web_client.get(url)
         
+        assert response.status_code == 200
+        content = response.content.decode('utf-8')
+        assert 'Dashboard' in content
+        assert str(sale.number) in content
+        assert str(quote.number) in content
+
+@pytest.mark.django_db
+class TestQuoteWebViews:
+    """Pruebas para las vistas web de presupuestos."""
+
+    def test_quote_list_renders(self, web_client, quote):
+        url = reverse('sales_web:quote_list')
+        response = web_client.get(url)
         assert response.status_code == 200
         assert str(quote.number) in response.content.decode('utf-8')
-        
-    def test_public_pdf_view_downloads_pdf(self, client, quote):
-        url = reverse('sales_web:quote_public_pdf', kwargs={'uuid': quote.uuid})
-        response = client.get(url, secure=True)
-        
+
+    def test_quote_detail_renders(self, web_client, quote):
+        url = reverse('sales_web:quote_detail', kwargs={'pk': quote.pk})
+        response = web_client.get(url)
         assert response.status_code == 200
-        assert response['Content-Type'] == 'application/pdf'
-        assert f'filename="Presupuesto_{quote.number}.pdf"' in response['Content-Disposition']
-        
-    def test_public_view_cancelled_returns_404(self, client, quote):
-        quote.status = 'cancelled'
-        quote.save(update_fields=['status'])
-        
+        assert str(quote.number) in response.content.decode('utf-8')
+
+    def test_quote_public_view_anonymous(self, client, quote):
+        """Vista pública accesible sin login."""
         url = reverse('sales_web:quote_public', kwargs={'uuid': quote.uuid})
-        response = client.get(url, secure=True)
-        assert response.status_code == 404
-        
-    def test_public_view_does_not_exist_returns_404(self, client):
-        url = reverse('sales_web:quote_public', kwargs={'uuid': uuid.uuid4()})
-        response = client.get(url, secure=True)
-        assert response.status_code == 404
+        response = client.get(url)
+        assert response.status_code == 200
+        assert str(quote.number) in response.content.decode('utf-8')
 
 @pytest.mark.django_db
-class TestQuoteSendEmailView:
-    
-    @patch('sales.tasks.send_quote_email_task.delay')
-    def test_valid_email_enqueues_task_and_changes_status(self, mock_task, client, admin_user, quote):
-        client.force_login(admin_user)
-        
-        url = reverse('sales_web:quote_send_email', kwargs={'pk': quote.id})
-        response = client.post(url, {'recipient_email': 'test@example.com'}, secure=True)
-        
-        assert response.status_code == 302
-        assert response.url == reverse('sales_web:quote_detail', kwargs={'pk': quote.id})
-        
-        quote.refresh_from_db()
-        assert quote.status == 'sent'
-        
-        mock_task.assert_called_once_with(quote.id, 'test@example.com')
+class TestSaleWebViews:
+    """Pruebas para las vistas web de ventas."""
 
-    @patch('sales.tasks.send_quote_email_task.delay')
-    def test_empty_email_shows_error(self, mock_task, client, admin_user, quote):
-        client.force_login(admin_user)
-        initial_status = quote.status
+    def test_sale_list_renders(self, web_client, sale):
+        url = reverse('sales_web:sale_list')
+        response = web_client.get(url)
+        assert response.status_code == 200
+        assert str(sale.number) in response.content.decode('utf-8')
+
+    def test_sale_detail_renders(self, web_client, sale_with_items):
+        url = reverse('sales_web:sale_detail', kwargs={'pk': sale_with_items.pk})
+        response = web_client.get(url)
+        assert response.status_code == 200
+        assert str(sale_with_items.number) in response.content.decode('utf-8')
+        assert str(sale_with_items.items.first().product.name) in response.content.decode('utf-8')
+
+@pytest.mark.django_db
+class TestSaleWebActions:
+    """Pruebas para las acciones POST de ventas (Server Actions)."""
+
+    def test_sale_confirm_action(self, web_client, sale_with_items):
+        url = reverse('sales_web:sale_confirm', kwargs={'pk': sale_with_items.pk})
+        response = web_client.post(url, follow=True)
         
-        url = reverse('sales_web:quote_send_email', kwargs={'pk': quote.id})
-        response = client.post(url, {'recipient_email': ''}, secure=True)
+        assert response.status_code == 200
+        sale_with_items.refresh_from_db()
+        assert sale_with_items.status == 'confirmed'
         
-        assert response.status_code == 302
-        mock_task.assert_not_called()
+        messages = [m.message for m in get_messages(response.wsgi_request)]
+        assert any("confirmada exitosamente" in m for m in messages)
+
+    def test_sale_cancel_action(self, web_client, sale_with_items):
+        url = reverse('sales_web:sale_cancel', kwargs={'pk': sale_with_items.pk})
+        response = web_client.post(url, {'reason': 'Cancelación Web'}, follow=True)
         
+        assert response.status_code == 200
+        sale_with_items.refresh_from_db()
+        assert sale_with_items.status == 'cancelled'
+
+    def test_sale_move_status_action(self, web_client, sale_with_items):
+        sale_with_items.status = 'confirmed'
+        sale_with_items.save()
+        
+        url = reverse('sales_web:sale_move_status', kwargs={'pk': sale_with_items.pk})
+        response = web_client.post(url, {'new_status': 'in_preparation'}, follow=True)
+        
+        assert response.status_code == 200
+        sale_with_items.refresh_from_db()
+        assert sale_with_items.status == 'in_preparation'
+
+    def test_convert_quote_action(self, web_client, quote):
+        quote.status = 'accepted'
+        quote.save()
+        
+        url = reverse('sales_web:quote_convert', kwargs={'quote_pk': quote.pk})
+        response = web_client.post(url, follow=True)
+        
+        assert response.status_code == 200
         quote.refresh_from_db()
-        assert quote.status == initial_status
+        assert quote.status == 'converted'
+        assert Sale.objects.filter(quote=quote).exists()

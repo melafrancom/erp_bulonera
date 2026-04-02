@@ -5,48 +5,70 @@
 
 {% block breadcrumb_items %}
   <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <a href="{% url 'inventory_web:dashboard' %}" class="text-gray-600 hover:text-gray-900">Inventario</a>
+  <a href="{% url 'inventory_web:dashboard' %}" class="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 transition-colors font-bold">Inventario</a>
   <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <span class="text-gray-900 font-medium">Nuevo Conteo</span>
+  <span class="text-gray-900 dark:text-slate-100 font-black transition-colors">Iniciar Conteo</span>
 {% endblock %}
 
 {% block content %}
 <div class="max-w-2xl mx-auto" x-data="countForm()">
   
-  <div class="mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">Iniciar Nuevo Conteo Físico</h1>
-    <p class="text-gray-600 mt-1">Crea un registro para auditoría y corrección de stock.</p>
+  <div class="mb-10 text-center">
+    <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl shadow-xl ring-4 ring-emerald-500/10 mb-4 mx-auto">
+      <i data-lucide="clipboard-list" class="w-8 h-8 text-white"></i>
+    </div>
+    <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight transition-colors">Nuevo Conteo Físico</h1>
+    <p class="text-gray-600 dark:text-slate-400 font-medium transition-colors mt-2">Inicializar auditoría de stock y ajuste de existencias</p>
   </div>
 
-  <form @submit.prevent="submit" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-    <div x-show="error" x-cloak class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-md">
-      <p class="text-sm text-red-700" x-text="error"></p>
-    </div>
-
-    <div class="space-y-6" :class="{'opacity-50 pointer-events-none': loading}">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha Programada</label>
-        <input type="date" x-model="form.count_date" required
-               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+  <div class="bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-gray-200 dark:border-slate-700 p-8 md:p-10 transition-colors relative overflow-hidden">
+    <!-- Decorative Glow -->
+    <div class="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl"></div>
+    
+    <form @submit.prevent="submit" class="relative">
+      <div x-show="error" x-cloak class="mb-8 p-4 bg-red-100 dark:bg-red-900/30 border-l-4 border-red-500 rounded-xl flex items-start gap-3">
+        <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 shrink-0"></i>
+        <p class="text-sm font-bold text-red-700 dark:text-red-400" x-text="error"></p>
       </div>
 
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Notas / Sector</label>
-        <textarea x-model="form.notes" rows="3"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ej: Auditoría semestral del pasillo 4..."></textarea>
-      </div>
+      <div class="space-y-8" :class="{'opacity-50 pointer-events-none grayscale': loading}">
+        <div class="group">
+          <label class="block text-sm font-black text-gray-700 dark:text-slate-300 mb-2 uppercase tracking-widest transition-colors group-focus-within:text-emerald-500">Fecha de Auditoría</label>
+          <div class="relative">
+            <i data-lucide="calendar" class="w-5 h-5 text-gray-400 dark:text-slate-600 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none group-focus-within:text-emerald-500 transition-colors"></i>
+            <input type="date" x-model="form.count_date" required
+                   class="w-full pl-12 pr-4 py-4 border border-gray-300 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all shadow-sm font-black tabular-nums">
+          </div>
+        </div>
 
-      <div class="pt-4 flex justify-end gap-3 border-t">
-        <a href="{% url 'inventory_web:count_list' %}" class="px-4 py-2 border text-gray-700 rounded-lg hover:bg-gray-50">Cancelar</a>
-        <button type="submit" class="inline-flex items-center px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition" :disabled="loading">
-          <i data-lucide="play" class="w-4 h-4 mr-2" x-show="!loading"></i>
-          <span x-show="loading" class="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-          Iniciar Conteo
-        </button>
+        <div class="group">
+          <label class="block text-sm font-black text-gray-700 dark:text-slate-300 mb-2 uppercase tracking-widest transition-colors group-focus-within:text-emerald-500">Notas y Sectorización</label>
+          <div class="relative">
+            <i data-lucide="message-square" class="w-5 h-5 text-gray-400 dark:text-slate-600 absolute left-4 top-4 pointer-events-none group-focus-within:text-emerald-500 transition-colors"></i>
+            <textarea x-model="form.notes" rows="4"
+                      class="w-full pl-12 pr-4 py-4 border border-gray-300 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all shadow-sm font-bold placeholder:text-gray-400 dark:placeholder:text-slate-600"
+                      placeholder="Ej: Auditoría del Sector A - Herramientas Manuales..."></textarea>
+          </div>
+        </div>
+
+        <div class="pt-6 flex flex-col sm:flex-row justify-end gap-4 border-t dark:border-slate-700">
+          <a href="{% url 'inventory_web:count_list' %}" class="inline-flex items-center justify-center px-8 py-3.5 border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-300 rounded-2xl hover:bg-gray-50 dark:hover:bg-slate-700 transition-all font-black uppercase tracking-widest text-xs">
+            Cancelar
+          </a>
+          <button type="submit" class="inline-flex items-center justify-center px-10 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-black uppercase tracking-widest text-sm rounded-2xl hover:from-emerald-700 hover:to-teal-800 transition-all shadow-xl shadow-emerald-500/25 group disabled:opacity-50" :disabled="loading">
+            <span x-show="!loading" class="flex items-center">
+              Comenzar Auditoría
+              <i data-lucide="chevron-right" class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform"></i>
+            </span>
+            <span x-show="loading" class="flex items-center">
+              Procesando
+              <div class="ml-3 w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            </span>
+          </button>
+        </div>
       </div>
-    </div>
-  </form>
+    </form>
+  </div>
 </div>
 {% endblock %}
 

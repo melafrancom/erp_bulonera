@@ -1,294 +1,261 @@
 {% extends 'base/base.html' %}
 {% load static %}
 
-{% block title %}{{ supplier.business_name }} - Proveedores | ERP Bulonera Alvear{% endblock %}
+{% block title %}Ficha Comercial: {{ supplier.business_name }} | ERP Bulonera Alvear{% endblock %}
 
 {% block breadcrumb_items %}
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <a href="{% url 'suppliers_web:supplier_list' %}" class="text-gray-600 hover:text-gray-900">Proveedores</a>
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <span class="text-gray-900 font-medium">{{ supplier.cuit }}</span>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <a href="{% url 'suppliers_web:supplier_list' %}" class="text-gray-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-bold">Proveedores</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <span class="text-gray-900 dark:text-slate-100 font-black tracking-tight">{{ supplier.cuit }}</span>
 {% endblock %}
 
 {% block mobile_title %}Detalle Proveedor{% endblock %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
 
   <!-- ═══════════════════════════════════════════════════════════════════
-       HEADER: Volver + Acciones
+       HEADER: Identidad y Control Maestro
        ═══════════════════════════════════════════════════════════════════ -->
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-    <a href="{% url 'suppliers_web:supplier_list' %}"
-       class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition">
-      <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i>
-      Volver a Proveedores
-    </a>
-    <div class="flex gap-2">
-      <a href="{% url 'suppliers_web:supplier_edit' supplier.pk %}"
-         class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium">
-        <i data-lucide="pencil" class="w-4 h-4 mr-2"></i>
-        Editar
+  <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-10">
+    <div class="relative group">
+      <a href="{% url 'suppliers_web:supplier_list' %}" class="inline-flex items-center text-[10px] font-black text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 uppercase tracking-[0.2em] transition-all mb-4 group/back">
+        <i data-lucide="arrow-left" class="w-3 h-3 mr-2 group-hover/back:-translate-x-1 transition-transform"></i>
+        Regresar a la Nómina
       </a>
-      <button type="button" onclick="confirmDelete()"
-              class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium">
-        <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i>
+      
+      <div class="flex items-start gap-5">
+        <div class="hidden sm:flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-[1.5rem] shadow-xl shadow-indigo-500/20 ring-4 ring-indigo-500/10 transition-transform hover:rotate-3">
+          <i data-lucide="building-2" class="w-8 h-8 text-white"></i>
+        </div>
+        <div>
+          <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight leading-none mb-3">
+            {{ supplier.business_name }}
+          </h1>
+          <div class="flex flex-wrap items-center gap-3 text-sm">
+            <span class="inline-flex items-center px-3 py-1 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-lg font-black text-[10px] uppercase tracking-widest ring-1 ring-gray-200 dark:ring-slate-700">
+              CUIT: {{ supplier.cuit }}
+            </span>
+            <span class="inline-flex items-center px-3 py-1 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 rounded-lg font-black text-[10px] uppercase tracking-widest ring-1 ring-indigo-200 dark:ring-indigo-800/30">
+              {{ supplier.get_tax_condition_display }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel de Acciones -->
+    <div class="flex items-center gap-3 bg-white dark:bg-slate-900/50 p-2 rounded-2xl border border-gray-100 dark:border-slate-800/50 shadow-sm backdrop-blur-xl">
+      <a href="{% url 'suppliers_web:supplier_edit' supplier.pk %}"
+         class="inline-flex items-center px-6 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 rounded-xl hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-500 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm active:scale-95 group">
+        <i data-lucide="edit-3" class="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform"></i>
+        Editar Ficha
+      </a>
+      <button onclick="confirmDelete()"
+              class="inline-flex items-center px-6 py-3 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-600 hover:text-white dark:hover:bg-red-500 transition-all font-black text-[10px] uppercase tracking-widest active:scale-95 group">
+        <i data-lucide="trash-2" class="w-4 h-4 mr-2 group-hover:shake transition-transform"></i>
         Eliminar
       </button>
     </div>
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════════════
-       1️⃣ ENCABEZADO DEL PROVEEDOR
+       MÉTRICAS CLAVE (High Impact)
        ═══════════════════════════════════════════════════════════════════ -->
-  <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4" aria-label="Información principal">
-    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-      <div class="flex-1">
-        <h1 class="text-xl md:text-2xl font-bold text-gray-900 mb-1">{{ supplier.business_name }}</h1>
-        {% if supplier.trade_name %}
-          <p class="text-gray-500 mb-2">{{ supplier.trade_name }}</p>
-        {% endif %}
-        <div class="flex flex-wrap gap-3 text-sm text-gray-600">
-          <span class="inline-flex items-center gap-1">
-            <i data-lucide="hash" class="w-3.5 h-3.5"></i>
-            <strong>CUIT:</strong> {{ supplier.cuit }}
-          </span>
-          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
-            {% if supplier.tax_condition == 'RI' %}bg-blue-100 text-blue-800
-            {% elif supplier.tax_condition == 'MONO' %}bg-yellow-100 text-yellow-800
-            {% else %}bg-gray-100 text-gray-700{% endif %}">
-            {{ supplier.get_tax_condition_display }}
-          </span>
-        </div>
-      </div>
-
-      <!-- Tags -->
-      {% if supplier.tags.all %}
-      <div class="flex flex-wrap gap-1.5 shrink-0">
-        {% for tag in supplier.tags.all %}
-          <span class="inline-block px-2.5 py-1 text-xs font-medium rounded-full text-white"
-                style="background-color: {{ tag.color }}">
-            {{ tag.name }}
-          </span>
-        {% endfor %}
-      </div>
-      {% endif %}
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-10">
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-gray-100 dark:border-slate-700 shadow-sm transition-all hover:scale-[1.02]">
+      <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2">Plazo de Pago</p>
+      <p class="text-xl font-black text-gray-900 dark:text-slate-100 tracking-tight">{{ supplier.payment_term_display }}</p>
     </div>
-
-    <!-- Métricas rápidas -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5 pt-4 border-t border-gray-100">
-      <div class="text-center p-3 bg-gray-50 rounded-lg">
-        <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Plazo Pago</p>
-        <p class="text-lg font-bold text-gray-900">{{ supplier.payment_term_display }}</p>
-      </div>
-      <div class="text-center p-3 bg-blue-50 rounded-lg">
-        <p class="text-xs text-blue-600 uppercase tracking-wider mb-1">Total Comprado</p>
-        <p class="text-lg font-bold text-blue-700">${{ supplier.total_purchased|floatformat:2 }}</p>
-      </div>
-      <div class="text-center p-3 {% if supplier.has_debt %}bg-red-50{% else %}bg-green-50{% endif %} rounded-lg">
-        <p class="text-xs {% if supplier.has_debt %}text-red-600{% else %}text-green-600{% endif %} uppercase tracking-wider mb-1">Deuda Actual</p>
-        <p class="text-lg font-bold {% if supplier.has_debt %}text-red-700{% else %}text-green-700{% endif %}">${{ supplier.current_debt|floatformat:2 }}</p>
-      </div>
-      <div class="text-center p-3 bg-purple-50 rounded-lg">
-        <p class="text-xs text-purple-600 uppercase tracking-wider mb-1">Productos</p>
-        <p class="text-lg font-bold text-purple-700">{{ products|length }}</p>
-      </div>
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-gray-100 dark:border-slate-700 shadow-sm transition-all hover:scale-[1.02]">
+      <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2">Total Comprado</p>
+      <p class="text-xl font-black text-blue-600 dark:text-blue-400 tabular-nums">${{ supplier.total_purchased|floatformat:2 }}</p>
     </div>
-  </section>
+    <div class="bg-gray-900 dark:bg-slate-800 p-6 rounded-[2rem] shadow-xl shadow-red-500/10 transition-all hover:scale-[1.02]">
+      <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Balance Pendiente</p>
+      <p class="text-xl font-black {% if supplier.has_debt %}text-red-500{% else %}text-emerald-500{% endif %} tabular-nums leading-none tracking-tight">${{ supplier.current_debt|floatformat:2 }}</p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-gray-100 dark:border-slate-700 shadow-sm transition-all hover:scale-[1.02]">
+      <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2">Catálogo Activo</p>
+      <p class="text-xl font-black text-indigo-600 dark:text-indigo-400">{{ products|length }} Items</p>
+    </div>
+  </div>
 
   <!-- ═══════════════════════════════════════════════════════════════════
-       2️⃣ CONTACTO + DIRECCIÓN
+       GRID DE INFORMACIÓN: Paneles de Datos
        ═══════════════════════════════════════════════════════════════════ -->
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-    <!-- Contacto -->
-    <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5" aria-label="Contacto">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        <i data-lucide="phone" class="w-5 h-5 text-blue-600"></i>
-        Contacto
-      </h2>
-      <div class="space-y-3 text-sm">
-        <div class="flex justify-between py-2 border-b border-gray-50">
-          <span class="text-gray-500">Email</span>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+    
+    <!-- Panel: Canales de Comunicación -->
+    <section class="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-gray-200 dark:border-slate-700 p-8 shadow-sm transition-colors relative overflow-hidden group/card">
+      <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 -mr-16 -mt-16 rounded-full blur-2xl group-hover/card:scale-150 transition-transform"></div>
+      
+      <div class="flex items-center gap-3 mb-8">
+        <div class="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-2xl">
+          <i data-lucide="phone-call" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i>
+        </div>
+        <h2 class="text-xl font-black text-gray-900 dark:text-slate-100 uppercase tracking-tight">Canales de Contacto</h2>
+      </div>
+
+      <div class="space-y-6">
+        <div class="flex justify-between items-center py-2 border-b border-gray-50 dark:border-slate-700/50">
+          <span class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">E-mail Corporativo</span>
           {% if supplier.email %}
-            <a href="mailto:{{ supplier.email }}" class="text-blue-600 hover:underline font-medium">{{ supplier.email }}</a>
+            <a href="mailto:{{ supplier.email }}" class="text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline">{{ supplier.email }}</a>
           {% else %}
-            <span class="text-gray-400">—</span>
+            <span class="text-xs text-gray-400 italic">No registrado</span>
           {% endif %}
         </div>
-        <div class="flex justify-between py-2 border-b border-gray-50">
-          <span class="text-gray-500">Teléfono</span>
-          <span class="text-gray-900 font-medium">{{ supplier.phone|default:"—" }}</span>
+        <div class="flex justify-between items-center py-2 border-b border-gray-50 dark:border-slate-700/50">
+          <span class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Línea Fija</span>
+          <span class="text-sm font-black text-gray-700 dark:text-slate-300">{{ supplier.phone|default:"—" }}</span>
         </div>
-        <div class="flex justify-between py-2 border-b border-gray-50">
-          <span class="text-gray-500">Celular</span>
-          <span class="text-gray-900 font-medium">{{ supplier.mobile|default:"—" }}</span>
+        <div class="flex justify-between items-center py-2 border-b border-gray-50 dark:border-slate-700/50">
+          <span class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Celular / WhatsApp</span>
+          <span class="text-sm font-black text-gray-700 dark:text-slate-300 font-mono">{{ supplier.mobile|default:"—" }}</span>
         </div>
-        <div class="flex justify-between py-2 border-b border-gray-50">
-          <span class="text-gray-500">Sitio Web</span>
+        <div class="flex justify-between items-center py-2">
+          <span class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Portal Web</span>
           {% if supplier.website %}
-            <a href="{{ supplier.website }}" target="_blank" rel="noopener" class="text-blue-600 hover:underline font-medium truncate max-w-[180px]">{{ supplier.website }}</a>
+            <a href="{{ supplier.website }}" target="_blank" class="text-sm font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 group/link">
+              Visitar sitio
+              <i data-lucide="external-link" class="w-3.5 h-3.5 group-hover/link:translate-x-0.5 transition-transform"></i>
+            </a>
           {% else %}
-            <span class="text-gray-400">—</span>
+            <span class="text-xs text-gray-400 italic">No disponible</span>
           {% endif %}
         </div>
       </div>
     </section>
 
-    <!-- Dirección -->
-    <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5" aria-label="Dirección">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        <i data-lucide="map-pin" class="w-5 h-5 text-red-500"></i>
-        Dirección
-      </h2>
-      <div class="space-y-3 text-sm">
-        <div class="flex justify-between py-2 border-b border-gray-50">
-          <span class="text-gray-500">Dirección</span>
-          <span class="text-gray-900 font-medium text-right max-w-[200px]">{{ supplier.address|default:"—" }}</span>
+    <!-- Panel: Ubicación Logística -->
+    <section class="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-gray-200 dark:border-slate-700 p-8 shadow-sm transition-colors relative overflow-hidden group/geo">
+      <div class="absolute bottom-0 left-0 w-32 h-32 bg-red-500/5 -ml-16 -mb-16 rounded-full blur-2xl group-hover/geo:scale-150 transition-transform"></div>
+      
+      <div class="flex items-center gap-3 mb-8">
+        <div class="p-3 bg-red-100 dark:bg-red-900/30 rounded-2xl">
+          <i data-lucide="map-pin" class="w-6 h-6 text-red-600 dark:text-red-400"></i>
         </div>
-        <div class="flex justify-between py-2 border-b border-gray-50">
-          <span class="text-gray-500">Ciudad</span>
-          <span class="text-gray-900 font-medium">{{ supplier.city|default:"—" }}</span>
+        <h2 class="text-xl font-black text-gray-900 dark:text-slate-100 uppercase tracking-tight">Dirección de Despacho</h2>
+      </div>
+
+      <div class="space-y-6">
+        <div class="group/loc">
+          <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1 group-hover/loc:text-red-500 transition-colors">Domicilio Legal / Operativo</p>
+          <p class="text-sm font-bold text-gray-800 dark:text-slate-200">{{ supplier.address|default:"Sin dirección registrada" }}</p>
         </div>
-        <div class="flex justify-between py-2 border-b border-gray-50">
-          <span class="text-gray-500">Provincia</span>
-          <span class="text-gray-900 font-medium">{{ supplier.state|default:"—" }}</span>
+        <div class="grid grid-cols-2 gap-8">
+          <div>
+            <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Localidad</p>
+            <p class="text-sm font-bold text-gray-800 dark:text-slate-200">{{ supplier.city|default:"—" }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Provincia</p>
+            <p class="text-sm font-bold text-gray-800 dark:text-slate-200">{{ supplier.state|default:"—" }}</p>
+          </div>
         </div>
-        <div class="flex justify-between py-2 border-b border-gray-50">
-          <span class="text-gray-500">Código Postal</span>
-          <span class="text-gray-900 font-medium">{{ supplier.zip_code|default:"—" }}</span>
+        <div class="pt-4 border-t border-gray-50 dark:border-slate-700/50">
+          <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Código Postal</p>
+          <p class="text-sm font-black text-gray-700 dark:text-slate-300 font-mono tracking-widest">{{ supplier.zip_code|default:"—" }}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Panel: Finanzas y Tesorería -->
+    <section class="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-gray-200 dark:border-slate-700 p-8 shadow-sm transition-colors relative overflow-hidden group/bank">
+      <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 -mr-16 -mt-16 rounded-full blur-2xl group-hover/bank:scale-150 transition-transform"></div>
+      
+      <div class="flex items-center gap-3 mb-8">
+        <div class="p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl">
+          <i data-lucide="landmark" class="w-6 h-6 text-emerald-600 dark:text-emerald-400"></i>
+        </div>
+        <h2 class="text-xl font-black text-gray-900 dark:text-slate-100 uppercase tracking-tight">Datos para Transferencias</h2>
+      </div>
+
+      <div class="space-y-6">
+        <div class="p-4 bg-gray-50 dark:bg-slate-900/50 rounded-2xl border border-gray-100 dark:border-slate-700/50">
+          <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2">Entidad Bancaria</p>
+          <p class="text-base font-black text-gray-900 dark:text-slate-100 mb-4">{{ supplier.bank_name|default:"—" }}</p>
+          
+          <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">CBU / CVU</p>
+          <div class="flex items-center justify-between group/cbu cursor-pointer" onclick="navigator.clipboard.writeText('{{ supplier.cbu }}')">
+            <p class="text-xs font-mono font-bold text-gray-700 dark:text-slate-300 tracking-[0.1em]">{{ supplier.cbu|default:"—" }}</p>
+            <i data-lucide="copy" class="w-3 h-3 text-gray-300 opacity-0 group-hover/cbu:opacity-100 transition-opacity"></i>
+          </div>
+        </div>
+        <div class="flex justify-between items-center py-2">
+          <span class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Alias Bancario</span>
+          <span class="text-sm font-black text-emerald-600 dark:text-emerald-400">{{ supplier.bank_alias|default:"—" }}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Panel: Relación Comercial -->
+    <section class="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-gray-200 dark:border-slate-700 p-8 shadow-sm transition-colors relative overflow-hidden group/deal">
+      <div class="absolute bottom-0 right-0 w-32 h-32 bg-indigo-500/5 -mr-16 -mb-16 rounded-full blur-2xl group-hover/deal:scale-150 transition-transform"></div>
+      
+      <div class="flex items-center gap-3 mb-8">
+        <div class="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl">
+          <i data-lucide="handshake" class="w-6 h-6 text-indigo-600 dark:text-indigo-400"></i>
+        </div>
+        <h2 class="text-xl font-black text-gray-900 dark:text-slate-100 uppercase tracking-tight">Condiciones de Compra</h2>
+      </div>
+
+      <div class="grid grid-cols-2 gap-x-8 gap-y-6">
+        <div>
+          <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Cierre Facturación</p>
+          <p class="text-sm font-bold text-gray-800 dark:text-slate-200">{% if supplier.payment_day_of_month %}Día {{ supplier.payment_day_of_month }}{% else %}Corriente{% endif %}</p>
+        </div>
+        <div>
+          <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Desc. Pronto Pago</p>
+          <p class="text-sm font-black text-emerald-600 dark:text-emerald-400 tabular-nums">{{ supplier.early_payment_discount|floatformat:2 }}%</p>
+        </div>
+        <div>
+          <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Lead Time (Entrega)</p>
+          <p class="text-sm font-bold text-gray-800 dark:text-slate-200">{% if supplier.delivery_days %}{{ supplier.delivery_days }} días corridos{% else %}Inmediato{% endif %}</p>
+        </div>
+        <div>
+          <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Última Actualización</p>
+          <p class="text-sm font-black text-gray-700 dark:text-slate-300">{% if supplier.last_price_list_date %}{{ supplier.last_price_list_date|date:"d/m/y" }}{% else %}—{% endif %}</p>
         </div>
       </div>
     </section>
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════════════
-       3️⃣ DATOS BANCARIOS + CONTACTO COMERCIAL
-       ═══════════════════════════════════════════════════════════════════ -->
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-    <!-- Datos Bancarios -->
-    <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5" aria-label="Datos bancarios">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        <i data-lucide="landmark" class="w-5 h-5 text-green-600"></i>
-        Datos Bancarios
-      </h2>
-      <div class="space-y-3 text-sm">
-        <div class="flex justify-between py-2 border-b border-gray-50">
-          <span class="text-gray-500">Banco</span>
-          <span class="text-gray-900 font-medium">{{ supplier.bank_name|default:"—" }}</span>
-        </div>
-        <div class="flex justify-between py-2 border-b border-gray-50">
-          <span class="text-gray-500">CBU</span>
-          <span class="text-gray-900 font-medium font-mono text-xs">{{ supplier.cbu|default:"—" }}</span>
-        </div>
-        <div class="flex justify-between py-2 border-b border-gray-50">
-          <span class="text-gray-500">Alias</span>
-          <span class="text-gray-900 font-medium">{{ supplier.bank_alias|default:"—" }}</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Contacto Comercial -->
-    <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5" aria-label="Contacto comercial">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        <i data-lucide="briefcase" class="w-5 h-5 text-orange-600"></i>
-        Contacto Comercial
-      </h2>
-      <div class="space-y-3 text-sm">
-        <div class="flex justify-between py-2 border-b border-gray-50">
-          <span class="text-gray-500">Persona</span>
-          <span class="text-gray-900 font-medium">{{ supplier.contact_person|default:"—" }}</span>
-        </div>
-        <div class="flex justify-between py-2 border-b border-gray-50">
-          <span class="text-gray-500">Email</span>
-          {% if supplier.contact_email %}
-            <a href="mailto:{{ supplier.contact_email }}" class="text-blue-600 hover:underline font-medium">{{ supplier.contact_email }}</a>
-          {% else %}
-            <span class="text-gray-400">—</span>
-          {% endif %}
-        </div>
-        <div class="flex justify-between py-2 border-b border-gray-50">
-          <span class="text-gray-500">Teléfono</span>
-          <span class="text-gray-900 font-medium">{{ supplier.contact_phone|default:"—" }}</span>
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════════════════════════
-       4️⃣ CONDICIONES COMERCIALES
-       ═══════════════════════════════════════════════════════════════════ -->
-  <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4" aria-label="Condiciones comerciales">
-    <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-      <i data-lucide="handshake" class="w-5 h-5 text-purple-600"></i>
-      Condiciones Comerciales
-    </h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Plazo de Pago</span>
-        <span class="text-gray-900 font-medium">{{ supplier.payment_term_display }}</span>
-      </div>
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Día de Pago del Mes</span>
-        <span class="text-gray-900 font-medium">{% if supplier.payment_day_of_month %}{{ supplier.payment_day_of_month }}{% else %}Desde fecha factura{% endif %}</span>
-      </div>
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Desc. Pronto Pago</span>
-        <span class="text-gray-900 font-medium">{{ supplier.early_payment_discount|floatformat:2 }}%</span>
-      </div>
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Plazo de Entrega</span>
-        <span class="text-gray-900 font-medium">{% if supplier.delivery_days %}{{ supplier.delivery_days }} días{% else %}—{% endif %}</span>
-      </div>
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Última Lista de Precios</span>
-        <span class="text-gray-900 font-medium">{% if supplier.last_price_list_date %}{{ supplier.last_price_list_date|date:"d/m/Y" }}{% else %}—{% endif %}</span>
-      </div>
-      <div class="flex justify-between py-2 border-b border-gray-50">
-        <span class="text-gray-500">Última Compra</span>
-        <span class="text-gray-900 font-medium">{% if supplier.last_purchase_date %}{{ supplier.last_purchase_date|date:"d/m/Y" }}{% else %}—{% endif %}</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════════════════════════════════════════════════════════
-       5️⃣ OBSERVACIONES (si existen)
-       ═══════════════════════════════════════════════════════════════════ -->
-  {% if supplier.notes %}
-  <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4" aria-label="Observaciones">
-    <h2 class="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-      <i data-lucide="file-text" class="w-5 h-5 text-gray-600"></i>
-      Observaciones
-    </h2>
-    <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{{ supplier.notes }}</p>
-  </section>
-  {% endif %}
-
-  <!-- ═══════════════════════════════════════════════════════════════════
-       6️⃣ PRODUCTOS DEL PROVEEDOR
+       PANEL: Catálogo de Suministros
        ═══════════════════════════════════════════════════════════════════ -->
   {% if products %}
-  <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4" aria-label="Productos del proveedor">
-    <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-      <i data-lucide="package" class="w-5 h-5 text-blue-600"></i>
-      Productos del Proveedor ({{ products|length }})
-    </h2>
-    <div class="overflow-x-auto -mx-5 px-5 max-h-80 overflow-y-auto">
-      <table class="min-w-full divide-y divide-gray-200 text-sm">
-        <thead class="bg-gray-50 sticky top-0">
+  <section class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden transition-colors">
+    <div class="px-8 py-6 border-b border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/30 flex justify-between items-center">
+      <h2 class="text-sm font-black text-gray-900 dark:text-slate-100 uppercase tracking-widest flex items-center gap-2">
+        <i data-lucide="package" class="w-5 h-5 text-indigo-500"></i> Portafolio de Productos
+      </h2>
+      <span class="text-[10px] font-black bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 px-3 py-1 rounded-full uppercase tracking-widest">{{ products|length }} Items</span>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left">
+        <thead class="bg-gray-100/50 dark:bg-slate-900 text-gray-400 dark:text-slate-500">
           <tr>
-            <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
-            <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-            <th class="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase">Costo</th>
-            <th class="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase">Venta</th>
+            <th class="px-8 py-4 text-[10px] font-black uppercase tracking-widest">Codificación</th>
+            <th class="px-8 py-4 text-[10px] font-black uppercase tracking-widest">Descripción Técnica</th>
+            <th class="px-8 py-4 text-right text-[10px] font-black uppercase tracking-widest">Costo s/IVA</th>
+            <th class="px-8 py-4 text-right text-[10px] font-black uppercase tracking-widest">Venta c/IVA</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody class="divide-y divide-gray-100 dark:divide-slate-700/50">
           {% for product in products %}
-          <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location='{% url 'products:product_detail' product.pk %}'">
-            <td class="px-4 py-2.5 font-medium text-gray-900">{{ product.code }}</td>
-            <td class="px-4 py-2.5 text-gray-700 truncate max-w-xs">{{ product.name|truncatewords:8 }}</td>
-            <td class="px-4 py-2.5 text-right text-gray-700">${{ product.cost|floatformat:2 }}</td>
-            <td class="px-4 py-2.5 text-right text-gray-900 font-medium">${{ product.price|floatformat:2 }}</td>
+          <tr class="hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 transition-colors cursor-pointer group" onclick="window.location='{% url 'products:product_detail' product.pk %}'">
+            <td class="px-8 py-5">
+              <span class="text-xs font-mono font-bold text-gray-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{{ product.code }}</span>
+            </td>
+            <td class="px-8 py-5">
+              <div class="text-sm font-bold text-gray-700 dark:text-slate-300 truncate max-w-sm group-hover:text-gray-900 dark:group-hover:text-white transition-colors">{{ product.name }}</div>
+            </td>
+            <td class="px-8 py-5 text-right font-black text-gray-600 dark:text-slate-400 tabular-nums">${{ product.cost|floatformat:2 }}</td>
+            <td class="px-8 py-5 text-right font-black text-gray-900 dark:text-slate-100 tabular-nums">${{ product.base_price_with_tax|floatformat:2 }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -297,26 +264,17 @@
   </section>
   {% endif %}
 
-  <!-- ═══════════════════════════════════════════════════════════════════
-       ACCIONES INFERIORES
-       ═══════════════════════════════════════════════════════════════════ -->
-  <div class="flex flex-wrap gap-2 mb-8">
-    <a href="{% url 'suppliers_web:supplier_list' %}"
-       class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-medium">
-      <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
-      Volver
-    </a>
-    <a href="{% url 'suppliers_web:supplier_edit' supplier.pk %}"
-       class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium">
-      <i data-lucide="pencil" class="w-4 h-4 mr-2"></i>
-      Editar
-    </a>
-    <button type="button" onclick="confirmDelete()"
-            class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium">
-      <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i>
-      Eliminar
-    </button>
-  </div>
+  <!-- Observaciones Maestras -->
+  {% if supplier.notes %}
+  <section class="mt-8 bg-amber-50 dark:bg-amber-900/10 border-2 border-dashed border-amber-200 dark:border-amber-900/30 rounded-[2rem] p-8">
+    <h3 class="text-xs font-black text-amber-700 dark:text-amber-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+      <i data-lucide="sticky-note" class="w-4 h-4"></i> Notas de Gestión
+    </h3>
+    <div class="text-sm text-amber-900/70 dark:text-amber-400/70 leading-relaxed font-medium indent-4">
+      {{ supplier.notes|linebreaks }}
+    </div>
+  </section>
+  {% endif %}
 
 </div>
 {% endblock %}
@@ -324,20 +282,23 @@
 {% block extra_js %}
 <script>
   function confirmDelete() {
-    if (confirm('¿Estás seguro de que querés eliminar este proveedor?\nEsta acción no se puede deshacer.')) {
+    if (confirm('⚠️ ATENCIÓN: PROCEDIMIENTO IRREVERSIBLE\n\n¿Estás seguro de eliminar este proveedor? Esto afectará al catálogo de productos vinculados y registros históricos de compra.')) {
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = '{% url "suppliers_web:supplier_detail" supplier.pk %}';
+      
       const csrf = document.createElement('input');
       csrf.type = 'hidden';
       csrf.name = 'csrfmiddlewaretoken';
       csrf.value = '{{ csrf_token }}';
       form.appendChild(csrf);
-      const action = document.createElement('input');
-      action.type = 'hidden';
-      action.name = 'action';
-      action.value = 'delete';
-      form.appendChild(action);
+
+      const actionInput = document.createElement('input');
+      actionInput.type = 'hidden';
+      actionInput.name = 'action';
+      actionInput.value = 'delete';
+      form.appendChild(actionInput);
+
       document.body.appendChild(form);
       form.submit();
     }

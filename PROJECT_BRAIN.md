@@ -105,7 +105,7 @@ sudo deploy_erp.sh
 docker compose -f /var/www/erp/src/docker-compose.production.yml restart
 
 # Ver estado de contenedores
-docker compose -f /var/www/erp/src/docker-compose.production.yml ps
+    docker compose -f /var/www/erp/src/docker-compose.production.yml ps
 
 # Logs en tiempo real
 docker compose -f /var/www/erp/src/docker-compose.production.yml logs -f web

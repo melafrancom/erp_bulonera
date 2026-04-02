@@ -1,171 +1,157 @@
 {% extends 'base/base.html' %}
 {% load static %}
 
-{% block title %}{% if is_edit %}Editar{% else %}Nueva{% endif %} Lista de Precios - ERP Bulonera Alvear{% endblock %}
+{% block title %}
+  {% if is_edit %}Editar{% else %}Nueva{% endif %} Lista de Precios | ERP Bulonera Alvear
+{% endblock %}
 
 {% block breadcrumb_items %}
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <a href="{% url 'products:product_list' %}" class="text-gray-600 hover:text-gray-900">Productos</a>
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <a href="{% url 'products:pricelist_list' %}" class="text-gray-600 hover:text-gray-900">Listas de Precios</a>
-  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <span class="text-gray-900 font-medium">{% if is_edit %}Editar{% else %}Nueva{% endif %}</span>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <a href="{% url 'products:product_list' %}" class="text-gray-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-bold">Productos</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <a href="{% url 'products:pricelist_list' %}" class="text-gray-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-bold">Listas de Precios</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <span class="text-gray-900 dark:text-slate-100 font-black tracking-tight">{% if is_edit %}Editar Nro. {{ pricelist.id }}{% else %}Nueva Definición{% endif %}</span>
 {% endblock %}
 
 {% block mobile_title %}{% if is_edit %}Editar Lista{% else %}Nueva Lista{% endif %}{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto">
+<div class="max-w-4xl mx-auto px-4 pb-24">
 
-  <!-- ═══════════════════════════════════════════════════════════════════
-       HEADER
-       ═══════════════════════════════════════════════════════════════════ -->
-  <div class="mb-6">
-    <a href="{% url 'products:pricelist_list' %}"
-       class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 transition mb-3">
-      <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i>
-      Volver al listado
-    </a>
-    <h1 class="text-2xl md:text-3xl font-bold text-gray-900">
-      {% if is_edit %}
-        <i data-lucide="pencil" class="w-7 h-7 inline mr-2 text-blue-600"></i>
-        Editar Lista de Precios
-      {% else %}
-        <i data-lucide="plus-circle" class="w-7 h-7 inline mr-2 text-green-600"></i>
-        Nueva Lista de Precios
-      {% endif %}
-    </h1>
+  <!-- Header Section -->
+  <div class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <div>
+      <a href="{% url 'products:pricelist_list' %}" class="inline-flex items-center text-[10px] font-black text-gray-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 uppercase tracking-[0.2em] transition-all mb-4 group">
+        <i data-lucide="arrow-left" class="w-3 h-3 mr-2 group-hover:-translate-x-1 transition-transform"></i>
+        Volver al Listado
+      </a>
+      <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight flex items-center gap-4">
+        <span class="flex items-center justify-center w-12 h-12 {% if is_edit %}bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400{% else %}bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400{% endif %} rounded-2xl">
+           <i data-lucide="{% if is_edit %}pencil{% else %}plus-circle{% endif %}" class="w-7 h-7"></i>
+        </span>
+        {% if is_edit %}Ajustar Estrategia{% else %}Nueva Lista de Precios{% endif %}
+      </h1>
+    </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════════
-       MENSAJES
-       ═══════════════════════════════════════════════════════════════════ -->
-  {% if messages %}
-    {% for message in messages %}
-      <div class="mb-4 px-4 py-3 rounded-lg text-sm font-medium
-                  {% if message.tags == 'success' %}bg-green-50 text-green-800 border border-green-200
-                  {% elif message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200
-                  {% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
-        {{ message }}
-      </div>
-    {% endfor %}
-  {% endif %}
-
-  <!-- ═══════════════════════════════════════════════════════════════════
-       FORMULARIO
-       ═══════════════════════════════════════════════════════════════════ -->
   <form method="POST"
-        action="{% if is_edit %}{% url 'products:pricelist_edit' pricelist.pk %}{% else %}{% url 'products:pricelist_create' %}{% endif %}">
+        action="{% if is_edit %}{% url 'products:pricelist_edit' pricelist.pk %}{% else %}{% url 'products:pricelist_create' %}{% endif %}"
+        class="grid grid-cols-1 lg:grid-cols-3 gap-8">
     {% csrf_token %}
 
-    <!-- Card: Información Básica -->
-    <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        <i data-lucide="info" class="w-5 h-5 text-blue-600"></i>
-        Información de la Lista
-      </h2>
+    <!-- Left Column: Form Core -->
+    <div class="lg:col-span-2 space-y-8">
+      
+      <!-- Primary Config Card -->
+      <section class="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-gray-100 dark:border-slate-700 p-8 shadow-sm transition-colors">
+        <h3 class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+           <i data-lucide="settings-2" class="w-4 h-4"></i>
+           Configuración de Regla
+        </h3>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <!-- Name -->
+          <div class="md:col-span-2">
+            <label for="id_name" class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">Identificador de Lista</label>
+            <input type="text" id="id_name" name="name" required maxlength="100"
+                   value="{% if is_edit %}{{ pricelist.name }}{% endif %}"
+                   placeholder="Ej: Mayoristas VIP, Lista Gremio..."
+                   class="w-full bg-gray-50 dark:bg-slate-900 border-none rounded-2xl px-6 py-4 text-sm font-bold text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 transition-all placeholder-gray-400 dark:placeholder-slate-600 shadow-inner">
+          </div>
 
-        <!-- Nombre * -->
-        <div class="sm:col-span-2">
-          <label for="id_name" class="block text-sm font-medium text-gray-700 mb-1">
-            Nombre <span class="text-red-500">*</span>
-          </label>
-          <input type="text" id="id_name" name="name" required maxlength="100"
-                 value="{% if is_edit %}{{ pricelist.name }}{% endif %}"
-                 placeholder="Ej: Mayoristas, Tarjeta 3 cuotas, Cliente Especial"
-                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
-        </div>
+          <!-- Type -->
+          <div>
+            <label for="id_list_type" class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">Tipo de Ajuste</label>
+            <div class="relative group">
+              <select id="id_list_type" name="list_type" required
+                      class="w-full bg-gray-50 dark:bg-slate-900 border-none rounded-2xl px-6 py-4 text-sm font-bold text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 transition-all appearance-none cursor-pointer shadow-inner">
+                <option value="DISCOUNT" {% if is_edit and pricelist.list_type == 'DISCOUNT' %}selected{% endif %}>Bonificación (-)</option>
+                <option value="SURCHARGE" {% if is_edit and pricelist.list_type == 'SURCHARGE' %}selected{% endif %}>Recargo (+)</option>
+              </select>
+              <i data-lucide="chevron-down" class="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none group-hover:text-indigo-500 transition-colors"></i>
+            </div>
+          </div>
 
-        <!-- Tipo * -->
-        <div>
-          <label for="id_list_type" class="block text-sm font-medium text-gray-700 mb-1">
-            Tipo <span class="text-red-500">*</span>
-          </label>
-          <select id="id_list_type" name="list_type" required
-                  class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white">
-            <option value="">Seleccionar tipo...</option>
-            <option value="DISCOUNT" {% if is_edit and pricelist.list_type == 'DISCOUNT' %}selected{% endif %}>
-              Bonificación (Descuento)
-            </option>
-            <option value="SURCHARGE" {% if is_edit and pricelist.list_type == 'SURCHARGE' %}selected{% endif %}>
-              Recargo
-            </option>
-          </select>
-        </div>
+          <!-- Percentage -->
+          <div>
+            <label for="id_percentage" class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">Porcentaje</label>
+            <div class="relative group">
+              <input type="number" id="id_percentage" name="percentage" required min="0.01" step="0.01"
+                     value="{% if is_edit %}{{ pricelist.percentage }}{% endif %}"
+                     placeholder="0.00"
+                     class="w-full bg-gray-50 dark:bg-slate-900 border-none rounded-2xl px-6 py-4 text-sm font-bold text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 transition-all tabular-nums shadow-inner">
+              <span class="absolute right-6 top-1/2 -translate-y-1/2 font-black text-indigo-500 text-sm">%</span>
+            </div>
+          </div>
 
-        <!-- Porcentaje * -->
-        <div>
-          <label for="id_percentage" class="block text-sm font-medium text-gray-700 mb-1">
-            Porcentaje <span class="text-red-500">*</span>
-          </label>
-          <div class="relative">
-            <input type="number" id="id_percentage" name="percentage" required
-                   min="0.01" step="0.01"
-                   value="{% if is_edit %}{{ pricelist.percentage }}{% endif %}"
-                   placeholder="Ej: 10, 20.5, 30"
-                   class="w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
-            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">%</span>
+          <!-- Priority -->
+          <div>
+            <label for="id_priority" class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">Orden de Prioridad</label>
+            <input type="number" id="id_priority" name="priority"
+                   value="{% if is_edit %}{{ pricelist.priority }}{% else %}0{% endif %}"
+                   class="w-full bg-gray-50 dark:bg-slate-900 border-none rounded-2xl px-6 py-4 text-sm font-bold text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 transition-all tabular-nums shadow-inner">
+            <p class="mt-2 text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-tighter">Valores más bajos tienen mayor jerarquía visual.</p>
           </div>
         </div>
+      </section>
 
-        <!-- Prioridad -->
-        <div>
-          <label for="id_priority" class="block text-sm font-medium text-gray-700 mb-1">
-            Prioridad
-          </label>
-          <input type="number" id="id_priority" name="priority"
-                 value="{% if is_edit %}{{ pricelist.priority }}{% else %}0{% endif %}"
-                 placeholder="0"
-                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
-          <p class="text-xs text-gray-400 mt-1">Menor = se muestra primero</p>
-        </div>
+      <!-- Description Card -->
+      <section class="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-gray-100 dark:border-slate-700 p-8 shadow-sm transition-colors">
+        <label for="id_description" class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
+           <i data-lucide="align-left" class="w-4 h-4"></i>
+           Notas Internas
+        </label>
+        <textarea id="id_description" name="description" rows="4" maxlength="500"
+                  placeholder="Describa el propósito de esta lista o condiciones especiales..."
+                  class="w-full bg-gray-50 dark:bg-slate-900 border-none rounded-3xl px-6 py-5 text-sm font-bold text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 transition-all placeholder-gray-400 dark:placeholder-slate-600 shadow-inner resize-none">{% if is_edit %}{{ pricelist.description|default_if_none:'' }}{% endif %}</textarea>
+      </section>
+    </div>
 
-        <!-- Descripción -->
-        <div class="sm:col-span-2">
-          <label for="id_description" class="block text-sm font-medium text-gray-700 mb-1">
-            Descripción
-          </label>
-          <textarea id="id_description" name="description" rows="3" maxlength="500"
-                    placeholder="Descripción opcional de la lista (ej: Descuento para clientes que compran en cantidad)"
-                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-y">{% if is_edit %}{{ pricelist.description|default_if_none:'' }}{% endif %}</textarea>
+    <!-- Right Column: Live Analytics & Actions -->
+    <div class="lg:col-span-1 space-y-8">
+      
+      <!-- Live Price Simulator -->
+      <div class="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-indigo-500/20 relative overflow-hidden group">
+        <div class="absolute -top-12 -right-12 w-40 h-40 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+        
+        <h3 class="text-[10px] font-black text-indigo-200 uppercase tracking-[0.25em] mb-8 flex items-center gap-2">
+            <i data-lucide="zap" class="w-4 h-4"></i> Simulador en Vivo
+        </h3>
+
+        <div class="space-y-6 relative z-10">
+          <div class="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10">
+             <p class="text-[9px] font-black text-indigo-200 uppercase tracking-widest mb-1">Costo Base Test</p>
+             <p class="text-2xl font-black tabular-nums">$100,00</p>
+          </div>
+
+          <div class="p-2">
+             <i data-lucide="arrow-down" class="w-5 h-5 text-indigo-300 mx-auto animate-bounce"></i>
+          </div>
+
+          <div class="bg-white/20 backdrop-blur-lg rounded-3xl p-6 border border-white/20 shadow-xl">
+             <p class="text-[9px] font-black text-white uppercase tracking-widest mb-2 opacity-80">Precio Proyectado</p>
+             <div class="flex items-center gap-3">
+                <span id="price-preview" class="text-4xl font-black tabular-nums tracking-tighter leading-none">$100,00</span>
+                <span id="type-indicator" class="text-[10px] font-black bg-white/20 px-2 py-0.5 rounded uppercase tabular-nums">±0%</span>
+             </div>
+          </div>
         </div>
       </div>
-    </section>
 
-    <!-- Card: Vista Previa -->
-    <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        <i data-lucide="eye" class="w-5 h-5 text-purple-600"></i>
-        Vista Previa
-      </h2>
-      <p class="text-sm text-gray-500 mb-3">
-        Simulación aplicando la lista a un producto base de <strong>$100,00</strong>:
-      </p>
-      <div class="bg-gray-50 rounded-lg p-4 grid grid-cols-2 gap-4">
-        <div>
-          <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Precio Base</p>
-          <p class="text-lg font-bold text-gray-900">$100,00</p>
-        </div>
-        <div>
-          <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Precio Final (s/IVA)</p>
-          <p id="price-preview" class="text-lg font-bold text-gray-900">$100,00</p>
-        </div>
+      <!-- Action Panel -->
+      <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-gray-100 dark:border-slate-700 p-8 shadow-sm transition-colors">
+        <button type="submit"
+                class="w-full inline-flex items-center justify-center px-8 py-5 bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-[2rem] hover:from-emerald-700 hover:to-teal-800 active:scale-95 transition-all text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-500/20 mb-4">
+          <i data-lucide="save" class="w-4 h-4 mr-3"></i>
+          {% if is_edit %}Confirmar Cambios{% else %}Registrar Lista{% endif %}
+        </button>
+        
+        <a href="{% url 'products:pricelist_list' %}"
+           class="w-full inline-flex items-center justify-center px-8 py-5 bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-slate-400 rounded-[2rem] hover:bg-gray-100 dark:hover:bg-slate-700 transition-all text-xs font-black uppercase tracking-[0.2em] active:scale-95">
+          Cancelar Ajuste
+        </a>
       </div>
-    </section>
-
-    <!-- Botones de Acción -->
-    <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2 pb-8">
-      <a href="{% url 'products:pricelist_list' %}"
-         class="inline-flex items-center justify-center px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
-        Cancelar
-      </a>
-      <button type="submit"
-              class="inline-flex items-center justify-center px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium shadow-sm">
-        <i data-lucide="save" class="w-4 h-4 mr-2"></i>
-        {% if is_edit %}Guardar Cambios{% else %}Crear Lista de Precios{% endif %}
-      </button>
     </div>
   </form>
 
@@ -174,11 +160,11 @@
 
 {% block extra_js %}
 <script>
-  // Vista previa de cálculo en tiempo real
   (function() {
     const typeSelect = document.getElementById('id_list_type');
     const percentageInput = document.getElementById('id_percentage');
     const previewEl = document.getElementById('price-preview');
+    const indicatorEl = document.getElementById('type-indicator');
     const basePrice = 100;
 
     function updatePreview() {
@@ -188,27 +174,22 @@
 
       if (type === 'DISCOUNT') {
         finalPrice = basePrice * (1 - pct / 100);
+        indicatorEl.textContent = `-${pct.toFixed(1)}%`;
+        indicatorEl.className = 'text-[10px] font-black bg-emerald-500/20 text-emerald-100 px-2 py-0.5 rounded uppercase tabular-nums';
       } else if (type === 'SURCHARGE') {
         finalPrice = basePrice * (1 + pct / 100);
-      }
-
-      // Formateo AR
-      previewEl.textContent = '$' + finalPrice.toFixed(2).replace('.', ',');
-
-      // Color
-      if (type === 'DISCOUNT') {
-        previewEl.className = 'text-lg font-bold text-green-700';
-      } else if (type === 'SURCHARGE') {
-        previewEl.className = 'text-lg font-bold text-red-700';
+        indicatorEl.textContent = `+${pct.toFixed(1)}%`;
+        indicatorEl.className = 'text-[10px] font-black bg-red-400/20 text-red-100 px-2 py-0.5 rounded uppercase tabular-nums';
       } else {
-        previewEl.className = 'text-lg font-bold text-gray-900';
+        indicatorEl.textContent = '±0%';
+        indicatorEl.className = 'text-[10px] font-black bg-white/20 text-white px-2 py-0.5 rounded uppercase tabular-nums';
       }
+
+      previewEl.textContent = '$' + finalPrice.toFixed(2).replace('.', ',');
     }
 
     typeSelect.addEventListener('change', updatePreview);
     percentageInput.addEventListener('input', updatePreview);
-
-    // Calcular al cargar
     updatePreview();
   })();
 </script>
