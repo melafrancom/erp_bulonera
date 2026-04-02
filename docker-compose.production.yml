@@ -58,7 +58,7 @@ services:
       # Media LECTURA de la app web (fotos de productos del catálogo, solo lectura)
       - /var/www/bulonera/bulonera/media:/app/media_web:ro
       # Certificados AFIP/ARCA (solo lectura desde el contenedor)
-      - /var/www/erp/bills/certs/certificados_arca_temp:/var/www/erp/certs_afip:ro
+      - /var/www/erp/src/afip/certs:/app/afip/certs:ro
       # Logs accesibles desde el host para monitoreo
       - /var/www/erp/logs:/app/logs
     extra_hosts:
@@ -89,7 +89,7 @@ services:
     volumes:
       - /var/www/erp/logs:/app/logs
       - /var/www/erp/media:/app/media
-      - /var/www/erp/bills/certs/certificados_arca_temp:/var/www/erp/certs_afip:ro
+      - /var/www/erp/src/afip/certs:/app/afip/certs:ro
     extra_hosts:
       - "host-gateway:host-gateway"
     depends_on:
