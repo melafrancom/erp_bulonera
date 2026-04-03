@@ -6,6 +6,7 @@ Vistas web para AFIP/ARCA:
   - Consulta de CUIT (Padrón)
 """
 import os
+import logging
 from django import forms
 from django.views.generic import ListView, DetailView, UpdateView, CreateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -17,6 +18,8 @@ from django.db.models import Q
 from django.utils import timezone
 
 from afip.models import ConfiguracionARCA, LogARCA, WSAAToken
+
+logger = logging.getLogger(__name__)
 
 
 class AdminRequiredMixin(UserPassesTestMixin):
@@ -31,22 +34,60 @@ class AdminRequiredMixin(UserPassesTestMixin):
 # SCANNER DE CERTIFICADOS .PEM
 # ============================================================================
 
-CERT_BASE_DIRS = ['/app/afip/certs']  # Dentro del contenedor Docker
+# Directorios donde buscar certificados (en orden de preferencia)
+CERT_SEARCH_DIRS = [
+    '/app/afip/certs',              # Dentro del contenedor Docker
+    '/var/www/erp/src/afip/certs',  # Fallback a ruta del HOST
+]
 
 def descubrir_certificados_pem():
-    """Escanea directorios conocidos y retorna las rutas de archivos .pem encontrados."""
+    """
+    Escanea directorios conocidos y retorna las rutas de archivos .pem encontrados.
+    Intenta buscar primero en rutas del contenedor, luego en rutas del HOST.
+    """
     opciones = [('', '— Seleccionar certificado —')]
-    for base_dir in CERT_BASE_DIRS:
+    encontrados = []
+    
+    for base_dir in CERT_SEARCH_DIRS:
         if not os.path.isdir(base_dir):
+            logger.debug(f"[AFIP] Directorio no encontrado: {base_dir}")
             continue
-        for root, dirs, files in os.walk(base_dir):
-            for f in sorted(files):
-                if f.endswith('.pem'):
-                    ruta_completa = os.path.join(root, f)
-                    # Etiqueta amigable: "homologacion / certificado_con_clave.pem"
-                    rel = os.path.relpath(ruta_completa, base_dir)
-                    label = rel.replace(os.sep, ' / ')
-                    opciones.append((ruta_completa, label))
+        
+        logger.debug(f"[AFIP] Buscando .pem en: {base_dir}")
+        
+        try:
+            for root, dirs, files in os.walk(base_dir):
+                for f in sorted(files):
+                    if f.endswith('.pem'):
+                        ruta_completa = os.path.join(root, f)
+                        
+                        # Verificar que el archivo es accesible
+                        if not os.path.isfile(ruta_completa):
+                            logger.warning(f"[AFIP] Archivo no accesible: {ruta_completa}")
+                            continue
+                        
+                        # Etiqueta amigable: "homologacion / certificado_con_clave.pem"
+                        rel = os.path.relpath(ruta_completa, base_dir)
+                        label = rel.replace(os.sep, ' / ')
+                        
+                        # Evitar duplicados
+                        if ruta_completa not in encontrados:
+                            opciones.append((ruta_completa, label))
+                            encontrados.append(ruta_completa)
+                            logger.info(f"[AFIP] Certificado encontrado: {label}")
+        
+        except Exception as e:
+            logger.error(f"[AFIP] Error escaneando {base_dir}: {str(e)}")
+            continue
+        
+        # Si encontramos algo, no seguimos buscando en otros directorios
+        if encontrados:
+            logger.info(f"[AFIP] Se encontraron {len(encontrados)} certificado(s)")
+            break
+    
+    if not encontrados:
+        logger.warning("[AFIP] No se encontraron certificados .pem en ningún directorio")
+    
     return opciones
 
 
