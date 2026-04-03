@@ -5,6 +5,8 @@ Vistas web para AFIP/ARCA:
   - Monitor de Logs
   - Consulta de CUIT (Padrón)
 """
+import os
+from django import forms
 from django.views.generic import ListView, DetailView, UpdateView, CreateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import render, redirect, get_object_or_404
@@ -23,6 +25,70 @@ class AdminRequiredMixin(UserPassesTestMixin):
     
     def test_func(self):
         return (self.request.user.is_authenticated and self.request.user.role == 'admin') or getattr(self.request.user, 'is_manager', False)
+
+
+# ============================================================================
+# SCANNER DE CERTIFICADOS .PEM
+# ============================================================================
+
+CERT_BASE_DIRS = ['/app/afip/certs']  # Dentro del contenedor Docker
+
+def descubrir_certificados_pem():
+    """Escanea directorios conocidos y retorna las rutas de archivos .pem encontrados."""
+    opciones = [('', '— Seleccionar certificado —')]
+    for base_dir in CERT_BASE_DIRS:
+        if not os.path.isdir(base_dir):
+            continue
+        for root, dirs, files in os.walk(base_dir):
+            for f in sorted(files):
+                if f.endswith('.pem'):
+                    ruta_completa = os.path.join(root, f)
+                    # Etiqueta amigable: "homologacion / certificado_con_clave.pem"
+                    rel = os.path.relpath(ruta_completa, base_dir)
+                    label = rel.replace(os.sep, ' / ')
+                    opciones.append((ruta_completa, label))
+    return opciones
+
+
+class ConfiguracionARCAForm(forms.ModelForm):
+    """Form personalizado con selector de certificados .pem."""
+    ruta_certificado = forms.ChoiceField(
+        label='Certificado (.pem)',
+        choices=[],  # Se carga dinámicamente en __init__
+        help_text='Archivos .pem encontrados en /app/afip/certs/',
+    )
+
+    class Meta:
+        model = ConfiguracionARCA
+        fields = [
+            'empresa_cuit', 'razon_social', 'email_contacto',
+            'ambiente', 'punto_venta',
+            'ruta_certificado', 'password_certificado',
+            'activo',
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['ruta_certificado'].choices = descubrir_certificados_pem()
+
+    def clean_ruta_certificado(self):
+        ruta = self.cleaned_data.get('ruta_certificado')
+        if ruta and not os.path.isfile(ruta):
+            raise forms.ValidationError(
+                f'El archivo no existe en el servidor: {ruta}'
+            )
+        return ruta
+
+
+class ConfiguracionARCAFormUpdate(ConfiguracionARCAForm):
+    """Form para actualizar, excluye empresa_cuit."""
+    class Meta(ConfiguracionARCAForm.Meta):
+        fields = [
+            'razon_social', 'email_contacto',
+            'ambiente', 'punto_venta',
+            'ruta_certificado', 'password_certificado',
+            'activo',
+        ]
 
 
 # ============================================================================
@@ -56,6 +122,15 @@ def solicitar_token_wsaa(request, pk):
     
     config = get_object_or_404(ConfiguracionARCA, pk=pk)
     
+    # Pre-validación: verificar que el archivo existe
+    if not os.path.isfile(config.ruta_certificado):
+        messages.error(
+            request,
+            f"❌ El certificado no existe en el servidor: {config.ruta_certificado}. "
+            f"Editá la configuración y seleccioná un archivo válido."
+        )
+        return redirect('afip_web:dashboard')
+    
     try:
         from afip.clients.wsaa_client import WSAAClient
         
@@ -84,12 +159,7 @@ def solicitar_token_wsaa(request, pk):
 class ConfiguracionCreateView(LoginRequiredMixin, AdminRequiredMixin, CreateView):
     model = ConfiguracionARCA
     template_name = 'afip/config_form.html'
-    fields = [
-        'empresa_cuit', 'razon_social', 'email_contacto',
-        'ambiente', 'punto_venta',
-        'ruta_certificado', 'password_certificado',
-        'activo',
-    ]
+    form_class = ConfiguracionARCAForm
     
     def get_success_url(self):
         messages.success(self.request, '✅ Configuración AFIP creada exitosamente.')
@@ -99,12 +169,7 @@ class ConfiguracionCreateView(LoginRequiredMixin, AdminRequiredMixin, CreateView
 class ConfiguracionUpdateView(LoginRequiredMixin, AdminRequiredMixin, UpdateView):
     model = ConfiguracionARCA
     template_name = 'afip/config_form.html'
-    fields = [
-        'razon_social', 'email_contacto',
-        'ambiente', 'punto_venta',
-        'ruta_certificado', 'password_certificado',
-        'activo',
-    ]
+    form_class = ConfiguracionARCAFormUpdate
     
     def get_success_url(self):
         messages.success(self.request, '✅ Configuración AFIP actualizada.')
