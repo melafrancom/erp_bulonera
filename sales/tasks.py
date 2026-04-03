@@ -2,6 +2,7 @@ import logging
 from celery import shared_task
 from django.core.mail import EmailMessage
 from django.conf import settings
+from common.company import get_company_info
 from .models import Quote
 from .utils import generate_quote_pdf
 
@@ -38,7 +39,8 @@ def send_quote_email_task(self, quote_id: int, recipient_email: str = None):
         pdf_buf = generate_quote_pdf(quote)
         
         # Armar email
-        subject = f"Presupuesto {quote.number} - {getattr(settings, 'COMPANY_NAME', 'BULONERA ALVEAR S.R.L.')}"
+        company_name = get_company_info()['name']
+        subject = f"Presupuesto {quote.number} - {company_name}"
         body = (
             f"Hola {quote.customer_display},\n\n"
             f"Adjuntamos el presupuesto solicitado N° {quote.number}.\n"

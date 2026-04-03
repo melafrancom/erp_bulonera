@@ -2,6 +2,7 @@ import logging
 from celery import shared_task
 from django.core.mail import EmailMessage
 from django.conf import settings
+from common.company import get_company_info
 from .models import Invoice
 from .pdf import generate_invoice_pdf
 
@@ -33,8 +34,8 @@ def send_invoice_email_task(self, invoice_id: int, recipient_email: str):
     try:
         pdf_buf = generate_invoice_pdf(invoice)
         tipo_nombre = "Nota de Crédito" if invoice.tipo_comprobante in (3, 8, 85, 86, 87) else "Factura"
-        
-        subject = f"{tipo_nombre} {invoice.number} - {getattr(settings, 'COMPANY_NAME', 'BULONERA ALVEAR S.R.L.')}"
+        company_name = get_company_info()['name']
+        subject = f"{tipo_nombre} {invoice.number} - {company_name}"
         body = (
             f"Hola,\n\n"
             f"Adjuntamos la {tipo_nombre.lower()} N° {invoice.number} correspondiente a su compra.\n\n"

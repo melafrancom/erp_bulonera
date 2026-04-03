@@ -42,6 +42,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST, require_GET
 from django.conf import settings
 
+from common.company import get_company_info
 from sales.models import Quote, QuoteItem, Sale, SaleItem
 from sales.services import cancel_sale, confirm_sale, convert_quote_to_sale, move_sale_status
 
@@ -1058,11 +1059,12 @@ def quote_print(request, pk):
         messages.error(request, 'No tenés acceso a este presupuesto.')
         return redirect('sales_web:quote_list')
 
+    company_info = get_company_info()
     context = {
         'quote': quote,
         'items': quote.items.select_related('product').order_by('line_order'),
-        'company_name': getattr(settings, 'COMPANY_NAME', 'BULONERA ALVEAR S.R.L.'),
-        'company_cuit': getattr(settings, 'EMPRESA_CUIT', '')
+        'company_name': company_info['name'],
+        'company_cuit': company_info['cuit']
     }
 
     return render(request, 'sales/quote_print.html', context)
@@ -1079,12 +1081,13 @@ def quote_public_view(request, uuid):
     if quote.status == 'cancelled':
         raise Http404("El presupuesto ha sido cancelado y ya no está disponible.")
 
+    company_info = get_company_info()
     context = {
         'quote': quote,
         'items': quote.items.select_related('product').order_by('line_order'),
-        'company_name': getattr(settings, 'COMPANY_NAME', 'BULONERA ALVEAR S.R.L.'),
-        'company_cuit': getattr(settings, 'EMPRESA_CUIT', ''),
-        'company_phone': getattr(settings, 'COMPANY_PHONE', '').replace('+', '').replace(' ', '').replace('-', '')
+        'company_name': company_info['name'],
+        'company_cuit': company_info['cuit'],
+        'company_phone': company_info['phone'].replace('+', '').replace(' ', '').replace('-', '')
     }
 
     return render(request, 'sales/quote_public.html', context)

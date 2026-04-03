@@ -7,6 +7,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.platypus import Table, TableStyle
 from reportlab.lib import colors
+from common.company import get_company_info
 
 try:
     from bills.pdf import _fmt
@@ -42,11 +43,12 @@ def generate_quote_pdf(quote) -> io.BytesIO:
 
     # 1. Cabecera
     c.setFont("Helvetica-Bold", 14)
-    company_name = getattr(settings, 'COMPANY_NAME', 'BULONERA ALVEAR S.R.L.')
+    company_info = get_company_info()
+    company_name = company_info['name']
     c.drawString(MARGIN, PAGE_H - MARGIN - 10, company_name)
     
     c.setFont("Helvetica", 10)
-    company_cuit = getattr(settings, 'EMPRESA_CUIT', '')
+    company_cuit = company_info['cuit']
     if company_cuit:
         c.drawString(MARGIN, PAGE_H - MARGIN - 25, f"CUIT: {company_cuit}")
     

@@ -154,6 +154,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'common.context_processors.company_info',
             ],
         },
     },
@@ -485,11 +486,22 @@ AFIP_AMBIENTE = env('AFIP_ENVIRONMENT', default='homologacion')
 AFIP_CERT_PATH = env('AFIP_CERT_PATH', default='')
 AFIP_CERT_PASSWORD = env('AFIP_CERT_PASSWORD', default='')
 
-EMPRESA_CUIT = env('EMPRESA_CUIT', default='')
-EMPRESA_RAZON_SOCIAL = env('EMPRESA_RAZON_SOCIAL', default='')
-EMPRESA_PUNTO_VENTA = env.int('EMPRESA_PUNTO_VENTA', default=1)
-COMPANY_NAME = env('COMPANY_NAME', default='Nombre comercial')
-COMPANY_PHONE = env('COMPANY_PHONE', default='')
+# =========================================================================
+# INFORMACIÓN DE LA EMPRESA (Single Source of Truth)
+# =========================================================================
+COMPANY_NAME          = env('COMPANY_NAME',          default='Nombre Comercial')
+COMPANY_CUIT          = env('COMPANY_CUIT',          default='')
+COMPANY_ADDRESS       = env('COMPANY_ADDRESS',       default='')
+COMPANY_PHONE         = env('COMPANY_PHONE',         default='')
+COMPANY_EMAIL         = env('COMPANY_EMAIL',         default='')
+COMPANY_WEBSITE       = env('COMPANY_WEBSITE',       default='')
+COMPANY_LOGO_URL      = env('COMPANY_LOGO_URL',      default='/static/img/logo.png')
+COMPANY_IVA_CONDITION = env('COMPANY_IVA_CONDITION', default='RI')
+
+# Datos fiscales AFIP/ARCA (aliases para compatibilidad con afip app)
+EMPRESA_CUIT          = env('COMPANY_CUIT',          default='')   # alias para compatibilidad afip app
+EMPRESA_RAZON_SOCIAL  = env('COMPANY_NAME',          default='')   # alias para compatibilidad afip app
+EMPRESA_PUNTO_VENTA   = env.int('EMPRESA_PUNTO_VENTA', default=1)
 
 # ============================================================================
 # Logging Configuration
