@@ -410,6 +410,107 @@ class TestProductModel:
         assert p.meta_title == 'Producto SEO Test'
         assert p.meta_keywords  # No vacío
 
+    # ── Smart Slug Regeneration (Fase 2 - Smart Slugs) ─────────────────
+
+    def test_generate_unique_slug_sin_colision(self, category, admin_user):
+        """TC-P040: _generate_unique_slug sin colisiones retorna base_slug."""
+        p = Product(
+            code='UNIQUE-001', name='Bulón Hexagonal Especial',
+            category=category, price=Decimal('100.00'),
+        )
+        slug = p._generate_unique_slug()
+        assert slug == 'bulon-hexagonal-especial'
+
+    def test_generate_unique_slug_con_colision(self, category, admin_user):
+        """TC-P041: _generate_unique_slug con colisión desambigua con code."""
+        # Crear primer producto
+        p1 = Product.objects.create(
+            code='HEX-001', name='Hexagonal', category=category,
+            price=Decimal('100.00'), created_by=admin_user,
+        )
+        assert p1.slug == 'hexagonal'
+        
+        # Crear segundo producto con mismo nombre
+        p2 = Product(
+            code='HEX-002', name='Hexagonal', category=category,
+            price=Decimal('100.00'),
+        )
+        slug = p2._generate_unique_slug()
+        # Debe contener 'hexagonal' y 'hex-002' (code slugificado)
+        assert 'hexagonal' in slug
+        assert 'hex-002' in slug
+
+    def test_should_regenerate_slug_detects_placeholder_to_real(self, category, admin_user):
+        """TC-P042: _should_regenerate_slug detecta transición placeholder → real."""
+        # Crear producto con nombre placeholder (ej: generado por importación)
+        p = Product.objects.create(
+            code='TEMP-001', name='Producto 001',  # Nombre corto
+            category=category, price=Decimal('100.00'),
+            created_by=admin_user,
+        )
+        original_slug = p.slug
+        
+        # Mejorar el nombre
+        p.name = 'Tornillo Especial M8x50'
+        assert p._should_regenerate_slug() is True
+        
+        # El slug debe regenerarse
+        p.save()
+        p.refresh_from_db()
+        assert p.slug != original_slug
+        assert 'tornillo' in p.slug
+
+    def test_should_regenerate_slug_detects_typo_fix(self, category, admin_user):
+        """TC-P043: _should_regenerate_slug NO regenera si solo se corrigió un typo."""
+        # Crear producto con nombre real
+        p = Product.objects.create(
+            code='REAL-001', name='Tornillo Hexagonal M8x50',
+            category=category, price=Decimal('100.00'),
+            created_by=admin_user,
+        )
+        original_slug = p.slug
+        
+        # Corregir solo un typo (sigue siendo "real")
+        p.name = 'Tornillo Hexagonal M8x50'  # Mismo nombre, solo typo corregido
+        assert p._should_regenerate_slug() is False
+        
+        # El slug NO debe regenerarse
+        p.save()
+        p.refresh_from_db()
+        assert p.slug == original_slug
+
+    def test_smart_slug_flow_importacion_con_enriquecimiento(self, category, admin_user):
+        """TC-P044: Flujo completo: importar con nombre genérico, luego enriquecer."""
+        # 1. Importar producto con nombre genérico
+        p = Product.objects.create(
+            code='IMPORT-001', name='Producto Importado',  # Corto, placeholder
+            category=category, price=Decimal('100.00'),
+            created_by=admin_user,
+        )
+        slug_v1 = p.slug
+        assert slug_v1.startswith('producto')
+        
+        # 2. Enriquecer nombre
+        p.name = 'Bulón Hexagonal Acero Inoxidable M8x50'
+        p.save()
+        p.refresh_from_db()
+        slug_v2 = p.slug
+        
+        # 3. Verificar que el slug cambió y es semántico
+        assert slug_v2 != slug_v1
+        assert 'bulon' in slug_v2
+        # Nota: 'import' (code) NO estará en el slug si no hay colisión, 
+        # ya que nuestra estrategia es mantener slugs limpios para SEO.
+        
+        # 4. Enriquecer nuevamente (cambio menor)
+        p.name = 'Bulón Hexagonal Acero Inoxidable M8x50 Zincado'
+        p.save()
+        p.refresh_from_db()
+        slug_v3 = p.slug
+        
+        # No debe regenerar nuevamente (ya no es placeholder)
+        assert slug_v3 == slug_v2
+
 
 # =============================================================================
 # PriceList

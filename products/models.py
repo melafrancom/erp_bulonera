@@ -372,6 +372,67 @@ class Product(BaseModel):
                 return self.name[:-len(suffix)]
         return self.name
 
+    # ── Smart Slug Regeneration (Fase 2 - Smart Slugs) ──────────────────────
+    
+    def _should_regenerate_slug(self):
+        """
+        Detecta si el nombre pasó de placeholder (genérico) a real (enriquecido).
+        
+        Retorna True si:
+        - El nombre es "real" (no empieza con "Producto " y tiene >10 caracteres)
+        - El slug actual es un placeholder (empieza con "producto-" o muy corto)
+        
+        Razón: El ERP hoy genera slugs secuenciales (producto-001). Si el nombre 
+        es mejorado, queremos regenerar el slug a algo trazable y semántico.
+        """
+        name_is_real = bool(
+            self.name and
+            not self.name.lower().startswith('producto ') and
+            len(self.name) > 10
+        )
+        slug_is_placeholder = bool(
+            self.slug and
+            (self.slug.startswith('producto-') or len(self.slug) < 10)
+        )
+        return name_is_real and slug_is_placeholder
+
+    def _generate_unique_slug(self):
+        """
+        Genera un slug único y trazable.
+        
+        Estrategia:
+        1. Base slug = slugify(name)
+        2. Si hay colisión: slug-{code} (desambigua usando el código)
+        3. Fallback: mantiene el slug actual (seguridad)
+        
+        Diferencia clave vs. ERP anterior:
+        - ANTES: slug-1, slug-2 (opaco)
+        - AHORA: slug-codigo (trazable, semántico)
+        
+        Retorna: Slug único y válido
+        """
+        if not self.name:
+            return self.slug or 'producto'
+        
+        base_slug = slugify(self.name)
+        if not base_slug:
+            return self.slug or 'producto'
+        
+        # Verificar colisión con base_slug
+        qs = Product.all_objects.filter(slug=base_slug).exclude(pk=self.pk)
+        if not qs.exists():
+            return base_slug
+        
+        # Colisión: agregar code como desambiguador
+        if self.code:
+            slug_with_code = f"{base_slug}-{slugify(self.code)}"
+            qs2 = Product.all_objects.filter(slug=slug_with_code).exclude(pk=self.pk)
+            if not qs2.exists():
+                return slug_with_code
+        
+        # Fallback: mantener slug actual para no romper URLs internas del ERP
+        return self.slug
+
     def save(self, *args, **kwargs):
         # Auto-generar nombre completo con dimensiones
         if self.diameter and self.length:
@@ -380,15 +441,14 @@ class Product(BaseModel):
             if suffix not in name_val:
                 self.name = f"{name_val}{suffix}".strip()
 
-        # Auto-generar slug
+        # Smart Slug Logic (Fase 2 - Smart Slugs)
         if not self.slug:
-            self.slug = slugify(self.name)
-            # Asegurar unicidad del slug
-            original_slug = self.slug
-            counter = 1
-            while Product.all_objects.filter(slug=self.slug).exclude(pk=self.pk).exists():
-                self.slug = f"{original_slug}-{counter}"
-                counter += 1
+            # Primera vez: generar slug único
+            self.slug = self._generate_unique_slug()
+        elif self._should_regenerate_slug():
+            # Slug es placeholder y nombre ya es real: regenerar
+            self.slug = self._generate_unique_slug()
+        # Si slug existe y NO es placeholder, mantenerlo para no romper URLs internas
 
         # Auto-generar SKU si está vacío
         if not self.sku:

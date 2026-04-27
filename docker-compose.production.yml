@@ -53,10 +53,8 @@ services:
     volumes:
       # Archivos estáticos: collectstatic los escribe aquí, OLS los sirve directamente
       - /var/www/erp/static:/app/staticfiles
-      # Media ESCRITURA del ERP (PDFs de facturas, uploads propios del ERP)
-      - /var/www/erp/media:/app/media
-      # Media LECTURA de la app web (fotos de productos del catálogo, solo lectura)
-      - /var/www/bulonera/bulonera/media:/app/media_web:ro
+      # Media COMPARTIDA (fotos de productos, facturas, comprobantes, etc.)
+      - /var/www/shared/media:/app/media
       # Certificados AFIP/ARCA (solo lectura desde el contenedor)
       - /var/www/erp/src/afip/certs:/app/afip/certs:ro
       # Logs accesibles desde el host para monitoreo
@@ -90,7 +88,7 @@ services:
       - .env
     volumes:
       - /var/www/erp/logs:/app/logs
-      - /var/www/erp/media:/app/media
+      - /var/www/shared/media:/app/media
       - /var/www/erp/src/afip/certs:/app/afip/certs:ro
     group_add:
       - "1002"  # GID del grupo erp-certs del HOST (acceso a certificados AFIP)
@@ -121,7 +119,7 @@ services:
       - .env
     volumes:
       - /var/www/erp/logs:/app/logs
-      - /var/www/erp/media:/app/media
+      - /var/www/shared/media:/app/media
     extra_hosts:
       - "host-gateway:host-gateway"
     depends_on:

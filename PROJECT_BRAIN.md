@@ -4,6 +4,40 @@
 
 ---
 
+## 🏗️ Contexto del Proyecto
+Estamos creando esta ERP en el directorio /var/www/erp/ y además tenemos una app que ya estaba construida en el servidor de Hostinger, en un directorio /var/www/bulonera/bulonera/ y que funcionaba correctamente. Ahora ambas appss son API REST y PWA.
+Ambas apps, la del ERP y la de la bulonera_web, compartirán la misma 'media' en el directorio /var/www/shared/media/. Pero NO comparten la misma base de datos MariaDB ni el mismo servidor Redis. 
+
+La base de datos de ambas apps están construida con MariaDB. La de la web se llama 'buloneraalvearDB' y el usuario es 'bulonera_user', ya tiene datos cargados. La BD del erp se llama 'erp_db' y el usuario es 'erp_user', hemos cargados 14.000 productos aprox, de PRUEBA unicamente.
+Las bases de datos de ambas apps se encuentran en /var/backups/databases/:
+| /var/backups/databases/buloneraalvearDB
+| /var/backups/databases/erp_db
+
+
+Directorio de apps:
+adminbuloneraalvear@buloneraalvear:/var/www$ ls
+bulonera  erp  shared
+
+Actual en servidor:
+/var/www/bulonera/web_bulonera/manage.py
+/var/www/erp/src/manage.py
+
+
+adminbuloneraalvear@buloneraalvear:/var/www/erp$ ls
+bills  logs  media  src  static  uwsgi.production.ini
+
+Acceso a la web actual:
+https://buloneraalvear.online/   ---> cuenta con SSL
+Acceso al panel de control de OpenLiteSpeed:
+http://212.85.12.132:7080/
+
+Acceso a ssh:
+ssh adminbuloneraalvear@212.85.12.132
+
+---
+
+
+
 ## 🏗️ Stack Tecnológico
 
 | Componente | Tecnología |
@@ -47,6 +81,13 @@ docker-compose exec web python manage.py migrate
 
 # Correr tests (SIEMPRE con settings de test)
 docker-compose exec -e DJANGO_SETTINGS_MODULE=erp_crm_bulonera.settings.test web pytest -v
+
+# Tests con cobertura (target > 90% en servicios)
+docker-compose exec -e DJANGO_SETTINGS_MODULE=erp_crm_bulonera.settings.test web pytest --cov=. --cov-report=html --cov-report=term-missing
+
+# Tests de una app específica
+docker-compose exec -e DJANGO_SETTINGS_MODULE=erp_crm_bulonera.settings.test web pytest sales/tests/ -v
+docker-compose exec -e DJANGO_SETTINGS_MODULE=erp_crm_bulonera.settings.test web pytest products/tests/test_services.py::test_name -v
 
 # Ver logs en vivo
 docker-compose logs -f web
@@ -165,6 +206,64 @@ sudo fail2ban-client set django-erp unbanip <IP>
 sudo ufw status numbered
 ```
 
+### Infraestructura de Volúmenes Compartida (Producción)
+
+**Configuración:** Ambas aplicaciones (ERP y Web Bulonera) ahora comparten un directorio único de media en `/var/www/shared/media/`.
+
+#### Volúmenes Montados en `docker-compose.production.yml`
+
+```yaml
+# Servicio 'web' (uWSGI)
+volumes:
+  - /var/www/erp/static:/app/staticfiles       # Estáticos del ERP
+  - /var/www/shared/media:/app/media           # COMPARTIDO: fotos, facturas, comprobantes
+  - /var/www/erp/src/afip/certs:/app/afip/certs:ro
+  - /var/www/erp/logs:/app/logs
+
+# Servicio 'celery_worker'
+volumes:
+  - /var/www/erp/logs:/app/logs
+  - /var/www/shared/media:/app/media           # COMPARTIDO: acceso para generar PDFs
+  - /var/www/erp/src/afip/certs:/app/afip/certs:ro
+
+# Servicio 'celery_beat'
+volumes:
+  - /var/www/erp/logs:/app/logs
+  - /var/www/shared/media:/app/media           # COMPARTIDO: acceso de solo lectura
+```
+
+#### Dentro del Contenedor
+- ERP ve archivos en `/app/media`
+- Web Bulonera también accede a `/app/media`
+- Django settings (`production.py`): `MEDIA_ROOT = env('MEDIA_ROOT', default='/app/media')`
+
+#### Configuración del Host
+Asegurar que el directorio exista y tenga los permisos correctos:
+
+```bash
+# Crear directorio si no existe
+sudo mkdir -p /var/www/shared/media
+
+# Establecer permisos
+sudo chown -R www-data:www-data /var/www/shared/media
+sudo chmod 755 /var/www/shared/media
+
+# Verificar permisos (web debe escribir aquí)
+ls -ld /var/www/shared/media
+```
+
+#### Migración de Datos (One-time)
+Si había datos en `/var/www/erp/media` o `/var/www/bulonera/bulonera/media`, migrar a la nueva ubicación:
+
+```bash
+# Consolidar media antiguo de ambos directorios
+sudo cp -r /var/www/erp/media/* /var/www/shared/media/
+sudo cp -r /var/www/bulonera/bulonera/media/* /var/www/shared/media/
+
+# Verificar que todo se copió
+ls -lh /var/www/shared/media/
+```
+
 ### OpenLiteSpeed
 
 ```bash
@@ -173,6 +272,165 @@ sudo /usr/local/lsws/bin/lswsctrl restart
 
 # Ver logs de errores
 sudo tail -f /usr/local/lsws/logs/error.log
+```
+
+---
+
+## 🧪 Testing Strategy (Fase 5)
+
+### Arquitectura de Pruebas por Capas
+
+```
+{app}/tests/
+├── __init__.py
+├── conftest.py         ← Fixtures específicos de la app
+├── factories.py        ← FactoryBoy factories para modelos
+├── test_models.py      ← Validaciones de modelos y BaseModel
+├── test_services.py    ← CRÍTICO: Lógica de negocio (AAA pattern)
+├── test_api.py         ← Endpoints REST: HTTP codes, permisos
+└── test_web.py         ← Rendimiento de templates Django
+```
+
+### Fixtures Globales (`/tests/conftest.py`)
+
+```python
+@pytest.fixture
+def authenticated_user(db):
+    """Usuario autenticado para tests de API."""
+    return User.objects.create_user('test@example.com', 'password')
+
+@pytest.fixture
+def authenticated_admin(db):
+    """Admin autenticado con todos los permisos."""
+    user = User.objects.create_superuser('admin@example.com', 'password')
+    return user
+
+@pytest.fixture
+def api_client():
+    """DRF APIClient con autenticación."""
+    client = APIClient()
+    user = User.objects.create_user('api@example.com', 'password')
+    client.force_authenticate(user=user)
+    return client
+
+@pytest.fixture
+def client():
+    """Django test client."""
+    return Client()
+```
+
+### Pruebas de Servicios (AAA Pattern)
+
+```python
+# test_services.py - Ejemplo
+class TestQuoteService:
+    
+    def test_create_quote_success(self, db):
+        # Arrange
+        customer = CustomerFactory(name='Acme')
+        data = {'customer': customer, 'items': []}
+        
+        # Act
+        quote = QuoteService.create(data)
+        
+        # Assert
+        assert quote.id is not None
+        assert quote.status == Quote.Status.DRAFT
+    
+    def test_create_quote_invalid_customer(self, db):
+        # Arrange
+        data = {'customer': None, 'items': []}
+        
+        # Act & Assert
+        with pytest.raises(InvalidQuote):
+            QuoteService.create(data)
+    
+    def test_confirm_quote_insufficient_items(self, db):
+        # Arrange
+        quote = QuoteFactory(items=[])
+        
+        # Act & Assert
+        with pytest.raises(QuoteError):
+            QuoteService.confirm(quote)
+```
+
+### Cobertura Mínima
+
+| Capa | Target | Prioridad |
+|---|---|---|
+| Services | **> 90%** | CRÍTICA |
+| API ViewSets | > 80% | Alta |
+| Models (clean) | > 70% | Media |
+| Web Views | > 60% | Baja |
+
+### Ejecución en CI/CD
+
+```yaml
+# .github/workflows/test.yml (ejemplo)
+script:
+  - docker-compose exec -e DJANGO_SETTINGS_MODULE=erp_crm_bulonera.settings.test web pytest --cov --cov-report=xml
+  - docker-compose exec -e DJANGO_SETTINGS_MODULE=erp_crm_bulonera.settings.test web pytest --cov-fail-under=90 sales/tests/
+```
+
+---
+
+## 🎨 Design System (The Bulonera Pattern)
+
+> **📖 Single Source of Truth:** Ver [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) para arquitectura completa de UI.
+
+### Colores Base (Light/Dark)
+
+| Elemento | Light | Dark |
+|---|---|---|
+| Fondo Principal | `bg-white` | `dark:bg-slate-950` |
+| Fondo Secundario | `bg-slate-50` | `dark:bg-slate-900` |
+| Texto Primario | `text-slate-900` | `dark:text-slate-50` |
+| Texto Secundario | `text-slate-600` | `dark:text-slate-400` |
+| Border | `border-slate-200` | `dark:border-slate-700/50` |
+
+### Componentes Estándar
+
+```html
+<!-- Card Universal (Light + Dark) -->
+<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/50 rounded-lg p-4 shadow-sm dark:shadow-slate-900/50">
+  <h3 class="text-lg font-bold text-slate-900 dark:text-slate-50">Título</h3>
+  <p class="text-sm text-slate-600 dark:text-slate-400 mt-2">Descripción</p>
+</div>
+
+<!-- Badge -->
+<span class="px-2 py-1 text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded">Status</span>
+
+<!-- Button Primary -->
+<button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-500">
+  Acción
+</button>
+```
+
+### Dark Mode - Detección Automática
+
+```javascript
+// En base.html <head> - detecta y aplica tema
+if (localStorage.getItem('theme') === 'dark' ||
+    (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+  document.documentElement.classList.add('dark');
+}
+```
+
+### Reglas de Tailwind
+
+✅ **DO:**
+```html
+<!-- Siempre ambos modos -->
+<div class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50">
+```
+
+❌ **DON'T:**
+```html
+<!-- Estilos inline -->
+<div style="background: #f8fafc; padding: 1rem;">❌</div>
+
+<!-- Solo dark sin light -->
+<div class="dark:bg-slate-900">❌</div>
 ```
 
 ---
@@ -317,4 +575,4 @@ Usa las skills `template-standardization` y `verification-before-completion`."
 
 ---
 
-*Última actualización: Marzo 2026*
+*Última actualización: Abril 2026*
