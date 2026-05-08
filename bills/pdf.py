@@ -169,7 +169,10 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
     buf = io.BytesIO()
     c = pdf_canvas.Canvas(buf, pagesize=A4)
     c.setTitle(f'{_TIPO.get(invoice.tipo_comprobante, "Comprobante")} {invoice.number}')
-    c.setAuthor('Bulonera Alvear S.R.L.')
+    # Metadata
+    from common.company import get_company_info
+    empresa_info = get_company_info()
+    c.setAuthor(empresa_info.get("razon_social") or empresa_info.get("name") or 'Bulonera Alvear S.R.L.')
 
     letra = _LETRA.get(invoice.tipo_comprobante, '?')
     tipo_nombre = _TIPO.get(invoice.tipo_comprobante, 'COMPROBANTE')
@@ -197,13 +200,23 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
     # Emisor (izquierda)
     ex, ey = MARGIN + 3 * mm, TOP_Y - 7 * mm
     c.setFont('Helvetica-Bold', 10)
-    c.drawString(ex, ey, 'BULONERA ALVEAR S.R.L.')
+    c.drawString(ex, ey, (empresa_info.get("razon_social") or empresa_info.get("name") or "").upper())
     c.setFont('Helvetica', 7.5)
-    c.drawString(ex, ey - 5 * mm, 'Av. Alvear 1234 — General Alvear, Mendoza')
-    c.drawString(ex, ey - 9 * mm, 'CUIT: 20-18054557-4')
-    c.drawString(ex, ey - 13 * mm, 'Ingresos Brutos: 1234567-89')
-    c.drawString(ex, ey - 17 * mm, 'IVA Responsable Inscripto')
-    c.drawString(ex, ey - 21 * mm, 'Inicio de actividades: 01/01/2000')
+    c.drawString(ex, ey - 5 * mm, empresa_info.get("address", ""))
+    
+    cuit_empresa = empresa_info.get("cuit", "")
+    if len(cuit_empresa) == 11 and '-' not in cuit_empresa:
+        cuit_empresa = f"{cuit_empresa[:2]}-{cuit_empresa[2:10]}-{cuit_empresa[10:]}"
+    c.drawString(ex, ey - 9 * mm, f'CUIT: {cuit_empresa}')
+    
+    if empresa_info.get("ingresos_brutos"):
+        c.drawString(ex, ey - 13 * mm, f'Ingresos Brutos: {empresa_info.get("ingresos_brutos", "")}')
+        
+    iva_label = _COND_IVA.get(empresa_info.get('iva_condition', 'RI'), 'IVA Responsable Inscripto')
+    c.drawString(ex, ey - 17 * mm, iva_label)
+    
+    if empresa_info.get("inicio_actividades"):
+        c.drawString(ex, ey - 21 * mm, f'Inicio de actividades: {empresa_info.get("inicio_actividades", "")}')
 
     # Comprobante (derecha)
     rx = BOX_X + BOX_W + 4 * mm

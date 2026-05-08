@@ -19,13 +19,16 @@ def get_company_info() -> dict:
     Usar esta función en lugar de acceder directamente a settings.COMPANY_*.
     """
     return {
-        'name':          getattr(settings, 'COMPANY_NAME',          'ERP'),
-        'cuit':          getattr(settings, 'COMPANY_CUIT',          ''),
-        'address':       getattr(settings, 'COMPANY_ADDRESS',       ''),
-        'phone':         getattr(settings, 'COMPANY_PHONE',         ''),
-        'email':         getattr(settings, 'COMPANY_EMAIL',         ''),
-        'website':       getattr(settings, 'COMPANY_WEBSITE',       ''),
-        'logo_url':      getattr(settings, 'COMPANY_LOGO_URL',      ''),
-        'iva_condition': getattr(settings, 'COMPANY_IVA_CONDITION', 'RI'),
-        'punto_venta':   getattr(settings, 'EMPRESA_PUNTO_VENTA',   1),
+        'name':              getattr(settings, 'COMPANY_NAME',              'ERP'),
+        'razon_social':      getattr(settings, 'COMPANY_RAZON_SOCIAL',      ''),
+        'cuit':              getattr(settings, 'COMPANY_CUIT',              ''),
+        'address':           getattr(settings, 'COMPANY_ADDRESS',           ''),
+        'phone':             getattr(settings, 'COMPANY_PHONE',             ''),
+        'email':             getattr(settings, 'COMPANY_EMAIL',             ''),
+        'website':           getattr(settings, 'COMPANY_WEBSITE',           ''),
+        'logo_url':          getattr(settings, 'COMPANY_LOGO_URL',          ''),
+        'iva_condition':     getattr(settings, 'COMPANY_IVA_CONDITION',     'RI'),
+        'punto_venta':       getattr(settings, 'EMPRESA_PUNTO_VENTA',       5),
+        'ingresos_brutos':   getattr(settings, 'COMPANY_IIBB',             ''),
+        'inicio_actividades': getattr(settings, 'COMPANY_INICIO_ACTIVIDADES', ''),
     }

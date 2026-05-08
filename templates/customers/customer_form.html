@@ -259,10 +259,11 @@ document.addEventListener('alpine:init', () => {
                         
                         const taxSelect = document.getElementById('id_tax_condition');
                         if (taxSelect) {
-                            const cIva = (d.condicion_iva || '').toUpperCase();
-                            if (cIva.includes('INSCRIPTO') || cIva.includes('RESPONSABLE')) taxSelect.value = 'RI';
-                            else if (cIva.includes('MONOTRIBUT')) taxSelect.value = 'MONO';
-                            else if (cIva.includes('EXENTO')) taxSelect.value = 'EX';
+                            const cIva = (d.condicion_iva || '').toUpperCase().trim();
+                            // El backend puede enviar el código directamente (RI, MONO, EX, CF) o texto
+                            if (cIva === 'RI' || cIva.includes('INSCRIPTO') || cIva.includes('RESPONSABLE')) taxSelect.value = 'RI';
+                            else if (cIva === 'MONO' || cIva.includes('MONOTRIBUT')) taxSelect.value = 'MONO';
+                            else if (cIva === 'EX' || cIva.includes('EXENTO')) taxSelect.value = 'EX';
                             else taxSelect.value = 'CF';
                         }
                         

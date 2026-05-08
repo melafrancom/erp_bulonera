@@ -10,7 +10,7 @@ function customerSelectorComponent() {
     customerResults: [],
     showCustomerResults: false,
     selectedCustomer: null,
-    newCustomer: { name: '', phone: '', email: '', cuit: '' },
+    newCustomer: { name: '', phone: '', email: '', cuit: '', tax_condition: 'CF' },
     isVerifyingAfip: false,
     isSubmittingCustomer: false,
 
@@ -46,7 +46,7 @@ function customerSelectorComponent() {
     setCustomerMode(mode) {
       this.customerMode = mode;
       this.selectedCustomer = null;
-      this.newCustomer = { name: '', phone: '', email: '', cuit: '' };
+      this.newCustomer = { name: '', phone: '', email: '', cuit: '', tax_condition: 'CF' };
       this.customerResults = [];
       this.customerSearchQuery = '';
     },
@@ -60,6 +60,13 @@ function customerSelectorComponent() {
         if (data.success && data.data) {
           const d = data.data;
           this.newCustomer.name = d.razon_social || ((d.nombre || '') + ' ' + (d.apellido || '')) || this.newCustomer.name;
+          if (d.condicion_iva) {
+              const cIva = d.condicion_iva.toUpperCase().trim();
+              if (cIva === 'RI' || cIva.includes('INSCRIPTO') || cIva.includes('RESPONSABLE')) this.newCustomer.tax_condition = 'RI';
+              else if (cIva === 'MONO' || cIva.includes('MONOTRIBUT')) this.newCustomer.tax_condition = 'MONO';
+              else if (cIva === 'EX' || cIva.includes('EXENTO')) this.newCustomer.tax_condition = 'EX';
+              else this.newCustomer.tax_condition = 'CF';
+          }
         } else {
           alert('No se encontraron datos en AFIP para este CUIT.');
         }
@@ -90,6 +97,7 @@ function customerSelectorComponent() {
             phone: this.newCustomer.phone,
             email: this.newCustomer.email,
             cuit_cuil: this.newCustomer.cuit,
+            tax_condition: this.newCustomer.tax_condition,
             is_active: true
           })
         });

@@ -74,6 +74,15 @@ def facturar_venta(sale, user, tipo_comprobante=None, async_emission=True):
 
     # ── Obtener datos del cliente ─────────────────────────────
     customer = sale.customer
+    # Intento de sincronizar la condición frente al IVA con AFIP automáticamente
+    if customer and customer.cuit_cuil:
+        try:
+            from customers.services import sincronizar_condicion_iva
+            sincronizar_condicion_iva(customer)
+            customer.refresh_from_db()
+        except Exception as e:
+            logger.warning(f"[BILLS] No se pudo sincronizar IVA de cliente {customer}: {e}")
+
     if customer:
         cliente_cuit = customer.cuit_cuil.replace('-', '')
         cliente_razon_social = customer.business_name
@@ -377,7 +386,13 @@ def anular_factura_y_venta(invoice_id, user):
         return {'success': False, 'error': 'La factura ya está anulada.'}
 
     # Mapa Factura -> Nota Crédito
-    MAPA_NC = {1: 3, 6: 8} # Factura A -> NC A, Factura B -> NC B
+    MAPA_NC = {
+        1: 3,    # Factura A -> NC A
+        6: 8,    # Factura B -> NC B
+        81: 85,  # Tique Factura A -> NC Tique A
+        82: 86,  # Tique Factura B -> NC Tique B
+        83: 87,  # Tique C a Consumidor Final -> NC Tique C
+    }
     nc_tipo = MAPA_NC.get(invoice.tipo_comprobante)
     
     if invoice.estado_fiscal == 'autorizada':

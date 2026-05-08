@@ -497,6 +497,9 @@ COMPANY_EMAIL         = env('COMPANY_EMAIL',         default='')
 COMPANY_WEBSITE       = env('COMPANY_WEBSITE',       default='')
 COMPANY_LOGO_URL      = env('COMPANY_LOGO_URL',      default='/static/img/logo.png')
 COMPANY_IVA_CONDITION = env('COMPANY_IVA_CONDITION', default='RI')
+COMPANY_RAZON_SOCIAL       = env('COMPANY_RAZON_SOCIAL',       default='')
+COMPANY_IIBB               = env('COMPANY_IIBB',               default='')
+COMPANY_INICIO_ACTIVIDADES = env('COMPANY_INICIO_ACTIVIDADES', default='')
 
 # Datos fiscales AFIP/ARCA (aliases para compatibilidad con afip app)
 EMPRESA_CUIT          = env('COMPANY_CUIT',          default='')   # alias para compatibilidad afip app
