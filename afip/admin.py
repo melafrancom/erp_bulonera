@@ -35,7 +35,10 @@ class WSAATokenAdmin(admin.ModelAdmin):
     list_display = ('cuit', 'servicio', 'ambiente', 'generado_en', 'vigencia')
     list_filter = ('servicio', 'ambiente')
     search_fields = ('cuit',)
-    readonly_fields = ('token', 'sign', 'generado_en', 'expira_en')
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return ('token', 'sign', 'generado_en', 'expira_en')
+        return ('generado_en',)
     
     def vigencia(self, obj):
         if obj.esta_vigente():
@@ -101,11 +104,19 @@ class ComprobRenglonAdmin(admin.ModelAdmin):
 
 @admin.register(LogARCA)
 class LogARCAAdmin(admin.ModelAdmin):
-    list_display = ('tipo', 'timestamp', 'cuit', 'servicio', 'response_code')
-    list_filter = ('tipo', 'timestamp')
-    search_fields = ('cuit', 'servicio')
-    readonly_fields = ('tipo', 'timestamp', 'request_xml', 'response_xml', 'error')
+    list_display = ('tipo', 'timestamp', 'cuit', 'servicio', 'response_code_display')
+    list_filter = ('tipo',)
+    search_fields = ('cuit', 'servicio', 'error')
+    readonly_fields = ('timestamp',)
     date_hierarchy = 'timestamp'
+    list_per_page = 50
+    
+    def response_code_display(self, obj):
+        code = obj.response_code
+        if code is None:
+            return '—'
+        return str(code)
+    response_code_display.short_description = 'Código'
     
     def has_add_permission(self, request):
-        return False  # No se añaden manualmente
+        return False

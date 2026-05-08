@@ -165,9 +165,15 @@ def solicitar_token_wsaa(request, pk):
     
     # Pre-validación: verificar que el archivo existe
     if not os.path.isfile(config.ruta_certificado):
+        cert_dir = os.path.dirname(config.ruta_certificado)
+        archivos_existentes = []
+        if os.path.isdir(cert_dir):
+            archivos_existentes = os.listdir(cert_dir)
+        
         messages.error(
             request,
             f"❌ El certificado no existe en el servidor: {config.ruta_certificado}. "
+            f"Archivos encontrados en {cert_dir}: {archivos_existentes or 'directorio no existe'}. "
             f"Editá la configuración y seleccioná un archivo válido."
         )
         return redirect('afip_web:dashboard')
