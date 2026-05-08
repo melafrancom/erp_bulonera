@@ -1100,6 +1100,107 @@ R: Sí. Implementa reintentos exponenciales (máximo 5 en producción).
 
 ---
 
+# FASE 8: DESPLIEGUE A PRODUCCIÓN (REALIZADO 2026-05-07)
+
+> **Estado:** ✅ Completado y verificado con CAEs reales.
+
+## 8.1 Certificado de Producción
+
+**Generación del CSR:**
+```bash
+cat > /tmp/csr_arca_produccion.conf << 'EOF'
+[req]
+default_bits = 2048
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+prompt = no
+
+[req_distinguished_name]
+C = AR
+ST = Chaco
+L = Resistencia
+O = MIGUEL ANGEL MELA
+CN = MIGUEL.ANGEL.MELA@20180545574.com.ar
+emailAddress = buloneraalveaar@gmail.com
+
+[v3_req]
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+EOF
+
+openssl req -new \
+  -key /var/www/erp/src/afip/keys/produccion/clave_privada_produccion.key \
+  -out solicitud_arca_produccion.csr \
+  -config /tmp/csr_arca_produccion.conf
+```
+
+**Certificado emitido por ARCA:** `MIGUEL.ANGEL.MELA_775721cccb8fab00.crt`
+
+## 8.2 Rutas en Producción (VPS Hostinger)
+
+```
+Clave privada:    /var/www/erp/src/afip/keys/produccion/clave_privada_produccion.key
+Certificado CRT:  /var/www/erp/src/afip/certs/produccion/MIGUEL.ANGEL.MELA_775721cccb8fab00.crt
+PEM combinado:    /var/www/erp/src/afip/certs/produccion/certificado_con_clave_produccion.pem
+```
+
+**Creación del PEM combinado:**
+```bash
+cat MIGUEL.ANGEL.MELA_775721cccb8fab00.crt \
+    /var/www/erp/src/afip/keys/produccion/clave_privada_produccion.key \
+    > certificado_con_clave_produccion.pem
+```
+
+## 8.3 Verificaciones Realizadas
+
+**MD5 Match (cert ↔ key):**
+```
+MD5 del CERTIFICADO:    152bae96b367dc1aa01c4ff932f7c12a
+MD5 de la CLAVE PRIVADA: 152bae96b367dc1aa01c4ff932f7c12a  ✅ Coinciden
+```
+
+**Vigencia del certificado:**
+```
+notBefore = May  7 21:56:05 2026 GMT
+notAfter  = May  6 21:56:05 2028 GMT   (2 años)
+```
+
+**Permisos aplicados:**
+```bash
+chmod 400 certificado_con_clave_produccion.pem
+chmod 400 MIGUEL.ANGEL.MELA_775721cccb8fab00.crt
+chmod 700 /var/www/erp/src/afip/certs/produccion
+chmod 700 /var/www/erp/src/afip/keys/produccion
+```
+
+## 8.4 Primeros CAEs Obtenidos en Producción
+
+| CAE               | Fecha Obtención      |
+| :---------------- | :------------------- |
+| BL7034611509663   | 2026-05-07 22:57:50  |
+| BL8098302329004   | 2026-05-07 23:00:31  |
+
+## 8.5 ConfiguracionARCA de Producción
+
+```python
+# Creada con create_afip_config.py --ambiente produccion
+ConfiguracionARCA(
+    empresa_cuit='20180545574',
+    razon_social='MELA MIGUEL ANGEL',
+    email_contacto='buloneraalveaar@gmail.com',
+    ambiente='produccion',
+    punto_venta=5,
+    ruta_certificado='/var/www/erp/src/afip/certs/produccion/certificado_con_clave_produccion.pem',
+    activo=True,
+)
+```
+
+> **Nota:** En producción, la ruta del certificado dentro del contenedor Docker
+> es `/app/afip/certs/produccion/certificado_con_clave_produccion.pem` (mapeada
+> por el volumen de Docker Compose).
+
+---
+
 # 🎯 CONCLUSIÓN
 
 Completaste una **implementación profesional, segura y escalable** de facturación electrónica ARCA en Django.

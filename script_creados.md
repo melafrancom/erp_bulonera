@@ -331,3 +331,28 @@ docker compose -f "$COMPOSE_FILE" ps
 COMANDO PARA EJECUTAR EL DEPLOY:
 
 sudo deploy_erp.sh
+
+ 
+
+# ═══════════════════════════════════════════════════
+# Script: create_afip_config.py
+# Ubicación: /var/www/erp/src/create_afip_config.py
+# Propósito: Crea o actualiza ConfiguracionARCA en BD
+# ═══════════════════════════════════════════════════
+
+COMANDOS PARA EJECUTAR (dentro del contenedor Docker):
+
+# Crear configuración de HOMOLOGACIÓN (default):
+python create_afip_config.py
+
+# Crear configuración de PRODUCCIÓN:
+python create_afip_config.py --ambiente produccion
+
+# Actualizar una configuración existente (cambia ambiente/ruta):
+python create_afip_config.py --ambiente produccion --force
+
+# Desarrollo local (usa homologación con settings.local):
+python create_afip_config.py --ambiente local --settings erp_crm_bulonera.settings.local
+
+# Desde docker compose (producción):
+docker compose -f docker-compose.production.yml exec web python create_afip_config.py --ambiente produccion
