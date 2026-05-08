@@ -511,7 +511,7 @@ class WSFEv1Client:
                 data=soap.encode('utf-8'),
                 headers={
                     'Content-Type': 'text/xml; charset=utf-8',
-                    'SOAPAction':   f'http://ar.gov.afip.dif.FEV1/{soap_action}',
+                    'SOAPAction':   f'"http://ar.gov.afip.dif.FEV1/{soap_action}"',
                 },
                 timeout=timeout,
                 verify=True,
