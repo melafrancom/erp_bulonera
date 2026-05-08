@@ -37,6 +37,8 @@ from typing import Optional
 import requests
 from requests.exceptions import ConnectionError, RequestException, Timeout
 
+from afip.clients.ssl_adapter import crear_session_afip
+
 logger = logging.getLogger(__name__)
 
 # ============================================================================
@@ -506,7 +508,8 @@ class WSFEv1Client:
         Envía el envelope SOAP al endpoint WSFEv1 y retorna el resultado parseado.
         """
         try:
-            response = requests.post(
+            session = crear_session_afip()
+            response = session.post(
                 self.endpoint,
                 data=soap.encode('utf-8'),
                 headers={

@@ -28,6 +28,8 @@ from pathlib import Path
 import requests
 from requests.exceptions import RequestException, Timeout, ConnectionError
 
+from afip.clients.ssl_adapter import crear_session_afip
+
 logger = logging.getLogger(__name__)
 
 
@@ -334,7 +336,8 @@ class WSAAClient:
 
             logger.info(f"[WSAA] Enviando LoginCms → {self.endpoint}")
 
-            response = requests.post(
+            session = crear_session_afip()
+            response = session.post(
                 self.endpoint,
                 data=soap.encode('utf-8'),
                 headers={

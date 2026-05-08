@@ -29,6 +29,8 @@ from typing import Optional
 import requests
 from requests.exceptions import ConnectionError, RequestException, Timeout
 
+from afip.clients.ssl_adapter import crear_session_afip
+
 logger = logging.getLogger(__name__)
 
 
@@ -131,7 +133,8 @@ class WSPadronClient:
         logger.debug(f"[WSPadron] SOAP Request:\n{soap}")
 
         try:
-            response = requests.post(
+            session = crear_session_afip()
+            response = session.post(
                 self.endpoint,
                 data=soap.encode('utf-8'),
                 headers={
@@ -303,27 +306,68 @@ class WSPadronClient:
     # ------------------------------------------------------------------
 
     def _determinar_condicion_iva(self, persona_elem) -> tuple:
-        # Recolectar todos los idImpuesto activos
+        """
+        Determina la condición IVA a partir de los impuestos inscriptos.
+
+        Recorre TODOS los descendientes buscando <idImpuesto> sin importar
+        namespace ni estructura de anidamiento.
+
+        Referencia de IDs relevantes:
+            30  = IVA (Responsable Inscripto)
+            32  = IVA Sujeto Exento  
+            20  = Monotributo (Régimen Simplificado)
+            48  = Monotributo Social (o Especial, según tabla)
+        """
         ids_impuesto = set()
-        for imp in persona_elem.iter():
-            tag = imp.tag.split('}')[-1]
-            if tag == 'idImpuesto' and imp.text:
+
+        # Estrategia 1: iter() recursivo sobre todos los descendientes
+        for elem in persona_elem.iter():
+            tag_local = elem.tag.split('}')[-1] if '}' in elem.tag else elem.tag
+            if tag_local == 'idImpuesto' and elem.text:
                 try:
-                    ids_impuesto.add(int(imp.text.strip()))
+                    ids_impuesto.add(int(elem.text.strip()))
                 except (ValueError, TypeError):
                     pass
 
+        # Si no encontramos nada con iter(), probar buscando sin namespace
+        if not ids_impuesto:
+            # Buscar nodos <impuesto> directos e hijos
+            for imp_node in persona_elem.findall('.//impuesto'):
+                id_elem = imp_node.find('idImpuesto')
+                if id_elem is not None and id_elem.text:
+                    try:
+                        ids_impuesto.add(int(id_elem.text.strip()))
+                    except (ValueError, TypeError):
+                        pass
+
+        # Fallback: buscar con namespace explícito
+        if not ids_impuesto:
+            ns = PADRON_A13_NS
+            for imp_node in persona_elem.findall('.//{%s}impuesto' % ns):
+                id_elem = (
+                    imp_node.find('{%s}idImpuesto' % ns)
+                    or imp_node.find('idImpuesto')
+                )
+                if id_elem is not None and id_elem.text:
+                    try:
+                        ids_impuesto.add(int(id_elem.text.strip()))
+                    except (ValueError, TypeError):
+                        pass
+
+        logger.info(f"[WSPadron] IDs de impuesto detectados: {ids_impuesto}")
+
+        # Evaluación por prioridad
         if 30 in ids_impuesto:
             return ('RI', 'Responsable Inscripto')
         if 20 in ids_impuesto or 48 in ids_impuesto:
             return ('MONO', 'Monotributista')
-
-        # Si hay exenciones, podría ser EX (Exento). Para CUITs empresariales a veces es común 32, etc.
-        # Por ahora simplificamos a CF si no es RI ni MONO (o verificar 32 como Exento si aplica)
-        if 32 in ids_impuesto: 
-            # 32 = IVA Sujeto Exento en algunas tablas, 30 es RI
+        if 32 in ids_impuesto:
             return ('EX', 'Sujeto Exento')
-            
+
+        logger.warning(
+            f"[WSPadron] No se detectaron impuestos conocidos (30/20/48/32). "
+            f"IDs encontrados: {ids_impuesto}. Clasificando como CF."
+        )
         return ('CF', 'Consumidor Final / No Responsable')
 
     def _formatear_domicilio(self, domicilio_elem) -> str:
