@@ -1,0 +1,134 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Cobros Registrados | ERP Bulonera Alvear{% endblock %}
+
+{% block breadcrumb_items %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <span class="text-gray-900 dark:text-slate-100 font-black tracking-tight">Cobros Registrados</span>
+{% endblock %}
+
+{% block mobile_title %}Cobros{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 pb-24">
+  
+  <!-- Header Section -->
+  <div class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <div>
+      <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight flex items-center gap-4">
+        <span class="flex items-center justify-center w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl shadow-sm">
+           <i data-lucide="banknote" class="w-7 h-7"></i>
+        </span>
+        Cobros Registrados
+      </h1>
+      <p class="mt-4 text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest pl-1">Historial de pagos recibidos de clientes</p>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="bg-white dark:bg-slate-800 p-5 rounded-[2rem] shadow-sm border border-gray-100 dark:border-slate-700 mb-8 transition-colors">
+    <form method="get" class="w-full flex flex-col md:flex-row gap-4">
+      <div class="flex-1 relative group">
+        <i data-lucide="search" class="w-5 h-5 absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500 group-focus-within:text-indigo-500 transition-colors"></i>
+        <input type="text" name="search" value="{{ search }}" placeholder="Buscar por referencia o cliente..." 
+               class="w-full pl-12 pr-6 py-4 bg-gray-50 dark:bg-slate-900/50 border-none rounded-2xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 transition-all placeholder-gray-400 dark:placeholder-slate-600 shadow-inner">
+      </div>
+      
+      <div class="md:w-48 relative">
+        <select name="method" class="w-full px-6 py-4 bg-gray-50 dark:bg-slate-900/50 border-none rounded-2xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 transition-all appearance-none cursor-pointer shadow-inner" onchange="this.form.submit()">
+          <option value="">Todos los Métodos</option>
+          {% for cod, label in method_choices %}
+            <option value="{{ cod }}" {% if current_method == cod %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <i data-lucide="chevron-down" class="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
+      </div>
+
+      <div class="md:w-48 relative">
+        <select name="status" class="w-full px-6 py-4 bg-gray-50 dark:bg-slate-900/50 border-none rounded-2xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 transition-all appearance-none cursor-pointer shadow-inner" onchange="this.form.submit()">
+          <option value="">Todos los Estados</option>
+          {% for cod, label in status_choices %}
+            <option value="{{ cod }}" {% if current_status == cod %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <i data-lucide="chevron-down" class="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
+      </div>
+
+      <button type="submit" class="px-8 py-4 bg-gray-900 dark:bg-slate-100 text-white dark:text-gray-900 rounded-2xl hover:bg-gray-800 dark:hover:bg-white transition-all text-sm font-black uppercase tracking-widest shadow-xl shadow-gray-900/10 dark:shadow-white/10 active:scale-95 flex items-center justify-center">
+        Filtrar
+      </button>
+      
+      {% if search or current_status or current_method %}
+      <a href="{% url 'payments_web:payment_list' %}" class="px-6 py-4 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-2xl transition-all inline-flex items-center justify-center text-sm font-black uppercase tracking-widest active:scale-95">
+        <i data-lucide="x" class="w-4 h-4 mr-2"></i> Limpiar
+      </a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Tabla de Pagos -->
+  <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden transition-colors">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-100 dark:divide-slate-700/50">
+        <thead class="bg-gray-50/50 dark:bg-slate-900/50">
+          <tr>
+            <th scope="col" class="px-8 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">ID / Referencia</th>
+            <th scope="col" class="px-8 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Fecha</th>
+            <th scope="col" class="px-8 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Cliente</th>
+            <th scope="col" class="px-8 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Monto</th>
+            <th scope="col" class="px-8 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] hidden sm:table-cell">Método</th>
+            <th scope="col" class="px-8 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] hidden lg:table-cell">Alocado</th>
+            <th scope="col" class="px-8 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Estado</th>
+            <th scope="col" class="relative px-8 py-5"><span class="sr-only">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-slate-700/50 bg-white dark:bg-slate-800">
+          {% for payment in payments %}
+            {% include 'payments/partials/_payment_row.html' with payment=payment %}
+          {% empty %}
+          <tr>
+             <td colspan="8" class="px-6 py-24 text-center">
+                <div class="flex flex-col items-center justify-center opacity-80">
+                   <div class="w-20 h-20 bg-gray-50 dark:bg-slate-800 rounded-[2rem] flex flex-col items-center justify-center mb-6 shadow-inner">
+                      <i data-lucide="banknote" class="w-10 h-10 text-gray-300 dark:text-slate-600"></i>
+                   </div>
+                   <h3 class="text-xl font-black text-gray-900 dark:text-slate-100 mb-2">No hay cobros registrados</h3>
+                   <p class="text-sm font-bold text-gray-500 dark:text-slate-500">{% if search or current_status or current_method %}No se encontraron coincidencias con tu búsqueda.{% else %}Los cobros registrados aparecerán aquí.{% endif %}</p>
+                </div>
+             </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación -->
+    {% if is_paginated %}
+    <div class="bg-gray-50/50 dark:bg-slate-900/30 px-8 py-5 border-t border-gray-100 dark:border-slate-700/50 transition-colors">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+        <p class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">
+          Página <span class="text-gray-900 dark:text-slate-100 font-black">{{ page_obj.number }}</span> de <span class="text-gray-900 dark:text-slate-100 font-black">{{ paginator.num_pages }}</span>
+        </p>
+        
+        <nav class="flex items-center gap-2" aria-label="Pagination">
+          {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_method %}&method={{ current_method }}{% endif %}" 
+               class="p-2 rounded-xl bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 border border-gray-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500/50 transition-all shadow-sm active:scale-95">
+              <i data-lucide="chevron-left" class="h-5 w-5"></i>
+            </a>
+          {% endif %}
+          
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_method %}&method={{ current_method }}{% endif %}" 
+               class="p-2 rounded-xl bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 border border-gray-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500/50 transition-all shadow-sm active:scale-95">
+              <i data-lucide="chevron-right" class="h-5 w-5"></i>
+            </a>
+          {% endif %}
+        </nav>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

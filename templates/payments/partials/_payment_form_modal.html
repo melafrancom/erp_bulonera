@@ -1,0 +1,231 @@
+{# Modal para registrar un nuevo pago #}
+{# Uso: {% include 'payments/partials/_payment_form_modal.html' with sale=sale %} #}
+
+<div x-data="paymentFormModal()" class="relative">
+  <!-- Trigger Button -->
+  {% if sale.payment_status != 'paid' and sale.status != 'cancelled' %}
+  <button @click="openModal()" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition font-medium text-sm">
+    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+    Registrar Pago
+  </button>
+  {% endif %}
+
+  <!-- Modal -->
+  <div x-show="modalOpen" x-transition class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+    <!-- Backdrop -->
+    <div @click="closeModal()" class="fixed inset-0 bg-black/50 dark:bg-black/70 transition-opacity"></div>
+    
+    <!-- Modal Content -->
+    <div class="relative flex items-center justify-center min-h-screen p-4">
+      <div @click.stop class="relative bg-white dark:bg-slate-800 rounded-[2rem] shadow-2xl border border-gray-100 dark:border-slate-700 max-w-md w-full">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between px-8 py-6 border-b border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50 rounded-t-[2rem]">
+          <h2 class="text-lg font-black text-gray-900 dark:text-slate-100 flex items-center gap-3">
+            <span class="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl text-emerald-600 dark:text-emerald-400">
+              <i data-lucide="plus-circle" class="w-5 h-5"></i>
+            </span>
+            Registrar Cobro
+          </h2>
+          <button @click="closeModal()" class="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition">
+            <i data-lucide="x" class="w-5 h-5 text-gray-500 dark:text-slate-400"></i>
+          </button>
+        </div>
+
+        <!-- Form Body -->
+        <form @submit.prevent="submitForm()" class="p-8 space-y-6">
+          {% csrf_token %}
+          
+          <!-- Monto -->
+          <div>
+            <label for="amount" class="block text-sm font-black text-gray-900 dark:text-slate-100 mb-2 uppercase tracking-widest">
+              <i data-lucide="dollar-sign" class="w-4 h-4 inline mr-1"></i>Monto
+            </label>
+            <input type="number" id="amount" x-model.number="formData.amount" placeholder="0.00" step="0.01" min="0.01" required
+                   class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 transition-all focus:border-transparent">
+          </div>
+
+          <!-- Método de Pago -->
+          <div>
+            <label for="method" class="block text-sm font-black text-gray-900 dark:text-slate-100 mb-2 uppercase tracking-widest">
+              <i data-lucide="credit-card" class="w-4 h-4 inline mr-1"></i>Método
+            </label>
+            <select id="method" x-model="formData.method" required
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 transition-all focus:border-transparent appearance-none cursor-pointer">
+              <option value="">Selecciona un método...</option>
+              <option value="cash">Efectivo</option>
+              <option value="debit_card">Tarjeta de Débito</option>
+              <option value="credit_card">Tarjeta de Crédito</option>
+              <option value="transfer">Transferencia Bancaria</option>
+              <option value="check">Cheque</option>
+              <option value="other">Otro</option>
+            </select>
+          </div>
+
+          <!-- Referencia (Opcional) -->
+          <div>
+            <label for="reference" class="block text-sm font-black text-gray-900 dark:text-slate-100 mb-2 uppercase tracking-widest">
+              <i data-lucide="link" class="w-4 h-4 inline mr-1"></i>Referencia (Opcional)
+            </label>
+            <input type="text" id="reference" x-model="formData.reference" placeholder="Ej: TRF-001, CHQ-005"
+                   class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 transition-all focus:border-transparent">
+          </div>
+
+          <!-- Fecha -->
+          <div>
+            <label for="date" class="block text-sm font-black text-gray-900 dark:text-slate-100 mb-2 uppercase tracking-widest">
+              <i data-lucide="calendar" class="w-4 h-4 inline mr-1"></i>Fecha
+            </label>
+            <input type="date" id="date" x-model="formData.date" required
+                   class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 transition-all focus:border-transparent">
+          </div>
+
+          <!-- Notas (Opcional) -->
+          <div>
+            <label for="notes" class="block text-sm font-black text-gray-900 dark:text-slate-100 mb-2 uppercase tracking-widest">
+              <i data-lucide="sticky-note" class="w-4 h-4 inline mr-1"></i>Notas (Opcional)
+            </label>
+            <textarea id="notes" x-model="formData.notes" placeholder="Cualquier información adicional..." rows="3"
+                      class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 transition-all focus:border-transparent resize-none"></textarea>
+          </div>
+
+          <!-- Checkboxes de Imputación -->
+          <div class="space-y-3 p-4 bg-gray-50 dark:bg-slate-900/50 rounded-xl border border-gray-200 dark:border-slate-700">
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input type="checkbox" x-model="formData.auto_allocate_sale" class="mt-1">
+              <span class="text-sm font-bold text-gray-700 dark:text-slate-300">
+                Imputar automáticamente a esta venta ({{ sale.number }})
+              </span>
+            </label>
+            
+            {% if sale.invoice %}
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input type="checkbox" x-model="formData.auto_allocate_invoice" class="mt-1">
+              <span class="text-sm font-bold text-gray-700 dark:text-slate-300">
+                Vincular a Factura ({{ sale.invoice.number }})
+              </span>
+            </label>
+            {% endif %}
+          </div>
+
+          <!-- Estado de la Solicitud -->
+          <template x-if="loading || error">
+            <div x-show="error" class="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-400 text-sm font-bold">
+              <i data-lucide="alert-circle" class="w-4 h-4 inline mr-2"></i>
+              <span x-text="error"></span>
+            </div>
+          </template>
+
+          <!-- Botones -->
+          <div class="flex gap-3 pt-4 border-t border-gray-100 dark:border-slate-700">
+            <button type="button" @click="closeModal()" class="flex-1 px-4 py-3 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-600 transition font-bold text-sm uppercase tracking-widest">
+              Cancelar
+            </button>
+            <button type="submit" :disabled="loading" class="flex-1 px-4 py-3 bg-emerald-600 dark:bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 dark:hover:bg-emerald-700 transition font-bold text-sm uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              <i data-lucide="check-circle" class="w-4 h-4"></i>
+              <span x-text="loading ? 'Registrando...' : 'Registrar Cobro'"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function paymentFormModal() {
+  return {
+    modalOpen: false,
+    loading: false,
+    error: null,
+    formData: {
+      amount: null,
+      method: 'cash',
+      reference: '',
+      date: new Date().toISOString().split('T')[0],
+      notes: '',
+      auto_allocate_sale: true,
+      auto_allocate_invoice: false,
+    },
+    
+    openModal() {
+      this.modalOpen = true;
+      this.formData.date = new Date().toISOString().split('T')[0];
+      this.error = null;
+    },
+    
+    closeModal() {
+      this.modalOpen = false;
+      this.resetForm();
+    },
+    
+    resetForm() {
+      this.formData = {
+        amount: null,
+        method: 'cash',
+        reference: '',
+        date: new Date().toISOString().split('T')[0],
+        notes: '',
+        auto_allocate_sale: true,
+        auto_allocate_invoice: false,
+      };
+      this.error = null;
+    },
+    
+    async submitForm() {
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        const payload = {
+          amount: this.formData.amount,
+          method: this.formData.method,
+          reference: this.formData.reference,
+          date: this.formData.date,
+          notes: this.formData.notes,
+          status: 'confirmed',
+        };
+        
+        // Si auto_allocate_sale está activo, agregar allocation
+        const allocations = [];
+        if (this.formData.auto_allocate_sale) {
+          allocations.push({
+            sale_id: {{ sale.id }},
+            invoice_id: this.formData.auto_allocate_invoice ? {{ sale.invoice.id|default:'null' }} : null,
+            allocated_amount: this.formData.amount,
+          });
+        }
+        
+        if (allocations.length > 0) {
+          payload.allocations = allocations;
+        }
+        
+        // Enviar POST a la API
+        const response = await fetch('/api/v1/payments/payments/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+          },
+          body: JSON.stringify(payload),
+        });
+        
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.detail || 'Error al registrar el pago');
+        }
+        
+        // Éxito: recargar la página o mostrar notificación
+        this.closeModal();
+        window.location.reload();
+      } catch (err) {
+        this.error = err.message || 'Error desconocido';
+      } finally {
+        this.loading = false;
+      }
+    }
+  }
+}
+</script>

@@ -74,21 +74,19 @@ def update_sale_totals(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Sale)
 def update_sale_payment_status(sender, instance, created, **kwargs):
-    """Actualiza payment_status según pagos allocados"""
-    if created:
-        return
+    """
+    DEPRECADO: Este signal ha sido movido a payments/signals.py
     
-    total_paid = instance.total_paid
+    El cálculo de payment_status ahora se dispara automáticamente cuando
+    se crean/modifican/eliminan PaymentAllocation (el trigger correcto).
     
-    if total_paid >= instance.total:
-        new_status = 'paid' if total_paid == instance.total else 'overpaid'
-    elif total_paid > 0:
-        new_status = 'partially_paid'
-    else:
-        new_status = 'unpaid'
+    Se mantiene este método como noop para compatibilidad con código existente.
     
-    if instance.payment_status != new_status:
-        Sale.objects.filter(pk=instance.pk).update(payment_status=new_status)
+    Ver: PaymentAllocation signal handlers en payments/signals.py
+    """
+    # No-op: La lógica se ejecuta desde payments/signals.py
+    pass
+
 
 
 # Eventos hacia otras apps

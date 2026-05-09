@@ -435,6 +435,14 @@ def sale_detail(request, pk):
     invoice = sale.facturas.filter(tipo_comprobante__in=[1, 6, 81, 82, 83]).first()
     nota_credito = sale.facturas.filter(tipo_comprobante__in=[3, 8, 85, 86, 87]).first()
     
+    # Alocaciones de pagos para esta venta
+    from payments.models import PaymentAllocation
+    payment_allocations = PaymentAllocation.objects.filter(
+        sale=sale,
+        is_active=True,
+        payment__status='confirmed'
+    ).select_related('payment', 'invoice').order_by('-payment__date')
+    
     # Datos para el modal de tickets fiscales
     from bills.services import get_next_ticket_number
     from afip.models import ConfiguracionARCA
@@ -465,6 +473,7 @@ def sale_detail(request, pk):
         'next_status_label': next_status_label,
         'invoice':           invoice,
         'nota_credito':      nota_credito,
+        'payment_allocations': payment_allocations,
         'ticket_config':     ticket_config,
         'tipos_ticket': [
             {'value': 81, 'label': 'Tique Factura A'},

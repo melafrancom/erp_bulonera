@@ -137,14 +137,14 @@
           Finanzas
         </p>
 
-        <a href="#" class="nav-item">
-          <i data-lucide="dollar-sign" class="w-5 h-5"></i>
-          <span>Caja</span>
+        <a href="{% url 'payments_web:payment_list' %}" class="nav-item {% if 'payments' in request.path %}active{% endif %}">
+          <i data-lucide="banknote" class="w-5 h-5"></i>
+          <span>Cobros</span>
         </a>
 
         <a href="#" class="nav-item">
-          <i data-lucide="credit-card" class="w-5 h-5"></i>
-          <span>Movimientos</span>
+          <i data-lucide="dollar-sign" class="w-5 h-5"></i>
+          <span>Caja</span>
         </a>
 
         <a href="{% url 'reports_web:dashboard' %}" class="nav-item {% if 'reports' in request.path %}active{% endif %}">

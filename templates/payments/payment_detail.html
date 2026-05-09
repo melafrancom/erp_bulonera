@@ -1,0 +1,251 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Pago #{{ payment.id }} | ERP Bulonera Alvear{% endblock %}
+
+{% block breadcrumb_items %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <a href="{% url 'payments_web:payment_list' %}" class="text-gray-500 dark:text-slate-400 font-bold hover:text-gray-900 dark:hover:text-slate-100 transition-colors tracking-tight">Cobros</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <span class="text-gray-900 dark:text-slate-100 font-black tracking-tight">Pago #{{ payment.id }}</span>
+{% endblock %}
+
+{% block mobile_title %}Pago #{{ payment.id }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 pb-24">
+
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+    <div>
+      <div class="flex items-center gap-4 mb-2">
+          <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight flex items-center transition-colors">
+              Pago #{{ payment.id }}
+          </h1>
+          {% if payment.status == 'confirmed' %}
+              <span class="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 uppercase tracking-widest ring-1 ring-emerald-500/30 shadow-sm">
+                  <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> {{ payment.get_status_display }}
+              </span>
+          {% elif payment.status == 'pending' %}
+              <span class="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 uppercase tracking-widest ring-1 ring-amber-500/30 shadow-sm">
+                  <i data-lucide="clock" class="w-4 h-4 mr-2 animate-pulse"></i> {{ payment.get_status_display }}
+              </span>
+          {% elif payment.status == 'cancelled' %}
+              <span class="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 uppercase tracking-widest ring-1 ring-red-500/30 shadow-sm">
+                  <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i> {{ payment.get_status_display }}
+              </span>
+          {% endif %}
+      </div>
+      <p class="text-sm font-bold text-gray-500 dark:text-slate-400 mt-2 uppercase tracking-widest pl-1">Registrado el <span class="text-gray-700 dark:text-slate-300">{{ payment.date|date:"d/m/Y" }}</span></p>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <a href="{% url 'payments_web:payment_list' %}" 
+         class="inline-flex items-center px-6 py-4 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-2xl text-sm font-black hover:bg-gray-200 dark:hover:bg-slate-700 transition-all active:scale-95 uppercase tracking-widest">
+        <i data-lucide="arrow-left" class="w-5 h-5 mr-2"></i> Volver
+      </a>
+      {% if payment.status != 'cancelled' %}
+      <form method="post" action="{% url 'payments_web:payment_cancel' payment.id %}" class="inline">
+        {% csrf_token %}
+        <button type="submit" class="inline-flex items-center px-6 py-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/50 text-red-600 dark:text-red-400 rounded-2xl text-sm font-black hover:bg-red-100 dark:hover:bg-red-900/20 transition-all active:scale-95 uppercase tracking-widest"
+                onclick="return confirm('¿Estás seguro de que deseas anular este pago?')">
+          <i data-lucide="trash-2" class="w-5 h-5 mr-2"></i> Anular
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Main Content -->
+    <div class="lg:col-span-2 space-y-8">
+      
+      <!-- Alocaciones -->
+      <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden transition-colors">
+        <div class="px-8 py-6 border-b border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50 flex items-center justify-between">
+          <h2 class="text-lg font-black text-gray-900 dark:text-slate-100 tracking-tight">Alocaciones de este Pago</h2>
+          <div class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+             <i data-lucide="arrow-right" class="w-5 h-5"></i>
+          </div>
+        </div>
+        {% if payment.allocations.all %}
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-100 dark:divide-slate-700/50">
+            <thead class="bg-white dark:bg-slate-800">
+              <tr>
+                <th scope="col" class="px-8 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Venta</th>
+                <th scope="col" class="px-8 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Factura</th>
+                <th scope="col" class="px-8 py-5 text-right text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Monto Alocado</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-slate-700/50">
+              {% for alloc in payment.allocations.all %}
+              <tr class="hover:bg-gray-50/80 dark:hover:bg-slate-700/30 transition-colors">
+                <td class="px-8 py-6">
+                  <a href="{% url 'sales_web:sale_detail' alloc.sale.id %}" class="inline-flex items-center px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors font-bold text-sm tracking-tight">
+                    <i data-lucide="shopping-cart" class="w-4 h-4 mr-2"></i> {{ alloc.sale.number }}
+                  </a>
+                </td>
+                <td class="px-8 py-6">
+                  {% if alloc.invoice %}
+                  <a href="{% url 'bills_web:invoice_detail' alloc.invoice.id %}" class="inline-flex items-center px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors font-bold text-sm tracking-tight">
+                    <i data-lucide="file-text" class="w-4 h-4 mr-2"></i> {{ alloc.invoice.number }}
+                  </a>
+                  {% else %}
+                  <span class="text-[10px] font-bold text-gray-400 dark:text-slate-600 uppercase tracking-widest">—</span>
+                  {% endif %}
+                </td>
+                <td class="px-8 py-6 text-right">
+                  <div class="text-lg font-black text-gray-900 dark:text-slate-100 tabular-nums">${{ alloc.allocated_amount }}</div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="px-8 py-16 text-center">
+          <div class="flex flex-col items-center justify-center opacity-80">
+             <i data-lucide="inbox" class="w-10 h-10 text-gray-300 dark:text-slate-600 mb-4"></i>
+             <p class="text-sm font-bold text-gray-500 dark:text-slate-500">No hay alocaciones registradas para este pago.</p>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Notas -->
+      {% if payment.notes %}
+      <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-slate-700 p-8 transition-colors">
+        <h2 class="text-lg font-black text-gray-900 dark:text-slate-100 mb-6 flex items-center gap-3">
+          <span class="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-xl text-amber-600 dark:text-amber-400">
+            <i data-lucide="sticky-note" class="w-5 h-5"></i>
+          </span>
+          Notas
+        </h2>
+        <div class="bg-gray-50 dark:bg-slate-900/50 p-6 rounded-2xl border border-gray-100 dark:border-slate-700/50">
+          <p class="text-sm font-medium text-gray-700 dark:text-slate-300 italic leading-relaxed">{{ payment.notes }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Auditoría -->
+      <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-slate-700 p-8 transition-colors">
+        <h2 class="text-lg font-black text-gray-900 dark:text-slate-100 mb-8 flex items-center gap-3">
+          <span class="p-2 bg-slate-100 dark:bg-slate-700 rounded-xl text-gray-600 dark:text-slate-400">
+            <i data-lucide="history" class="w-5 h-5"></i>
+          </span>
+          Auditoría
+        </h2>
+        <div class="space-y-4">
+          <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-slate-700">
+            <span class="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">Creado por</span>
+            <span class="text-sm font-black text-gray-900 dark:text-slate-100">{{ payment.created_by.get_full_name|default:payment.created_by.username }}</span>
+          </div>
+          <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-slate-700">
+            <span class="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">Fecha de Creación</span>
+            <span class="text-sm font-black text-gray-900 dark:text-slate-100 tabular-nums">{{ payment.created_at|date:"d/m/Y H:i" }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">Última Actualización</span>
+            <span class="text-sm font-black text-gray-900 dark:text-slate-100 tabular-nums">{{ payment.updated_at|date:"d/m/Y H:i" }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="space-y-8">
+      <!-- Totals Card -->
+      <div class="bg-gray-900 dark:bg-slate-800 rounded-[2.5rem] shadow-xl shadow-gray-900/10 border border-gray-800 dark:border-slate-700 p-8 transition-colors relative overflow-hidden">
+        <!-- Decoracion fondo -->
+        <div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white/5 blur-2xl"></div>
+        
+        <h2 class="text-lg font-black text-white dark:text-slate-100 mb-8 relative z-10 flex items-center gap-3">
+            <i data-lucide="calculator" class="w-5 h-5 text-indigo-400"></i>
+            Resumen de Importes
+        </h2>
+        <div class="space-y-6 relative z-10">
+          <div class="flex flex-col gap-2">
+            <span class="text-[11px] font-bold text-indigo-400 uppercase tracking-[0.2em]">Monto Total</span>
+            <span class="text-4xl sm:text-5xl font-black text-white tabular-nums tracking-tight">${{ payment.amount }}</span>
+          </div>
+          <div class="pt-6 border-t border-gray-700/50">
+            <div class="flex justify-between items-center mb-3">
+              <span class="text-gray-400 font-bold uppercase tracking-widest text-[11px]">Total Alocado</span>
+              <span class="text-gray-200 font-black tabular-nums">${{ payment.allocated_total }}</span>
+            </div>
+            <div class="w-full bg-gray-800/50 rounded-full h-2 overflow-hidden">
+              {% widthratio payment.allocated_total payment.amount 100 as allocation_percent %}
+              <div class="bg-emerald-500 h-full rounded-full" style="width: {{ allocation_percent }}%"></div>
+            </div>
+            <div class="text-[10px] font-bold text-gray-400 mt-2">{{ allocation_percent }}% alocado</div>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400 font-bold uppercase tracking-widest text-[11px]">Disponible</span>
+            <span class="text-gray-200 font-black tabular-nums">${{ payment.unallocated_balance }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Metadata Card -->
+      <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-slate-700 p-8 transition-colors">
+        <h2 class="text-lg font-black text-gray-900 dark:text-slate-100 mb-8 flex items-center gap-3">
+          <span class="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl text-emerald-600 dark:text-emerald-400">
+             <i data-lucide="info" class="w-5 h-5"></i>
+          </span>
+          Datos del Pago
+        </h2>
+        <div class="space-y-6">
+          <div>
+            <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2">Método de Pago</p>
+            <p class="text-base font-black text-gray-900 dark:text-slate-100 flex items-center gap-2">
+              {% if payment.method == 'cash' %}
+                <i data-lucide="banknote" class="w-5 h-5 text-emerald-600 dark:text-emerald-400"></i>
+              {% elif payment.method == 'transfer' %}
+                <i data-lucide="arrow-right-left" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+              {% elif payment.method in 'debit_card,credit_card' %}
+                <i data-lucide="credit-card" class="w-5 h-5 text-purple-600 dark:text-purple-400"></i>
+              {% elif payment.method == 'check' %}
+                <i data-lucide="file-check" class="w-5 h-5 text-amber-600 dark:text-amber-400"></i>
+              {% else %}
+                <i data-lucide="help-circle" class="w-5 h-5 text-gray-600 dark:text-gray-400"></i>
+              {% endif %}
+              {{ payment.get_method_display }}
+            </p>
+          </div>
+          
+          {% if payment.reference %}
+          <div>
+            <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2">Referencia</p>
+            <p class="text-sm font-bold text-gray-900 dark:text-slate-100 font-mono bg-gray-50 dark:bg-slate-900/50 px-3 py-2 rounded-lg break-all">{{ payment.reference }}</p>
+          </div>
+          {% endif %}
+          
+          <div class="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700/50">
+              <div class="grid grid-cols-1 gap-4">
+                  <div>
+                      <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1">Fecha del Cobro</p>
+                      <div class="flex items-center gap-2">
+                        <i data-lucide="calendar" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+                        <p class="text-sm font-bold text-gray-900 dark:text-slate-100 tabular-nums">{{ payment.date|date:"d/m/Y" }}</p>
+                      </div>
+                  </div>
+                  {% if payment.customer %}
+                  <div>
+                      <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1">Cliente</p>
+                      <a href="{% url 'customers:customer_detail' payment.customer.id %}" class="text-sm font-bold text-indigo-700 dark:text-indigo-400 hover:underline">{{ payment.customer.business_name }}</a>
+                  </div>
+                  {% else %}
+                  <div>
+                      <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1">Cliente</p>
+                      <p class="text-sm font-bold text-gray-500 dark:text-slate-400">Walk-in / Sin Cliente</p>
+                  </div>
+                  {% endif %}
+              </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

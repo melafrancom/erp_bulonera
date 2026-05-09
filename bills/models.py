@@ -216,6 +216,48 @@ class Invoice(BaseModel):
     def numero_completo(self):
         return f"{self.punto_venta:04d}-{self.numero_secuencial:08d}"
 
+    @property
+    def total_paid(self):
+        """
+        Total cobrado contra esta factura.
+        Calcula la suma de alocaciones confirmadas activas vinculadas a esta factura.
+        """
+        from payments.models import PaymentAllocation
+        result = PaymentAllocation.objects.filter(
+            invoice=self,
+            payment__status='confirmed',
+            is_active=True
+        ).aggregate(total=models.Sum('allocated_amount'))
+        return result['total'] or Decimal('0.00')
+
+    @property
+    def balance_due(self):
+        """
+        Saldo pendiente de cobro de esta factura.
+        Diferencia entre total de factura y pagos confirmados.
+        """
+        # Usar valor absoluto porque el total puede ser negativo (NC)
+        return abs(self.total) - self.total_paid
+
+    @property
+    def payment_status(self):
+        """
+        Estado de cobro derivado de las alocaciones activas.
+        
+        Valores:
+          - 'paid':              Factura cobrada totalmente
+          - 'partially_paid':    Factura parcialmente cobrada
+          - 'unpaid':            Factura sin cobros registrados
+        """
+        paid = self.total_paid
+        total = abs(self.total)
+        
+        if paid >= total:
+            return 'paid'
+        elif paid > 0:
+            return 'partially_paid'
+        return 'unpaid'
+
 
 class InvoiceItem(BaseModel):
     """

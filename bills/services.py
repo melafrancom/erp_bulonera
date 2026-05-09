@@ -489,6 +489,18 @@ def anular_factura_y_venta(invoice_id, user):
                 cancel_sale(invoice.sale, user, reason=f"Factura {invoice.number} anulada fiscalmente.")
             except Exception as e:
                 logger.error(f"Error cancelando venta {invoice.sale.number}: {e}")
+        
+        # HOOK: Liberar alocaciones de pago vinculadas a esta factura
+        try:
+            from payments.services import PaymentService
+            nc_invoice_ref = nc_invoice if 'nc_invoice' in locals() else None
+            PaymentService.handle_credit_note_impact(
+                original_invoice=invoice,
+                credit_note_invoice=nc_invoice_ref,
+                user=user
+            )
+        except Exception as e:
+            logger.error(f"Error liberando alocaciones de pago para factura {invoice.number}: {e}")
                 
     return {'success': True, 'message': 'Factura y Venta anuladas correctamente (Nota de Crédito emitida si correspondía).'}
 
