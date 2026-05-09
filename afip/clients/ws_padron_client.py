@@ -149,7 +149,7 @@ class WSPadronClient:
             if response.status_code not in (200, 500):
                 response.raise_for_status()
 
-            logger.debug(f"[WSPadron] HTTP {response.status_code}\n{response.text[:2000]}")
+            logger.info(f"[WSPadron] HTTP {response.status_code} — XML completo:\n{response.text}")
             return self._parsear_respuesta(response.text, cuit_limpio)
 
         except Timeout:
@@ -309,63 +309,47 @@ class WSPadronClient:
         """
         Determina la condición IVA a partir de los impuestos inscriptos.
 
-        Recorre TODOS los descendientes buscando <idImpuesto> sin importar
-        namespace ni estructura de anidamiento.
+        Busca idImpuesto e idRegimen recursivamente, sin importar namespace.
 
         Referencia de IDs relevantes:
             30  = IVA (Responsable Inscripto)
             32  = IVA Sujeto Exento  
             20  = Monotributo (Régimen Simplificado)
+            33  = Monotributo Autónomo
             48  = Monotributo Social (o Especial, según tabla)
         """
         ids_impuesto = set()
 
-        # Estrategia 1: iter() recursivo sobre todos los descendientes
+        # Estrategia ÚNICA: iter() recursivo buscando TODAS las etiquetas relevantes
+        # sin importar namespace (ARCA puede cambiar la estructura entre ambientes)
         for elem in persona_elem.iter():
             tag_local = elem.tag.split('}')[-1] if '}' in elem.tag else elem.tag
-            if tag_local == 'idImpuesto' and elem.text:
+            if tag_local in ('idImpuesto', 'idRegimen') and elem.text:
                 try:
                     ids_impuesto.add(int(elem.text.strip()))
                 except (ValueError, TypeError):
                     pass
 
-        # Si no encontramos nada con iter(), probar buscando sin namespace
         if not ids_impuesto:
-            # Buscar nodos <impuesto> directos e hijos
-            for imp_node in persona_elem.findall('.//impuesto'):
-                id_elem = imp_node.find('idImpuesto')
-                if id_elem is not None and id_elem.text:
-                    try:
-                        ids_impuesto.add(int(id_elem.text.strip()))
-                    except (ValueError, TypeError):
-                        pass
+            import xml.etree.ElementTree as ET
+            persona_xml = ET.tostring(persona_elem, encoding='unicode')
+            logger.warning(
+                f"[WSPadron] ⚠️ SIN IMPUESTOS DETECTADOS. "
+                f"Volcando XML del elemento <persona>:\n{persona_xml}"
+            )
+        else:
+            logger.info(f"[WSPadron] IDs de impuesto detectados: {ids_impuesto}")
 
-        # Fallback: buscar con namespace explícito
-        if not ids_impuesto:
-            ns = PADRON_A13_NS
-            for imp_node in persona_elem.findall('.//{%s}impuesto' % ns):
-                id_elem = (
-                    imp_node.find('{%s}idImpuesto' % ns)
-                    or imp_node.find('idImpuesto')
-                )
-                if id_elem is not None and id_elem.text:
-                    try:
-                        ids_impuesto.add(int(id_elem.text.strip()))
-                    except (ValueError, TypeError):
-                        pass
-
-        logger.info(f"[WSPadron] IDs de impuesto detectados: {ids_impuesto}")
-
-        # Evaluación por prioridad
+        # Evaluación por prioridad (IDs según tabla AFIP)
         if 30 in ids_impuesto:
             return ('RI', 'Responsable Inscripto')
-        if 20 in ids_impuesto or 48 in ids_impuesto:
+        if ids_impuesto & {20, 33, 48}:
             return ('MONO', 'Monotributista')
         if 32 in ids_impuesto:
             return ('EX', 'Sujeto Exento')
 
         logger.warning(
-            f"[WSPadron] No se detectaron impuestos conocidos (30/20/48/32). "
+            f"[WSPadron] No se detectaron impuestos conocidos (30/20/33/48/32). "
             f"IDs encontrados: {ids_impuesto}. Clasificando como CF."
         )
         return ('CF', 'Consumidor Final / No Responsable')

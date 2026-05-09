@@ -10,7 +10,7 @@ function customerSelectorComponent() {
     customerResults: [],
     showCustomerResults: false,
     selectedCustomer: null,
-    newCustomer: { name: '', phone: '', email: '', cuit: '', tax_condition: 'CF' },
+    newCustomer: { name: '', phone: '', email: '', cuit: '', tax_condition: '' },
     isVerifyingAfip: false,
     isSubmittingCustomer: false,
 
@@ -46,7 +46,7 @@ function customerSelectorComponent() {
     setCustomerMode(mode) {
       this.customerMode = mode;
       this.selectedCustomer = null;
-      this.newCustomer = { name: '', phone: '', email: '', cuit: '', tax_condition: 'CF' };
+      this.newCustomer = { name: '', phone: '', email: '', cuit: '', tax_condition: '' };
       this.customerResults = [];
       this.customerSearchQuery = '';
     },
@@ -61,11 +61,24 @@ function customerSelectorComponent() {
           const d = data.data;
           this.newCustomer.name = d.razon_social || ((d.nombre || '') + ' ' + (d.apellido || '')) || this.newCustomer.name;
           if (d.condicion_iva) {
-              const cIva = d.condicion_iva.toUpperCase().trim();
-              if (cIva === 'RI' || cIva.includes('INSCRIPTO') || cIva.includes('RESPONSABLE')) this.newCustomer.tax_condition = 'RI';
-              else if (cIva === 'MONO' || cIva.includes('MONOTRIBUT')) this.newCustomer.tax_condition = 'MONO';
-              else if (cIva === 'EX' || cIva.includes('EXENTO')) this.newCustomer.tax_condition = 'EX';
-              else this.newCustomer.tax_condition = 'CF';
+              // El backend ya retorna el código normalizado: 'RI', 'MONO', 'EX', 'CF'
+              const validCodes = ['RI', 'MONO', 'EX', 'CF', 'NR'];
+              const code = d.condicion_iva.toUpperCase().trim();
+              if (validCodes.includes(code)) {
+                  this.newCustomer.tax_condition = code;
+              } else {
+                  // Fallback: intentar mapear desde texto largo (por compatibilidad)
+                  const upper = code;
+                  if (upper.includes('INSCRIPTO') || upper.includes('RESPONSABLE')) 
+                      this.newCustomer.tax_condition = 'RI';
+                  else if (upper.includes('MONOTRIBUT')) 
+                      this.newCustomer.tax_condition = 'MONO';
+                  else if (upper.includes('EXENTO')) 
+                      this.newCustomer.tax_condition = 'EX';
+                  else 
+                      this.newCustomer.tax_condition = 'CF';
+              }
+              console.log(`[AFIP] Condición IVA recibida: "${d.condicion_iva}" → mapeada: "${this.newCustomer.tax_condition}"`);
           }
         } else {
           alert('No se encontraron datos en AFIP para este CUIT.');
