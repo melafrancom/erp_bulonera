@@ -121,8 +121,10 @@ class Customer(BaseModel):
     tax_condition = models.CharField(
         max_length=10,
         choices=TAX_CONDITION_CHOICES,
-        default='CF',
-        verbose_name="Condición IVA"
+        default='',
+        blank=True,
+        verbose_name="Condición IVA",
+        help_text="Determinada automáticamente por consulta a AFIP o ingresada manualmente"
     )
     
     # Contact Information

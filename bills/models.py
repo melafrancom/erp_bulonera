@@ -111,8 +111,8 @@ class Invoice(BaseModel):
     cliente_condicion_iva = models.CharField(
         max_length=10,
         blank=True,
-        default='CF',
-        help_text='Condición IVA del cliente al emitir (RI, MONO, CF, EX)'
+        default='',
+        help_text='Condición IVA del cliente al emitir (RI, MONO, CF, EX, NR)'
     )
     cliente_domicilio = models.CharField(max_length=255, blank=True, default='')
 

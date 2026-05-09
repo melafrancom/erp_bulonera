@@ -55,6 +55,21 @@ class CustomerViewSet(AuditMixin, OwnerQuerysetMixin, ModelViewSet):
             return CustomerCreateSerializer
         return CustomerListSerializer
     
+    def perform_create(self, serializer):
+        """Crea el cliente y sincroniza automáticamente la condición IVA con AFIP."""
+        customer = serializer.save()
+        
+        # Sincronizar condición IVA automáticamente si tiene CUIT
+        if customer.cuit_cuil:
+            from customers.services import sincronizar_condicion_iva
+            try:
+                sincronizar_condicion_iva(customer)
+            except Exception as e:
+                # Log pero no bloquear la creación del cliente
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error sincronizando IVA para cliente {customer}: {e}")
+    
     @action(detail=True, methods=['get'])
     def quotes(self, request, pk=None):
         """Retorna presupuestos del cliente."""
