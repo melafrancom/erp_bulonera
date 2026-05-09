@@ -133,9 +133,18 @@ def admin_user():
 
 @pytest.fixture
 def auth_client(admin_user):
-    """APIClient autenticado como administrador."""
+    """APIClient autenticado como administrador para REST API."""
     client = APIClient()
     client.force_authenticate(user=admin_user)
+    return client
+
+
+@pytest.fixture
+def web_client(db, admin_user):
+    """Client de Django con sesión iniciada para vistas web tradicionales."""
+    from django.test import Client
+    client = Client()
+    client.login(username=admin_user.username, password='adminpass123')
     return client
 
 

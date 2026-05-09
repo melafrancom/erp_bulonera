@@ -37,7 +37,7 @@ class PaymentListView(LoginRequiredMixin, ListView):
             queryset = queryset.filter(
                 Q(reference__icontains=search) |
                 Q(customer__business_name__icontains=search) |
-                Q(customer__cuit__icontains=search)
+                Q(customer__cuit_cuil__icontains=search)
             )
         
         # Filtro: estado
