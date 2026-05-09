@@ -965,6 +965,13 @@ def sale_invoice(request, pk):
         )
         return redirect('sales_web:sale_detail', pk=pk)
 
+    # Guardar payment_method del formulario si viene
+    payment_method = request.POST.get('payment_method', '').strip()
+    if payment_method and payment_method in dict(Sale._meta.get_field('payment_method').choices):
+        sale.payment_method = payment_method
+        sale.save(update_fields=['payment_method'])
+        logger.info(f'[SALES] Payment method set to {payment_method} for sale {sale.number}')
+
     try:
         from bills.services import facturar_venta
         # facturar_venta maneja la creación de Invoice y Comprobante AFIP

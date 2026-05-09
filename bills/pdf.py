@@ -8,6 +8,7 @@ Cumple con:
 import io
 import json
 import base64
+import os
 from datetime import date
 from decimal import Decimal
 
@@ -320,7 +321,9 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
 
             bonif = _fmt(item.descuento) if item.descuento else '-'
             
-            codigo = getattr(item, 'producto_codigo', '') or getattr(item, 'producto_sku', '') or getattr(item.product, 'sku', '') if hasattr(item, 'product') else ''
+            codigo = getattr(item, 'producto_codigo', '') or getattr(item, 'producto_sku', '')
+            if not codigo and hasattr(item, 'product') and hasattr(item.product, 'sku'):
+                codigo = item.product.sku
 
             rows.append([
                 codigo[:15],

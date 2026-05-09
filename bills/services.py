@@ -64,6 +64,12 @@ def facturar_venta(sale, user, tipo_comprobante=None, async_emission=True):
             f'Estado: {sale.status}, '
             f'Fiscal: {sale.fiscal_status}'
         )
+    
+    # Validar que tenga medio de pago seleccionado
+    if not sale.payment_method:
+        raise ValueError(
+            f'Debe seleccionar un medio de pago para la venta {sale.number} antes de facturar.'
+        )
 
     # Verificar que no tenga factura previa (solo comprobantes tipo factura A o B)
     factura_previa = sale.facturas.filter(tipo_comprobante__in=[1, 6]).first()
@@ -80,6 +86,7 @@ def facturar_venta(sale, user, tipo_comprobante=None, async_emission=True):
             from customers.services import sincronizar_condicion_iva
             sincronizar_condicion_iva(customer)
             customer.refresh_from_db()
+            logger.info(f"[BILLS] Post-sync IVA: customer {customer} (CUIT: {customer.cuit_cuil}) → tax_condition={customer.tax_condition}")
         except Exception as e:
             logger.warning(f"[BILLS] No se pudo sincronizar IVA de cliente {customer}: {e}")
 

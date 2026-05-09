@@ -357,6 +357,23 @@ class Sale(BaseModel):
     # La relación Sale ↔ Invoice se gestiona desde bills.Invoice.sale (FK)
     # Acceso inverso: sale.facturas.all() (ForeignKey desde Invoice — puede tener Factura + NC)
     
+    # Medio de pago
+    payment_method = models.CharField(
+        max_length=20,
+        choices=[
+            ('cash', 'Efectivo'),
+            ('debit_card', 'Tarjeta de Débito'),
+            ('credit_card', 'Tarjeta de Crédito'),
+            ('transfer', 'Transferencia Bancaria'),
+            ('check', 'Cheque'),
+            ('account', 'Cuenta Corriente'),
+            ('other', 'Otro'),
+        ],
+        blank=True,
+        default='',
+        help_text='Medio de pago principal'
+    )
+    
     # Información adicional
     notes = models.TextField(blank=True)
     internal_notes = models.TextField(blank=True)

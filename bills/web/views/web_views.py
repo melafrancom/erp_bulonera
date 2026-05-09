@@ -5,6 +5,8 @@ Listado y detalle de facturas emitidas.
 from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 from bills.models import Invoice
 
 class InvoiceListView(LoginRequiredMixin, ListView):
@@ -160,3 +162,26 @@ def invoice_cancel(request, pk):
         return redirect('bills_web:invoice_detail', pk=invoice.id)
         
     return redirect('bills_web:invoice_list')
+
+
+@login_required
+def invoice_status_api(request, pk):
+    """
+    API endpoint para polling del estado de una factura.
+    
+    GET /bills/invoices/<pk>/status/
+    
+    Retorna JSON con:
+    {
+        "status": "autorizada|pendiente|rechazada|borrador",
+        "cae": "12345678901234",
+        "vencimiento_cae": "2026-06-01"
+    }
+    """
+    invoice = get_object_or_404(Invoice, pk=pk)
+    
+    return JsonResponse({
+        'status': invoice.estado_fiscal,
+        'cae': invoice.cae or '',
+        'vencimiento_cae': invoice.cae_vencimiento.isoformat() if invoice.cae_vencimiento else '',
+    })
