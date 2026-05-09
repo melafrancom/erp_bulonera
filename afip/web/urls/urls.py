@@ -13,6 +13,7 @@ from afip.web.views.views import (
     consultar_cuit,
     api_consultar_cuit,
 )
+from afip.api.debug import debug_padron_xml
 
 app_name = 'afip_web'
 
@@ -32,4 +33,7 @@ urlpatterns = [
     # Consulta de CUIT (Padrón)
     path('consultar-cuit/', consultar_cuit, name='consultar_cuit'),
     path('api/padron/<str:cuit>/', api_consultar_cuit, name='api_padron'),
+    
+    # DEBUG: Ver XML crudo de AFIP (solo admins)
+    path('api/debug/padron/', debug_padron_xml, name='debug_padron_xml'),
 ]
