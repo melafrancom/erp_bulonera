@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev \
     libffi-dev \
     libpcre2-dev \
+    libcairo2-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -38,6 +39,7 @@ ENV PYTHONUNBUFFERED=1 \
 RUN apt-get update && apt-get install -y --no-install-recommends \
     default-libmysqlclient-dev \
     libpcre2-8-0 \
+    libcairo2 \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
