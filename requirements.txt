@@ -36,6 +36,7 @@ qrcode[pil]>=7.4.2
 
 # Generación de PDFs
 reportlab>=4.0.0
+svglib>=1.6.0
 
 # Utilidades
 python-slugify>=8.0.0

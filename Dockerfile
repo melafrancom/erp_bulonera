@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     python3-dev \
     curl \
+    libcairo2-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Crear directorio de trabajo

@@ -1,16 +1,5 @@
-"""
-bills/pdf.py — Generación de PDF de facturas electrónicas ARCA/AFIP
-
-Cumple con:
-  - RG 2485: Formato de comprobantes electrónicos
-  - RG 4291: QR code obligatorio (desde 01/04/2021)
-"""
+import os
 import io
-import json
-import base64
-from datetime import date
-from decimal import Decimal
-
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import mm
@@ -20,151 +9,11 @@ from reportlab.graphics.barcode import code128
 from reportlab.graphics.shapes import Drawing
 from reportlab.graphics import renderPDF
 
-
-# ─── Layout ──────────────────────────────────────────────────────────────────
-
-PAGE_W, PAGE_H = A4
-MARGIN = 15 * mm
-CONTENT_W = PAGE_W - 2 * MARGIN
-
-# ─── Tablas de constantes AFIP ────────────────────────────────────────────────
-
-_LETRA = {
-    1: 'A', 2: 'A', 3: 'A',
-    6: 'B', 7: 'B', 8: 'B',
-    11: 'C', 12: 'C', 13: 'C',
-}
-_TIPO = {
-    1: 'FACTURA',   2: 'NOTA DE DÉBITO',   3: 'NOTA DE CRÉDITO',
-    6: 'FACTURA',   7: 'NOTA DE DÉBITO',   8: 'NOTA DE CRÉDITO',
-    11: 'FACTURA',  12: 'NOTA DE DÉBITO',  13: 'NOTA DE CRÉDITO',
-}
-_COND_IVA = {
-    'RI': 'Responsable Inscripto',
-    'MONO': 'Monotributista',
-    'EX': 'Exento',
-    'CF': 'Consumidor Final',
-    'NR': 'No Responsable',
-}
-
-
-# ─── Helpers ──────────────────────────────────────────────────────────────────
-
-def _fmt(value) -> str:
-    """Formatea Decimal como moneda argentina. Ej: $ 1.234,56"""
-    v = Decimal(str(value or 0))
-    neg = v < 0
-    v = abs(v)
-    int_part, dec_part = f'{v:.2f}'.split('.')
-    int_fmt = '{:,}'.format(int(int_part)).replace(',', '.')
-    result = f'$ {int_fmt},{dec_part}'
-    return f'- {result}' if neg else result
-
-
-def _build_qr_url(invoice) -> str:
-    """URL del QR AFIP (RG 4291)."""
-    comp = getattr(invoice, 'comprobante_arca', None)
-
-    cuit_emisor = 20180545574
-    if comp and comp.empresa_cuit_id:
-        try:
-            cuit_emisor = int(str(comp.empresa_cuit_id).replace('-', ''))
-        except (ValueError, TypeError):
-            pass
-
-    doc_tipo, doc_nro = 99, 0
-    if comp:
-        doc_tipo = comp.doc_cliente_tipo or 99
-        try:
-            doc_nro = int(str(comp.doc_cliente or '0').replace('-', ''))
-        except (ValueError, TypeError):
-            doc_nro = 0
-
-    fecha_str = (
-        invoice.fecha_emision.strftime('%Y-%m-%d')
-        if invoice.fecha_emision else date.today().strftime('%Y-%m-%d')
-    )
-
-    data = {
-        "ver": 1,
-        "fecha": fecha_str,
-        "cuit": cuit_emisor,
-        "ptoVta": invoice.punto_venta,
-        "tipoCmp": invoice.tipo_comprobante,
-        "nroCmp": invoice.numero_secuencial,
-        "importe": float(invoice.total),
-        "moneda": "PES",
-        "ctz": 1,
-        "tipoDocRec": doc_tipo,
-        "nroDocRec": doc_nro,
-        "tipoCodAut": "E",
-        "codAut": int(invoice.cae) if invoice.cae else 0,
-    }
-    j = json.dumps(data, separators=(',', ':'))
-    b64 = base64.urlsafe_b64encode(j.encode()).decode()
-    return f"https://www.afip.gob.ar/fe/qr/?p={b64}"
-
-
-def _draw_qr(c, url: str, x: float, y: float, size: float):
-    """Dibuja el QR. Si qrcode no está instalado dibuja un placeholder."""
-    try:
-        import qrcode
-        from reportlab.lib.utils import ImageReader
-        qr = qrcode.QRCode(
-            version=None,
-            error_correction=qrcode.constants.ERROR_CORRECT_M,
-            box_size=10, border=1,
-        )
-        qr.add_data(url)
-        qr.make(fit=True)
-        img = qr.make_image(fill_color='black', back_color='white')
-        buf = io.BytesIO()
-        img.save(buf, format='PNG')
-        buf.seek(0)
-        c.drawImage(ImageReader(buf), x, y, width=size, height=size, preserveAspectRatio=True)
-    except ImportError:
-        c.setStrokeColor(colors.grey)
-        c.setLineWidth(0.3)
-        c.rect(x, y, size, size)
-        c.setFont('Helvetica', 6)
-        c.setFillColor(colors.grey)
-        c.drawCentredString(x + size / 2, y + size / 2 - 2 * mm, 'Instalar qrcode')
-        c.drawCentredString(x + size / 2, y + size / 2 - 5 * mm, 'para el QR AFIP')
-        c.setFillColor(colors.black)
-
-
-def _draw_barcode(c, invoice, x, y, w, h):
-    """Code 128 con datos del CAE."""
-    if not invoice.cae:
-        return
-    comp = getattr(invoice, 'comprobante_arca', None)
-    cuit = '20180545574'
-    if comp and comp.empresa_cuit_id:
-        cuit = str(comp.empresa_cuit_id).replace('-', '')
-
-    vto = invoice.cae_vencimiento.strftime('%Y%m%d') if invoice.cae_vencimiento else '00000000'
-    data = f'{cuit}{invoice.tipo_comprobante:02d}{invoice.punto_venta:04d}{invoice.numero_secuencial:08d}{invoice.cae}{vto}'
-
-    try:
-        bar = code128.Code128(data, barWidth=0.55, barHeight=h * 0.65, humanReadable=False)
-        d = Drawing(w, h)
-        bar.drawOn(d, 0, h * 0.15)
-        renderPDF.draw(d, c, x, y)
-    except Exception:
-        pass
-
-
-# ─── Función principal ────────────────────────────────────────────────────────
+# imports locales asumidos (que ya existen en pdf.py)
+from bills.pdf import _TIPO, _LETRA, _COND_IVA, _fmt, _build_qr_url, _draw_qr, _draw_barcode, PAGE_W, PAGE_H, MARGIN, CONTENT_W
 
 def generate_invoice_pdf(invoice) -> io.BytesIO:
     """
-    Genera el PDF de una factura electrónica ARCA/AFIP.
-
-    Args:
-        invoice: bills.models.Invoice (preferentemente con estado_fiscal='autorizada')
-
-    Returns:
-        io.BytesIO con el PDF listo para enviar al navegador
     Genera el PDF de una factura electrónica ARCA/AFIP (Triplicado).
     """
     buf = io.BytesIO()
@@ -173,7 +22,7 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
     
     from common.company import get_company_info
     empresa_info = get_company_info()
-    c.setAuthor(empresa_info.get("razon_social") or empresa_info.get("name") or 'Mela Miguel Angel')
+    c.setAuthor(empresa_info.get("razon_social") or empresa_info.get("name") or 'Bulonera Alvear')
 
     letra = _LETRA.get(invoice.tipo_comprobante, '?')
     tipo_nombre = _TIPO.get(invoice.tipo_comprobante, 'COMPROBANTE')
