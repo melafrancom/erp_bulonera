@@ -16,7 +16,8 @@ class TestFacturarVenta(TestCase):
         self.sale = Sale.objects.create(
             number='V-0001',
             status='draft',
-            created_by=self.user
+            created_by=self.user,
+            payment_method='cash'
         )
 
     def test_facturar_venta_sin_configuracion_arca_lanza_error(self):

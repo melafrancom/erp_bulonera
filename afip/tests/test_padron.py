@@ -6,9 +6,9 @@ def test_parsea_persona_juridica_correctamente():
     xml_juridica = """<?xml version="1.0" encoding="UTF-8"?>
     <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
         <soap:Body>
-            <ns2:getPersonaResponse xmlns:ns2="http://a13.soap.ws.server.puc.sr/">
+            <ns2:getPersonaResponse xmlns:ns2="http://a5.soap.ws.server.puc.sr/">
                 <personaReturn>
-                    <persona>
+                    <datosGenerales>
                         <idPersona>30707680098</idPersona>
                         <tipoPersona>JURIDICA</tipoPersona>
                         <razonSocial>MERCADOLIBRE S.R.L.</razonSocial>
@@ -18,19 +18,18 @@ def test_parsea_persona_juridica_correctamente():
                             <descripcionProvincia>CAPITAL FEDERAL</descripcionProvincia>
                             <codPostal>1430</codPostal>
                         </domicilioFiscal>
+                    </datosGenerales>
+                    <datosRegimenGeneral>
                         <impuesto>
                             <idImpuesto>30</idImpuesto>
+                            <estadoImpuesto>ACTIVO</estadoImpuesto>
                             <descripcionImpuesto>IMPUESTO AL VALOR AGREGADO</descripcionImpuesto>
                         </impuesto>
                         <actividad>
                             <descripcionActividad>Comercio al por mayor</descripcionActividad>
                             <orden>1</orden>
                         </actividad>
-                    </persona>
-                    <errorConstancia>
-                        <codigo>0</codigo>
-                        <descripcion>OK</descripcion>
-                    </errorConstancia>
+                    </datosRegimenGeneral>
                 </personaReturn>
             </ns2:getPersonaResponse>
         </soap:Body>
@@ -52,9 +51,9 @@ def test_parsea_persona_fisica_correctamente():
     xml_fisica = """<?xml version="1.0" encoding="UTF-8"?>
     <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
         <soap:Body>
-            <ns2:getPersonaResponse xmlns:ns2="http://a13.soap.ws.server.puc.sr/">
+            <ns2:getPersonaResponse xmlns:ns2="http://a5.soap.ws.server.puc.sr/">
                 <personaReturn>
-                    <persona>
+                    <datosGenerales>
                         <idPersona>20123456789</idPersona>
                         <tipoPersona>FISICA</tipoPersona>
                         <nombre>JUAN PABLO</nombre>
@@ -63,11 +62,14 @@ def test_parsea_persona_fisica_correctamente():
                             <direccion>AV SIEMPRE VIVA 742</direccion>
                             <localidad>SPRINGFIELD</localidad>
                         </domicilioFiscal>
+                    </datosGenerales>
+                    <datosMonotributo>
                         <impuesto>
                             <idImpuesto>20</idImpuesto>
+                            <estadoImpuesto>ACTIVO</estadoImpuesto>
                             <descripcionImpuesto>MONOTRIBUTO</descripcionImpuesto>
                         </impuesto>
-                    </persona>
+                    </datosMonotributo>
                 </personaReturn>
             </ns2:getPersonaResponse>
         </soap:Body>
@@ -105,21 +107,21 @@ def test_mapea_condicion_iva_correctamente():
     client = WSPadronClient(ambiente='homologacion')
     
     # Simular RI (ID 30)
-    xml_ri = ET.fromstring("<persona><impuesto><idImpuesto>30</idImpuesto></impuesto></persona>")
+    xml_ri = ET.fromstring("<personaReturn><impuesto><idImpuesto>30</idImpuesto></impuesto></personaReturn>")
     iva_ri, label_ri = client._determinar_condicion_iva(xml_ri)
     assert iva_ri == 'RI'
     
     # Simular MONO (ID 20)
-    xml_mono = ET.fromstring("<persona><impuesto><idImpuesto>20</idImpuesto></impuesto></persona>")
+    xml_mono = ET.fromstring("<personaReturn><impuesto><idImpuesto>20</idImpuesto></impuesto></personaReturn>")
     iva_mono, label_mono = client._determinar_condicion_iva(xml_mono)
     assert iva_mono == 'MONO'
     
     # Simular EXENTO (ID 32)
-    xml_ex = ET.fromstring("<persona><impuesto><idImpuesto>32</idImpuesto></impuesto></persona>")
+    xml_ex = ET.fromstring("<personaReturn><impuesto><idImpuesto>32</idImpuesto></impuesto></personaReturn>")
     iva_ex, label_ex = client._determinar_condicion_iva(xml_ex)
     assert iva_ex == 'EX'
     
     # Simular Consumidor Final (Sin impuestos de IVA)
-    xml_cf = ET.fromstring("<persona><impuesto><idImpuesto>11</idImpuesto></impuesto></persona>")
+    xml_cf = ET.fromstring("<personaReturn><impuesto><idImpuesto>11</idImpuesto></impuesto></personaReturn>")
     iva_cf, label_cf = client._determinar_condicion_iva(xml_cf)
     assert iva_cf == 'CF'

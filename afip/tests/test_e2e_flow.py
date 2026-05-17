@@ -42,7 +42,8 @@ class TestAFIPE2EFlow:
             status='confirmed',
             created_by=admin_user,
             customer_cuit='20999999999',
-            customer_name='Cliente Test'
+            customer_name='Cliente Test',
+            payment_method='cash'
         )
         SaleItem.objects.create(
             sale=sale,
