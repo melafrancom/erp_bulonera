@@ -38,16 +38,16 @@ logger = logging.getLogger(__name__)
 # CONSTANTES
 # ============================================================================
 
-PADRON_A13_ENDPOINTS = {
-    'homologacion': 'https://awshomo.afip.gov.ar/sr-padron/webservices/personaServiceA13',
-    'produccion':   'https://aws.afip.gov.ar/sr-padron/webservices/personaServiceA13',
+PADRON_A5_ENDPOINTS = {
+    'homologacion': 'https://awshomo.afip.gov.ar/sr-padron/webservices/personaServiceA5',
+    'produccion':   'https://aws.afip.gov.ar/sr-padron/webservices/personaServiceA5',
 }
 
-PADRON_A13_TIMEOUT_SECONDS = 30
-PADRON_A13_NS = 'http://a13.soap.ws.server.puc.sr/'
+PADRON_TIMEOUT_SECONDS = 30
+PADRON_A5_NS = 'http://a5.soap.ws.server.puc.sr/'
 
 # Mapa de idImpuesto → condición IVA para el modelo Customer
-# Fuente: manual-ws-sr-padron-a13 (tabla de impuestos)
+# Fuente: manual-ws-sr-padron (tabla de impuestos)
 _CONDICION_IVA_POR_IMPUESTO = {
     30: 'RI',    # IVA — Responsable Inscripto
     20: 'MONO',  # Monotributo (Régimen Simplificado)
@@ -64,7 +64,7 @@ _IMPUESTOS_EXENTO = {48}  # Exento puede variar; se complementa con estado
 
 class WSPadronClient:
     """
-    Cliente para el Web Service de Consulta a Padrón A13 de ARCA/AFIP.
+    Cliente para el Web Service de Consulta a Padrón (Constancia de Inscripción A5) de ARCA/AFIP.
 
     Uso:
         client = WSPadronClient(ambiente='homologacion')
@@ -79,12 +79,12 @@ class WSPadronClient:
     """
 
     def __init__(self, ambiente: str = 'homologacion'):
-        if ambiente not in PADRON_A13_ENDPOINTS:
+        if ambiente not in PADRON_A5_ENDPOINTS:
             raise ValueError(
-                f"Ambiente '{ambiente}' inválido. Opciones: {list(PADRON_A13_ENDPOINTS)}"
+                f"Ambiente '{ambiente}' inválido. Opciones: {list(PADRON_A5_ENDPOINTS)}"
             )
         self.ambiente = ambiente
-        self.endpoint = PADRON_A13_ENDPOINTS[ambiente]
+        self.endpoint = PADRON_A5_ENDPOINTS[ambiente]
 
     # ------------------------------------------------------------------
     # API pública
@@ -96,13 +96,13 @@ class WSPadronClient:
         sign: str,
         cuit_representada: str,
         cuit_consultar: str,
-        timeout: int = PADRON_A13_TIMEOUT_SECONDS,
+        timeout: int = PADRON_TIMEOUT_SECONDS,
     ) -> dict:
         """
         Consulta los datos de una persona (física o jurídica) en el padrón AFIP.
 
         Args:
-            token:           Token obtenido de WSAA para el servicio ws_sr_padron_a13
+            token:           Token obtenido de WSAA para el servicio ws_sr_constancia_inscripcion
             sign:            Sign obtenido de WSAA
             cuit_representada: CUIT de la empresa representante (nuestra empresa)
             cuit_consultar:  CUIT de la persona a consultar (sin guiones)
@@ -139,7 +139,7 @@ class WSPadronClient:
                 data=soap.encode('utf-8'),
                 headers={
                     'Content-Type': 'text/xml; charset=utf-8',
-                    'SOAPAction':   '""',  # ARCA requiere Header vacío o no lo valida estricto para A13
+                    'SOAPAction':   '""',  # ARCA requiere Header vacío
                 },
                 timeout=timeout,
                 verify=True,
@@ -153,22 +153,22 @@ class WSPadronClient:
             return self._parsear_respuesta(response.text, cuit_limpio)
 
         except Timeout:
-            msg = f"Timeout ({timeout}s) al conectar con Padrón A13 ({self.endpoint})"
+            msg = f"Timeout ({timeout}s) al conectar con Padrón ({self.endpoint})"
             logger.error(f"[WSPadron] {msg}")
             return self._error_result(msg)
 
         except ConnectionError as exc:
-            msg = f"No se pudo conectar al servicio Padrón A13: {exc}"
+            msg = f"No se pudo conectar al servicio Padrón: {exc}"
             logger.error(f"[WSPadron] {msg}")
             return self._error_result(msg)
 
         except requests.exceptions.HTTPError as exc:
-            msg = f"Error HTTP {exc.response.status_code} en Padrón A13"
+            msg = f"Error HTTP {exc.response.status_code} en Padrón"
             logger.error(f"[WSPadron] {msg}")
             return self._error_result(msg)
 
         except RequestException as exc:
-            msg = f"Error de red en Padrón A13: {exc}"
+            msg = f"Error de red en Padrón: {exc}"
             logger.error(f"[WSPadron] {msg}")
             return self._error_result(msg)
 
@@ -190,22 +190,22 @@ class WSPadronClient:
         """
         Construye el envelope SOAP para la operación getPersona.
 
-        Estructura según manual ws_sr_padron_a13 v1.3:
-          - Namespace: http://a13.soap.ws.server.puc.sr/
-          - Parámetros: sign, token, cuitRepresentante, idPersona
+        Estructura según manual ws_sr_constancia_inscripcion (A5):
+          - Namespace: http://a5.soap.ws.server.puc.sr/
+          - Parámetros: sign, token, cuitRepresentada, idPersona
         """
         return f"""<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope
     xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
-    xmlns:a13="http://a13.soap.ws.server.puc.sr/">
+    xmlns:a5="{PADRON_A5_NS}">
     <soapenv:Header/>
     <soapenv:Body>
-        <a13:getPersona>
+        <a5:getPersona>
             <token>{token}</token>
             <sign>{sign}</sign>
             <cuitRepresentada>{cuit_representada}</cuitRepresentada>
             <idPersona>{id_persona}</idPersona>
-        </a13:getPersona>
+        </a5:getPersona>
     </soapenv:Body>
 </soapenv:Envelope>"""
 
@@ -231,56 +231,65 @@ class WSPadronClient:
             return self._error_result(f"SOAP Fault: {msg}")
 
         # ── Verificar errorConstancia (error de negocio de AFIP) ──────
-        codigo_elem = root.find('.//{%s}codigo' % PADRON_A13_NS)
-        if codigo_elem is None:
-            codigo_elem = root.find('.//codigo')
+        # A5 suele devolver errores en <errorConstancia><error>...</error>
+        error_constancia = root.find('.//{%s}errorConstancia' % PADRON_A5_NS) or root.find('.//errorConstancia')
+        if error_constancia is not None:
+            errores = []
+            for err_elem in error_constancia.findall('.//{%s}error' % PADRON_A5_NS) + error_constancia.findall('.//error'):
+                if err_elem.text:
+                    errores.append(err_elem.text)
+            if errores:
+                msg = " | ".join(errores)
+                logger.error(f"[WSPadron] Error de Constancia AFIP: {msg}")
+                return self._error_result(f"AFIP Constancia: {msg}")
 
-        if codigo_elem is not None:
-            codigo = (codigo_elem.text or '').strip()
-            if codigo and codigo != '0':
-                desc_elem = (
-                    root.find('.//{%s}descripcion' % PADRON_A13_NS)
-                    or root.find('.//descripcion')
-                )
-                desc = desc_elem.text if desc_elem is not None else 'Error desconocido'
-                logger.error(f"[WSPadron] Error AFIP [{codigo}]: {desc}")
-                return self._error_result(f"AFIP [{codigo}]: {desc}")
-
-        # ── Extraer elemento <persona> ────────────────────────────────
-        persona = (
-            root.find('.//{%s}persona' % PADRON_A13_NS)
-            or root.find('.//persona')
+        # ── Extraer elemento <personaReturn> y <datosGenerales> ───────
+        persona_return = (
+            root.find('.//{%s}personaReturn' % PADRON_A5_NS)
+            or root.find('.//personaReturn')
         )
 
-        if persona is None:
+        if persona_return is None:
             return self._error_result(
                 f"CUIT {cuit_consultar} no encontrado en el padrón de AFIP."
             )
+            
+        datos_generales = (
+            persona_return.find('{%s}datosGenerales' % PADRON_A5_NS)
+            or persona_return.find('datosGenerales')
+        )
+        
+        if datos_generales is None:
+            return self._error_result(
+                f"Datos generales no encontrados para CUIT {cuit_consultar}."
+            )
 
         # ── Tipo persona ──────────────────────────────────────────────
-        tipo_persona = self._text(persona, 'tipoPersona') or 'DESCONOCIDA'
+        tipo_persona = self._text(datos_generales, 'tipoPersona') or 'DESCONOCIDA'
 
         # ── Razón social / Nombre ─────────────────────────────────────
-        razon_social = self._text(persona, 'razonSocial') or ''
+        razon_social = self._text(datos_generales, 'razonSocial') or ''
         if not razon_social:
-            apellido = self._text(persona, 'apellido') or ''
-            nombre   = self._text(persona, 'nombre') or ''
+            apellido = self._text(datos_generales, 'apellido') or ''
+            nombre   = self._text(datos_generales, 'nombre') or ''
             razon_social = f"{apellido} {nombre}".strip()
         if not razon_social:
             razon_social = f"CUIT {cuit_consultar}"
 
         # ── Domicilio fiscal ──────────────────────────────────────────
         domicilio_elem = (
-            persona.find('{%s}domicilioFiscal' % PADRON_A13_NS)
-            or persona.find('domicilioFiscal')
+            datos_generales.find('{%s}domicilioFiscal' % PADRON_A5_NS)
+            or datos_generales.find('domicilioFiscal')
         )
         domicilio = self._formatear_domicilio(domicilio_elem)
 
         # ── Impuestos → condición IVA ─────────────────────────────────
-        condicion_iva, condicion_iva_label = self._determinar_condicion_iva(persona)
+        # Le pasamos persona_return entero porque los impuestos están
+        # en datosRegimenGeneral y datosMonotributo
+        condicion_iva, condicion_iva_label = self._determinar_condicion_iva(persona_return)
 
         # ── Actividad principal ───────────────────────────────────────
-        actividad = self._actividad_principal(persona)
+        actividad = self._actividad_principal(persona_return)
 
         # ── Formatear CUIT ────────────────────────────────────────────
         cuit_fmt = self._formatear_cuit(cuit_consultar)
@@ -305,11 +314,12 @@ class WSPadronClient:
     # Helpers de parseo
     # ------------------------------------------------------------------
 
-    def _determinar_condicion_iva(self, persona_elem) -> tuple:
+    def _determinar_condicion_iva(self, persona_return_elem) -> tuple:
         """
         Determina la condición IVA a partir de los impuestos inscriptos.
 
-        Busca idImpuesto e idRegimen recursivamente, sin importar namespace.
+        Busca impuestos en datosRegimenGeneral/impuesto 
+        y datosMonotributo/impuesto, filtrando por estado ACTIVO.
 
         Referencia de IDs relevantes:
             30  = IVA (Responsable Inscripto)
@@ -318,39 +328,53 @@ class WSPadronClient:
             33  = Monotributo Autónomo
             48  = Monotributo Social (o Especial, según tabla)
         """
-        ids_impuesto = set()
+        ids_impuesto_activos = set()
 
-        # Estrategia ÚNICA: iter() recursivo buscando TODAS las etiquetas relevantes
-        # sin importar namespace (ARCA puede cambiar la estructura entre ambientes)
-        for elem in persona_elem.iter():
-            tag_local = elem.tag.split('}')[-1] if '}' in elem.tag else elem.tag
-            if tag_local in ('idImpuesto', 'idRegimen') and elem.text:
-                try:
-                    ids_impuesto.add(int(elem.text.strip()))
-                except (ValueError, TypeError):
-                    pass
+        for elem in persona_return_elem.iter():
+            tag = elem.tag.split('}')[-1] if '}' in elem.tag else elem.tag
+            if tag == 'impuesto':
+                # Cada <impuesto> tiene <idImpuesto> y <estadoImpuesto>
+                id_elem = elem.find('{%s}idImpuesto' % PADRON_A5_NS) or elem.find('idImpuesto')
+                estado_elem = elem.find('{%s}estadoImpuesto' % PADRON_A5_NS) or elem.find('estadoImpuesto')
+                
+                if id_elem is not None and id_elem.text:
+                    estado = (estado_elem.text.strip().upper() if estado_elem is not None 
+                              and estado_elem.text else 'ACTIVO')
+                    if estado == 'ACTIVO':
+                        try:
+                            ids_impuesto_activos.add(int(id_elem.text.strip()))
+                        except (ValueError, TypeError):
+                            pass
 
-        if not ids_impuesto:
+        # También buscar datosMonotributo (indica Monotributista)
+        datos_mono = None
+        for elem in persona_return_elem.iter():
+            tag = elem.tag.split('}')[-1] if '}' in elem.tag else elem.tag
+            if tag == 'datosMonotributo':
+                datos_mono = elem
+                break
+
+        if not ids_impuesto_activos and datos_mono is None:
             import xml.etree.ElementTree as ET
-            persona_xml = ET.tostring(persona_elem, encoding='unicode')
+            persona_xml = ET.tostring(persona_return_elem, encoding='unicode')
             logger.warning(
                 f"[WSPadron] ⚠️ SIN IMPUESTOS DETECTADOS. "
-                f"Volcando XML del elemento <persona>:\n{persona_xml}"
+                f"Volcando XML del elemento <personaReturn>:\n{persona_xml}"
             )
         else:
-            logger.info(f"[WSPadron] IDs de impuesto detectados: {ids_impuesto}")
+            logger.info(f"[WSPadron] IDs de impuesto ACTIVOS detectados: {ids_impuesto_activos}")
 
-        # Evaluación por prioridad (IDs según tabla AFIP)
-        if 30 in ids_impuesto:
+        # Evaluación por prioridad
+        if 30 in ids_impuesto_activos:
             return ('RI', 'Responsable Inscripto')
-        if ids_impuesto & {20, 33, 48}:
+        if datos_mono is not None or ids_impuesto_activos & {20, 33, 48}:
             return ('MONO', 'Monotributista')
-        if 32 in ids_impuesto:
+        if 32 in ids_impuesto_activos:
             return ('EX', 'Sujeto Exento')
 
         logger.warning(
-            f"[WSPadron] No se detectaron impuestos conocidos (30/20/33/48/32). "
-            f"IDs encontrados: {ids_impuesto}. Clasificando como CF."
+            f"[WSPadron] No se detectaron impuestos conocidos activos. "
+            f"IDs encontrados: {ids_impuesto_activos}. Clasificando como CF."
         )
         return ('CF', 'Consumidor Final / No Responsable')
 
@@ -361,7 +385,7 @@ class WSPadronClient:
         partes = []
         for campo in ('direccion', 'localidad', 'descripcionProvincia', 'codPostal'):
             elem = (
-                domicilio_elem.find('{%s}%s' % (PADRON_A13_NS, campo))
+                domicilio_elem.find('{%s}%s' % (PADRON_A5_NS, campo))
                 or domicilio_elem.find(campo)
             )
             if elem is not None and elem.text:
@@ -373,17 +397,17 @@ class WSPadronClient:
 
         return ', '.join(p for p in partes if p) if partes else ''
 
-    def _actividad_principal(self, persona_elem) -> str:
+    def _actividad_principal(self, persona_return_elem) -> str:
         actividades = []
-        for act in persona_elem.iter():
+        for act in persona_return_elem.iter():
             tag = act.tag.split('}')[-1]
             if tag == 'actividad':
                 orden_elem = (
-                    act.find('{%s}orden' % PADRON_A13_NS)
+                    act.find('{%s}orden' % PADRON_A5_NS)
                     or act.find('orden')
                 )
                 desc_elem = (
-                    act.find('{%s}descripcionActividad' % PADRON_A13_NS)
+                    act.find('{%s}descripcionActividad' % PADRON_A5_NS)
                     or act.find('descripcionActividad')
                 )
                 if desc_elem is not None and desc_elem.text:
@@ -399,7 +423,7 @@ class WSPadronClient:
     @staticmethod
     def _text(elem, tag: str) -> Optional[str]:
         found = (
-            elem.find('{%s}%s' % (PADRON_A13_NS, tag))
+            elem.find('{%s}%s' % (PADRON_A5_NS, tag))
             or elem.find(tag)
         )
         return found.text.strip() if found is not None and found.text else None

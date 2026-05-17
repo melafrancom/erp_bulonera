@@ -53,7 +53,7 @@ def debug_padron_xml(request):
             cert_path=config.ruta_certificado,
             cuit=config.empresa_cuit
         )
-        token_res = wsaa.obtener_ticket_acceso(servicio='ws_sr_padron_a13', usar_cache=True)
+        token_res = wsaa.obtener_ticket_acceso(servicio='ws_sr_constancia_inscripcion', usar_cache=True)
         
         if not token_res.get('success'):
             return Response({'error': f"WSAA error: {token_res.get('error')}"}, status=500)

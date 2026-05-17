@@ -34,7 +34,7 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 # Nombre del servicio AFIP para padrón (debe estar habilitado en WSASS)
-SERVICIO_PADRON = 'ws_sr_padron_a13'
+SERVICIO_PADRON = 'ws_sr_constancia_inscripcion'
 
 
 def consultar_padron_afip(cuit: str, ambiente: str = None) -> dict:
