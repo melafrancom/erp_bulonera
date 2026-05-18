@@ -1,21 +1,27 @@
 """
 afip/clients/ws_padron_client.py
 =================================
-Cliente SOAP para el Web Service de Consulta a Padrón A13 (ws_sr_padron_a13).
+Cliente SOAP para el Web Service de Constancia de Inscripción (ws_sr_constancia_inscripcion / A5).
 
 Operación implementada:
-  getPersona(token, sign, cuitRepresentante, idPersona)
-  → Retorna datos formales registrados en AFIP para un CUIT dado.
+  getPersona_v2(token, sign, cuitRepresentada, idPersona)
+  → Retorna constancia de inscripción completa, incluyendo impuestos y regímenes.
 
 Endpoints oficiales ARCA:
-  Homologación: https://awshomo.afip.gov.ar/sr-padron/webservices/personaServiceA13
-  Producción:   https://aws.afip.gov.ar/sr-padron/webservices/personaServiceA13
+  Homologación: https://awshomo.afip.gov.ar/sr-padron/webservices/personaServiceA5
+  Producción:   https://aws.afip.gov.ar/sr-padron/webservices/personaServiceA5
 
-Namespace del servicio: http://a13.soap.ws.server.puc.sr/
+Namespace del servicio: http://a5.soap.ws.server.puc.sr/
 
-Prerequisito: el alias del Computador Fiscal debe tener el servicio
-`ws_sr_padron_a13` habilitado en WSASS (homologación) y en el portal
-de ARCA (producción).
+IMPORTANTE: El endpoint A5 expone DOS operaciones:
+  - getPersona:    retorna solo datos generales (equivalente a A13, SIN impuestos)
+  - getPersona_v2: retorna constancia completa CON datosRegimenGeneral/impuesto
+
+Usamos getPersona_v2 porque es la única que incluye la lista de impuestos
+necesaria para determinar la condición IVA del contribuyente.
+
+Prerequisito: el servicio `ws_sr_constancia_inscripcion` debe estar
+habilitado en WSASS/ARCA para el certificado digital.
 
 Diseño: mismo patrón que wsfev1_client.py — ElementTree puro,
 sin dependencias SOAP externas, manejo explícito de SOAP Faults
@@ -188,11 +194,15 @@ class WSPadronClient:
         id_persona: str,
     ) -> str:
         """
-        Construye el envelope SOAP para la operación getPersona.
+        Construye el envelope SOAP para la operación getPersona_v2.
 
-        Estructura según manual ws_sr_constancia_inscripcion (A5):
+        IMPORTANTE: usamos getPersona_v2, NO getPersona.
+        - getPersona:    retorna solo datos generales (sin impuestos)
+        - getPersona_v2: retorna constancia completa CON impuestos
+
+        Estructura según WSDL PersonaServiceA5:
           - Namespace: http://a5.soap.ws.server.puc.sr/
-          - Parámetros: sign, token, cuitRepresentada, idPersona
+          - Parámetros: token, sign, cuitRepresentada, idPersona
         """
         return f"""<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope
@@ -200,12 +210,12 @@ class WSPadronClient:
     xmlns:a5="{PADRON_A5_NS}">
     <soapenv:Header/>
     <soapenv:Body>
-        <a5:getPersona>
+        <a5:getPersona_v2>
             <token>{token}</token>
             <sign>{sign}</sign>
             <cuitRepresentada>{cuit_representada}</cuitRepresentada>
             <idPersona>{id_persona}</idPersona>
-        </a5:getPersona>
+        </a5:getPersona_v2>
     </soapenv:Body>
 </soapenv:Envelope>"""
 

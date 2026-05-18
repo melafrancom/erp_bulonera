@@ -9,13 +9,13 @@ Uso dentro de Docker:
 Valida:
   1. Token WSAA (obtener o reutilizar)
   2. FECompUltimoAutorizado (WSFEv1 → consulta último número)
-  3. getPersona (Padrón A13 → consulta un CUIT conocido)
+  3. getPersona_v2 (Constancia Inscripción A5 → consulta un CUIT conocido)
 """
 
 from django.core.management.base import BaseCommand
 
 class Command(BaseCommand):
-    help = 'Smoke test ARCA producción: WSAA + WSFEv1 + Padrón A13'
+    help = 'Smoke test ARCA producción: WSAA + WSFEv1 + Constancia Inscripción'
 
     def handle(self, *args, **options):
         from afip.services.facturacion_service import FacturacionService
@@ -53,12 +53,12 @@ class Command(BaseCommand):
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"  ❌ WSFEv1 FALLÓ: {e}"))
 
-        # 3. Padrón A13
-        self.stdout.write("[3/3] Consultando CUIT propio en Padrón A13...")
+        # 3. Constancia de Inscripción (A5)
+        self.stdout.write("[3/3] Consultando CUIT propio en Constancia Inscripción (A5)...")
         try:
             from afip.clients.wsaa_client import WSAAClient
             wsaa = WSAAClient(ambiente=config.ambiente, cert_path=config.ruta_certificado, cuit=cuit)
-            token_padron_res = wsaa.obtener_ticket_acceso(servicio='ws_sr_padron_a13')
+            token_padron_res = wsaa.obtener_ticket_acceso(servicio='ws_sr_constancia_inscripcion')
             
             if not token_padron_res['success']:
                 self.stdout.write(self.style.ERROR(f"  ❌ WSAA Padrón FALLÓ: {token_padron_res['error']}"))

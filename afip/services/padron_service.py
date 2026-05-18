@@ -3,15 +3,17 @@ afip/services/padron_service.py
 ================================
 Servicio orquestador para consultas al Padrón AFIP oficial.
 
-Reemplaza la versión anterior que usaba el endpoint REST público e inestable
-(https://soa.afip.gob.ar/sr-padron/v2/persona) por el Web Service SOAP oficial
-ws_sr_padron_a13, autenticado mediante el mismo certificado digital que wsfe.
+Usa el Web Service SOAP oficial ws_sr_constancia_inscripcion (ex Padrón A5),
+autenticado mediante el mismo certificado digital que wsfe.
+
+Operación SOAP: getPersona_v2 (NO getPersona, que solo devuelve datos básicos).
+getPersona_v2 retorna la constancia completa incluyendo impuestos y regímenes.
 
 Flujo:
   1. Obtiene ConfiguracionARCA activa (certificado + ambiente)
-  2. Solicita Token WSAA para servicio "ws_sr_padron_a13"
+  2. Solicita Token WSAA para servicio "ws_sr_constancia_inscripcion"
      → El token se cachea automáticamente en WSAAToken (separado del de wsfe)
-  3. Llama a WSPadronClient.get_persona()
+  3. Llama a WSPadronClient.get_persona() → internamente usa getPersona_v2
   4. Retorna dict estándar que consumen la vista web y la API REST
 
 Contrato de salida (invariante — la UI no cambia):
@@ -41,7 +43,7 @@ def consultar_padron_afip(cuit: str, ambiente: str = None) -> dict:
     """
     Consulta el padrón oficial de AFIP/ARCA para obtener datos de un CUIT.
 
-    Usa el Web Service ws_sr_padron_a13 con autenticación por certificado.
+    Usa el Web Service ws_sr_constancia_inscripcion (A5) con getPersona_v2.
     El Token WSAA se cachea en BD y se renueva automáticamente.
 
     Args:
@@ -83,8 +85,8 @@ def consultar_padron_afip(cuit: str, ambiente: str = None) -> dict:
     ambiente_activo = config.ambiente
     empresa_cuit = config.empresa_cuit
 
-    # ── Obtener Token WSAA para ws_sr_padron_a13 ──────────────────────
-    # El token se cachea en WSAAToken con servicio='ws_sr_padron_a13',
+    # ── Obtener Token WSAA para ws_sr_constancia_inscripcion ────────────
+    # El token se cachea en WSAAToken con servicio='ws_sr_constancia_inscripcion',
     # separado e independiente del token de wsfe.
     logger.info(
         f'[PadronService] Solicitando token WSAA para {SERVICIO_PADRON} '

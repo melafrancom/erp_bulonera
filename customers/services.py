@@ -15,8 +15,7 @@ def sincronizar_condicion_iva(customer: Customer):
     """
     Consulta el Padrón ARCA y actualiza tax_condition del cliente.
 
-    REGLA DE PROTECCIÓN: si AFIP retorna 'CF' (lo cual puede significar
-    "no tengo datos de impuestos" en ws_sr_padron_a13) y el cliente ya
+    REGLA DE PROTECCIÓN: si AFIP retorna 'CF' y el cliente ya
     tiene una condición más específica (RI, MONO, EX), se PRESERVA la
     condición existente. Solo se sobreescribe si AFIP retorna una
     condición positiva (RI, MONO, EX) o si el cliente aún no tenía
@@ -79,14 +78,11 @@ def sincronizar_condicion_iva(customer: Customer):
             # ── REGLA DE PROTECCIÓN ──────────────────────────────
             # Si AFIP retorna 'CF' pero el cliente ya tiene una condición
             # más específica asignada manualmente, NO sobreescribir.
-            # Esto protege contra el bug de ws_sr_padron_a13 que no
-            # devuelve impuestos y siempre cae al fallback 'CF'.
             if nueva_cond == 'CF' and customer.tax_condition in _CONDICIONES_CON_DATOS_FISCALES:
                 logger.warning(
                     f"[Customers] ⚠️ PROTECCIÓN: AFIP retornó 'CF' pero el cliente "
                     f"ya tiene '{customer.tax_condition}' (posiblemente asignado "
-                    f"manualmente). Se PRESERVA la condición existente. "
-                    f"(ws_sr_padron_a13 no devuelve impuestos en producción)"
+                    f"manualmente). Se PRESERVA la condición existente."
                 )
                 return
 

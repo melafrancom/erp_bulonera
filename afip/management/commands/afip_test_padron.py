@@ -1,6 +1,6 @@
 """
 Management command: afip_test_padron
-Prueba la consulta al padrón AFIP oficial (ws_sr_padron_a13).
+Prueba la consulta al padrón AFIP oficial (ws_sr_constancia_inscripcion / A5).
 
 Uso:
     python manage.py afip_test_padron 30707680098
@@ -12,7 +12,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 
 class Command(BaseCommand):
-    help = 'Consulta el padrón oficial de AFIP (ws_sr_padron_a13) para un CUIT dado.'
+    help = 'Consulta el padrón oficial de AFIP (ws_sr_constancia_inscripcion) para un CUIT dado.'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -55,14 +55,14 @@ class Command(BaseCommand):
                 'Creá una en /admin/afip/configuracionarca/add/'
             )
 
-        self.stdout.write(f'\n📡 Consulta al Padrón AFIP Oficial (ws_sr_padron_a13)')
+        self.stdout.write(f'\n📡 Consulta al Padrón AFIP Oficial (ws_sr_constancia_inscripcion)')
         self.stdout.write(f'   Ambiente:    {config.ambiente.upper()}')
         self.stdout.write(f'   Empresa:     {config.empresa_cuit}')
         self.stdout.write(f'   Certificado: {config.ruta_certificado}')
         self.stdout.write(f'   CUIT:        {cuit_input}\n')
 
         # ── Paso 1: Token WSAA ────────────────────────────────────────
-        self.stdout.write('🔐 1. Obteniendo Token WSAA para ws_sr_padron_a13...')
+        self.stdout.write('🔐 1. Obteniendo Token WSAA para ws_sr_constancia_inscripcion...')
         from afip.clients.wsaa_client import WSAAClient
 
         wsaa = WSAAClient(
@@ -71,7 +71,7 @@ class Command(BaseCommand):
             cuit=config.empresa_cuit,
         )
         resultado_wsaa = wsaa.obtener_ticket_acceso(
-            servicio='ws_sr_padron_a13',
+            servicio='ws_sr_constancia_inscripcion',
             usar_cache=True,
         )
 
@@ -80,7 +80,7 @@ class Command(BaseCommand):
                 f'\n❌ Error WSAA: {resultado_wsaa["error"]}'
             ))
             self.stdout.write(
-                '\n⚠️  Verificá que el servicio ws_sr_padron_a13 esté habilitado en WSASS '
+                '\n⚠️  Verificá que el servicio ws_sr_constancia_inscripcion esté habilitado en WSASS '
                 f'(https://wsass-homo.afip.gob.ar) para el alias buloneraalvear.'
             )
             raise CommandError('No se pudo obtener token WSAA.')
