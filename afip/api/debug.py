@@ -94,7 +94,8 @@ def debug_padron_xml(request):
             'cuit': cuit,
             'ambiente': config.ambiente,
             'http_status': response.status_code,
-            'xml_raw': xml_raw[:5000],  # Primeros 5000 chars para no saturar
+            'soap_request_sent': soap_request[:2000],  # Lo que ENVIAMOS a AFIP
+            'xml_raw': xml_raw[:5000],  # Lo que RECIBIMOS de AFIP
             'xml_raw_length': len(xml_raw),
             'parser_result': result,
         })

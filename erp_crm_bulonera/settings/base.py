@@ -68,6 +68,7 @@ SHARED_APPS = [
     'bills',
     'afip',
     'suppliers',
+    'expenses',
     'reports',
 ]
 
@@ -442,6 +443,11 @@ CELERY_BEAT_SCHEDULE = {
     'afip-renovar-tokens': {
         'task': 'afip.renovar_tokens_expirados',
         'schedule': crontab(minute='*/30'),
+    },
+    # Regenera snapshots financieros diariamente a las 02:00 AM
+    'regenerar-snapshots-financieros': {
+        'task': 'reports.tasks.regenerate_financial_snapshots',
+        'schedule': crontab(hour=2, minute=0),
     },
 }
 
