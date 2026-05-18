@@ -70,6 +70,7 @@ urlpatterns = [
     path('api/v1/payments/', include('payments.api.urls', namespace='payments_api')),
     path('api/v1/bills/', include('bills.api.urls', namespace='bills_api')),
     path('api/v1/suppliers/', include('suppliers.api.urls', namespace='suppliers_api')),
+    path('api/v1/expenses/', include('expenses.api.urls', namespace='expenses_api')),
     path('api/v1/afip/', include('afip.api.urls', namespace='afip_api')),
     path('api/v1/reports/', include('reports.api.urls', namespace='reports_api')),
 
@@ -81,6 +82,7 @@ urlpatterns = [
     path('payments/', include('payments.web.urls')),
     path('bills/', include('bills.web.urls', namespace='bills_web')),
     path('suppliers/', include('suppliers.web.urls', namespace='suppliers_web')),
+    path('expenses/', include('expenses.web.urls', namespace='expenses_web')),
     path('afip/', include('afip.web.urls', namespace='afip_web')),
     path('reports/', include('reports.web.urls', namespace='reports_web')),
 

@@ -1,0 +1,197 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Bulonera Alvear{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
+  <div class="max-w-7xl mx-auto">
+    
+    <!-- Encabezado -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        {{ page_title }}
+      </h1>
+      <p class="text-gray-600 dark:text-gray-400">
+        Flujo de Caja Percibido (Dinero Real)
+      </p>
+    </div>
+
+    <!-- Selector de Período -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
+      <form method="GET" class="flex flex-col sm:flex-row gap-4 items-end">
+        <div class="flex-1">
+          <label for="period" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Período
+          </label>
+          <select id="period" name="period" 
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            x-data
+            @change="
+              const [year, month] = $el.value.split('-');
+              window.location.href = `?year=${year}&month=${month}`;
+            ">
+            {% for y, m, display in available_periods %}
+              <option value="{{ y }}-{{ m }}" {% if selected_period == display %}selected{% endif %}>
+                {{ display }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition">
+          Cargar
+        </button>
+      </form>
+    </div>
+
+    <!-- Mensaje de Error -->
+    {% if error %}
+    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4 mb-6">
+      <p class="text-red-800 dark:text-red-200">{{ error }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Indicador de Caché -->
+    {% if cached %}
+    <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-2 mb-4 text-sm">
+      <p class="text-amber-800 dark:text-amber-200">
+        📦 Datos en caché (actualizado hace menos de 1 hora)
+      </p>
+    </div>
+    {% endif %}
+
+    <!-- Flujo de Caja -->
+    {% if cashflow %}
+    <div class="space-y-6">
+      
+      <!-- Resumen Rápido (KPIs) -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        
+        <!-- Cobros Totales -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">Cobros Confirmados</p>
+          <p class="text-2xl font-bold text-green-600 dark:text-green-400 mt-2">
+            ${{ cashflow.inflows.total|floatformat:0|add:"" }}
+          </p>
+          <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
+            Dinero que entró
+          </p>
+        </div>
+
+        <!-- Gastos Pagados -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">Gastos Pagados</p>
+          <p class="text-2xl font-bold text-red-600 dark:text-red-400 mt-2">
+            -${{ cashflow.outflows.total|floatformat:0|add:"" }}
+          </p>
+          <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
+            Dinero que salió
+          </p>
+        </div>
+
+        <!-- Flujo Neto -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">Flujo Neto</p>
+          <p class="text-2xl font-bold {% if cashflow.net_cash_flow >= 0 %}text-emerald-600 dark:text-emerald-400{% else %}text-red-600 dark:text-red-400{% endif %} mt-2">
+            ${{ cashflow.net_cash_flow|floatformat:0|add:"" }}
+          </p>
+          <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
+            Período {{ cashflow.period.from }} a {{ cashflow.period.to }}
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Tabla de Flujos -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 class="text-lg font-bold text-gray-900 dark:text-white">Detalle del Flujo de Caja</h2>
+        </div>
+        
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+              
+              <!-- Cobros por Método de Pago -->
+              <tr class="bg-green-50 dark:bg-green-900/10">
+                <td colspan="2" class="px-6 py-3 font-bold text-gray-900 dark:text-white">COBROS CONFIRMADOS</td>
+              </tr>
+
+              {% if cashflow.inflows.by_method %}
+                {% for method, amount in cashflow.inflows.by_method.items %}
+                <tr>
+                  <td class="px-6 py-3 text-gray-700 dark:text-gray-300 pl-12">
+                    {{ method }}
+                  </td>
+                  <td class="px-6 py-3 text-right text-green-600 dark:text-green-400 font-medium">
+                    +${{ amount|floatformat:0|add:"" }}
+                  </td>
+                </tr>
+                {% endfor %}
+              {% else %}
+              <tr>
+                <td class="px-6 py-3 text-gray-500 dark:text-gray-400 pl-12">
+                  Sin cobros registrados
+                </td>
+                <td class="px-6 py-3 text-right">-</td>
+              </tr>
+              {% endif %}
+
+              <tr class="bg-green-50 dark:bg-green-900/10">
+                <td class="px-6 py-3 font-bold text-gray-900 dark:text-white">TOTAL COBROS</td>
+                <td class="px-6 py-3 text-right font-bold text-green-600 dark:text-green-400">
+                  +${{ cashflow.inflows.total|floatformat:0|add:"" }}
+                </td>
+              </tr>
+
+              <!-- Gastos Pagados -->
+              <tr class="bg-red-50 dark:bg-red-900/10">
+                <td colspan="2" class="px-6 py-3 font-bold text-gray-900 dark:text-white">GASTOS PAGADOS</td>
+              </tr>
+
+              <tr>
+                <td class="px-6 py-3 text-gray-700 dark:text-gray-300 pl-12">
+                  Total de Gastos Pagados
+                </td>
+                <td class="px-6 py-3 text-right text-red-600 dark:text-red-400 font-medium">
+                  -${{ cashflow.outflows.total|floatformat:0|add:"" }}
+                </td>
+              </tr>
+
+              <!-- Flujo Neto -->
+              <tr class="bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-900/10 dark:to-blue-900/10">
+                <td class="px-6 py-4 font-bold text-lg text-gray-900 dark:text-white">FLUJO DE CAJA NETO</td>
+                <td class="px-6 py-4 text-right font-bold text-xl {% if cashflow.net_cash_flow >= 0 %}text-emerald-600 dark:text-emerald-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                  ${{ cashflow.net_cash_flow|floatformat:0|add:"" }}
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Nota Informativa -->
+      <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+        <p class="text-sm text-blue-800 dark:text-blue-200">
+          <strong>Nota:</strong> El Flujo de Caja refleja el dinero que <strong>realmente</strong> entró y salió en el período,
+          basado en pagos confirmados y gastos pagados. Diferencia del Estado de Resultados que usa criterio devengado.
+        </p>
+      </div>
+
+    </div>
+    {% else %}
+    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-8 text-center">
+      <p class="text-gray-600 dark:text-gray-400">
+        {% if error %}
+          No se pueden mostrar los datos. {{ error }}
+        {% else %}
+          Selecciona un período para ver el Flujo de Caja.
+        {% endif %}
+      </p>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

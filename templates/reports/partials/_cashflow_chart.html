@@ -1,0 +1,147 @@
+{# templates/reports/partials/_cashflow_chart.html #}
+{# Gráfico de evolución mensual del Cash Flow usando Chart.js #}
+{# Variables esperadas: monthly_labels, monthly_inflows, monthly_outflows, monthly_net #}
+
+{% load static %}
+
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mt-6">
+  <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">
+    💰 Evolución Mensual (Últimos 12 Meses)
+  </h3>
+  
+  <div style="position: relative; height: 350px;">
+    <canvas id="cashflowChart"></canvas>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('cashflowChart').getContext('2d');
+    
+    const labels = {{ monthly_labels|safe }};
+    const inflowsData = {{ monthly_inflows|safe }};
+    const outflowsData = {{ monthly_outflows|safe }};
+    const netData = {{ monthly_net|safe }};
+    
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Cobros Confirmados',
+            data: inflowsData,
+            backgroundColor: '#10b981',
+            borderColor: '#059669',
+            borderWidth: 1,
+            borderRadius: 4,
+          },
+          {
+            label: 'Gastos Pagados',
+            data: outflowsData.map(v => -v),  // Negativo para stack
+            backgroundColor: '#ef4444',
+            borderColor: '#dc2626',
+            borderWidth: 1,
+            borderRadius: 4,
+          },
+          {
+            label: 'Flujo Neto',
+            data: netData,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderWidth: 2,
+            fill: false,
+            type: 'line',
+            yAxisID: 'y1',
+            tension: 0.3,
+            pointRadius: 5,
+            pointBackgroundColor: '#3b82f6',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+          },
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              padding: 15,
+              usePointStyle: true,
+              font: {
+                size: 12,
+                weight: 'bold',
+              },
+              color: document.documentElement.classList.contains('dark') ? '#d1d5db' : '#374151',
+            }
+          },
+          filler: {
+            propagate: true
+          }
+        },
+        scales: {
+          y: {
+            stacked: true,
+            ticks: {
+              callback: function(value) {
+                return '$' + value.toLocaleString('es-AR', {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0
+                });
+              },
+              color: document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280',
+              font: {
+                size: 11,
+              }
+            },
+            grid: {
+              color: document.documentElement.classList.contains('dark') ? 'rgba(107, 114, 128, 0.1)' : 'rgba(209, 213, 219, 0.5)',
+            }
+          },
+          y1: {
+            type: 'linear',
+            position: 'right',
+            title: {
+              display: true,
+              text: 'Flujo Neto ($)',
+              color: '#3b82f6',
+            },
+            ticks: {
+              callback: function(value) {
+                return '$' + value.toLocaleString('es-AR', {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0
+                });
+              },
+              color: '#3b82f6',
+              font: {
+                size: 11,
+              }
+            },
+            grid: {
+              drawOnChartArea: false,
+            }
+          },
+          x: {
+            grid: {
+              display: false,
+            },
+            ticks: {
+              color: document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280',
+              font: {
+                size: 11,
+              }
+            }
+          }
+        }
+      }
+    });
+  });
+</script>

@@ -61,13 +61,12 @@ function customerSelectorComponent() {
           const d = data.data;
           this.newCustomer.name = d.razon_social || ((d.nombre || '') + ' ' + (d.apellido || '')) || this.newCustomer.name;
           if (d.condicion_iva) {
-              // El backend ya retorna el código normalizado: 'RI', 'MONO', 'EX', 'CF'
+              // El backend retorna el código normalizado: 'RI', 'MONO', 'EX', 'CF'
               const validCodes = ['RI', 'MONO', 'EX', 'CF', 'NR'];
               const code = d.condicion_iva.toUpperCase().trim();
               if (validCodes.includes(code)) {
                   this.newCustomer.tax_condition = code;
               } else {
-                  // Fallback: intentar mapear desde texto largo (por compatibilidad)
                   const upper = code;
                   if (upper.includes('INSCRIPTO') || upper.includes('RESPONSABLE')) 
                       this.newCustomer.tax_condition = 'RI';
@@ -79,6 +78,24 @@ function customerSelectorComponent() {
                       this.newCustomer.tax_condition = 'CF';
               }
               console.log(`[AFIP] Condición IVA recibida: "${d.condicion_iva}" → mapeada: "${this.newCustomer.tax_condition}"`);
+
+              // ADVERTENCIA: ws_sr_padron_a13 no retorna impuestos en producción,
+              // por lo que CF puede ser un falso negativo. Avisar al usuario.
+              if (this.newCustomer.tax_condition === 'CF') {
+                  alert(
+                      '⚠️ ATENCIÓN: AFIP retornó "Consumidor Final".\n\n' +
+                      'El servicio de AFIP actualmente no puede determinar la condición IVA automáticamente. ' +
+                      'Si el cliente es Responsable Inscripto, Monotributista o Exento, ' +
+                      'seleccionelo manualmente en el campo "Condición ante el IVA" debajo.'
+                  );
+              }
+          } else {
+              // AFIP no retornó condición: dejar vacío para que el usuario elija
+              this.newCustomer.tax_condition = '';
+              alert(
+                  '⚠️ AFIP no retornó la condición IVA para este CUIT.\n' +
+                  'Por favor seleccione la condición manualmente.'
+              );
           }
         } else {
           alert('No se encontraron datos en AFIP para este CUIT.');
@@ -94,6 +111,10 @@ function customerSelectorComponent() {
     async registerCustomer() {
       if (!this.newCustomer.name || !this.newCustomer.cuit) {
         alert('Por favor complete Nombre y CUIT/DNI.');
+        return;
+      }
+      if (!this.newCustomer.tax_condition) {
+        alert('Debe seleccionar la Condición ante el IVA antes de guardar.');
         return;
       }
 

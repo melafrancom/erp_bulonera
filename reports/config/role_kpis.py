@@ -80,6 +80,24 @@ AVAILABLE_KPIS = {
         'service': 'stock_kpis.get_low_stock_products',
         'roles': ['admin', 'manager', 'operator'],
     },
+
+    # --- KPIs FINANCIEROS (FASE 2) ---
+    'monthly_revenue': {
+        'service': 'financial_kpis.get_monthly_revenue',
+        'roles': ['admin', 'manager'],
+    },
+    'monthly_ebitda': {
+        'service': 'financial_kpis.get_monthly_ebitda',
+        'roles': ['admin', 'manager'],
+    },
+    'monthly_cashflow': {
+        'service': 'financial_kpis.get_monthly_cashflow',
+        'roles': ['admin', 'manager'],
+    },
+    'payment_methods': {
+        'service': 'financial_kpis.get_payment_methods_breakdown',
+        'roles': ['admin', 'manager'],
+    },
 }
 
 def get_kpis_for_role(role: str) -> list[str]:

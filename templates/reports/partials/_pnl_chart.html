@@ -1,0 +1,131 @@
+{# templates/reports/partials/_pnl_chart.html #}
+{# Gráfico de evolución mensual del P&L usando Chart.js #}
+{# Variables esperadas: monthly_labels, monthly_revenue, monthly_cogs, monthly_ebitda #}
+
+{% load static %}
+
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mt-6">
+  <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">
+    📊 Evolución Mensual (Últimos 12 Meses)
+  </h3>
+  
+  <div style="position: relative; height: 350px;">
+    <canvas id="pnlChart"></canvas>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('pnlChart').getContext('2d');
+    
+    const labels = {{ monthly_labels|safe }};
+    const revenueData = {{ monthly_revenue|safe }};
+    const cogsData = {{ monthly_cogs|safe }};
+    const ebitdaData = {{ monthly_ebitda|safe }};
+    
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Ingresos Netos',
+            data: revenueData,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.05)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.3,
+            pointRadius: 4,
+            pointBackgroundColor: '#10b981',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+          },
+          {
+            label: 'COGS',
+            data: cogsData,
+            borderColor: '#ef4444',
+            backgroundColor: 'rgba(239, 68, 68, 0.05)',
+            borderWidth: 2,
+            fill: false,
+            tension: 0.3,
+            pointRadius: 4,
+            pointBackgroundColor: '#ef4444',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+          },
+          {
+            label: 'EBITDA',
+            data: ebitdaData,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.05)',
+            borderWidth: 2,
+            fill: false,
+            tension: 0.3,
+            borderDash: [5, 5],
+            pointRadius: 4,
+            pointBackgroundColor: '#3b82f6',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+          },
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              padding: 15,
+              usePointStyle: true,
+              font: {
+                size: 12,
+                weight: 'bold',
+              },
+              color: document.documentElement.classList.contains('dark') ? '#d1d5db' : '#374151',
+            }
+          },
+          filler: {
+            propagate: true
+          }
+        },
+        scales: {
+          y: {
+            ticks: {
+              callback: function(value) {
+                return '$' + value.toLocaleString('es-AR', {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0
+                });
+              },
+              color: document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280',
+              font: {
+                size: 11,
+              }
+            },
+            grid: {
+              color: document.documentElement.classList.contains('dark') ? 'rgba(107, 114, 128, 0.1)' : 'rgba(209, 213, 219, 0.5)',
+            }
+          },
+          x: {
+            grid: {
+              display: false,
+            },
+            ticks: {
+              color: document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280',
+              font: {
+                size: 11,
+              }
+            }
+          }
+        }
+      }
+    });
+  });
+</script>

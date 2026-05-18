@@ -11,7 +11,7 @@ class TestPaymentService:
     def test_create_payment_succeeds_simple(self, admin_user):
         """Happy Path: Crear un pago sin alocaciones."""
         amount = Decimal('1000.00')
-        payment = PaymentService.create_payment_with_allocations(amount, admin_user)
+        payment = PaymentService.create_payment(amount, admin_user)
         
         assert payment.id is not None
         assert payment.amount == amount
@@ -36,7 +36,7 @@ class TestPaymentService:
         amount = Decimal('100.00')
         allocations = [{'sale_id': sale_with_items.id, 'amount': 150}] # 150 > 100
         
-        with pytest.raises(ValueError, match="no puede exceder el monto del pago"):
+        with pytest.raises(ValueError, match="excede monto del pago"):
             PaymentService.create_payment_with_allocations(amount, admin_user, allocations)
 
     def test_create_payment_fails_if_balance_exceeded(self, admin_user, sale_with_items):
@@ -45,7 +45,7 @@ class TestPaymentService:
         amount = Decimal('1000.00')
         allocations = [{'sale_id': sale_with_items.id, 'amount': 700}] # 700 > 605
         
-        with pytest.raises(ValueError, match="excede el saldo pendiente"):
+        with pytest.raises(ValueError, match="excede saldo de Venta"):
             PaymentService.create_payment_with_allocations(amount, admin_user, allocations)
 
     def test_create_payment_atomic_rollback(self, admin_user, sale_with_items):
@@ -58,7 +58,7 @@ class TestPaymentService:
             {'sale_id': sale_with_items.id, 'amount': 700} 
         ]
         
-        with pytest.raises(ValueError, match="excede el saldo pendiente"):
+        with pytest.raises(ValueError, match="excede saldo de Venta"):
             PaymentService.create_payment_with_allocations(amount, admin_user, allocations)
             
         assert Payment.objects.count() == initial_count

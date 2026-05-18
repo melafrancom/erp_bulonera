@@ -1,0 +1,38 @@
+{# templates/reports/partials/_report_nav.html #}
+{# Navegación entre reportes financieros #}
+{# Variables esperadas: active (pnl | cashflow) #}
+
+<nav class="flex flex-wrap gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
+  <a href="{% url 'reports_web:pnl_statement' %}"
+     class="px-4 py-3 border-b-2 text-sm font-medium transition
+            {% if active == 'pnl' %}
+              border-blue-600 text-blue-600 dark:text-blue-400
+            {% else %}
+              border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300
+            {% endif %}">
+    <svg class="w-4 h-4 inline mr-2" data-lucide="bar-chart-3"></svg>
+    Estado de Resultados
+  </a>
+  
+  <a href="{% url 'reports_web:cashflow_statement' %}"
+     class="px-4 py-3 border-b-2 text-sm font-medium transition
+            {% if active == 'cashflow' %}
+              border-blue-600 text-blue-600 dark:text-blue-400
+            {% else %}
+              border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300
+            {% endif %}">
+    <svg class="w-4 h-4 inline mr-2" data-lucide="wallet"></svg>
+    Flujo de Caja
+  </a>
+
+  <a href="{% url 'reports_web:pnl_export' %}"
+     class="px-4 py-3 border-b-2 text-sm font-medium transition
+            {% if active == 'export' %}
+              border-blue-600 text-blue-600 dark:text-blue-400
+            {% else %}
+              border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300
+            {% endif %}">
+    <svg class="w-4 h-4 inline mr-2" data-lucide="download"></svg>
+    Exportar
+  </a>
+</nav>

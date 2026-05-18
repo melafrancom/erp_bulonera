@@ -1,0 +1,227 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Bulonera Alvear{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
+  <div class="max-w-7xl mx-auto">
+    
+    <!-- Encabezado -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        {{ page_title }}
+      </h1>
+      <p class="text-gray-600 dark:text-gray-400">
+        Estado de Resultados Económico (Devengado)
+      </p>
+    </div>
+
+    <!-- Selector de Período -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
+      <form method="GET" class="flex flex-col sm:flex-row gap-4 items-end">
+        <div class="flex-1">
+          <label for="period" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Período
+          </label>
+          <select id="period" name="period" 
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            x-data
+            @change="
+              const [year, month] = $el.value.split('-');
+              window.location.href = `?year=${year}&month=${month}`;
+            ">
+            {% for y, m, display in available_periods %}
+              <option value="{{ y }}-{{ m }}" {% if selected_period == display %}selected{% endif %}>
+                {{ display }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition">
+          Cargar
+        </button>
+      </form>
+    </div>
+
+    <!-- Mensaje de Error -->
+    {% if error %}
+    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4 mb-6">
+      <p class="text-red-800 dark:text-red-200">{{ error }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Indicador de Caché -->
+    {% if cached %}
+    <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-2 mb-4 text-sm">
+      <p class="text-amber-800 dark:text-amber-200">
+        📦 Datos en caché (actualizado hace menos de 1 hora)
+      </p>
+    </div>
+    {% endif %}
+
+    <!-- Estado de Resultados -->
+    {% if pnl %}
+    <div class="space-y-6">
+      
+      <!-- Resumen Rápido (KPIs) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Ingresos Netos -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">Ingresos Netos</p>
+          <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-2">
+            ${{ pnl.revenue.net_revenue|floatformat:0|add:"" }}
+          </p>
+          <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
+            Período {{ pnl.period.from }} a {{ pnl.period.to }}
+          </p>
+        </div>
+
+        <!-- Margen Bruto -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">Margen Bruto</p>
+          <p class="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-2">
+            {{ pnl.gross_margin_pct|floatformat:1 }}%
+          </p>
+          <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
+            Sobre ingresos netos
+          </p>
+        </div>
+
+        <!-- EBITDA -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">EBITDA</p>
+          <p class="text-2xl font-bold {% if pnl.ebitda >= 0 %}text-emerald-600 dark:text-emerald-400{% else %}text-red-600 dark:text-red-400{% endif %} mt-2">
+            ${{ pnl.ebitda|floatformat:0|add:"" }}
+          </p>
+          <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
+            Resultado operativo
+          </p>
+        </div>
+
+        <!-- Margen EBITDA -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">Margen EBITDA</p>
+          <p class="text-2xl font-bold {% if pnl.ebitda_margin_pct >= 0 %}text-blue-600 dark:text-blue-400{% else %}text-red-600 dark:text-red-400{% endif %} mt-2">
+            {{ pnl.ebitda_margin_pct|floatformat:1 }}%
+          </p>
+          <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
+            Sobre ingresos netos
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Detalles del P&L (Tabla) -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 class="text-lg font-bold text-gray-900 dark:text-white">Detalle del Período</h2>
+        </div>
+        
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+              
+              <!-- Ingresos -->
+              <tr class="bg-emerald-50 dark:bg-emerald-900/10">
+                <td class="px-6 py-3 font-bold text-gray-900 dark:text-white">Ventas Brutas</td>
+                <td class="px-6 py-3 text-right text-gray-900 dark:text-white">
+                  ${{ pnl.revenue.gross_sales|floatformat:0|add:"" }}
+                </td>
+              </tr>
+              
+              <tr>
+                <td class="px-6 py-3 font-bold text-gray-900 dark:text-white">Notas de Crédito</td>
+                <td class="px-6 py-3 text-right text-red-600 dark:text-red-400">
+                  -${{ pnl.revenue.credit_notes|floatformat:0|add:"" }}
+                </td>
+              </tr>
+              
+              <tr class="bg-gray-50 dark:bg-gray-700/30">
+                <td class="px-6 py-3 font-bold text-gray-900 dark:text-white">INGRESOS NETOS</td>
+                <td class="px-6 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                  ${{ pnl.revenue.net_revenue|floatformat:0|add:"" }}
+                </td>
+              </tr>
+
+              <!-- COGS -->
+              <tr class="bg-red-50 dark:bg-red-900/10">
+                <td class="px-6 py-3 font-bold text-gray-900 dark:text-white">(-) COGS</td>
+                <td class="px-6 py-3 text-right text-red-600 dark:text-red-400">
+                  -${{ pnl.cogs|floatformat:0|add:"" }}
+                </td>
+              </tr>
+
+              <!-- Margen Bruto -->
+              <tr class="bg-blue-50 dark:bg-blue-900/10">
+                <td class="px-6 py-3 font-bold text-gray-900 dark:text-white">MARGEN BRUTO</td>
+                <td class="px-6 py-3 text-right font-bold text-blue-600 dark:text-blue-400">
+                  ${{ pnl.gross_profit|floatformat:0|add:"" }} ({{ pnl.gross_margin_pct|floatformat:1 }}%)
+                </td>
+              </tr>
+
+              <!-- OPEX Desglosado -->
+              <tr class="bg-orange-50 dark:bg-orange-900/10">
+                <td colspan="2" class="px-6 py-3 font-bold text-gray-900 dark:text-white">GASTOS OPERATIVOS</td>
+              </tr>
+              
+              {% for category, amount in pnl.opex.by_category.items %}
+              <tr>
+                <td class="px-6 py-3 text-gray-700 dark:text-gray-300 pl-12">
+                  {{ category }}
+                </td>
+                <td class="px-6 py-3 text-right text-gray-900 dark:text-white">
+                  -${{ amount|floatformat:0|add:"" }}
+                </td>
+              </tr>
+              {% endfor %}
+
+              <tr class="bg-orange-50 dark:bg-orange-900/10">
+                <td class="px-6 py-3 font-bold text-gray-900 dark:text-white">TOTAL OPEX</td>
+                <td class="px-6 py-3 text-right font-bold text-orange-600 dark:text-orange-400">
+                  -${{ pnl.opex.total|floatformat:0|add:"" }}
+                </td>
+              </tr>
+
+              <!-- EBITDA -->
+              <tr class="bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-900/10 dark:to-blue-900/10">
+                <td class="px-6 py-4 font-bold text-lg text-gray-900 dark:text-white">RESULTADO OPERATIVO (EBITDA)</td>
+                <td class="px-6 py-4 text-right font-bold text-xl {% if pnl.ebitda >= 0 %}text-emerald-600 dark:text-emerald-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                  ${{ pnl.ebitda|floatformat:0|add:"" }}
+                </td>
+              </tr>
+              
+              <tr class="bg-gray-100 dark:bg-gray-700">
+                <td class="px-6 py-3 text-gray-700 dark:text-gray-300">Margen EBITDA %</td>
+                <td class="px-6 py-3 text-right font-bold {% if pnl.ebitda_margin_pct >= 0 %}text-emerald-600 dark:text-emerald-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                  {{ pnl.ebitda_margin_pct|floatformat:1 }}%
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Gráfico de Evolución Mensual -->
+      {% if monthly_labels %}
+        {% include "reports/partials/_pnl_chart.html" %}
+      {% endif %}
+
+    </div>
+    {% else %}
+    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-8 text-center">
+      <p class="text-gray-600 dark:text-gray-400">
+        {% if error %}
+          No se pueden mostrar los datos. {{ error }}
+        {% else %}
+          Selecciona un período para ver el Estado de Resultados.
+        {% endif %}
+      </p>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
