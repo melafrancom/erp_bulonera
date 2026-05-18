@@ -350,7 +350,8 @@ class WSPadronClient:
                 if id_elem is not None and id_elem.text:
                     estado = (estado_elem.text.strip().upper() if estado_elem is not None 
                               and estado_elem.text else 'ACTIVO')
-                    if estado == 'ACTIVO':
+                    # ARCA devuelve 'AC' (abreviado), no 'ACTIVO'
+                    if estado in ('ACTIVO', 'AC'):
                         try:
                             ids_impuesto_activos.add(int(id_elem.text.strip()))
                         except (ValueError, TypeError):
