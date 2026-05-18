@@ -47,6 +47,7 @@ class WSAAToken(models.Model):
     SERVICIO_CHOICES = [
         ('wsfe', 'Facturación Electrónica v1'),
         ('wsfe_v2', 'Facturación Electrónica v2'),
+        ('ws_sr_constancia_inscripcion', 'Constancia de Inscripción (Padrón A5)'),
     ]
     
     AMBIENTE_CHOICES = [
@@ -55,7 +56,7 @@ class WSAAToken(models.Model):
     ]
     
     cuit = models.CharField(max_length=15, db_index=True)
-    servicio = models.CharField(max_length=20, choices=SERVICIO_CHOICES)
+    servicio = models.CharField(max_length=50, choices=SERVICIO_CHOICES)
     ambiente = models.CharField(max_length=20, choices=AMBIENTE_CHOICES)
     
     token = models.TextField()
