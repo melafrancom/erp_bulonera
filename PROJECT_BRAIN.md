@@ -542,6 +542,25 @@ Usa las skills `template-standardization` y `verification-before-completion`."
 
 ---
 
+## 🔍 Codebase Knowledge Graph (codebase-memory-mcp)
+
+Este proyecto cuenta con `codebase-memory-mcp` para mantener un grafo de conocimiento estructurado del código.
+Siempre prefiere las herramientas del grafo de conocimiento sobre búsquedas de texto plano (`grep_search` / `glob`) para el descubrimiento y exploración de código.
+
+### Orden de Prioridad de Herramientas:
+1. **`search_graph`** — Buscar funciones, clases, vistas, rutas o variables mediante patrones.
+2. **`trace_path`** — Rastrear llamadas entrantes/salientes de una función o componente (quién la llama o qué llama).
+3. **`get_code_snippet`** — Leer el código fuente de funciones, clases o métodos específicos.
+4. **`query_graph`** — Realizar consultas complejas en el grafo usando sintaxis tipo Cypher.
+5. **`get_architecture`** — Resumen arquitectónico de alto nivel (lenguajes, límites, hotspots).
+
+### Cuándo volver a grep / búsquedas de archivos:
+- Al buscar constantes literales, mensajes de error específicos, o configuraciones de strings.
+- Al explorar archivos de configuración no estructurados (Dockerfiles, config de uWSGI, scripts shell).
+- Cuando el grafo de conocimiento retorne resultados insuficientes.
+
+---
+
 ## 🛠️ Skills Disponibles
 
 | Skill | Trigger Natural |
@@ -550,6 +569,7 @@ Usa las skills `template-standardization` y `verification-before-completion`."
 | `docker-environment` | Cualquier comando de ejecución/test |
 | `django-canonical` | Crear o refactorizar una app Django |
 | `template-standardization` | Crear o editar archivos en `templates/` |
+| `design-quality` | Crear o editar templates HTML del ERP, validación visual anti-slop |
 | `test-standardization` | Crear o editar archivos en `tests/` |
 | `tech-lead-advisor` | Debate de arquitectura o decisiones de diseño |
 | `prompt-engineering` | Automatización de roles y prompts XML |
@@ -575,4 +595,4 @@ Usa las skills `template-standardization` y `verification-before-completion`."
 
 ---
 
-*Última actualización: Abril 2026*
+*Última actualización: Junio 2026*

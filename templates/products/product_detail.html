@@ -261,7 +261,7 @@
       <section class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-200 dark:border-slate-700 p-8 transition-colors">
         <h2 class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.25em] mb-6">Origen Logístico</h2>
         {% if product.supplier %}
-          <div class="flex items-center gap-5 group cursor-pointer" onclick="window.location='{% url 'suppliers:supplier_detail' product.supplier.pk %}'">
+          <div class="flex items-center gap-5 group cursor-pointer" onclick="window.location='{% url 'suppliers_web:supplier_detail' product.supplier.pk %}'">
             <div class="w-14 h-14 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
               <i data-lucide="building-2" class="w-6 h-6 text-indigo-600 dark:text-indigo-400"></i>
             </div>
