@@ -28,7 +28,7 @@
             Editar Presupuesto <span class="text-blue-600 dark:text-blue-400">{{ quote.number }}</span>
           {% else %}
             <span class="flex items-center gap-3">
-              <span class="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg shadow-blue-500/20 dark:shadow-none">
+              <span class="inline-flex items-center justify-center w-10 h-10 bg-[#1B3A5C] text-white rounded-xl shadow-md">
                 <i data-lucide="file-plus" class="w-5 h-5 text-white"></i>
               </span>
               Nuevo Presupuesto
@@ -99,8 +99,8 @@
               <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider" style="width:105px">Precio Unit.</th>
               <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider" style="width:140px">Lista Precios</th>
               <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider" style="width:100px">Tipo Desc.</th>
-              <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider" style="width:80px">Descuento</th>
-              <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider" style="width:70px">IVA %</th>
+              <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider" style="width:100px">Descuento</th>
+              <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider" style="width:100px">IVA %</th>
               <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider" style="width:100px">Total</th>
               <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider" style="width:40px"></th>
             </tr>
@@ -112,7 +112,7 @@
                 <td class="px-3 py-2.5">
                   <select x-model="item.product"
                           @change="onProductChange(index)"
-                          class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition"
+                          class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-2 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition"
                           :class="{'border-red-400 bg-red-50 dark:bg-red-900/10': item._errors.product}">
                     <option value="">Seleccionar producto...</option>
                     {% for product in products %}
@@ -129,7 +129,7 @@
                         x-model.number="item.quantity"
                         @input="calculateLine(index)"
                         min="0.01" step="0.01"
-                        class="w-full text-sm text-right border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition"
+                        class="w-full text-sm text-right border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-2 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition"
                         :class="{'border-red-400 bg-red-50 dark:bg-red-900/10': item._errors.quantity}"
                         placeholder="1">
                 </td>
@@ -141,7 +141,7 @@
                           x-model.number="item.unit_price"
                           @input="calculateLine(index)"
                           min="0" step="0.01"
-                          class="w-full text-sm text-right pl-6 pr-2 py-2 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition"
+                          class="w-full text-sm text-right pl-6 pr-2 py-2 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition"
                           :class="{'border-red-400 bg-red-50 dark:bg-red-900/10': item._errors.unit_price}"
                           placeholder="0.00">
                   </div>
@@ -150,7 +150,7 @@
                 <td class="px-3 py-2.5">
                   <select x-model="item.price_list"
                           @change="onPriceListChange(index)"
-                          class="w-full text-xs border border-gray-200 dark:border-slate-700 rounded-lg px-1.5 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition">
+                          class="w-full text-xs border border-gray-200 dark:border-slate-700 rounded-lg px-1.5 py-2 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition">
                     <option value="">Sin lista</option>
                     {% for pl in pricelists %}
                     <option value="{{ pl.id }}" data-type="{{ pl.list_type }}" data-percentage="{{ pl.percentage }}">
@@ -163,7 +163,7 @@
                 <td class="px-3 py-2.5">
                   <select x-model="item.discount_type"
                           @change="calculateLine(index)"
-                          class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-1.5 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition">
+                          class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-1.5 py-2 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition">
                     <option value="none">Sin desc.</option>
                     <option value="percentage">%</option>
                     <option value="fixed">Fijo $</option>
@@ -176,7 +176,7 @@
                         @input="calculateLine(index)"
                         min="0" step="0.01"
                         :disabled="item.discount_type === 'none'"
-                        class="w-full text-sm text-right border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:text-gray-400 dark:disabled:text-slate-500"
+                        class="w-full text-sm text-right border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-2 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:text-gray-400 dark:disabled:text-slate-500"
                         placeholder="0">
                 </td>
                 <!-- IVA -->
@@ -186,7 +186,7 @@
                           x-model.number="item.tax_percentage"
                           @input="calculateLine(index)"
                           min="0" max="100" step="0.01"
-                          class="w-full text-sm text-right border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-2 pr-6 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition"
+                          class="w-full text-sm text-right border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-2 pr-6 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition"
                           placeholder="21">
                     <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 text-xs">%</span>
                   </div>
@@ -237,7 +237,7 @@
             </div>
             <select x-model="item.product"
                     @change="onProductChange(index)"
-                    class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition">
+                    class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition">
               <option value="">Seleccionar producto...</option>
               {% for product in products %}
               <option value="{{ product.id }}" data-price="{{ product.price }}">
@@ -250,7 +250,7 @@
               <label class="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Lista de Precios</label>
               <select x-model="item.price_list"
                       @change="onPriceListChange(index)"
-                      class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition">
+                      class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition">
                 <option value="">Sin lista</option>
                 {% for pl in pricelists %}
                 <option value="{{ pl.id }}" data-type="{{ pl.list_type }}" data-percentage="{{ pl.percentage }}">
@@ -263,19 +263,19 @@
               <div>
                 <label class="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Cantidad</label>
                 <input type="number" x-model.number="item.quantity" @input="calculateLine(index)"
-                      class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-slate-900 dark:text-slate-100 transition"
+                      class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent bg-white dark:bg-slate-900 dark:text-slate-100 transition"
                       min="0.01" step="0.01" placeholder="1">
               </div>
               <div>
                 <label class="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Precio Unit.</label>
                 <input type="number" x-model.number="item.unit_price" @input="calculateLine(index)"
-                      class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-slate-900 dark:text-slate-100 transition"
+                      class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent bg-white dark:bg-slate-900 dark:text-slate-100 transition"
                       min="0" step="0.01" placeholder="0.00">
               </div>
               <div>
                 <label class="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Tipo Desc.</label>
                 <select x-model="item.discount_type" @change="calculateLine(index)"
-                        class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-2 outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-slate-900 dark:text-slate-100 transition">
+                        class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-2 outline-none focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent bg-white dark:bg-slate-900 dark:text-slate-100 transition">
                   <option value="none">Sin desc.</option>
                   <option value="percentage">%</option>
                   <option value="fixed">Fijo $</option>
@@ -285,13 +285,13 @@
                 <label class="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Desc. Valor</label>
                 <input type="number" x-model.number="item.discount_value" @input="calculateLine(index)"
                       :disabled="item.discount_type === 'none'"
-                      class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-slate-900 dark:text-slate-100 transition disabled:bg-gray-100 dark:disabled:bg-slate-800"
+                      class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent bg-white dark:bg-slate-900 dark:text-slate-100 transition disabled:bg-gray-100 dark:disabled:bg-slate-800"
                       min="0" step="0.01" placeholder="0">
               </div>
               <div>
                 <label class="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">IVA %</label>
                 <input type="number" x-model.number="item.tax_percentage" @input="calculateLine(index)"
-                      class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-slate-900 dark:text-slate-100 transition"
+                      class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent bg-white dark:bg-slate-900 dark:text-slate-100 transition"
                       min="0" max="100" step="0.01" placeholder="21">
               </div>
               <div>
@@ -303,7 +303,7 @@
         </template>
         <!-- Botón agregar mobile -->
         <button type="button" @click="addItem()"
-                class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 dark:border-slate-700 hover:border-purple-400 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-xl text-sm font-medium text-gray-500 dark:text-slate-400 hover:text-purple-700 dark:hover:text-purple-300 transition">
+                class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl text-sm font-medium text-gray-500 dark:text-slate-400 hover:text-blue-700 dark:hover:text-blue-300 transition">
           <i data-lucide="plus" class="w-4 h-4"></i>
           Agregar Item
         </button>
@@ -350,7 +350,7 @@
         <div class="space-y-4">
           <div>
             <label class="block text-xs font-medium text-gray-700 dark:text-slate-400 mb-1">Notas para el Cliente</label>
-            <textarea name="notes" class="w-full border border-gray-200 dark:border-slate-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition" rows="3">{{ quote.notes }}</textarea>
+            <textarea name="notes" class="w-full border border-gray-200 dark:border-slate-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition" rows="3">{{ quote.notes }}</textarea>
             <p class="mt-1 text-[10px] text-gray-400 dark:text-slate-500">Visible en el documento impreso/PDF.</p>
           </div>
           {% if user.is_manager or user.is_admin or user.is_superuser %}
@@ -359,7 +359,7 @@
               <i data-lucide="lock" class="w-3 h-3 text-yellow-600 dark:text-yellow-500"></i>
               Notas Internas
             </label>
-            <textarea name="internal_notes" class="w-full border border-gray-200 dark:border-slate-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition" rows="3">{{ quote.internal_notes }}</textarea>
+            <textarea name="internal_notes" class="w-full border border-gray-200 dark:border-slate-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition" rows="3">{{ quote.internal_notes }}</textarea>
           </div>
           {% endif %}
         </div>
@@ -375,7 +375,7 @@
           <div>
             <label class="block text-xs font-medium text-gray-700 dark:text-slate-400 mb-1">Presupuesto válido hasta</label>
             <input type="date" x-model="valid_until" 
-                  class="w-full border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition">
+                  class="w-full border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition">
             <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-800/30">
               <p class="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
                 <span class="font-semibold">Nota:</span> Pasada esta fecha, es posible que los precios o el stock de los productos deban ser revisados.
@@ -529,6 +529,56 @@ function quoteForm() {
       ];
       this._nextId = existingItems.length + 1;
       this.items = existingItems;
+      {% elif copy_source %}
+      // Copiar presupuesto
+      {% if copy_source.customer %}
+        this.customerMode = 'existing';
+        this.selectedCustomer = {
+          id: {{ copy_source.customer.id }},
+          business_name: "{{ copy_source.customer.business_name|escapejs }}",
+          cuit_cuil: "{{ copy_source.customer.cuit_cuil|default:'' }}"
+        };
+        this.customerSearchQuery = this.selectedCustomer.business_name;
+      {% elif copy_source.customer_name %}
+        this.customerMode = 'new';
+        this.newCustomer = {
+          name: "{{ copy_source.customer_name|escapejs }}",
+          phone: "{{ copy_source.customer_phone|escapejs }}",
+          email: "{{ copy_source.customer_email|escapejs }}",
+          cuit: "{{ copy_source.customer_cuit|escapejs }}"
+        };
+      {% else %}
+        this.customerMode = 'anonymous';
+      {% endif %}
+
+      // Nuevo vencimiento por defecto a 7 días
+      const d = new Date();
+      d.setDate(d.getDate() + 7);
+      this.valid_until = d.toISOString().split('T')[0];
+
+      const existingItems = [
+        {% for item in prefilled_items %}
+        {
+          _id: {{ forloop.counter }},
+          product: {{ item.product_id }},
+          quantity: {{ item.quantity }},
+          unit_price: {{ item.unit_price }},
+          discount_type: "{{ item.discount_type }}",
+          discount_value: {{ item.discount_value }},
+          tax_percentage: {{ item.tax_percentage }},
+          notes: "{{ item.notes|escapejs }}",
+          showNotes: {% if item.notes %}true{% else %}false{% endif %},
+          price_list: '',
+          _basePrice: {{ item.unit_price }},
+          _total: 0,
+          _discount: 0,
+          _errors: {}
+        },
+        {% endfor %}
+      ];
+      this._nextId = existingItems.length + 1;
+      this.items = existingItems;
+      this.items.forEach((item, index) => this.calculateLine(index));
       {% else %}
       // Nuevo presupuesto: default válido por 7 días
       const d = new Date();

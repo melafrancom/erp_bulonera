@@ -110,3 +110,27 @@ class TestSaleWebActions:
         quote.refresh_from_db()
         assert quote.status == 'converted'
         assert Sale.objects.filter(quote=quote).exists()
+
+    def test_quote_create_copy_quote(self, web_client, quote, product):
+        from sales.models import QuoteItem
+        QuoteItem.objects.create(
+            quote=quote,
+            product=product,
+            quantity=2,
+            unit_price=product.price,
+            tax_percentage=21
+        )
+        url = reverse('sales_web:quote_create') + f'?copy_quote={quote.pk}'
+        response = web_client.get(url)
+        assert response.status_code == 200
+        assert response.context['copy_source'] == quote
+        assert len(response.context['prefilled_items']) == 1
+        assert response.context['prefilled_items'][0]['product_id'] == product.id
+
+    def test_sale_create_copy_sale(self, web_client, sale_with_items, product):
+        url = reverse('sales_web:sale_create') + f'?copy_sale={sale_with_items.pk}'
+        response = web_client.get(url)
+        assert response.status_code == 200
+        assert response.context['copy_source'] == sale_with_items
+        assert len(response.context['prefilled_items']) == 1
+        assert response.context['prefilled_items'][0]['product_id'] == sale_with_items.items.first().product_id

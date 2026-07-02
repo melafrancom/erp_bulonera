@@ -252,6 +252,46 @@ def quote_create(request):
         messages.error(request, 'No tenés permisos para crear presupuestos.')
         return redirect('sales_web:quote_list')
 
+    prefilled_items = []
+    copy_source = None
+    copy_quote_id = request.GET.get('copy_quote')
+    copy_sale_id = request.GET.get('copy_sale')
+
+    if copy_quote_id:
+        try:
+            quote_obj = Quote.objects.get(pk=copy_quote_id)
+            if _owns_or_privileged(request.user, quote_obj):
+                copy_source = quote_obj
+                for item in quote_obj.items.select_related('product').all():
+                    prefilled_items.append({
+                        'product_id': item.product.id,
+                        'quantity': float(item.quantity),
+                        'unit_price': float(item.product.price),
+                        'discount_type': item.discount_type,
+                        'discount_value': float(item.discount_value),
+                        'tax_percentage': float(item.tax_percentage),
+                        'notes': getattr(item, 'notes', ''),
+                    })
+        except Quote.DoesNotExist:
+            pass
+    elif copy_sale_id:
+        try:
+            sale_obj = Sale.objects.get(pk=copy_sale_id)
+            if _owns_or_privileged(request.user, sale_obj):
+                copy_source = sale_obj
+                for item in sale_obj.items.select_related('product').all():
+                    prefilled_items.append({
+                        'product_id': item.product.id,
+                        'quantity': float(item.quantity),
+                        'unit_price': float(item.product.price),
+                        'discount_type': item.discount_type,
+                        'discount_value': float(item.discount_value),
+                        'tax_percentage': float(item.tax_percentage),
+                        'notes': getattr(item, 'notes', ''),
+                    })
+        except Sale.DoesNotExist:
+            pass
+
     context = {
         'products':      _get_products_queryset(),
         'pricelists':    _get_pricelists_queryset(),
@@ -259,6 +299,8 @@ def quote_create(request):
         'subcategories': _get_subcategories_queryset(),
         'today':         timezone.now().date(),
         'mode':          'create',
+        'copy_source':   copy_source,
+        'prefilled_items': prefilled_items,
     }
     return render(request, 'sales/quote_form.html', context)
 
@@ -500,6 +542,46 @@ def sale_create(request):
         messages.error(request, 'No tenés permisos para crear presupuestos.')
         return redirect('sales_web:quote_list')
 
+    prefilled_items = []
+    copy_source = None
+    copy_quote_id = request.GET.get('copy_quote')
+    copy_sale_id = request.GET.get('copy_sale')
+
+    if copy_quote_id:
+        try:
+            quote_obj = Quote.objects.get(pk=copy_quote_id)
+            if _owns_or_privileged(request.user, quote_obj):
+                copy_source = quote_obj
+                for item in quote_obj.items.select_related('product').all():
+                    prefilled_items.append({
+                        'product_id': item.product.id,
+                        'quantity': float(item.quantity),
+                        'unit_price': float(item.product.price),
+                        'discount_type': item.discount_type,
+                        'discount_value': float(item.discount_value),
+                        'tax_percentage': float(item.tax_percentage),
+                        'notes': getattr(item, 'notes', ''),
+                    })
+        except Quote.DoesNotExist:
+            pass
+    elif copy_sale_id:
+        try:
+            sale_obj = Sale.objects.get(pk=copy_sale_id)
+            if _owns_or_privileged(request.user, sale_obj):
+                copy_source = sale_obj
+                for item in sale_obj.items.select_related('product').all():
+                    prefilled_items.append({
+                        'product_id': item.product.id,
+                        'quantity': float(item.quantity),
+                        'unit_price': float(item.product.price),
+                        'discount_type': item.discount_type,
+                        'discount_value': float(item.discount_value),
+                        'tax_percentage': float(item.tax_percentage),
+                        'notes': getattr(item, 'notes', ''),
+                    })
+        except Sale.DoesNotExist:
+            pass
+
     context = {
         'products':      _get_products_queryset(),
         'pricelists':    _get_pricelists_queryset(),
@@ -507,6 +589,8 @@ def sale_create(request):
         'subcategories': _get_subcategories_queryset(),
         'today':         timezone.now().date(),
         'mode':          'create',
+        'copy_source':   copy_source,
+        'prefilled_items': prefilled_items,
     }
     return render(request, 'sales/sale_form.html', context)
 

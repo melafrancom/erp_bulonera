@@ -293,6 +293,32 @@
       // Inicializar Lucide Icons
       if (typeof lucide !== "undefined") {
         lucide.createIcons();
+        
+        // Observar cambios en el DOM para procesar nuevos iconos dinámicos (Alpine.js, modales, etc.)
+        const observer = new MutationObserver((mutations) => {
+          let hasNewIcons = false;
+          for (let i = 0; i < mutations.length; i++) {
+            const addedNodes = mutations[i].addedNodes;
+            for (let j = 0; j < addedNodes.length; j++) {
+              const node = addedNodes[j];
+              if (node.nodeType === 1) { // Node.ELEMENT_NODE
+                // Solo buscamos etiquetas <i> con data-lucide (los iconos no procesados)
+                // Esto evita procesar las etiquetas <svg> ya creadas por Lucide
+                if ((node.tagName === 'I' && node.hasAttribute('data-lucide')) || node.querySelector('i[data-lucide]')) {
+                  hasNewIcons = true;
+                  break;
+                }
+              }
+            }
+            if (hasNewIcons) break;
+          }
+          if (hasNewIcons) {
+            observer.disconnect();
+            lucide.createIcons();
+            observer.observe(document.body, { childList: true, subtree: true });
+          }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
       }
 
       // Cerrar sidebar al hacer clic en un link (mobile)
