@@ -135,80 +135,62 @@ def _get_period_range(request):
 
 
 def _compute_sales_chart_data(sales_qs, date_from, date_to):
-    from datetime import timedelta, datetime
-    from django.db.models.functions import TruncDay, TruncMonth
+    from datetime import timedelta, datetime, time
     
     delta = date_to - date_from
     labels = []
     counts = []
     totals = []
     
+    # 1. Filtrar ventas en base de datos usando rango simple de fechas (sin funciones de BD complejas)
+    dt_from = timezone.make_aware(datetime.combine(date_from, time.min))
+    dt_to = timezone.make_aware(datetime.combine(date_to, time.max))
+    
+    sales_in_range = (
+        sales_qs
+        .filter(status__in=['confirmed', 'delivered'], date__range=[dt_from, dt_to])
+        .values('date', '_cached_total')
+    )
+    
     if delta.days <= 31:
-        # Group by day
-        sales_by_day = (
-            sales_qs
-            .filter(status__in=['confirmed', 'delivered'])
-            .annotate(day=TruncDay('date'))
-            .values('day')
-            .annotate(
-                count=models.Count('id'),
-                total=models.Sum('_cached_total')
-            )
-            .order_by('day')
-        )
-        data_map = {}
-        for item in sales_by_day:
-            dt = item['day']
-            if isinstance(dt, datetime):
-                d = dt.date()
-            else:
-                d = dt
-            data_map[d] = item
+        # Agrupar por día en Python
+        from collections import defaultdict
+        daily_counts = defaultdict(int)
+        daily_totals = defaultdict(float)
+        
+        for sale in sales_in_range:
+            dt = sale['date']
+            local_dt = timezone.localtime(dt)
+            d = local_dt.date()
+            daily_counts[d] += 1
+            daily_totals[d] += float(sale['_cached_total'] or 0)
             
         curr = date_from
         while curr <= date_to:
             label = curr.strftime('%d/%m')
             labels.append(label)
-            if curr in data_map:
-                counts.append(data_map[curr]['count'])
-                totals.append(float(data_map[curr]['total'] or 0))
-            else:
-                counts.append(0)
-                totals.append(0.0)
+            counts.append(daily_counts[curr])
+            totals.append(daily_totals[curr])
             curr += timedelta(days=1)
     else:
-        # Group by month
-        sales_by_month = (
-            sales_qs
-            .filter(status__in=['confirmed', 'delivered'])
-            .annotate(month=TruncMonth('date'))
-            .values('month')
-            .annotate(
-                count=models.Count('id'),
-                total=models.Sum('_cached_total')
-            )
-            .order_by('month')
-        )
-        data_map = {}
-        for item in sales_by_month:
-            dt = item['month']
-            if isinstance(dt, datetime):
-                d = dt.date()
-            else:
-                d = dt
-            d = d.replace(day=1)
-            data_map[d] = item
+        # Agrupar por mes en Python
+        from collections import defaultdict
+        monthly_counts = defaultdict(int)
+        monthly_totals = defaultdict(float)
+        
+        for sale in sales_in_range:
+            dt = sale['date']
+            local_dt = timezone.localtime(dt)
+            m = local_dt.date().replace(day=1)
+            monthly_counts[m] += 1
+            monthly_totals[m] += float(sale['_cached_total'] or 0)
             
         curr = date_from.replace(day=1)
         while curr <= date_to:
             label = curr.strftime('%b %y')
             labels.append(label)
-            if curr in data_map:
-                counts.append(data_map[curr]['count'])
-                totals.append(float(data_map[curr]['total'] or 0))
-            else:
-                counts.append(0)
-                totals.append(0.0)
+            counts.append(monthly_counts[curr])
+            totals.append(monthly_totals[curr])
             
             if curr.month == 12:
                 curr = curr.replace(year=curr.year + 1, month=1)
