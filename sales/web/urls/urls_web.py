@@ -21,7 +21,7 @@ Montado en erp_crm_bulonera/urls.py bajo el prefijo /ventas/
 """
 
 from django.urls import path
-
+from sales.web.views import export_views
 from sales.web.views.web_views import (
     # Dashboard
     sales_dashboard,
@@ -60,6 +60,7 @@ urlpatterns = [
 
     # ── Presupuestos (Quotes) ─────────────────────────────────────────────────
     path('presupuestos/',                  quote_list,   name='quote_list'),
+    path('presupuestos/export/',           export_views.quote_list_export, name='quote_list_export'),
     path('presupuestos/nuevo/',            quote_create, name='quote_create'),
     path('presupuestos/<int:pk>/',         quote_detail, name='quote_detail'),
     path('presupuestos/<int:pk>/editar/',  quote_update, name='quote_update'),
@@ -83,6 +84,7 @@ urlpatterns = [
 
     # ── Ventas (Sales) ────────────────────────────────────────────────────────
     path('ventas/',             sale_list,   name='sale_list'),
+    path('ventas/export/',                 export_views.sale_list_export, name='sale_list_export'),
     path('ventas/nueva/',       sale_create, name='sale_create'),
     path('ventas/<int:pk>/',    sale_detail, name='sale_detail'),
 

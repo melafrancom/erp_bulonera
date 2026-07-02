@@ -77,34 +77,211 @@ def _owns_or_privileged(user, obj):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# DASHBOARD
 # ─────────────────────────────────────────────────────────────────────────────
+# DASHBOARD HELPERS (NUEVO)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _get_period_range(request):
+    from datetime import date, timedelta
+    import calendar
+    
+    period = request.GET.get('period', 'month').strip().lower()
+    today = timezone.localtime(timezone.now()).date()
+    
+    if period == 'today':
+        date_from = today
+        date_to = today
+        label = "Hoy"
+    elif period == 'week':
+        date_from = today - timedelta(days=today.weekday())
+        date_to = today
+        label = "Esta Semana"
+    elif period == 'month':
+        date_from = today.replace(day=1)
+        _, last_day = calendar.monthrange(today.year, today.month)
+        date_to = today.replace(day=last_day)
+        label = "Este Mes"
+    elif period == 'quarter':
+        quarter = (today.month - 1) // 3 + 1
+        month_from = (quarter - 1) * 3 + 1
+        date_from = today.replace(month=month_from, day=1)
+        month_to = quarter * 3
+        _, last_day = calendar.monthrange(today.year, month_to)
+        date_to = today.replace(month=month_to, day=last_day)
+        label = "Este Trimestre"
+    elif period == 'year':
+        date_from = today.replace(month=1, day=1)
+        date_to = today.replace(month=12, day=31)
+        label = "Este Año"
+    elif period == 'custom':
+        from_str = request.GET.get('from', '')
+        to_str = request.GET.get('to', '')
+        try:
+            date_from = timezone.datetime.strptime(from_str, '%Y-%m-%d').date()
+            date_to = timezone.datetime.strptime(to_str, '%Y-%m-%d').date()
+            label = f"Personalizado ({from_str} a {to_str})"
+        except ValueError:
+            date_from = today.replace(day=1)
+            _, last_day = calendar.monthrange(today.year, today.month)
+            date_to = today.replace(day=last_day)
+            label = "Este Mes (Rango Inválido)"
+    else:
+        date_from = today.replace(day=1)
+        _, last_day = calendar.monthrange(today.year, today.month)
+        date_to = today.replace(day=last_day)
+        label = "Este Mes"
+        
+    return date_from, date_to, label
+
+
+def _compute_sales_chart_data(sales_qs, date_from, date_to):
+    from datetime import timedelta, datetime
+    from django.db.models.functions import TruncDay, TruncMonth
+    
+    delta = date_to - date_from
+    labels = []
+    counts = []
+    totals = []
+    
+    if delta.days <= 31:
+        # Group by day
+        sales_by_day = (
+            sales_qs
+            .filter(status__in=['confirmed', 'delivered'])
+            .annotate(day=TruncDay('date'))
+            .values('day')
+            .annotate(
+                count=models.Count('id'),
+                total=models.Sum('_cached_total')
+            )
+            .order_by('day')
+        )
+        data_map = {}
+        for item in sales_by_day:
+            dt = item['day']
+            if isinstance(dt, datetime):
+                d = dt.date()
+            else:
+                d = dt
+            data_map[d] = item
+            
+        curr = date_from
+        while curr <= date_to:
+            label = curr.strftime('%d/%m')
+            labels.append(label)
+            if curr in data_map:
+                counts.append(data_map[curr]['count'])
+                totals.append(float(data_map[curr]['total'] or 0))
+            else:
+                counts.append(0)
+                totals.append(0.0)
+            curr += timedelta(days=1)
+    else:
+        # Group by month
+        sales_by_month = (
+            sales_qs
+            .filter(status__in=['confirmed', 'delivered'])
+            .annotate(month=TruncMonth('date'))
+            .values('month')
+            .annotate(
+                count=models.Count('id'),
+                total=models.Sum('_cached_total')
+            )
+            .order_by('month')
+        )
+        data_map = {}
+        for item in sales_by_month:
+            dt = item['month']
+            if isinstance(dt, datetime):
+                d = dt.date()
+            else:
+                d = dt
+            d = d.replace(day=1)
+            data_map[d] = item
+            
+        curr = date_from.replace(day=1)
+        while curr <= date_to:
+            label = curr.strftime('%b %y')
+            labels.append(label)
+            if curr in data_map:
+                counts.append(data_map[curr]['count'])
+                totals.append(float(data_map[curr]['total'] or 0))
+            else:
+                counts.append(0)
+                totals.append(0.0)
+            
+            if curr.month == 12:
+                curr = curr.replace(year=curr.year + 1, month=1)
+            else:
+                curr = curr.replace(month=curr.month + 1)
+                
+    return labels, counts, totals
+
 
 @login_required
 def sales_dashboard(request):
     """Dashboard principal de ventas con métricas clave."""
+    from datetime import datetime, time
+    from django.db.models import Sum
+    from decimal import Decimal
+    import json
+    
+    # 1. Obtener período seleccionado
+    date_from, date_to, period_label = _get_period_range(request)
+    
+    # timezone-aware datetimes para filtrar DateTimeFields
+    dt_from = timezone.make_aware(datetime.combine(date_from, time.min))
+    dt_to = timezone.make_aware(datetime.combine(date_to, time.max))
 
-    # ── Presupuestos ──────────────────────────────────────────────────────────
+    # 2. Querysets base respetando permisos (operators ven solo lo propio, managers/admins ven todo)
     quotes_qs = Quote.objects.all()
-    total_quotes    = quotes_qs.count()
-    quotes_sent     = quotes_qs.filter(status='sent').count()
-    quotes_accepted = quotes_qs.filter(status='accepted').count()
-    quotes_draft    = quotes_qs.filter(status='draft').count()
-    quotes_pending  = quotes_qs.filter(status__in=['draft', 'sent']).count()
-    recent_quotes   = quotes_qs.select_related('customer').order_by('-date')[:5]
-
-    # ── Ventas ────────────────────────────────────────────────────────────────
     sales_qs = Sale.objects.all()
-    total_sales           = sales_qs.count()
-    sales_confirmed       = sales_qs.filter(status='confirmed').count()
-    sales_delivered       = sales_qs.filter(status='delivered').count()
-    sales_unpaid          = sales_qs.filter(payment_status='unpaid').count()
-    sales_partially_paid  = sales_qs.filter(payment_status='partially_paid').count()
-    sales_paid            = sales_qs.filter(payment_status='paid').count()
-    sales_pending_payment = sales_qs.exclude(payment_status='paid').count()
-    recent_sales          = sales_qs.select_related('customer').order_by('-date')[:5]
+
+    if not _is_privileged(request.user):
+        quotes_qs = quotes_qs.filter(created_by=request.user)
+        sales_qs = sales_qs.filter(created_by=request.user)
+        
+    # Recientes se obtienen antes de aplicar filtros de fecha del período
+    recent_quotes = quotes_qs.select_related('customer').order_by('-date')[:5]
+    recent_sales = sales_qs.select_related('customer').order_by('-date')[:5]
+
+    # 3. Aplicar filtros de fecha del período
+    quotes_filtered = quotes_qs.filter(date__range=[date_from, date_to])
+    sales_filtered = sales_qs.filter(date__range=[dt_from, dt_to])
+
+    # ── Métricas de Presupuestos ──────────────────────────────────────────────
+    total_quotes    = quotes_filtered.count()
+    quotes_sent     = quotes_filtered.filter(status='sent').count()
+    quotes_accepted = quotes_filtered.filter(status='accepted').count()
+    quotes_draft    = quotes_filtered.filter(status='draft').count()
+    quotes_pending  = quotes_filtered.filter(status__in=['draft', 'sent']).count()
+
+    # ── Métricas de Ventas ────────────────────────────────────────────────────
+    total_sales           = sales_filtered.count()
+    sales_confirmed       = sales_filtered.filter(status='confirmed').count()
+    sales_delivered       = sales_filtered.filter(status='delivered').count()
+    sales_unpaid          = sales_filtered.filter(payment_status='unpaid').count()
+    sales_partially_paid  = sales_filtered.filter(payment_status='partially_paid').count()
+    sales_paid            = sales_filtered.filter(payment_status='paid').count()
+    sales_pending_payment = sales_filtered.exclude(payment_status='paid').count()
+
+    # ── Montos Financieros (NUEVO) ─────────────────────────────────────────────
+    sales_confirmed_delivered = sales_filtered.filter(status__in=['confirmed', 'delivered'])
+    total_sales_amount = sales_confirmed_delivered.aggregate(total=Sum('_cached_total'))['total'] or Decimal('0')
+    
+    sales_count_for_avg = sales_confirmed_delivered.count()
+    average_ticket = total_sales_amount / sales_count_for_avg if sales_count_for_avg > 0 else Decimal('0')
+
+    # ── Datos de Evolución para el Gráfico (NUEVO) ──────────────────────────────
+    chart_labels, chart_counts, chart_totals = _compute_sales_chart_data(sales_qs, date_from, date_to)
 
     context = {
+        # Periodo
+        'selected_period': request.GET.get('period', 'month'),
+        'date_from': date_from.strftime('%Y-%m-%d'),
+        'date_to': date_to.strftime('%Y-%m-%d'),
+        'period_label': period_label,
+        
         # Quotes
         'total_quotes':     total_quotes,
         'quotes_sent':      quotes_sent,
@@ -112,6 +289,7 @@ def sales_dashboard(request):
         'quotes_draft':     quotes_draft,
         'quotes_pending':   quotes_pending,
         'recent_quotes':    recent_quotes,
+        
         # Sales
         'total_sales':            total_sales,
         'sales_confirmed':        sales_confirmed,
@@ -121,6 +299,15 @@ def sales_dashboard(request):
         'sales_paid':             sales_paid,
         'sales_pending_payment':  sales_pending_payment,
         'recent_sales':           recent_sales,
+        
+        # Totales y Promedios Financieros
+        'total_sales_amount':     total_sales_amount,
+        'average_ticket':         average_ticket,
+        
+        # Chart Data
+        'chart_labels':           json.dumps(chart_labels),
+        'chart_counts':           json.dumps(chart_counts),
+        'chart_totals':           json.dumps(chart_totals),
     }
 
     return render(request, 'sales/dashboard.html', context)
