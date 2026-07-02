@@ -147,3 +147,46 @@ body {
     display: none !important;
   }
 }
+
+/* Split Price Display Component */
+.price-display {
+  display: inline-flex;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+}
+
+.price-display__symbol {
+  font-size: 0.75em;
+  font-weight: 700;
+  margin-right: 0.1em;
+  opacity: 0.85;
+}
+
+.price-display__integer {
+  font-weight: 900;
+}
+
+.price-display__separator {
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+
+.price-display__decimals {
+  font-size: 0.75em;
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+.price-display--hero {
+  font-size: 2.5rem; /* Equivale a text-4xl/5xl */
+  line-height: 1;
+}
+
+.price-display--hero .price-display__integer {
+  font-size: 1.25em;
+}
+
+.price-display--compact {
+  font-size: inherit; /* Hereda tamaño de la tipografía del contenedor */
+}
+

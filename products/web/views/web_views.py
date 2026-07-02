@@ -206,7 +206,7 @@ def product_list(request):
     for p in products:
         # Calcular IVA del precio base
         tax_multiplier = 1 + (p.tax_rate / Decimal('100.0'))
-        p_base_with_tax = (p.price * tax_multiplier).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        p_base_with_tax = (p.price * tax_multiplier).quantize(Decimal('0.000001'), rounding=ROUND_HALF_UP)
         p.base_price_with_tax = p_base_with_tax
         
         # p.price es Decimal, tax_rate es Decimal

@@ -77,9 +77,9 @@
           <div>
             <label for="id_percentage" class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">Porcentaje</label>
             <div class="relative group">
-              <input type="number" id="id_percentage" name="percentage" required min="0.01" step="0.01"
-                     value="{% if is_edit %}{{ pricelist.percentage }}{% endif %}"
-                     placeholder="0.00"
+              <input type="number" id="id_percentage" name="percentage" required min="0.000001" step="0.000001"
+                     value="{% if is_edit %}{{ pricelist.percentage|floatformat:-6 }}{% endif %}"
+                     placeholder="0.000000"
                      class="w-full bg-gray-50 dark:bg-slate-900 border-none rounded-2xl px-6 py-4 text-sm font-bold text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 transition-all tabular-nums shadow-inner">
               <span class="absolute right-6 top-1/2 -translate-y-1/2 font-black text-indigo-500 text-sm">%</span>
             </div>
@@ -171,21 +171,28 @@
       const type = typeSelect.value;
       const pct = parseFloat(percentageInput.value) || 0;
       let finalPrice = basePrice;
+      const pctStr = Number(pct.toFixed(6)).toString();
 
       if (type === 'DISCOUNT') {
         finalPrice = basePrice * (1 - pct / 100);
-        indicatorEl.textContent = `-${pct.toFixed(1)}%`;
+        indicatorEl.textContent = `-${pctStr}%`;
         indicatorEl.className = 'text-[10px] font-black bg-emerald-500/20 text-emerald-100 px-2 py-0.5 rounded uppercase tabular-nums';
       } else if (type === 'SURCHARGE') {
         finalPrice = basePrice * (1 + pct / 100);
-        indicatorEl.textContent = `+${pct.toFixed(1)}%`;
+        indicatorEl.textContent = `+${pctStr}%`;
         indicatorEl.className = 'text-[10px] font-black bg-red-400/20 text-red-100 px-2 py-0.5 rounded uppercase tabular-nums';
       } else {
         indicatorEl.textContent = '±0%';
         indicatorEl.className = 'text-[10px] font-black bg-white/20 text-white px-2 py-0.5 rounded uppercase tabular-nums';
       }
 
-      previewEl.textContent = '$' + finalPrice.toFixed(2).replace('.', ',');
+      let finalPriceStr = finalPrice.toFixed(6);
+      if (finalPriceStr.includes('.')) {
+        while (finalPriceStr.endsWith('0') && finalPriceStr.split('.')[1].length > 2) {
+          finalPriceStr = finalPriceStr.slice(0, -1);
+        }
+      }
+      previewEl.textContent = '$' + finalPriceStr.replace('.', ',');
     }
 
     typeSelect.addEventListener('change', updatePreview);

@@ -102,8 +102,8 @@ class TestProductActions:
         data = {'sale_price': '250.00', 'cost_price': '120.00'}
         response = authenticated_client.patch(url, data, format='json')
         assert response.status_code == status.HTTP_200_OK
-        assert response.data['price'] == '250.00'
-        assert response.data['cost'] == '120.00'
+        assert response.data['price'] == '250.000000'
+        assert response.data['cost'] == '120.000000'
 
     def test_price_lists(self, authenticated_client, product, price_list):
         """GET /api/v1/products/{id}/price-lists/ - Precios con listas."""

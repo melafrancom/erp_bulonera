@@ -79,7 +79,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     """Serializador resumido para listados de productos."""
     category_name = serializers.CharField(source='category.name', read_only=True)
     sale_price_with_tax = serializers.DecimalField(
-        max_digits=12, decimal_places=2, read_only=True
+        max_digits=16, decimal_places=6, read_only=True
     )
     profit_margin_percentage = serializers.DecimalField(
         max_digits=8, decimal_places=2, read_only=True
@@ -111,13 +111,13 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     # Computed
     sale_price_with_tax = serializers.DecimalField(
-        max_digits=12, decimal_places=2, read_only=True
+        max_digits=16, decimal_places=6, read_only=True
     )
     profit_margin_percentage = serializers.DecimalField(
         max_digits=8, decimal_places=2, read_only=True
     )
     profit_amount = serializers.DecimalField(
-        max_digits=12, decimal_places=2, read_only=True
+        max_digits=16, decimal_places=6, read_only=True
     )
 
     class Meta:
@@ -220,10 +220,10 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
 class ProductQuickPriceSerializer(serializers.Serializer):
     """Serializador para actualización rápida de precio."""
     sale_price = serializers.DecimalField(
-        max_digits=12, decimal_places=2, required=False
+        max_digits=16, decimal_places=6, required=False
     )
     cost_price = serializers.DecimalField(
-        max_digits=12, decimal_places=2, required=False
+        max_digits=16, decimal_places=6, required=False
     )
     tax_rate = serializers.DecimalField(
         max_digits=5, decimal_places=2, required=False

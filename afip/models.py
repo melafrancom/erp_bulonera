@@ -406,8 +406,8 @@ class ComprobRenglon(models.Model):
         validators=[MinValueValidator(Decimal('0.0001'))]
     )
     precio_unitario = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
+        max_digits=16,
+        decimal_places=6,
         validators=[MinValueValidator(Decimal('0.01'))]
     )
     subtotal = models.DecimalField(

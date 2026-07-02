@@ -111,7 +111,7 @@ class QuoteItem(BaseModel):
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     
     quantity = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(Decimal('0.001'))])
-    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    unit_price = models.DecimalField(max_digits=16, decimal_places=6)
     
     discount_type = models.CharField(
         max_length=10,
@@ -559,12 +559,12 @@ class SaleItem(BaseModel):
         decimal_places=3,
         validators=[MinValueValidator(Decimal('0.001'))]
     )
-    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    unit_price = models.DecimalField(max_digits=16, decimal_places=6)
     
     # Snapshot del costo al momento de venta (para calcular ganancia)
     unit_cost = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
+        max_digits=16,
+        decimal_places=6,
         default=0,
         help_text='Costo unitario al momento de la venta'
     )

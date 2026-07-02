@@ -1,3 +1,4 @@
+{% load core_tags %}
 <!-- 
   Partial: _product_card.html
   Uso: { .. % include 'products/partials/_product_card.html' with product=p % .. }
@@ -59,15 +60,15 @@
     <div class="grid grid-cols-3 gap-3">
       <div class="bg-gray-50 dark:bg-slate-900/50 rounded-xl p-3 flex flex-col items-center justify-center transition-colors">
         <span class="text-[8px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-tighter text-center leading-tight">Costo<br/>s/IVA</span>
-        <span class="font-bold text-gray-700 dark:text-slate-300 tabular-nums text-xs mt-1">${{ product.cost|floatformat:2 }}</span>
+        <span class="font-bold text-gray-700 dark:text-slate-300 text-xs mt-1">{{ product.cost|price_display:'compact' }}</span>
       </div>
       <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 flex flex-col items-center justify-center transition-colors">
         <span class="text-[8px] font-black text-blue-500 dark:text-blue-400 uppercase tracking-tighter text-center leading-tight">Venta<br/>s/IVA</span>
-        <span class="font-black text-blue-700 dark:text-blue-300 tabular-nums text-xs mt-1">${{ product.price|floatformat:2 }}</span>
+        <span class="font-black text-blue-700 dark:text-blue-300 text-xs mt-1">{{ product.price|price_display:'compact' }}</span>
       </div>
       <div class="bg-emerald-100/50 dark:bg-emerald-900/30 rounded-xl p-3 flex flex-col items-center justify-center border border-emerald-200 dark:border-emerald-800/30 transition-colors">
         <span class="text-[8px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-tighter text-center leading-tight">Venta<br/>c/IVA</span>
-        <span class="font-black text-emerald-700 dark:text-emerald-300 tabular-nums text-sm mt-1 mb-0.5">${{ product.base_price_with_tax|floatformat:2 }}</span>
+        <span class="font-black text-emerald-700 dark:text-emerald-300 text-sm mt-1 mb-0.5">{{ product.base_price_with_tax|price_display:'compact' }}</span>
       </div>
     </div>
   </div>
@@ -141,7 +142,7 @@
                   <span class="text-red-500 font-black tabular-nums">-{{ cp.percentage|floatformat:0 }}%</span>
                 {% endif %}
               </td>
-              <td class="px-3 py-3 text-right font-black text-gray-900 dark:text-slate-100 tabular-nums whitespace-nowrap">${{ cp.price_with_tax|floatformat:2 }}</td>
+              <td class="px-3 py-3 text-right font-black text-gray-900 dark:text-slate-100 whitespace-nowrap">{{ cp.price_with_tax|price_display:'compact' }}</td>
             </tr>
             {% endfor %}
           </tbody>

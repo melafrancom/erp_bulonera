@@ -160,13 +160,13 @@ class Product(BaseModel):
 
     # ── Precios ─────────────────────────────────────────────────────────
     price = models.DecimalField(
-        "Precio de venta (sin IVA)", max_digits=12, decimal_places=2,
+        "Precio de venta (sin IVA)", max_digits=16, decimal_places=6,
         default=Decimal('0.00'),
         validators=[MinValueValidator(Decimal('0.00'))],
         help_text="Precio base de venta sin IVA."
     )
     cost = models.DecimalField(
-        "Precio de costo (sin IVA)", max_digits=12, decimal_places=2,
+        "Precio de costo (sin IVA)", max_digits=16, decimal_places=6,
         default=Decimal('0.00'),
         validators=[MinValueValidator(Decimal('0.00'))],
         help_text="Último costo de compra sin IVA."
@@ -275,7 +275,7 @@ class Product(BaseModel):
         "Fecha última compra", null=True, blank=True
     )
     last_purchase_price = models.DecimalField(
-        "Último precio de compra", max_digits=12, decimal_places=2,
+        "Último precio de compra", max_digits=16, decimal_places=6,
         null=True, blank=True
     )
 
@@ -341,7 +341,7 @@ class Product(BaseModel):
     def sale_price_with_tax(self):
         """Precio de venta con IVA incluido."""
         return (self.price * (1 + self.tax_rate / 100)).quantize(
-            Decimal('0.01'), rounding=ROUND_HALF_UP
+            Decimal('0.000001'), rounding=ROUND_HALF_UP
         )
 
     @property
@@ -357,7 +357,7 @@ class Product(BaseModel):
     def profit_amount(self):
         """Ganancia en pesos (venta - costo)."""
         return (self.price - self.cost).quantize(
-            Decimal('0.01'), rounding=ROUND_HALF_UP
+            Decimal('0.000001'), rounding=ROUND_HALF_UP
         )
 
     # ── Métodos de negocio ──────────────────────────────────────────────
@@ -505,7 +505,7 @@ class PriceList(BaseModel):
         "Tipo", max_length=20, choices=TYPE_CHOICES
     )
     percentage = models.DecimalField(
-        "Porcentaje", max_digits=5, decimal_places=2,
+        "Porcentaje", max_digits=10, decimal_places=6,
         help_text="Valor positivo. Ej: 20 para -20% descuento o +20% recargo."
     )
     description = models.TextField(
@@ -545,9 +545,9 @@ class PriceList(BaseModel):
         else:  # SURCHARGE
             final_price = base_price * (1 + pct / 100)
 
-        final_price = final_price.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        final_price = final_price.quantize(Decimal('0.000001'), rounding=ROUND_HALF_UP)
         price_with_tax = (final_price * (1 + tax_rate / 100)).quantize(
-            Decimal('0.01'), rounding=ROUND_HALF_UP
+            Decimal('0.000001'), rounding=ROUND_HALF_UP
         )
 
         return {

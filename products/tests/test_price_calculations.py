@@ -138,17 +138,17 @@ class TestPriceCalculations:
         assert r2['price_without_tax'] == Decimal('88.00')
 
     def test_rounding_precision(self, admin_user):
-        """TC-PRICE012: Redondeo a 2 decimales."""
+        """TC-PRICE012: Redondeo a 6 decimales."""
         pl = PriceList.objects.create(
             name='Round', list_type='DISCOUNT',
             percentage=Decimal('15.00'), created_by=admin_user,
         )
         r = pl.calculate_price(Decimal('33.33'))
-        # 33.33 * 0.85 = 28.3305 → 28.33
-        assert r['price_without_tax'] == Decimal('28.33')
-        # 2 decimales
-        assert len(str(r['price_without_tax']).split('.')[1]) == 2
-        assert len(str(r['price_with_tax']).split('.')[1]) == 2
+        # 33.33 * 0.85 = 28.330500
+        assert r['price_without_tax'] == Decimal('28.330500')
+        # 6 decimales
+        assert len(str(r['price_without_tax']).split('.')[1]) == 6
+        assert len(str(r['price_with_tax']).split('.')[1]) == 6
 
     def test_large_percentage_discount(self, admin_user):
         """TC-PRICE013: Descuento 90% sobre 1000."""

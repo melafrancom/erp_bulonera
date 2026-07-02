@@ -1,5 +1,5 @@
 {% extends 'base/base.html' %}
-{% load static %}
+{% load static core_tags %}
 
 {% block title %}Catálogo de Productos - ERP Bulonera Alvear{% endblock %}
 
@@ -137,17 +137,17 @@
               {% endif %}
             </td>
             
-            <td class="px-6 py-5 whitespace-nowrap text-right font-medium text-gray-500 dark:text-slate-500 tabular-nums text-sm">
-              ${{ product.cost|floatformat:2 }}
+            <td class="px-6 py-5 whitespace-nowrap text-right font-medium text-gray-500 dark:text-slate-500 text-sm">
+              {{ product.cost|price_display:'compact' }}
             </td>
             
-            <td class="px-6 py-5 whitespace-nowrap text-right font-bold text-gray-900 dark:text-slate-100 tabular-nums text-sm">
-              ${{ product.price|floatformat:2 }}
+            <td class="px-6 py-5 whitespace-nowrap text-right font-bold text-gray-900 dark:text-slate-100 text-sm">
+              {{ product.price|price_display:'compact' }}
             </td>
             
             <td class="px-6 py-5 whitespace-nowrap text-right">
-              <span class="text-base font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
-                ${{ product.base_price_with_tax|floatformat:2 }} 
+              <span class="text-base font-black text-emerald-600 dark:text-emerald-400">
+                {{ product.base_price_with_tax|price_display:'compact' }} 
               </span>
             </td>
 
@@ -242,8 +242,8 @@
                                   <span class="text-red-500 font-black tabular-nums">-{{ cp.percentage|floatformat:1 }}%</span>
                                 {% endif %}
                               </td>
-                              <td class="px-4 py-3 text-right text-gray-500 dark:text-slate-500 tabular-nums">${{ cp.price_without_tax|floatformat:2 }}</td>
-                              <td class="px-4 py-3 text-right font-black text-gray-900 dark:text-slate-100 tabular-nums bg-gray-50/30 dark:bg-slate-900/30">${{ cp.price_with_tax|floatformat:2 }}</td>
+                              <td class="px-4 py-3 text-right text-gray-500 dark:text-slate-500 whitespace-nowrap">{{ cp.price_without_tax|price_display:'compact' }}</td>
+                              <td class="px-4 py-3 text-right font-black text-gray-900 dark:text-slate-100 bg-gray-50/30 dark:bg-slate-900/30 whitespace-nowrap">{{ cp.price_with_tax|price_display:'compact' }}</td>
                             </tr>
                             {% endfor %}
                           </tbody>
