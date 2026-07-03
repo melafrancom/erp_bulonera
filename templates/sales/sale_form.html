@@ -1,5 +1,6 @@
 {% extends 'base/base.html' %}
 {% load static %}
+{% load l10n %}
 
 {% block title %}{% if is_update %}Editar Venta {{ sale.number }}{% else %}Nueva Venta{% endif %} - ERP Bulonera Alvear{% endblock %}
 
@@ -439,6 +440,7 @@ function saleForm() {
         this.delivery.date = "{{ sale.delivery_date|date:'Y-m-d'|default:'' }}";
         this.payment_method = "{{ sale.payment_method|default:''|escapejs }}";
 
+        {% localize off %}
         {% for item in sale.items.all %}
         this.items.push({
           _id: {{ forloop.counter }},
@@ -454,6 +456,7 @@ function saleForm() {
           _errors: {}
         });
         {% endfor %}
+        {% endlocalize %}
         this._nextId = this.items.length + 1;
       {% elif copy_source %}
         {% if copy_source.customer %}
@@ -467,6 +470,7 @@ function saleForm() {
         this.delivery.address = "{{ copy_source.delivery_address|default:''|escapejs }}";
         this.payment_method = "{{ copy_source.payment_method|default:''|escapejs }}";
 
+        {% localize off %}
         {% for item in prefilled_items %}
         this.items.push({
           _id: {{ forloop.counter }},
@@ -482,6 +486,7 @@ function saleForm() {
           _errors: {}
         });
         {% endfor %}
+        {% endlocalize %}
         this._nextId = this.items.length + 1;
         this.items.forEach((item, index) => this.calculateLine(index));
       {% else %}

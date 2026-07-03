@@ -94,3 +94,15 @@ class TestSaleAPI:
         assert Sale.objects.filter(customer=customer).exists()
         sale = Sale.objects.get(customer=customer)
         assert sale.items.count() == 1
+
+    def test_update_sale_with_empty_items_fails(self, authenticated_client, sale_with_items):
+        """Validar que actualizar con una lista vacía de items retorne error de validación (protección defensiva)."""
+        url = reverse('sales_api:sale-detail', kwargs={'pk': sale_with_items.pk})
+        data = {
+            'items': []
+        }
+        response = authenticated_client.patch(url, data, format='json')
+        
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        errors = response.data.get('error', {}).get('details', response.data)
+        assert 'items' in errors

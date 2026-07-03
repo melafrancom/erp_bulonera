@@ -4,7 +4,7 @@
   Uso: { .. % include 'products/partials/_product_card.html' with product=p % .. }
   Card de producto para vista mobile. Touch-friendly (botones > 44px). 
 -->
-<article class="rounded-2xl shadow-sm border p-5 mb-4 transition-all relative overflow-hidden group {% if product.match_score > 0 %}bg-emerald-50/30 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800/30 hover:shadow-emerald-500/10{% else %}bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:shadow-blue-500/10{% endif %}">
+<article x-data="{ expanded: false }" class="rounded-2xl shadow-sm border p-5 mb-4 transition-all relative overflow-hidden group {% if product.match_score > 0 %}bg-emerald-50/30 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800/30 hover:shadow-emerald-500/10{% else %}bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:shadow-blue-500/10{% endif %}">
   
   <!-- Decorative Accent -->
   <div class="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 -mr-8 -mt-8 rounded-full transition-transform group-hover:scale-150"></div>
@@ -75,9 +75,9 @@
 
   <!-- Botones Acción -->
   <div class="mt-5 flex gap-3 relative">
-    <button type="button" onclick="toggleRow('mobile-details-{{ product.pk }}')"
+    <button type="button" @click="expanded = !expanded"
             class="flex items-center justify-center w-12 h-12 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-600 transition-all focus:outline-none shrink-0 group/btn"
-            aria-expanded="false" aria-controls="mobile-details-{{ product.pk }}">
+            :aria-expanded="expanded" aria-controls="mobile-details-{{ product.pk }}">
       <i data-lucide="plus-circle" class="w-5 h-5 transition-transform group-aria-expanded/btn:rotate-180 group-aria-expanded/btn:text-blue-500" id="mobile-icon-{{ product.pk }}"></i>
     </button>
     
@@ -89,7 +89,7 @@
   </div>
 
   <!-- SECCIÓN OCULTA EXPANDIBLE -->
-  <div id="mobile-details-{{ product.pk }}" class="hidden mt-6 pt-6 border-t border-gray-200 dark:border-slate-700/50 relative">
+  <div id="mobile-details-{{ product.pk }}" :class="{'hidden': !expanded}" class="hidden mt-6 pt-6 border-t border-gray-200 dark:border-slate-700/50 relative">
     <!-- Info Técnica -->
     <div class="mb-6">
       <h4 class="text-xs font-black text-gray-900 dark:text-slate-100 mb-3 flex items-center gap-2 uppercase tracking-widest">

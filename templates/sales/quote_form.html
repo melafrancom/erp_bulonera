@@ -1,5 +1,6 @@
 {% extends 'base/base.html' %}
 {% load static %}
+{% load l10n %}
 
 {% block title %}{% if is_update %}Editar Presupuesto {{ quote.number }}{% else %}Nuevo Presupuesto{% endif %} - ERP Bulonera Alvear{% endblock %}
 
@@ -507,6 +508,7 @@ function quoteForm() {
       // Cargar vencimiento
       this.valid_until = "{% if quote.valid_until %}{{ quote.valid_until|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}";
 
+      {% localize off %}
       const existingItems = [
         {% for item in quote.items.all %}
         {
@@ -527,6 +529,7 @@ function quoteForm() {
         },
         {% endfor %}
       ];
+      {% endlocalize %}
       this._nextId = existingItems.length + 1;
       this.items = existingItems;
       {% elif copy_source %}
@@ -556,6 +559,7 @@ function quoteForm() {
       d.setDate(d.getDate() + 7);
       this.valid_until = d.toISOString().split('T')[0];
 
+      {% localize off %}
       const existingItems = [
         {% for item in prefilled_items %}
         {
@@ -576,6 +580,7 @@ function quoteForm() {
         },
         {% endfor %}
       ];
+      {% endlocalize %}
       this._nextId = existingItems.length + 1;
       this.items = existingItems;
       this.items.forEach((item, index) => this.calculateLine(index));

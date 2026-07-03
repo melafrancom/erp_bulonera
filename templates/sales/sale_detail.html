@@ -408,10 +408,10 @@
                 Confirmar Venta
               </button>
             </form>
-            <a href="{% url 'sales_web:sale_create' %}"
+            <a href="{% url 'sales_web:sale_create' %}?copy_sale={{ sale.id }}"
                class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/30 transition font-medium text-sm">
-              <i data-lucide="edit" class="w-4 h-4"></i>
-              Editar
+              <i data-lucide="copy" class="w-4 h-4"></i>
+              Recrear Venta
             </a>
             <form method="post" action="{% url 'sales_web:sale_cancel' sale.id %}">
               {% csrf_token %}

@@ -171,8 +171,8 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """Debe tener FK de cliente O nombre del cliente, nunca ninguno."""
-        customer    = data.get('customer')
-        customer_name = data.get('customer_name', '').strip()
+        customer = data.get('customer') if 'customer' in data else (self.instance.customer if self.instance else None)
+        customer_name = data.get('customer_name', '').strip() if 'customer_name' in data else (self.instance.customer_name if self.instance else '')
 
         if not customer and not customer_name:
             raise serializers.ValidationError(
@@ -236,6 +236,11 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         self._handle_new_customer(validated_data)
         items_data = validated_data.pop('items', None)
+        
+        if items_data is not None and len(items_data) == 0:
+            raise serializers.ValidationError({
+                'items': 'No se puede actualizar con una lista de ítems vacía. Esto borraría todos los productos del presupuesto.'
+            })
         
         # Actualizar campos básicos
         for attr, value in validated_data.items():
@@ -458,8 +463,8 @@ class SaleCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """Igual que Quote: necesita FK o nombre."""
-        customer      = data.get('customer')
-        customer_name = data.get('customer_name', '').strip()
+        customer = data.get('customer') if 'customer' in data else (self.instance.customer if self.instance else None)
+        customer_name = data.get('customer_name', '').strip() if 'customer_name' in data else (self.instance.customer_name if self.instance else '')
 
         if not customer and not customer_name:
             raise serializers.ValidationError(
@@ -524,6 +529,11 @@ class SaleCreateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         self._handle_new_customer(validated_data)
         items_data = validated_data.pop('items', None)
+        
+        if items_data is not None and len(items_data) == 0:
+            raise serializers.ValidationError({
+                'items': 'No se puede actualizar con una lista de ítems vacía. Esto borraría todos los productos de la venta.'
+            })
         
         for attr, value in validated_data.items():
             setattr(instance, attr, value)

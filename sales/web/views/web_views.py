@@ -513,6 +513,7 @@ def quote_update(request, pk):
         'categories':    _get_categories_queryset(),
         'subcategories': _get_subcategories_queryset(),
         'mode':          'update',
+        'is_update':     True,
     }
 
     return render(request, 'sales/quote_form.html', context)
