@@ -12,7 +12,7 @@
  */
 
 // ─── CONSTANTES ─────────────────────────────────────────────────
-const APP_VERSION   = 'v2.0.0';
+const APP_VERSION   = 'v2.0.1';
 const STATIC_CACHE  = `bulonera-static-${APP_VERSION}`;
 const DYNAMIC_CACHE = `bulonera-dynamic-${APP_VERSION}`;
 const API_CACHE     = `bulonera-api-${APP_VERSION}`;
@@ -30,6 +30,7 @@ const PRECACHE_ASSETS = [
   '/static/css/responsive.css',
   '/static/js/main.js',
   '/static/js/utils.js',
+  '/static/js/vendor/lucide.min.js',
   '/static/pwa/icons/logo_bulonera/android/android-launchericon-192-192.png',
   '/static/pwa/icons/logo_bulonera/ios/512.png',
 ];
