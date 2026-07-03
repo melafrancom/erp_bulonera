@@ -16,7 +16,8 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas as pdf_canvas
-from reportlab.platypus import Table, TableStyle
+from reportlab.platypus import Table, TableStyle, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.graphics.barcode import code128
 from reportlab.graphics.shapes import Drawing
 from reportlab.graphics import renderPDF
@@ -183,6 +184,22 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
     email_empresa = "contacto@buloneraalvear.online"
     whatsapp_empresa = "+5493624733431"
 
+    # Estilos ReportLab
+    styles = getSampleStyleSheet()
+    style_normal = styles['Normal']
+    style_emisor_text = ParagraphStyle(
+        'EmisorText', parent=style_normal, fontName='Helvetica', fontSize=7.5, leading=9.5
+    )
+    style_comp_text = ParagraphStyle(
+        'CompText', parent=style_normal, fontName='Helvetica', fontSize=7.5, leading=10
+    )
+    style_rec = ParagraphStyle(
+        'ReceptorText', parent=style_normal, fontName='Helvetica', fontSize=8, leading=10
+    )
+    style_item_desc = ParagraphStyle(
+        'ItemDesc', parent=style_normal, fontName='Helvetica', fontSize=7, leading=8.5
+    )
+
     COPIAS = ['ORIGINAL', 'DUPLICADO', 'TRIPLICADO']
 
     for copia in COPIAS:
@@ -192,10 +209,12 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
 
         # ── 1. CABECERA TRIPARTITA ────────────────────────────────────────────────
         HDR_H = 35 * mm
-        BOX_W = 22 * mm
+        BOX_W = 18 * mm   # Ancho caja de letra
+        BOX_H = 18 * mm   # Alto caja de letra
         BOX_X = PAGE_W / 2 - BOX_W / 2
         TOP_Y = PAGE_H - MARGIN - 2 * mm
         HDR_Y = TOP_Y - HDR_H
+        BOX_Y = TOP_Y - BOX_H
 
         # Marco cabecera
         c.setStrokeColor(colors.black)
@@ -203,67 +222,91 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
         c.rect(MARGIN, HDR_Y, CONTENT_W, HDR_H)
 
         # Caja central (letra)
-        c.setLineWidth(1.5)
-        c.rect(BOX_X, HDR_Y, BOX_W, HDR_H)
-        c.setFont('Helvetica-Bold', 38)
-        c.drawCentredString(BOX_X + BOX_W / 2, HDR_Y + HDR_H / 2 - 4 * mm, letra)
-        c.setFont('Helvetica-Bold', 7)
-        c.drawCentredString(BOX_X + BOX_W / 2, HDR_Y + 3 * mm, f'Cód. {invoice.tipo_comprobante:02d}')
+        c.setLineWidth(1.2)
+        c.rect(BOX_X, BOX_Y, BOX_W, BOX_H)
+        c.setFont('Helvetica-Bold', 32)
+        c.drawCentredString(BOX_X + BOX_W / 2, BOX_Y + 5 * mm, letra)
+        c.setFont('Helvetica-Bold', 6)
+        c.drawCentredString(BOX_X + BOX_W / 2, BOX_Y + 1.5 * mm, f'Cód. {invoice.tipo_comprobante:02d}')
 
-        # Emisor (izquierda)
-        ex, ey = MARGIN + 3 * mm, TOP_Y - 5 * mm
-        
+        # Línea vertical divisoria debajo de la caja de letra
+        c.setLineWidth(0.6)
+        c.line(PAGE_W / 2, HDR_Y, PAGE_W / 2, BOX_Y)
+
         # Logo SVG (intento cargar con svglib si está disponible)
         logo_path = os.path.join('static', 'img', 'transpLOGO BULONERA.svg')
+        logo_drawn = False
         if os.path.exists(logo_path):
             try:
                 from svglib.svglib import svg2rlg
                 drawing = svg2rlg(logo_path)
                 if drawing:
                     # Escalar
-                    scale = 0.08
+                    scale = 0.05
                     drawing.width = drawing.minWidth() * scale
                     drawing.height = drawing.height * scale
                     drawing.scale(scale, scale)
-                    renderPDF.draw(drawing, c, ex, ey - 15 * mm)
-                    ex += 35 * mm # mover texto a la derecha del logo
+                    renderPDF.draw(drawing, c, MARGIN + 2 * mm, HDR_Y + 10 * mm)
+                    logo_drawn = True
             except ImportError:
-                pass # si no hay svglib, no dibujar logo
-        
-        c.setFont('Helvetica-Bold', 11)
-        c.drawString(ex, ey, (empresa_info.get("razon_social") or empresa_info.get("name") or "").upper())
-        c.setFont('Helvetica', 7.5)
-        c.drawString(ex, ey - 5 * mm, empresa_info.get("address", ""))
-        c.drawString(ex, ey - 9 * mm, f'Email: {email_empresa}')
-        c.drawString(ex, ey - 13 * mm, f'WhatsApp: {whatsapp_empresa}')
-        
+                pass
+
+        # Emisor (izquierda)
         iva_label = _COND_IVA.get(empresa_info.get('iva_condition', 'RI'), 'IVA Responsable Inscripto')
-        c.setFont('Helvetica-Bold', 7.5)
-        c.drawString(ex, ey - 19 * mm, iva_label)
+        emisor_html = f"""
+        <b>{(empresa_info.get("razon_social") or empresa_info.get("name") or "").upper()}</b><br/>
+        {empresa_info.get("address", "")}<br/>
+        Email: {email_empresa}<br/>
+        WhatsApp: {whatsapp_empresa}<br/>
+        <b>{iva_label}</b>
+        """
+        
+        emisor_col_w = 56 * mm if logo_drawn else 76 * mm
+        emisor_p = Paragraph(emisor_html, style_emisor_text)
+        emisor_table = Table([[emisor_p]], colWidths=[emisor_col_w])
+        emisor_table.setStyle(TableStyle([
+            ('VALIGN', (0,0), (-1,-1), 'TOP'),
+            ('LEFTPADDING', (0,0), (-1,-1), 0),
+            ('RIGHTPADDING', (0,0), (-1,-1), 0),
+            ('TOPPADDING', (0,0), (-1,-1), 0),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ]))
+        
+        ex_x = MARGIN + 22 * mm if logo_drawn else MARGIN + 3 * mm
+        emisor_table.wrapOn(c, emisor_col_w, HDR_H)
+        emisor_table.drawOn(c, ex_x, HDR_Y + 4 * mm)
 
         # Comprobante (derecha)
-        rx = BOX_X + BOX_W + 4 * mm
-        ry = TOP_Y - 5 * mm
-        c.setFont('Helvetica-Bold', 12)
-        c.drawString(rx, ry, f'{tipo_nombre}')
-        c.setFont('Helvetica-Bold', 10)
-        # Desagregar número de factura en punto de venta y comp nro
         nro_parts = invoice.number.split('-') if '-' in invoice.number else ['', invoice.number]
         pto_vta = f"{invoice.punto_venta:04d}" if hasattr(invoice, 'punto_venta') else (nro_parts[0].zfill(4) if nro_parts[0] else '0005')
         comp_nro = f"{invoice.numero_secuencial:08d}" if hasattr(invoice, 'numero_secuencial') else (nro_parts[1].zfill(8) if len(nro_parts)>1 else invoice.number.zfill(8))
-        c.drawString(rx, ry - 6 * mm, f'Punto de Venta: {pto_vta}    Comp. Nro: {comp_nro}')
-        
-        c.setFont('Helvetica-Bold', 8)
         fecha = invoice.fecha_emision.strftime('%d/%m/%Y') if invoice.fecha_emision else ''
-        c.drawString(rx, ry - 11 * mm, f'Fecha de Emisión: {fecha}')
         
-        c.setFont('Helvetica', 8)
         cuit_empresa = empresa_info.get("cuit", "")
         if len(cuit_empresa) == 11 and '-' not in cuit_empresa:
             cuit_empresa = f"{cuit_empresa[:2]}-{cuit_empresa[2:10]}-{cuit_empresa[10:]}"
-        c.drawString(rx, ry - 16 * mm, f'CUIT: {cuit_empresa}')
-        c.drawString(rx, ry - 20 * mm, f'Ingresos Brutos: {empresa_info.get("ingresos_brutos", cuit_empresa)}')
-        c.drawString(rx, ry - 24 * mm, f'Fecha de Inicio de Actividades: {empresa_info.get("inicio_actividades", "")}')
+            
+        comp_html = f"""
+        <font size="11"><b>{tipo_nombre}</b></font><br/>
+        <b>Punto de Venta:</b> {pto_vta}  <b>Comp. Nro:</b> {comp_nro}<br/>
+        <b>Fecha de Emisión:</b> {fecha}<br/>
+        <b>CUIT:</b> {cuit_empresa}<br/>
+        <b>Ingresos Brutos:</b> {empresa_info.get("ingresos_brutos", cuit_empresa)}<br/>
+        <b>Inicio Actividades:</b> {empresa_info.get("inicio_actividades", "")}
+        """
+        
+        comp_p = Paragraph(comp_html, style_comp_text)
+        comp_table = Table([[comp_p]], colWidths=[76 * mm])
+        comp_table.setStyle(TableStyle([
+            ('VALIGN', (0,0), (-1,-1), 'TOP'),
+            ('LEFTPADDING', (0,0), (-1,-1), 0),
+            ('RIGHTPADDING', (0,0), (-1,-1), 0),
+            ('TOPPADDING', (0,0), (-1,-1), 0),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ]))
+        
+        comp_table.wrapOn(c, 76 * mm, HDR_H)
+        comp_table.drawOn(c, BOX_X + BOX_W + 4 * mm, HDR_Y + 4 * mm)
 
         y = HDR_Y
 
@@ -273,22 +316,6 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
         c.setLineWidth(0.6)
         c.rect(MARGIN, REC_Y, CONTENT_W, REC_H)
 
-        HALF = CONTENT_W / 2
-        rx2, ry2 = MARGIN + 3 * mm, y - 5 * mm
-
-        def _pair(label, value, lx, ly):
-            c.setFont('Helvetica-Bold', 8)
-            c.drawString(lx, ly, f'{label}:')
-            c.setFont('Helvetica', 8)
-            c.drawString(lx + 26 * mm, ly, str(value or '-'))
-
-        _pair('CUIT / DNI', invoice.cliente_cuit or '-', rx2, ry2)
-        _pair('Razón Social', invoice.cliente_razon_social or 'Consumidor Final', MARGIN + HALF + 3 * mm, ry2)
-        
-        _pair('Cond. IVA', _COND_IVA.get(invoice.cliente_condicion_iva, invoice.cliente_condicion_iva), rx2, ry2 - 5 * mm)
-        _pair('Domicilio', invoice.cliente_domicilio or '-', MARGIN + HALF + 3 * mm, ry2 - 5 * mm)
-
-        # Condición de pago
         pago = 'Contado'
         try:
             if invoice.sale and invoice.sale.customer and invoice.sale.customer.payment_term:
@@ -296,7 +323,38 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
                 pago = 'Contado' if pt == 0 else f'{pt} días'
         except Exception:
             pass
-        _pair('Cond. de venta', pago, rx2, ry2 - 10 * mm)
+
+        cuit_cli = invoice.cliente_cuit or '-'
+        razon = invoice.cliente_razon_social or 'Consumidor Final'
+        cond_iva = _COND_IVA.get(invoice.cliente_condicion_iva, invoice.cliente_condicion_iva or '-')
+        domicilio = invoice.cliente_domicilio or '-'
+
+        rec_data = [
+            [
+                Paragraph(f"<b>CUIT / DNI:</b> {cuit_cli}", style_rec),
+                Paragraph(f"<b>Razón Social:</b> {razon}", style_rec)
+            ],
+            [
+                Paragraph(f"<b>Cond. IVA:</b> {cond_iva}", style_rec),
+                Paragraph(f"<b>Domicilio:</b> {domicilio}", style_rec)
+            ],
+            [
+                Paragraph(f"<b>Cond. de venta:</b> {pago}", style_rec),
+                Paragraph("", style_rec)
+            ]
+        ]
+        
+        rec_table = Table(rec_data, colWidths=[90 * mm, 90 * mm])
+        rec_table.setStyle(TableStyle([
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('LEFTPADDING', (0,0), (-1,-1), 4 * mm),
+            ('RIGHTPADDING', (0,0), (-1,-1), 4 * mm),
+            ('TOPPADDING', (0,0), (-1,-1), 1 * mm),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 1 * mm),
+        ]))
+        
+        rec_table.wrapOn(c, CONTENT_W, REC_H)
+        rec_table.drawOn(c, MARGIN, REC_Y + 1 * mm)
 
         y = REC_Y - 2 * mm
 
@@ -310,9 +368,6 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
         for item in items:
             # Calcular subtotal sin iva
             alicuota_val = getattr(item, 'alicuota_iva', 21) or 21
-            # item.subtotal es el monto con iva? No, en InvoiceItem subtotal suele ser neto, vamos a ver
-            # si en InvoiceItem está subtotal, precio_unitario, descuento, monto_iva, total
-            # En bills/pdf.py original el Subtotal era item.subtotal.
             subt_neto = getattr(item, 'subtotal', 0)
             alicuota_str = f"{alicuota_val}%"
             subt_c_iva = subt_neto + getattr(item, 'monto_iva', 0)
@@ -327,9 +382,9 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
 
             rows.append([
                 codigo[:15],
-                item.producto_nombre[:45],
+                Paragraph(item.producto_nombre, style_item_desc),
                 f'{item.cantidad:.2f}',
-                'unidades', # O unidad de medida real si existe
+                'unidades',
                 _fmt(item.precio_unitario),
                 bonif,
                 _fmt(subt_neto),
@@ -351,6 +406,7 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
             ('ALIGN',         (0, 0), (-1, -1), 'CENTER'),
             ('ALIGN',         (1, 1), (1, -1), 'LEFT'), # Descripcion
             ('ALIGN',         (4, 1), (8, -1), 'RIGHT'), # Precios
+            ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
             ('ROWBACKGROUNDS',(0, 1), (-1, -1), [colors.white, ALT_BG]),
             ('GRID',          (0, 0), (-1, -1), 0.25, colors.HexColor('#D1D5DB')),
             ('LINEBELOW',     (0, 0), (-1, 0), 1, colors.black),

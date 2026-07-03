@@ -61,6 +61,7 @@ services:
       - /var/www/erp/logs:/app/logs
     group_add:
       - "1002"  # GID del grupo erp-certs del HOST (acceso a certificados AFIP)
+      - "33"    # GID del grupo www-data del HOST (acceso a media compartida)
     extra_hosts:
       # Permite al contenedor conectarse a MariaDB en el HOST (127.0.0.1 del host)
       - "host-gateway:host-gateway"
@@ -92,6 +93,7 @@ services:
       - /var/www/erp/src/afip/certs:/app/afip/certs:ro
     group_add:
       - "1002"  # GID del grupo erp-certs del HOST (acceso a certificados AFIP)
+      - "33"    # GID del grupo www-data del HOST (acceso a media compartida)
     extra_hosts:
       - "host-gateway:host-gateway"
     depends_on:

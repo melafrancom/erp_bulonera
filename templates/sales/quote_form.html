@@ -18,7 +18,7 @@
 {% block mobile_title %}{% if is_update %}Editar {{ quote.number }}{% else %}Nuevo Presupuesto{% endif %}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto" x-data="quoteForm()" x-init="init()">
+<div class="max-w-7xl mx-auto" x-data="quoteForm()">
 
   <!-- Header -->
   <div class="mb-6">
@@ -589,7 +589,37 @@ function quoteForm() {
       const d = new Date();
       d.setDate(d.getDate() + 7);
       this.valid_until = d.toISOString().split('T')[0];
-      this.addItem();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('from_cart') === '1') {
+        const cartData = JSON.parse(localStorage.getItem('bulonera_catalog_cart') || '[]');
+        if (cartData.length > 0) {
+          cartData.forEach((cartItem) => {
+            this.items.push({
+              _id: ++this._nextId,
+              product: cartItem.id,
+              quantity: cartItem.quantity,
+              unit_price: cartItem.price,
+              discount_type: 'none',
+              discount_value: 0,
+              tax_percentage: cartItem.tax_rate || 21,
+              notes: '',
+              showNotes: false,
+              price_list: '',
+              _basePrice: cartItem.price,
+              _total: 0,
+              _discount: 0,
+              _errors: {}
+            });
+          });
+          localStorage.removeItem('bulonera_catalog_cart');
+          this.items.forEach((item, index) => this.calculateLine(index));
+        } else {
+          this.addItem();
+        }
+      } else {
+        this.addItem();
+      }
       {% endif %}
       this.calculateTotal();
     },

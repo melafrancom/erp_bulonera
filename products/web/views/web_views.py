@@ -213,12 +213,20 @@ def product_list(request):
         p.computed_prices = []
         for pl in price_lists:
             calc = pl.calculate_price(p.price, p.tax_rate)
+            price_without_tax = calc['price_without_tax']
+            
+            # Calcular margen específico para esta lista de precios
+            margin_val = Decimal('0.00')
+            if p.cost and p.cost > 0:
+                margin_val = (((price_without_tax - p.cost) / p.cost) * Decimal('100.0')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                
             p.computed_prices.append({
                 'list_name': pl.name,
                 'type': pl.list_type,
                 'percentage': pl.percentage,
-                'price_without_tax': calc['price_without_tax'],
+                'price_without_tax': price_without_tax,
                 'price_with_tax': calc['price_with_tax'],
+                'margin': margin_val,
             })
 
     # Datos para filtros

@@ -18,7 +18,7 @@
 {% block mobile_title %}{% if is_update %}Editar {{ sale.number }}{% else %}Nueva Venta{% endif %}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto" x-data="saleForm()" x-init="init()">
+<div class="max-w-7xl mx-auto" x-data="saleForm()">
 
   <!-- Header -->
   <div class="mb-6">
@@ -490,7 +490,33 @@ function saleForm() {
         this._nextId = this.items.length + 1;
         this.items.forEach((item, index) => this.calculateLine(index));
       {% else %}
-        this.addItem();
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('from_cart') === '1') {
+          const cartData = JSON.parse(localStorage.getItem('bulonera_catalog_cart') || '[]');
+          if (cartData.length > 0) {
+            cartData.forEach((cartItem) => {
+              this.items.push({
+                _id: ++this._nextId,
+                product: cartItem.id,
+                quantity: cartItem.quantity,
+                unit_price: cartItem.price,
+                discount_type: 'none',
+                discount_value: 0,
+                tax_percentage: cartItem.tax_rate || 21,
+                price_list: '',
+                _basePrice: cartItem.price,
+                _total: 0,
+                _errors: {}
+              });
+            });
+            localStorage.removeItem('bulonera_catalog_cart');
+            this.items.forEach((item, index) => this.calculateLine(index));
+          } else {
+            this.addItem();
+          }
+        } else {
+          this.addItem();
+        }
       {% endif %}
       this.calculateTotal();
     },

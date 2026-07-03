@@ -146,11 +146,13 @@ sudo deploy_erp.sh
 docker compose -f /var/www/erp/src/docker-compose.production.yml restart
 
 # Ver estado de contenedores
-    docker compose -f /var/www/erp/src/docker-compose.production.yml ps
+docker compose -f /var/www/erp/src/docker-compose.production.yml ps
 
-# Logs en tiempo real
-docker compose -f /var/www/erp/src/docker-compose.production.yml logs -f web
-docker compose -f /var/www/erp/src/docker-compose.production.yml logs -f celery_worker
+# Logs en tiempo real (Persistidos en host, stdout de Docker está silenciado para optimizar CPU/RAM)
+tail -f /var/www/erp/logs/uwsgi_erp.log     # uWSGI (peticiones web)
+tail -f /var/www/erp/logs/django_prod.log   # Django (warnings/errores)
+tail -f /var/www/erp/logs/celery_worker.log # Celery Worker (tareas en segundo plano)
+tail -f /var/www/erp/logs/celery_beat.log   # Celery Beat (tareas programadas)
 
 # Migraciones manuales en producción
 docker compose -f /var/www/erp/src/docker-compose.production.yml run --rm web python manage.py migrate --no-input
@@ -163,10 +165,11 @@ docker compose -f /var/www/erp/src/docker-compose.production.yml run --rm web py
 
 # ############################### DIAGNÓSTICO RÁPIDO (PROD) ###############################
 
-# Ver logs en vivo (Web y Workers)
-docker compose -f /var/www/erp/src/docker-compose.production.yml logs -f web
-docker compose -f /var/www/erp/src/docker-compose.production.yml logs -f celery_worker
-docker compose -f /var/www/erp/src/docker-compose.production.yml logs --tail=40 celery_worker
+# Ver logs en vivo (Persistidos en host)
+tail -f /var/www/erp/logs/uwsgi_erp.log
+tail -f /var/www/erp/logs/django_prod.log
+tail -f /var/www/erp/logs/celery_worker.log
+tail -n 40 /var/www/erp/logs/celery_worker.log
 docker compose -f /var/www/erp/src/docker-compose.production.yml logs --tail=40 redis
 
 # Pings de conectividad interna
@@ -448,7 +451,8 @@ if (localStorage.getItem('theme') === 'dark' ||
 | `inventory` | Stock y movimientos |
 | `payments` | Pagos y asignaciones |
 | `bills` | Facturación |
-| `afip` | Integración fiscal Argentina (AFIP) |
+| `expenses` | Gastos operativos (OPEX) y clasificación en P&L |
+| `afip` | Integración fiscal Argentina (AFIP/ARCA) |
 | `reports` | Dashboard y reportes |
 | `api` | Configuración central de la API REST |
 
@@ -464,6 +468,10 @@ GET /bills/           → bills/web/views/
 GET /inventory/       → inventory/web/views/
 GET /payments/        → payments/web/views/
 GET /reports/         → reports/web/views/
+GET /expenses/        → expenses/web/views/
+GET /customers/       → customers/web/views/
+GET /suppliers/       → suppliers/web/views/
+GET /afip/            → afip/web/views/
 ```
 
 ### API REST (JSON/DRF)
@@ -475,6 +483,10 @@ GET /reports/         → reports/web/views/
 /api/v1/bills/bills/        → BillViewSet
 /api/v1/inventory/stocks/   → StockViewSet
 /api/v1/payments/payments/  → PaymentViewSet
+/api/v1/expenses/expenses/  → ExpenseViewSet
+/api/v1/expenses/categories/ → ExpenseCategoryViewSet
+/api/v1/customers/          → CustomerViewSet
+/api/v1/suppliers/          → SupplierViewSet
 ```
 
 ---
@@ -591,8 +603,9 @@ Siempre prefiere las herramientas del grafo de conocimiento sobre búsquedas de 
 | [VALIDATION_CHECKLIST.md](VALIDATION_CHECKLIST.md) | Checklist de QA antes de mergear |
 | [PWA-IMPLEMENTATION.md](PWA-IMPLEMENTATION.md) | Implementación PWA offline-first |
 | [script_creados.md](script_creados.md) | Historial de scripts de infraestructura creados |
-| feature-rollout.md | Protocolo de E2E y Monitoreo post-lanzamiento |
+| [PRODUCTION_DEPLOY_STEPS.md](PRODUCTION_DEPLOY_STEPS.md) | Pasos de sincronización y despliegue en producción |
+| [.agents/workflows/feature-rollout.md](.agents/workflows/feature-rollout.md) | Protocolo de E2E y Monitoreo post-lanzamiento |
 
 ---
 
-*Última actualización: Junio 2026*
+*Última actualización: Julio 2026*

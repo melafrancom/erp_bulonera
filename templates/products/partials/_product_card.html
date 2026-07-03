@@ -53,6 +53,17 @@
       <span class="font-bold text-gray-700 dark:text-slate-300 truncate">{{ product.brand }}</span>
     </div>
     {% endif %}
+    <div class="flex flex-col">
+      <span class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Medidas</span>
+      <span class="font-bold text-gray-700 dark:text-slate-300 truncate">
+        {% if product.diameter or product.length %}
+          {% if product.diameter %}Ø {{ product.diameter }}{% endif %}
+          {% if product.length %} L: {{ product.length }}{% endif %}
+        {% else %}
+          —
+        {% endif %}
+      </span>
+    </div>
   </div>
 
   <!-- Precios -->
@@ -128,6 +139,7 @@
             <tr class="bg-gray-100 dark:bg-slate-900">
               <th class="px-3 py-2 text-left font-black text-gray-500 dark:text-slate-400 uppercase tracking-tighter">Lista</th>
               <th class="px-3 py-2 text-right font-black text-gray-500 dark:text-slate-400 uppercase tracking-tighter">Impacto</th>
+              <th class="px-3 py-2 text-right font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-tighter">Margen</th>
               <th class="px-3 py-2 text-right font-black text-gray-500 dark:text-slate-400 uppercase tracking-tighter">c/IVA</th>
             </tr>
           </thead>
@@ -140,6 +152,15 @@
                   <span class="text-emerald-600 dark:text-emerald-400 font-black tabular-nums">+{{ cp.percentage|floatformat:0 }}%</span>
                 {% else %}
                   <span class="text-red-500 font-black tabular-nums">-{{ cp.percentage|floatformat:0 }}%</span>
+                {% endif %}
+              </td>
+              <td class="px-3 py-3 text-right whitespace-nowrap font-bold">
+                {% if cp.margin > 0 %}
+                  <span class="text-emerald-600 dark:text-emerald-400">↑ {{ cp.margin }}%</span>
+                {% elif cp.margin < 0 %}
+                  <span class="text-red-500">↓ {{ cp.margin }}%</span>
+                {% else %}
+                  <span class="text-gray-500">0.0%</span>
                 {% endif %}
               </td>
               <td class="px-3 py-3 text-right font-black text-gray-900 dark:text-slate-100 whitespace-nowrap">{{ cp.price_with_tax|price_display:'compact' }}</td>
