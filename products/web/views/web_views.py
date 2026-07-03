@@ -194,7 +194,7 @@ def product_list(request):
         queryset = queryset.filter(subcategories__id=subcategory_filter).distinct()
 
     # Paginación
-    paginator = Paginator(queryset, 200)
+    paginator = Paginator(queryset, 50)
     page_number = request.GET.get('page')
     products = paginator.get_page(page_number)
 
