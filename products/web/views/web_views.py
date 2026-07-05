@@ -749,3 +749,36 @@ def pricelist_delete(request, pk):
         messages.error(request, f'Error al eliminar la lista: {e}')
 
     return redirect('products:pricelist_list')
+
+
+@login_required
+def generate_barcode(request, pk):
+    """Genera la imagen del código de barras de un producto y la retorna como respuesta HTTP."""
+    from django.http import HttpResponse, Http404
+    product = get_object_or_404(Product, pk=pk, is_active=True)
+    barcode_text = product.barcode or product.code
+    if not barcode_text:
+        raise Http404("El producto no posee código de barras ni código identificador.")
+
+    try:
+        image_bytes = ProductService.generate_barcode_image(barcode_text)
+        return HttpResponse(image_bytes, content_type="image/png")
+    except ValidationError as e:
+        raise Http404(str(e))
+
+
+@login_required
+def generate_qr(request, pk):
+    """Genera la imagen del código QR de un producto y la retorna como respuesta HTTP."""
+    from django.http import HttpResponse, Http404
+    product = get_object_or_404(Product, pk=pk, is_active=True)
+    qr_text = product.qr_code or product.code
+    if not qr_text:
+        raise Http404("El producto no posee datos para generar el código QR.")
+
+    try:
+        image_bytes = ProductService.generate_qr_image(qr_text)
+        return HttpResponse(image_bytes, content_type="image/png")
+    except ValidationError as e:
+        raise Http404(str(e))
+

@@ -10,25 +10,32 @@
   <div class="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 -mr-8 -mt-8 rounded-full transition-transform group-hover:scale-150"></div>
 
   <!-- Header: Nombre -->
-  <div class="flex justify-between items-start gap-3 mb-4 relative">
-    <h3 class="text-base font-black text-gray-900 dark:text-slate-100 leading-tight flex-1 transition-colors">
-      {{ product.name|truncatewords:12 }}
-    </h3>
-    <div class="shrink-0">
-      {% if product.profit_margin_percentage > 0 %}
-        <span class="inline-flex items-center px-2 py-1 text-[10px] font-black text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 ring-1 ring-emerald-600/20 rounded-lg tabular-nums">
-          ↑ {{ product.profit_margin_percentage|floatformat:1 }}%
-        </span>
-      {% elif product.profit_margin_percentage < 0 %}
-        <span class="inline-flex items-center px-2 py-1 text-[10px] font-black text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/30 ring-1 ring-red-600/20 rounded-lg tabular-nums">
-          ↓ {{ product.profit_margin_percentage|floatformat:1 }}%
-        </span>
-      {% else %}
-        <span class="inline-flex items-center px-2 py-1 text-[10px] font-black text-gray-600 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 ring-1 ring-gray-400/20 rounded-lg">
-          0%
-        </span>
-      {% endif %}
+  <div class="flex flex-col mb-4 relative">
+    <div class="flex justify-between items-start gap-3">
+      <h3 class="text-base font-black text-gray-900 dark:text-slate-100 leading-tight flex-1 transition-colors">
+        {{ product.name|truncatewords:12 }}
+      </h3>
+      <div class="shrink-0">
+        {% if product.profit_margin_percentage > 0 %}
+          <span class="inline-flex items-center px-2 py-1 text-[10px] font-black text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 ring-1 ring-emerald-600/20 rounded-lg tabular-nums">
+            ↑ {{ product.profit_margin_percentage|floatformat:1 }}%
+          </span>
+        {% elif product.profit_margin_percentage < 0 %}
+          <span class="inline-flex items-center px-2 py-1 text-[10px] font-black text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/30 ring-1 ring-red-600/20 rounded-lg tabular-nums">
+            ↓ {{ product.profit_margin_percentage|floatformat:1 }}%
+          </span>
+        {% else %}
+          <span class="inline-flex items-center px-2 py-1 text-[10px] font-black text-gray-600 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 ring-1 ring-gray-400/20 rounded-lg">
+            0%
+          </span>
+        {% endif %}
+      </div>
     </div>
+    {% if product.description %}
+      <p class="text-xs text-gray-500 dark:text-slate-400 line-clamp-2 mt-1.5">
+        {{ product.description }}
+      </p>
+    {% endif %}
   </div>
 
   <!-- Info básica -->

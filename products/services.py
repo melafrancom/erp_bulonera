@@ -136,6 +136,59 @@ class ProductService:
             f"Producto eliminado (soft): {product.code} por {user.username}"
         )
 
+    @staticmethod
+    def generate_barcode_image(barcode_text: str) -> bytes:
+        """Genera una imagen de código de barras (Code128 o EAN13) en memoria y retorna los bytes PNG."""
+        import io
+        import barcode
+        from barcode.writer import ImageWriter
+
+        text_clean = str(barcode_text).strip()
+        if not text_clean:
+            raise ValidationError("El texto del código de barras no puede estar vacío.")
+
+        try:
+            if len(text_clean) == 13 and text_clean.isdigit():
+                coder = barcode.get_barcode_class('ean13')
+            else:
+                coder = barcode.get_barcode_class('code128')
+
+            rv = io.BytesIO()
+            # Escribir el código de barras en formato PNG
+            coder(text_clean, writer=ImageWriter()).write(rv)
+            return rv.getvalue()
+        except Exception as e:
+            logger.exception(f"Error generando código de barras para '{barcode_text}': {e}")
+            raise ValidationError(f"No se pudo generar el código de barras: {e}")
+
+    @staticmethod
+    def generate_qr_image(qr_text: str) -> bytes:
+        """Genera una imagen de código QR en memoria a partir de un texto y retorna los bytes PNG."""
+        import io
+        import qrcode
+
+        text_clean = str(qr_text).strip()
+        if not text_clean:
+            raise ValidationError("El texto del código QR no puede estar vacío.")
+
+        try:
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(text_clean)
+            qr.make(fit=True)
+            img = qr.make_image(fill_color="black", back_color="white")
+
+            rv = io.BytesIO()
+            img.save(rv, format="PNG")
+            return rv.getvalue()
+        except Exception as e:
+            logger.exception(f"Error generando código QR para '{qr_text}': {e}")
+            raise ValidationError(f"No se pudo generar el código QR: {e}")
+
 
 # =============================================================================
 # PriceService
@@ -371,6 +424,10 @@ class ProductImportService:
             'condition': 'condition',
             'other codes': 'other_codes',
             'other_codes': 'other_codes',
+            'description': 'description',
+            'descripción': 'description',
+            'descripcion': 'description',
+            'detalle': 'description',
         }
         for csv_col, model_field in OPTIONAL_TEXT_FIELDS.items():
             val = row.get(csv_col)

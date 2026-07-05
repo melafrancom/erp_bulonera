@@ -290,3 +290,47 @@ class TestImportReportView:
         resp = client.get(url)
         assert resp.status_code == 200
         assert resp.context['task_id'] == 'fake-id-123'
+
+
+# =============================================================================
+# Generación de códigos de barra y QR
+# =============================================================================
+
+class TestProductBarcodeView:
+
+    def test_generate_barcode_success(self, admin_user, product):
+        """Si el producto tiene barcode, la vista responde 200 y es una imagen png."""
+        product.barcode = "7791234567890"
+        product.save()
+        client = _login_client(admin_user)
+        url = reverse('products:generate_barcode', kwargs={'pk': product.pk})
+        resp = client.get(url)
+        assert resp.status_code == 200
+        assert resp['Content-Type'] == 'image/png'
+        assert len(resp.content) > 0
+
+    def test_generate_barcode_fallback_to_code(self, admin_user, product):
+        """Si el producto no tiene barcode, la vista responde 200 usando product.code como fallback."""
+        product.barcode = ""
+        product.save()
+        client = _login_client(admin_user)
+        url = reverse('products:generate_barcode', kwargs={'pk': product.pk})
+        resp = client.get(url)
+        assert resp.status_code == 200
+        assert resp['Content-Type'] == 'image/png'
+        assert len(resp.content) > 0
+
+
+class TestProductQRView:
+
+    def test_generate_qr_success(self, admin_user, product):
+        """La vista responde 200 y devuelve una imagen png del QR."""
+        product.qr_code = "https://buloneraalvear.online/p/123"
+        product.save()
+        client = _login_client(admin_user)
+        url = reverse('products:generate_qr', kwargs={'pk': product.pk})
+        resp = client.get(url)
+        assert resp.status_code == 200
+        assert resp['Content-Type'] == 'image/png'
+        assert len(resp.content) > 0
+

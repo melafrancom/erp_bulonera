@@ -126,7 +126,10 @@
                 <i data-lucide="loader-2" class="w-4 h-4 animate-spin" x-show="isVerifyingAfip" x-cloak></i>
                 <span>AFIP</span>
               </button>
-            </div>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold text-gray-700 dark:text-slate-400 mb-1.5 tracking-wide">Dirección de Facturación</label>
+            <input type="text" x-model="newCustomer.billing_address" placeholder="Calle, número, piso, dpto..." class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm shadow-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors dark:text-slate-100">
           </div>
           <div class="sm:col-span-2">
             <label class="block text-xs font-semibold text-gray-700 dark:text-slate-400 mb-1.5 tracking-wide">

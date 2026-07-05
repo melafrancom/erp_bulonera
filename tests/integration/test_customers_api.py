@@ -29,14 +29,16 @@ class TestCustomerAPI:
             'cuit_cuil': generate_valid_cuit(99887766).replace('-', ''),
             'tax_condition': 'RI',
             'email': 'nueva@empresa.com',
-            'customer_segment': customer_segment.id
+            'customer_segment': customer_segment.id,
+            'billing_address': 'Avenida Siempre Viva 742'
         }
         response = authenticated_client.post(url, data, format='json')
         
         assert response.status_code == status.HTTP_201_CREATED, f"Error: {response.data}"
         assert response.data['business_name'] == 'Nueva Empresa S.A.'
+        assert response.data['billing_address'] == 'Avenida Siempre Viva 742'
         clean_cuit = generate_valid_cuit(99887766).replace('-', '')
-        assert Customer.objects.filter(cuit_cuil=clean_cuit).exists()
+        assert Customer.objects.filter(cuit_cuil=clean_cuit, billing_address='Avenida Siempre Viva 742').exists()
     
     def test_create_customer_duplicate_cuit(self, authenticated_client, customer):
         """Test crear cliente con CUIT duplicado."""

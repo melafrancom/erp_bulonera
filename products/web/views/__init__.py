@@ -11,6 +11,8 @@ from .web_views import (
     pricelist_create,
     pricelist_edit,
     pricelist_delete,
+    generate_barcode,
+    generate_qr,
 )
 
 __all__ = [
@@ -18,5 +20,5 @@ __all__ = [
     'product_edit', 'product_delete', 'product_import',
     'import_report', 'download_import_template',
     'pricelist_list', 'pricelist_create', 'pricelist_edit',
-    'pricelist_delete',
+    'pricelist_delete', 'generate_barcode', 'generate_qr',
 ]

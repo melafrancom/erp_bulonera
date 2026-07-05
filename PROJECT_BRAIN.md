@@ -442,19 +442,25 @@ if (localStorage.getItem('theme') === 'dark' ||
 
 | App | Propósito |
 |---|---|
-| `core` | Modelos base (BaseModel, soft-delete, audit) |
-| `common` | Middleware, excepciones, permisos globales |
+| [`core`](core/README.md) | Modelos base (BaseModel, soft-delete, audit) |
+| [`common`](common/README.md) | Middleware, excepciones, permisos globales |
 | `products` | Catálogo de productos |
-| `sales` | Ventas y presupuestos (con sync PWA offline) |
-| `customers` | Clientes |
-| `suppliers` | Proveedores |
-| `inventory` | Stock y movimientos |
-| `payments` | Pagos y asignaciones |
-| `bills` | Facturación |
-| `expenses` | Gastos operativos (OPEX) y clasificación en P&L |
-| `afip` | Integración fiscal Argentina (AFIP/ARCA) |
-| `reports` | Dashboard y reportes |
-| `api` | Configuración central de la API REST |
+| [`sales`](sales/README.md) | Ventas y presupuestos (con sync PWA offline) |
+| [`customers`](customers/README.md) | Clientes |
+| [`suppliers`](suppliers/README.md) | Proveedores |
+| [`inventory`](inventory/README.md) | Stock y movimientos |
+| [`payments`](payments/README.md) | Pagos y asignaciones |
+| [`bills`](bills/README.md) | Facturación |
+| [`expenses`](expenses/README.md) | Gastos operativos (OPEX) y clasificación en P&L |
+| [`afip`](afip/README.md) | Integración fiscal Argentina (AFIP/ARCA) |
+| [`reports`](reports/README.md) | Dashboard y reportes |
+| [`api`](api/README.md) | Configuración central de la API REST |
+| [`erp_crm_bulonera`](erp_crm_bulonera/README.md) | Configuración raíz del proyecto y Celery |
+| [`templates`](templates/README.md) | UI: Plantillas HTML, Tailwind y Alpine.js |
+| [`deployment`](deployment/README.md) | Configuración de Docker, uWSGI y Entorno de Producción |
+| [`scripts`](scripts/README.md) | Scripts de mantenimiento, auditoría y diagnóstico |
+| [`tmp`](tmp/README.md) | Espacio temporal de pruebas y scratch scripts (excluido de Git) |
+| [`.agents`](.agents/README.md) | Habilidades, reglas de estilo y workflows de Agentes de IA |
 
 ---
 
@@ -554,22 +560,34 @@ Usa las skills `template-standardization` y `verification-before-completion`."
 
 ---
 
-## 🔍 Codebase Knowledge Graph (codebase-memory-mcp)
+## 🔍 Descubrimiento Semántico y Grafos de Conocimiento (MCP & Obsidian)
 
-Este proyecto cuenta con `codebase-memory-mcp` para mantener un grafo de conocimiento estructurado del código.
-Siempre prefiere las herramientas del grafo de conocimiento sobre búsquedas de texto plano (`grep_search` / `glob`) para el descubrimiento y exploración de código.
+Este proyecto utiliza un ecosistema híbrido de grafos de conocimiento y documentación estructurada para acelerar el desarrollo y mantener un contexto alineado con las reglas de negocio:
 
-### Orden de Prioridad de Herramientas:
-1. **`search_graph`** — Buscar funciones, clases, vistas, rutas o variables mediante patrones.
-2. **`trace_path`** — Rastrear llamadas entrantes/salientes de una función o componente (quién la llama o qué llama).
-3. **`get_code_snippet`** — Leer el código fuente de funciones, clases o métodos específicos.
-4. **`query_graph`** — Realizar consultas complejas en el grafo usando sintaxis tipo Cypher.
-5. **`get_architecture`** — Resumen arquitectónico de alto nivel (lenguajes, límites, hotspots).
+### 1. Codebase Memory Graph (`codebase-memory-mcp`)
+Analiza la estructura física y sintáctica del código Python/Django (AST). 
+*   **Cuándo usar:** Exploración técnica, trazabilidad de llamadas de métodos (`trace_path`), ubicación de clases y extracción rápida de snippets de código (`get_code_snippet`).
+*   **Prioridad:** Siempre prefiere las herramientas de `codebase-memory-mcp` (`search_graph`, `trace_path`, `get_code_snippet`) sobre búsquedas planas (`grep_search` / `glob`) para exploración de código.
+
+### 2. Semantic Context Graph (`Graphify MCP`)
+Conecta semánticamente el código fuente con la documentación comercial de Obsidian y los layouts visuales.
+*   **Archivo del Grafo:** [`graphify-out/graph.json`](file:///c:/Users/frank/Desktop/BULONERA_ERP/graphify-out/graph.json) (Contiene 400+ comunidades semánticas).
+*   **Herramientas MCP:** `query_graph`, `find_path` (para buscar la ruta más corta entre conceptos, ej. de una vista al archivo Markdown de negocio), `get_neighbors`.
+*   **Mantenimiento (Host Windows):** Para regenerar el grafo tras cambios importantes en el código o documentación, ejecutar en PowerShell:
+    ```powershell
+    $env:GEMINI_API_KEY="tu_clave_de_api"
+    graphify .
+    ```
+
+### 3. Segundo Cerebro de Negocio (Obsidian)
+Estructura de documentación distribuida por módulos para entender el **por qué** y el **cómo** de las decisiones comerciales:
+*   **Estructura:** Cada módulo posee su `README.md` (Cerebro Local) y notas atómicas en su carpeta `docs/` vinculadas mediante enlaces Markdown relativos.
+*   **Uso en Agentes:** Antes de escribir código para solucionar un requerimiento impositivo o comercial, la IA debe consultar el `README.md` del módulo correspondiente en Obsidian para alinear el diseño con las directrices del negocio.
 
 ### Cuándo volver a grep / búsquedas de archivos:
-- Al buscar constantes literales, mensajes de error específicos, o configuraciones de strings.
-- Al explorar archivos de configuración no estructurados (Dockerfiles, config de uWSGI, scripts shell).
-- Cuando el grafo de conocimiento retorne resultados insuficientes.
+- Al buscar constantes literales específicas, mensajes de error literales de logs, o configuraciones de strings.
+- Al explorar archivos de configuración plana no estructurados (Dockerfiles, `.env`, configs de uWSGI).
+- Cuando los grafos de conocimiento (MCP) retornen resultados insuficientes..
 
 ---
 

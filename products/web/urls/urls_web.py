@@ -15,6 +15,8 @@ from products.web.views import (
     pricelist_create,
     pricelist_edit,
     pricelist_delete,
+    generate_barcode,
+    generate_qr,
 )
 
 app_name = 'products'
@@ -26,6 +28,8 @@ urlpatterns = [
     path('<int:pk>/', product_detail, name='product_detail'),
     path('<int:pk>/editar/', product_edit, name='product_edit'),
     path('<int:pk>/eliminar/', product_delete, name='product_delete'),
+    path('<int:pk>/codigo-barras/', generate_barcode, name='generate_barcode'),
+    path('<int:pk>/codigo-qr/', generate_qr, name='generate_qr'),
     path('importar/', product_import, name='product_import'),
     path('importar/reporte/', import_report, name='import_report'),
     path('importar/reporte/<str:task_id>/', import_report, name='import_report_task'),

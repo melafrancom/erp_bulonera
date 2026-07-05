@@ -88,7 +88,7 @@
             <th scope="col" class="w-12 px-6 py-5 text-center">
               <span class="sr-only">Expandir</span>
             </th>
-            <th scope="col" class="px-6 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Identificación</th>
+            <th scope="col" class="w-24 px-6 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Identificación</th>
             <th scope="col" class="px-6 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Nombre</th>
             <th scope="col" class="px-6 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Medidas</th>
             <th scope="col" class="px-6 py-5 text-right text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">P. Costo</th>
@@ -112,7 +112,7 @@
               </button>
             </td>
 
-            <td class="px-6 py-5 whitespace-nowrap cursor-pointer" onclick="window.location='{% url 'products:product_detail' product.pk %}'">
+            <td class="w-24 px-6 py-5 whitespace-nowrap cursor-pointer" onclick="window.location='{% url 'products:product_detail' product.pk %}'">
               <span class="text-sm font-black text-gray-900 dark:text-slate-100 tabular-nums">#{{ product.code }}</span>
             </td>
             
@@ -120,11 +120,18 @@
               <div class="text-sm font-black text-[#1B3A5C] dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
                 {{ product.name }}
               </div>
-              {% if product.category %}
-                <div class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-tight mt-0.5">
-                  {{ product.category.name }}
-                </div>
-              {% endif %}
+              <div class="flex flex-col gap-0.5 mt-1">
+                {% if product.category %}
+                  <span class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-tight">
+                    {{ product.category.name }}
+                  </span>
+                {% endif %}
+                {% if product.description %}
+                  <span class="text-xs text-gray-500 dark:text-slate-400 line-clamp-1">
+                    {{ product.description }}
+                  </span>
+                {% endif %}
+              </div>
             </td>
 
             <td class="px-6 py-5 whitespace-nowrap cursor-pointer" onclick="window.location='{% url 'products:product_detail' product.pk %}'">
@@ -232,6 +239,25 @@
                         <div class="flex justify-between items-center group/item border-t dark:border-slate-800 pt-3 mt-3">
                           <span class="text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-tight">Último Cambio</span>
                           <span class="text-[10px] font-bold text-gray-400 dark:text-slate-600 tabular-nums">{{ product.updated_at|date:"d/m/Y - H:i" }}</span>
+                        </div>
+                      </div>
+
+                      <!-- Identificación Visual (Código de Barras y QR) -->
+                      <div class="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700/50">
+                        <h5 class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                          <i data-lucide="qr-code" class="w-3.5 h-3.5 text-blue-500"></i> Identificación Visual
+                        </h5>
+                        <div class="flex items-center gap-4 bg-white dark:bg-slate-900/40 p-3 rounded-2xl border border-gray-100 dark:border-slate-800/80 shadow-sm">
+                          {% if product.barcode or product.code %}
+                            <div class="flex flex-col items-center bg-white dark:bg-slate-800 p-2 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm transition-transform duration-300 hover:scale-150 hover:shadow-lg origin-center cursor-zoom-in z-10 hover:z-20">
+                              <img src="{% url 'products:generate_barcode' product.pk %}" alt="Barcode" class="h-10 max-w-[120px] object-contain">
+                              <span class="text-[8px] font-mono text-gray-500 dark:text-slate-400 mt-1">{{ product.barcode|default:product.code }}</span>
+                            </div>
+                          {% endif %}
+                          <div class="flex flex-col items-center bg-white dark:bg-slate-800 p-2 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm transition-transform duration-300 hover:scale-150 hover:shadow-lg origin-center cursor-zoom-in z-10 hover:z-20">
+                            <img src="{% url 'products:generate_qr' product.pk %}" alt="QR" class="w-10 h-10 object-contain">
+                            <span class="text-[8px] font-mono text-gray-500 dark:text-slate-400 mt-1">{{ product.code }}</span>
+                          </div>
                         </div>
                       </div>
                     </div>

@@ -253,8 +253,10 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
 
         # Emisor (izquierda)
         iva_label = _COND_IVA.get(empresa_info.get('iva_condition', 'RI'), 'IVA Responsable Inscripto')
+        razon_social_str = (empresa_info.get("razon_social") or empresa_info.get("name") or "").upper()
         emisor_html = f"""
-        <b>{(empresa_info.get("razon_social") or empresa_info.get("name") or "").upper()}</b><br/>
+        <b><font size="12" color="#1B3A5C">BULONERA ALVEAR</font></b><br/>
+        <b>Razón Social:</b> {razon_social_str}<br/>
         {empresa_info.get("address", "")}<br/>
         Email: {email_empresa}<br/>
         WhatsApp: {whatsapp_empresa}<br/>

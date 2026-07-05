@@ -333,11 +333,11 @@
         <h3 class="text-xs font-black text-gray-400 dark:text-slate-500 mb-8 self-start flex items-center gap-2 uppercase tracking-widest group-hover/barcode:text-blue-500 transition-colors">
           <i data-lucide="barcode" class="w-4 h-4"></i> EAN / Estándar
         </h3>
-        {% if product.barcode %}
-          <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-inner mb-6 transition-transform group-hover/barcode:scale-110">
-            <img src="{% url 'products:generate_barcode' product.pk %}" alt="Barcode {{ product.barcode }}" class="h-20">
+        {% if product.barcode or product.code %}
+          <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-inner mb-6 transition-transform duration-300 hover:scale-150 hover:shadow-xl cursor-zoom-in z-10 hover:z-20">
+            <img src="{% url 'products:generate_barcode' product.pk %}" alt="Barcode {{ product.barcode|default:product.code }}" class="h-20 object-contain">
           </div>
-          <p class="font-mono text-gray-900 dark:text-slate-100 font-black tracking-widest text-lg">{{ product.barcode }}</p>
+          <p class="font-mono text-gray-900 dark:text-slate-100 font-black tracking-widest text-lg">{{ product.barcode|default:product.code }}</p>
         {% else %}
           <div class="py-12 text-gray-300 dark:text-slate-600 italic text-xs font-black uppercase text-center tracking-widest">Sin Código EAN</div>
         {% endif %}
@@ -348,9 +348,9 @@
         <h3 class="text-xs font-black text-gray-400 dark:text-slate-500 mb-8 self-start flex items-center gap-2 uppercase tracking-widest group-hover/qr:text-indigo-500 transition-colors">
           <i data-lucide="qr-code" class="w-4 h-4"></i> Acceso Rápido
         </h3>
-        {% if product.qr_code %}
-          <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-inner mb-6 transition-transform group-hover/qr:scale-110">
-            <img src="{% url 'products:generate_qr' product.pk %}" alt="QR {{ product.code }}" class="w-20 h-20 opacity-80 group-hover:opacity-100 transition-opacity">
+        {% if product.qr_code or product.code %}
+          <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-inner mb-6 transition-transform duration-300 hover:scale-150 hover:shadow-xl cursor-zoom-in z-10 hover:z-20">
+            <img src="{% url 'products:generate_qr' product.pk %}" alt="QR {{ product.code }}" class="w-20 h-20 opacity-80 group-hover:opacity-100 transition-opacity object-contain">
           </div>
           <p class="font-mono text-gray-900 dark:text-slate-100 font-black tracking-widest text-lg">{{ product.code }}</p>
         {% else %}

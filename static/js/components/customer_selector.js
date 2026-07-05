@@ -10,7 +10,7 @@ function customerSelectorComponent() {
     customerResults: [],
     showCustomerResults: false,
     selectedCustomer: null,
-    newCustomer: { name: '', phone: '', email: '', cuit: '', tax_condition: '' },
+    newCustomer: { name: '', phone: '', email: '', cuit: '', tax_condition: '', billing_address: '' },
     isVerifyingAfip: false,
     isSubmittingCustomer: false,
 
@@ -46,7 +46,7 @@ function customerSelectorComponent() {
     setCustomerMode(mode) {
       this.customerMode = mode;
       this.selectedCustomer = null;
-      this.newCustomer = { name: '', phone: '', email: '', cuit: '', tax_condition: '' };
+      this.newCustomer = { name: '', phone: '', email: '', cuit: '', tax_condition: '', billing_address: '' };
       this.customerResults = [];
       this.customerSearchQuery = '';
     },
@@ -60,6 +60,9 @@ function customerSelectorComponent() {
         if (data.success && data.data) {
           const d = data.data;
           this.newCustomer.name = d.razon_social || ((d.nombre || '') + ' ' + (d.apellido || '')) || this.newCustomer.name;
+          if (d.domicilio) {
+              this.newCustomer.billing_address = d.domicilio;
+          }
           if (d.condicion_iva) {
               // El backend retorna el código normalizado: 'RI', 'MONO', 'EX', 'CF'
               const validCodes = ['RI', 'MONO', 'EX', 'CF', 'NR'];
@@ -132,6 +135,7 @@ function customerSelectorComponent() {
             email: this.newCustomer.email,
             cuit_cuil: this.newCustomer.cuit,
             tax_condition: this.newCustomer.tax_condition,
+            billing_address: this.newCustomer.billing_address,
             is_active: true
           })
         });
