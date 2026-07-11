@@ -318,11 +318,21 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
         c.setLineWidth(0.6)
         c.rect(MARGIN, REC_Y, CONTENT_W, REC_H)
 
+        _PAYMENT_METHOD_DISPLAY = {
+            'cash': 'Contado',
+            'debit_card': 'Tarjeta de Débito',
+            'credit_card': 'Tarjeta de Crédito',
+            'transfer': 'Transferencia Bancaria',
+            'check': 'Cheque',
+            'account': 'Cuenta Corriente',
+            'other': 'Otro',
+        }
         pago = 'Contado'
         try:
-            if invoice.sale and invoice.sale.customer and invoice.sale.customer.payment_term:
-                pt = invoice.sale.customer.payment_term
-                pago = 'Contado' if pt == 0 else f'{pt} días'
+            if invoice.sale and invoice.sale.payment_method:
+                pago = _PAYMENT_METHOD_DISPLAY.get(
+                    invoice.sale.payment_method, 'Contado'
+                )
         except Exception:
             pass
 
@@ -433,7 +443,7 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
         c.setFont('Helvetica-Bold', 8)
         c.drawString(MARGIN + 3 * mm, TRIB_Y + TRIB_H - 5 * mm, "Importe Neto Gravado:")
         c.setFont('Helvetica', 8)
-        c.drawRightString(MARGIN + 45 * mm, TRIB_Y + TRIB_H - 5 * mm, _fmt(invoice.neto_gravado))
+        c.drawRightString(MARGIN + 70 * mm, TRIB_Y + TRIB_H - 5 * mm, _fmt(invoice.neto_gravado))
 
         # IVA desglose
         # Agrupamos por alicuotas o mostramos fijas como pidió el usuario
@@ -456,7 +466,7 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
             c.setFont('Helvetica-Bold', 7)
             c.drawString(lx, ly, f"IVA {pct}%:")
             c.setFont('Helvetica', 7)
-            c.drawRightString(lx + 42 * mm, ly, _fmt(val))
+            c.drawRightString(lx + 67 * mm, ly, _fmt(val))
             ly -= 4 * mm
             
         c.setFont('Helvetica-Bold', 8)
