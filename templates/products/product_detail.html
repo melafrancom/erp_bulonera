@@ -177,7 +177,106 @@
 
     <!-- Columna Derecha: KPI & Centro de Costos -->
     <div class="space-y-8">
-      
+
+      <!-- Panel: Imagen del Producto y Compartir -->
+      <section class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-200 dark:border-slate-700 p-6 xl:p-8 transition-colors relative overflow-hidden group/image">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 -mr-16 -mt-16 rounded-full blur-3xl group-hover/image:scale-150 transition-all"></div>
+        
+        <div class="flex items-center gap-3 mb-6">
+          <div class="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl">
+            <i data-lucide="image" class="w-6 h-6 text-indigo-600 dark:text-indigo-400"></i>
+          </div>
+          <h2 class="text-xl font-black text-gray-900 dark:text-slate-100 uppercase tracking-tight">Imagen</h2>
+        </div>
+
+        <div class="relative w-full aspect-square rounded-[1.5rem] overflow-hidden bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 flex items-center justify-center mb-4">
+          {% if product.main_image %}
+            <img id="main-product-image" src="{{ product.main_image.url }}" alt="{{ product.name }}" class="w-full h-full object-cover transition-transform duration-500 group-hover/image:scale-105" />
+          {% else %}
+            <div class="flex flex-col items-center gap-2 text-gray-400 dark:text-slate-600">
+              <i data-lucide="package" class="w-16 h-16 stroke-1"></i>
+              <span class="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-slate-500">Sin Imagen</span>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Galería de imágenes adicionales -->
+        {% if product.images.all %}
+          <div class="flex items-center gap-2 overflow-x-auto pb-3 mb-4 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-slate-700">
+            {% if product.main_image %}
+              <button onclick="changeMainImage('{{ product.main_image.url }}')" class="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 border-indigo-500 focus:outline-none transition-all">
+                <img src="{{ product.main_image.url }}" alt="Principal" class="w-full h-full object-cover" />
+              </button>
+            {% endif %}
+            {% for img in product.images.all %}
+              <button onclick="changeMainImage('{{ img.image.url }}')" class="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 border-transparent hover:border-gray-300 dark:hover:border-slate-700 focus:outline-none transition-all">
+                <img src="{{ img.image.url }}" alt="{{ img.alt_text }}" class="w-full h-full object-cover" />
+              </button>
+            {% endfor %}
+          </div>
+          <script>
+            function changeMainImage(url) {
+              const mainImg = document.getElementById('main-product-image');
+              if (mainImg) {
+                mainImg.src = url;
+              }
+              // Update borders
+              const buttons = event.currentTarget.parentNode.getElementsByTagName('button');
+              for (let btn of buttons) {
+                btn.classList.remove('border-indigo-500');
+                btn.classList.add('border-transparent');
+              }
+              event.currentTarget.classList.remove('border-transparent');
+              event.currentTarget.classList.add('border-indigo-500');
+            }
+          </script>
+        {% endif %}
+
+        <!-- Botones de Compartir -->
+        <div class="space-y-3 mt-4">
+          {% if product.main_image %}
+            <button onclick="copyImageLink(this, '{{ request.scheme }}://{{ request.get_host }}{{ product.main_image.url }}')"
+                    class="w-full flex items-center justify-center gap-2 py-3 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 rounded-xl transition-all font-semibold text-xs uppercase tracking-wider hover:bg-indigo-100 dark:hover:bg-indigo-900/50">
+              <i data-lucide="link" class="w-4 h-4 btn-icon"></i>
+              <span class="btn-text">Copiar Enlace Imagen</span>
+            </button>
+            
+            <button onclick="shareWhatsApp('{{ product.name }}', '{{ request.scheme }}://{{ request.get_host }}{{ product.main_image.url }}')"
+                    class="w-full flex items-center justify-center gap-2 py-3 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 rounded-xl transition-all font-semibold text-xs uppercase tracking-wider hover:bg-emerald-100 dark:hover:bg-emerald-900/50">
+              <i data-lucide="share-2" class="w-4 h-4"></i>
+              <span>Compartir por WhatsApp</span>
+            </button>
+          {% else %}
+            <p class="text-xs text-gray-400 dark:text-slate-500 text-center italic">Sube una imagen para habilitar opciones de compartir.</p>
+          {% endif %}
+        </div>
+      </section>
+
+      <script>
+        function copyImageLink(btn, url) {
+          navigator.clipboard.writeText(url).then(() => {
+            const textSpan = btn.querySelector('.btn-text');
+            
+            const originalText = textSpan.innerText;
+            textSpan.innerText = 'Copiado!';
+            btn.classList.add('bg-emerald-500/10', 'text-emerald-500');
+            
+            setTimeout(() => {
+              textSpan.innerText = originalText;
+              btn.classList.remove('bg-emerald-500/10', 'text-emerald-500');
+            }, 2000);
+          }).catch(err => {
+            console.error('Error al copiar: ', err);
+          });
+        }
+
+        // Deep link share to whatsapp
+        function shareWhatsApp(name, url) {
+          const text = encodeURIComponent(`Mirá este producto de Bulonera Alvear: *${name}*\n\nImagen: ${url}`);
+          window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+        }
+      </script>
+
       <!-- Card: Almacén y Disponibilidad -->
       <section class="bg-gray-900 dark:bg-slate-800 rounded-[2.5rem] shadow-2xl shadow-indigo-500/10 p-8 transition-all group/stock relative overflow-hidden">
         <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-white/5 rounded-full blur-2xl group-hover/stock:scale-150 transition-transform"></div>
