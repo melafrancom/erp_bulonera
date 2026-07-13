@@ -118,6 +118,10 @@ def _parse_product_form(request):
     else:
         data['supplier'] = None
 
+    # Imagen Principal
+    if 'main_image' in request.FILES:
+        data['main_image'] = request.FILES['main_image']
+
     return data
 
 

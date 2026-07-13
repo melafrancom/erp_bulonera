@@ -457,6 +457,21 @@ class ProductImportService:
             except (InvalidOperation, TypeError):
                 pass
 
+        # Imagen Principal
+        img_val = row.get('images') or row.get('image')
+        if img_val and not (isinstance(img_val, float) and pd.isna(img_val)):
+            first_image = str(img_val).split(',')[0].strip()
+            if first_image:
+                expected_path = f"photos/products/original/{first_image}"
+                product.main_image = expected_path
+
+        # Galería de imágenes (pendiente para después del save)
+        gallery_val = row.get('gallery')
+        if gallery_val and not (isinstance(gallery_val, float) and pd.isna(gallery_val)):
+            gallery_images = [img.strip() for img in str(gallery_val).split(',') if img.strip()]
+            if gallery_images:
+                setattr(product, '_pending_gallery', gallery_images)
+
         # Si el producto fue softdeleted, restaurarlo
         if not is_new and not product.is_active:
             product.is_active = True
@@ -480,6 +495,18 @@ class ProductImportService:
                 )
                 subcats.append(subcat)
             product.subcategories.set(subcats)
+
+        # Galería (después de save)
+        if hasattr(product, '_pending_gallery'):
+            from products.models import ProductImage
+            product.images.all().delete()
+            for idx, img_name in enumerate(product._pending_gallery):
+                expected_path = f"photos/products/original/{img_name}"
+                ProductImage.objects.create(
+                    product=product,
+                    image=expected_path,
+                    order=idx
+                )
 
         return 'created' if is_new else 'updated'
 

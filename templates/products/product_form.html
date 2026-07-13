@@ -151,6 +151,29 @@
             </select>
           </div>
         </div>
+
+        <!-- Imagen Principal -->
+        <div class="md:col-span-2 lg:col-span-3">
+          <label for="id_main_image" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Imagen Principal</label>
+          <div class="flex items-center gap-6 p-4 bg-gray-50 dark:bg-slate-900 border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-2xl hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
+            {% if is_edit and product.main_image %}
+              <div class="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700">
+                <img src="{{ product.main_image.url }}" alt="Imagen actual" class="w-full h-full object-contain">
+              </div>
+            {% else %}
+              <div class="w-24 h-24 rounded-xl flex-shrink-0 bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 flex flex-col items-center justify-center text-gray-400 dark:text-slate-500">
+                <i data-lucide="image" class="w-8 h-8 mb-1"></i>
+                <span class="text-[9px] uppercase font-bold">Vacío</span>
+              </div>
+            {% endif %}
+            <div class="flex-grow">
+              <input type="file" id="id_main_image" name="main_image" accept="image/*"
+                     class="block w-full text-sm text-gray-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-900/30 dark:file:text-blue-400 hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50 transition-all cursor-pointer outline-none">
+              <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-2 font-bold uppercase">Formatos soportados: JPG, PNG, WEBP</p>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 

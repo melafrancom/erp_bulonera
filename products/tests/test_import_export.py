@@ -236,6 +236,33 @@ class TestProductImportService:
         finally:
             os.unlink(path)
 
+    def test_import_with_images_and_gallery(self, service, category, admin_user):
+        """TC-IMP012: Importar productos con columnas de imágenes y galería."""
+        path = _create_excel({
+            'code': ['IMG-001', 'IMG-002'],
+            'name': ['Producto Imagen 1', 'Producto Imagen 2'],
+            'price': [100.00, 200.00],
+            'category': [category.name, category.name],
+            'images': ['imagen1.jpg', 'imagen2.webp'],
+            'gallery': ['galeria1a.jpg, galeria1b.webp', 'galeria2.jpg'],
+        })
+        try:
+            result = service.import_from_file(path, admin_user.id)
+            assert result['successful'] == 2
+            
+            p1 = Product.objects.get(code='IMG-001')
+            assert p1.main_image == 'photos/products/original/imagen1.jpg'
+            assert p1.images.count() == 2
+            assert p1.images.order_by('order')[0].image == 'photos/products/original/galeria1a.jpg'
+            assert p1.images.order_by('order')[1].image == 'photos/products/original/galeria1b.webp'
+            
+            p2 = Product.objects.get(code='IMG-002')
+            assert p2.main_image == 'photos/products/original/imagen2.webp'
+            assert p2.images.count() == 1
+            assert p2.images.first().image == 'photos/products/original/galeria2.jpg'
+        finally:
+            os.unlink(path)
+
 
 # =============================================================================
 # Export
