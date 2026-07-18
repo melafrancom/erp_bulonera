@@ -614,6 +614,10 @@ Estructura de documentación distribuida por módulos para entender el **por qu�
 | Documento | Contenido |
 |---|---|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Arquitectura completa del módulo Sales (modelos, API, PWA) |
+| [DATABASE_ARCHITECTURE.md](DATABASE_ARCHITECTURE.md) | Flujos transaccionales, decisiones e ingeniería inversa de Base de Datos ([HTML](DATABASE_ARCHITECTURE.html)) |
+| [FULL_DATABASE_ER_DIAGRAM.md](FULL_DATABASE_ER_DIAGRAM.md) | Diagrama Entidad-Relación (Mermaid) completo y exhaustivo de la base de datos ([HTML](FULL_DATABASE_ER_DIAGRAM.html)) |
+| [DATABASE_ARCHITECTURE.md](DATABASE_ARCHITECTURE.md) | Flujos transaccionales, decisiones e ingeniería inversa de Base de Datos ([HTML](DATABASE_ARCHITECTURE.html)) |
+| [FULL_DATABASE_ER_DIAGRAM.md](FULL_DATABASE_ER_DIAGRAM.md) | Diagrama Entidad-Relación (Mermaid) completo y exhaustivo de la base de datos ([HTML](FULL_DATABASE_ER_DIAGRAM.html)) |
 | [API_STRUCTURE.md](API_STRUCTURE.md) | Todos los endpoints REST documentados |
 | [REQUEST_FLOW.md](REQUEST_FLOW.md) | Flujo de request end-to-end |
 | [ARCHITECTURE_VIEWS.md](ARCHITECTURE_VIEWS.md) | Separación Web vs API explicada |
