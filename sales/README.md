@@ -16,7 +16,7 @@ El módulo `sales` gestiona el ciclo comercial completo de la empresa. Permite l
 *   **`Quote`**: Presupuesto emitido a un cliente. Tiene validez temporal. Hereda de `BaseModel` (Soft-delete: Sí).
 *   **`QuoteItem`**: Renglón individual de un presupuesto. Contiene cantidad, precio, descuento e IVA. Hereda de `BaseModel` (Soft-delete: Sí).
 *   **`Sale`**: Venta comercial confirmada o en borrador. Controla tres estados ortogonales: comercial (`status`), financiero (`payment_status`) y fiscal (`fiscal_status`). Hereda de `BaseModel` (Soft-delete: Sí).
-*   **`SaleItem`**: Renglón individual de una venta. Soporta el modo de cálculo bidireccional (precio a total o total a precio). Hereda de `BaseModel` (Soft-delete: Sí).
+*   **`SaleItem`**: Renglón individual de una venta. Soporta el modo de cálculo bidireccional (precio a total o total a precio). Registra un snapshot de costo unitario (`unit_cost`) que se puede ingresar manualmente en el formulario de venta para asegurar la precisión del P&L en artículos comercializados por unidad pero comprados por peso (kg). Hereda de `BaseModel` (Soft-delete: Sí).
 *   **`QuoteConversion`**: Historial de trazabilidad que documenta cuándo y quién convirtió un presupuesto en venta, incluyendo modificaciones de precios aplicadas. Hereda de `BaseModel` (Soft-delete: Sí).
 
 ## ⚡ Servicios Críticos (`services.py`)
@@ -50,6 +50,13 @@ Base URL: `/api/v1/sales/`
 *   `GET /sales/` - Panel principal de ventas e historial de transacciones.
 *   `GET /sales/quotes/` - Gestor de presupuestos y cotizaciones de salón.
 
+## 💸 Gestión de Costos y Margen de Rentabilidad (P&L)
+El sistema utiliza un snapshot histórico de costos en `SaleItem.unit_cost` para calcular de manera precisa el costo de mercadería vendida (COGS) en los reportes de pérdidas y ganancias (P&L).
+*   **Ajuste manual de costos:** En artículos que se compran al proveedor por kilogramo pero se comercializan por unidad en salón (ej: arandelas, tornillos sueltos), el costo del producto principal en base de datos (`Product.cost`) refleja el valor por kg. El formulario de ventas expone un input para el **Costo Unitario** con el placeholder `"Auto"`.
+*   **Fallback Automático:** Si el vendedor deja el campo vacío, el backend asigna automáticamente `Product.current_cost` en la base de datos al guardar la venta.
+*   **Copias y conversiones:** Al duplicar o convertir presupuestos o ventas, las vistas web arrastran el costo unitario snapshot original para evitar distorsiones en el margen histórico de rentabilidad.
+
 ## 📝 Documentación de Detalle
 *   [Arquitectura de Sincronización Offline](docs/sync_architecture.md): Protocolo de colas, UUIDs de salón y resolución de conflictos.
 *   [Cálculo Bidireccional de Precios](docs/price_calculation.md): Lógica matemática aplicada en mostrador para total a precio y viceversa.
+
