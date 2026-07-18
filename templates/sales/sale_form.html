@@ -81,6 +81,7 @@
               <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[14rem]">Producto</th>
               <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider w-20">Cant.</th>
               <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider w-28">Precio Unit.</th>
+              <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider w-28">Costo Unit.</th>
               <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider w-36">Lista Precios</th>
               <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider w-28">Tipo Desc.</th>
               <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider w-24">Descuento</th>
@@ -99,7 +100,7 @@
                           :class="{'border-red-400 bg-red-50 dark:bg-red-900/10': item._errors.product}">
                     <option value="">Seleccionar producto...</option>
                     {% for product in products %}
-                    <option value="{{ product.id }}" data-price="{{ product.price }}" data-code="{{ product.code }}">
+                    <option value="{{ product.id }}" data-price="{{ product.price }}" data-cost="{{ product.cost }}" data-code="{{ product.code }}">
                       [{{ product.code }}] {{ product.name }}
                     </option>
                     {% endfor %}
@@ -119,6 +120,15 @@
                     <input type="number" x-model.number="item.unit_price" @input="calculateLine(index)"
                            class="w-full text-sm text-right pl-6 pr-2 py-2 border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent transition"
                            min="0" step="0.01" placeholder="0.00">
+                  </div>
+                </td>
+                <!-- Costo Unitario -->
+                <td class="px-3 py-2.5">
+                  <div class="relative">
+                    <span class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 text-sm">$</span>
+                    <input type="number" x-model.number="item.unit_cost"
+                           class="w-full text-sm text-right pl-6 pr-2 py-2 border border-dashed border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent transition"
+                           min="0" step="0.01" placeholder="Auto" title="Costo unitario (opcional). Dejar vacío para usar costo del producto.">
                   </div>
                 </td>
                 <!-- Lista de Precios -->
@@ -200,7 +210,7 @@
               <select x-model="item.product" @change="onProductChange(index)" class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100">
                 <option value="">Seleccionar producto...</option>
                 {% for product in products %}
-                <option value="{{ product.id }}" data-price="{{ product.price }}">[{{ product.code }}] {{ product.name }}</option>
+                <option value="{{ product.id }}" data-price="{{ product.price }}" data-cost="{{ product.cost }}">[{{ product.code }}] {{ product.name }}</option>
                 {% endfor %}
               </select>
               <!-- Lista de Precios mobile -->
@@ -230,6 +240,12 @@
                          min="0" step="0.01" placeholder="0.00">
                 </div>
                 <div>
+                  <label class="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Costo Unit.</label>
+                  <input type="number" x-model.number="item.unit_cost"
+                         class="w-full text-sm border border-dashed border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 px-3 py-2 outline-none focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent transition"
+                         min="0" step="0.01" placeholder="Auto" title="Costo unitario (opcional)">
+                </div>
+                <div>
                   <label class="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Tipo Desc.</label>
                   <select x-model="item.discount_type" @change="calculateLine(index)"
                           class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-2 outline-none focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 transition">
@@ -251,8 +267,8 @@
                          class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 transition"
                          min="0" max="100" step="0.01" placeholder="21">
                 </div>
-                <div>
-                  <label class="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Total</label>
+                <div class="col-span-2 flex items-center justify-between border-t border-gray-100 dark:border-slate-700/50 pt-2 mt-1">
+                  <label class="text-xs font-semibold text-gray-500 dark:text-slate-400">Total Item:</label>
                   <div class="text-sm font-bold text-gray-900 dark:text-slate-100 py-2 text-right" x-text="'$' + formatNumber(item._total)"></div>
                 </div>
               </div>
@@ -416,6 +432,7 @@ function saleForm() {
       // To ensure prices cascade correctly:
       it._basePrice = parseFloat(prod.price) || 0;
       it.unit_price = it._basePrice;
+      it.unit_cost = parseFloat(prod.cost) || '';
       it.tax_percentage = parseFloat(prod.tax_rate) || 21;
       
       this.calculateLine(emptyIdx);
@@ -447,6 +464,7 @@ function saleForm() {
           product: {{ item.product.id }},
           quantity: {{ item.quantity }},
           unit_price: {{ item.unit_price }},
+          unit_cost: {% if item.unit_cost is not None %}{{ item.unit_cost }}{% else %}''{% endif %},
           discount_type: "{{ item.discount_type }}",
           discount_value: {{ item.discount_value }},
           tax_percentage: {{ item.tax_percentage }},
@@ -477,6 +495,7 @@ function saleForm() {
           product: {{ item.product_id }},
           quantity: {{ item.quantity }},
           unit_price: {{ item.unit_price }},
+          unit_cost: {% if item.unit_cost is not None %}{{ item.unit_cost }}{% else %}''{% endif %},
           discount_type: "{{ item.discount_type }}",
           discount_value: {{ item.discount_value }},
           tax_percentage: {{ item.tax_percentage }},
@@ -500,6 +519,7 @@ function saleForm() {
                 product: cartItem.id,
                 quantity: cartItem.quantity,
                 unit_price: cartItem.price,
+                unit_cost: cartItem.cost || '',
                 discount_type: 'none',
                 discount_value: 0,
                 tax_percentage: cartItem.tax_rate || 21,
@@ -528,7 +548,7 @@ function saleForm() {
 
 
     addItem() {
-      this.items.push({ _id: ++this._nextId, product: '', quantity: 1, unit_price: 0, discount_type: 'none', discount_value: 0, tax_percentage: 21, price_list: '', _basePrice: 0, _total: 0, _errors: {} });
+      this.items.push({ _id: ++this._nextId, product: '', quantity: 1, unit_price: 0, unit_cost: '', discount_type: 'none', discount_value: 0, tax_percentage: 21, price_list: '', _basePrice: 0, _total: 0, _errors: {} });
       this.$nextTick(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); });
     },
 
@@ -542,8 +562,10 @@ function saleForm() {
       const opt = event.target.selectedOptions[0];
       if (opt?.dataset.price) {
         const basePrice = parseFloat(opt.dataset.price) || 0;
+        const baseCost = parseFloat(opt.dataset.cost) || '';
         this.items[idx]._basePrice = basePrice;
         this.items[idx].unit_price = basePrice;
+        this.items[idx].unit_cost = baseCost;
         if (this.items[idx].price_list) {
           this.onPriceListChange(idx);
           return;
@@ -613,7 +635,20 @@ function saleForm() {
         payment_method: this.payment_method,
         delivery_address: this.delivery.address,
         delivery_date: this.delivery.date || null,
-        items: this.items.map(i => ({ product: i.product, quantity: i.quantity, unit_price: i.unit_price, discount_type: i.discount_type, discount_value: i.discount_value, tax_percentage: i.tax_percentage }))
+        items: this.items.map(i => {
+          const item = {
+            product: i.product,
+            quantity: i.quantity,
+            unit_price: i.unit_price,
+            discount_type: i.discount_type,
+            discount_value: i.discount_value,
+            tax_percentage: i.tax_percentage
+          };
+          if (i.unit_cost !== '' && i.unit_cost !== null && i.unit_cost !== undefined) {
+            item.unit_cost = parseFloat(i.unit_cost);
+          }
+          return item;
+        })
       };
 
       if (this.customerMode === 'existing') {

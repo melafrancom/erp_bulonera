@@ -731,6 +731,7 @@ def sale_create(request):
                         'discount_value': float(item.discount_value),
                         'tax_percentage': float(item.tax_percentage),
                         'notes': getattr(item, 'notes', ''),
+                        'unit_cost': float(item.product.cost),
                     })
         except Quote.DoesNotExist:
             pass
@@ -748,6 +749,7 @@ def sale_create(request):
                         'discount_value': float(item.discount_value),
                         'tax_percentage': float(item.tax_percentage),
                         'notes': getattr(item, 'notes', ''),
+                        'unit_cost': float(item.unit_cost),
                     })
         except Sale.DoesNotExist:
             pass
