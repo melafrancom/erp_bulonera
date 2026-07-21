@@ -120,3 +120,49 @@ class CustomerViewSet(AuditMixin, OwnerQuerysetMixin, ModelViewSet):
             'pending_balance': str(pending_sales),
             'total_transactions': customer.sales.count()
         })
+
+    @action(detail=True, methods=['get'])
+    def credit(self, request, pk=None):
+        """Retorna estado detallado de cuenta corriente (deuda, disponible, aging)."""
+        customer = self.get_object()
+        from customers.services import CuentaCorrienteService
+        estado = CuentaCorrienteService.get_estado_cuenta(customer)
+        
+        return Response({
+            'customer_id': customer.id,
+            'business_name': customer.business_name,
+            'allow_credit': customer.allow_credit,
+            'account_modality': customer.account_modality,
+            'deuda_total': str(estado['deuda_total']),
+            'credito_disponible': str(estado['credito_disponible']),
+            'credit_limit': str(estado['credit_limit']),
+            'credit_used_percentage': str(estado['credit_used_percentage']),
+            'sales_pendientes_count': estado['sales_pendientes'].count(),
+            'facturas_pendientes_count': len(estado['facturas_pendientes']),
+            'aging': {k: str(v) for k, v in estado['aging'].items()}
+        })
+
+    @action(detail=True, methods=['post'])
+    def refacturar_sale(self, request, pk=None):
+        """Refactura una venta informal a precio actualizado."""
+        customer = self.get_object()
+        sale_id = request.data.get('sale_id')
+        if not sale_id:
+            return Response({'error': 'Se requiere sale_id'}, status=400)
+            
+        from sales.models import Sale
+        from customers.services import CuentaCorrienteService
+        try:
+            sale = Sale.objects.get(pk=sale_id, customer=customer)
+            res = CuentaCorrienteService.refacturar_venta_a_precio_actual(sale, request.user)
+            return Response({
+                'success': True,
+                'sale_id': sale.id,
+                'sale_number': sale.number,
+                'nuevo_total': str(sale.total),
+                'diferencia_total': str(res['diferencia_total']),
+                'items_actualizados': res['items_actualizados']
+            })
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)
+

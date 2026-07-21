@@ -28,7 +28,7 @@ class CustomerForm(forms.ModelForm):
             'billing_address', 'billing_city', 'billing_state', 'billing_zip_code', 'billing_country',
             'customer_segment', # 'price_list',
             'payment_term', 'credit_limit', 'discount_percentage',
-            'allow_credit', 'notes'
+            'allow_credit', 'account_modality', 'notes'
         ]
         widgets = {
             'customer_type': forms.Select(attrs={'class': 'form-select'}),
@@ -52,6 +52,7 @@ class CustomerForm(forms.ModelForm):
             'credit_limit': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
             'discount_percentage': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),
             'allow_credit': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'account_modality': forms.Select(attrs={'class': 'form-select'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
     

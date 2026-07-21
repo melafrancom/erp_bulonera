@@ -89,6 +89,7 @@ class CustomerAdmin(admin.ModelAdmin):
         'tax_condition', 
         'customer_segment',
         'allow_credit',
+        'account_modality',
         'is_active', 
         'created_at'
     ]
@@ -112,27 +113,24 @@ class CustomerAdmin(admin.ModelAdmin):
     inlines = [CustomerNoteInline]
     
     fieldsets = (
-        ('Información Básica', {
+        ('Información Principal', {
             'fields': (
                 'customer_type',
                 'business_name',
                 'trade_name',
-            )
-        }),
-        ('Información Tributaria', {
-            'fields': (
                 'cuit_cuil',
                 'tax_condition',
             )
         }),
         ('Información de Contacto', {
             'fields': (
-                'contact_person',
                 'email',
                 'phone',
                 'mobile',
                 'website',
-            )
+                'contact_person',
+            ),
+            'classes': ('collapse',)
         }),
         ('Dirección de Facturación', {
             'fields': (
@@ -156,6 +154,7 @@ class CustomerAdmin(admin.ModelAdmin):
                 'discount_percentage',
                 'effective_discount_display',
                 'allow_credit',
+                'account_modality',
                 'credit_limit',
                 'available_credit_display',
             )

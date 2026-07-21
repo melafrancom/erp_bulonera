@@ -162,6 +162,7 @@ erDiagram
         DecimalField credit_limit
         DecimalField discount_percentage
         BooleanField allow_credit
+        CharField account_modality
         TextField notes
     }
     CustomerNote {
@@ -218,6 +219,7 @@ erDiagram
         CharField payment_status
         CharField fiscal_status
         CharField payment_method
+        BooleanField is_credit_sale
         TextField notes
         TextField internal_notes
         TextField delivery_address

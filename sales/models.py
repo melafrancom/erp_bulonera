@@ -374,6 +374,13 @@ class Sale(BaseModel):
         help_text='Medio de pago principal'
     )
     
+    is_credit_sale = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name="Venta a crédito",
+        help_text="True si la venta se registró a cuenta corriente"
+    )
+    
     # Información adicional
     notes = models.TextField(blank=True)
     internal_notes = models.TextField(blank=True)

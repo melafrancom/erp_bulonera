@@ -446,7 +446,7 @@ if (localStorage.getItem('theme') === 'dark' ||
 | [`common`](common/README.md) | Middleware, excepciones, permisos globales |
 | `products` | Catálogo de productos |
 | [`sales`](sales/README.md) | Ventas y presupuestos (con sync PWA offline) |
-| [`customers`](customers/README.md) | Clientes |
+| [`customers`](customers/README.md) | Clientes y Cuentas Corrientes (modalidades formal/informal, pre-check de crédito, refacturación y aging) |
 | [`suppliers`](suppliers/README.md) | Proveedores |
 | [`inventory`](inventory/README.md) | Stock y movimientos |
 | [`payments`](payments/README.md) | Pagos y asignaciones |

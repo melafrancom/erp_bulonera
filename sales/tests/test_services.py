@@ -131,3 +131,42 @@ class TestSaleService:
         
         with pytest.raises(ValueError, match="Transición inválida"):
             move_sale_status(sale, admin_user, 'in_preparation')
+
+    def test_confirm_sale_account_without_customer_fails(self, sale_with_items, admin_user):
+        """Error: Confirmar venta a cuenta corriente sin cliente asignado debe fallar."""
+        sale_with_items.payment_method = 'account'
+        sale_with_items.customer = None
+        sale_with_items.save()
+
+        with pytest.raises(ValueError, match="requieren un cliente registrado"):
+            confirm_sale(sale_with_items, admin_user)
+
+    def test_confirm_sale_account_exceeding_credit_limit_fails(self, sale_with_items, admin_user, customer):
+        """Error: Confirmar venta a cuenta corriente que excede el crédito disponible debe fallar."""
+        customer.allow_credit = True
+        customer.credit_limit = Decimal('50.00')
+        customer.save()
+
+        sale_with_items.payment_method = 'account'
+        sale_with_items.customer = customer
+        sale_with_items._cached_total = Decimal('100.00')
+        sale_with_items.save()
+
+        with pytest.raises(ValueError, match="Crédito insuficiente"):
+            confirm_sale(sale_with_items, admin_user)
+
+    def test_confirm_sale_account_within_credit_limit_success(self, sale_with_items, admin_user, customer):
+        """Happy Path: Confirmar venta a cuenta corriente dentro del crédito marca is_credit_sale=True."""
+        customer.allow_credit = True
+        customer.credit_limit = Decimal('500.00')
+        customer.save()
+
+        sale_with_items.payment_method = 'account'
+        sale_with_items.customer = customer
+        sale_with_items._cached_total = Decimal('100.00')
+        sale_with_items.save()
+
+        confirmed_sale = confirm_sale(sale_with_items, admin_user)
+        assert confirmed_sale.status == 'confirmed'
+        assert confirmed_sale.is_credit_sale is True
+

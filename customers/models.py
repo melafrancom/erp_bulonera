@@ -233,6 +233,19 @@ class Customer(BaseModel):
         help_text="Si está marcado, el cliente puede comprar a crédito"
     )
     
+    ACCOUNT_MODALITY_CHOICES = [
+        ('informal', 'Informal (factura al cobrar a precio actualizado)'),
+        ('formal', 'Formal (factura al entregar)'),
+    ]
+    account_modality = models.CharField(
+        max_length=10,
+        choices=ACCOUNT_MODALITY_CHOICES,
+        default='formal',
+        blank=True,
+        verbose_name="Modalidad de Cuenta Corriente",
+        help_text="Informal: se factura al cobrar a precio actualizado. Formal: se factura al entregar."
+    )
+    
     # Additional Notes
     notes = models.TextField(
         blank=True,
@@ -280,17 +293,13 @@ class Customer(BaseModel):
     
     def get_available_credit(self):
         """
-        Calculate available credit for the customer.
-        Returns the credit limit (in v2 will subtract outstanding debt).
+        Calcula el crédito disponible real del cliente restando la deuda actual.
         """
         if not self.allow_credit:
             return Decimal('0.00')
         
-        # TODO: In v2, subtract outstanding invoices
-        # outstanding_debt = self.get_outstanding_debt()
-        # return self.credit_limit - outstanding_debt
-        
-        return self.credit_limit
+        from customers.services import CuentaCorrienteService
+        return CuentaCorrienteService.calcular_credito_disponible(self)
     
     def has_valid_email(self):
         """Check if customer has a valid email address."""

@@ -284,3 +284,50 @@ class CustomerSegmentUpdateView(LoginRequiredMixin, UpdateView):
         form.instance.save()
         messages.success(self.request, f'Segmento "{form.instance.name}" actualizado exitosamente.')
         return redirect(self.success_url)
+
+
+# --- Cuenta Corriente Views ---
+
+from django.contrib.auth.decorators import login_required
+from customers.services import CuentaCorrienteService
+
+
+@login_required
+def customer_credit_view(request, pk):
+    """
+    Dashboard de estado de cuenta corriente del cliente.
+    """
+    customer = get_object_or_404(Customer, pk=pk)
+    estado = CuentaCorrienteService.get_estado_cuenta(customer)
+    return render(request, 'customers/customer_credit.html', {
+        'customer': customer,
+        'estado': estado,
+    })
+
+
+@login_required
+def customer_refacturar_sale_view(request, pk, sale_id):
+    """
+    Acción para refacturar una venta en modalidad informal a precio actualizado.
+    """
+    from sales.models import Sale
+    customer = get_object_or_404(Customer, pk=pk)
+    sale = get_object_or_404(Sale, pk=sale_id, customer=customer)
+
+    if request.method == 'POST':
+        try:
+            res = CuentaCorrienteService.refacturar_venta_a_precio_actual(sale, request.user)
+            messages.success(
+                request,
+                f"Venta #{sale.number} refacturada a precio actualizado. "
+                f"Diferencia total: ${res['diferencia_total']:.2f}"
+            )
+        except Exception as e:
+            messages.error(request, f"Error al refacturar venta: {e}")
+        return redirect('customers:customer_credit', pk=customer.pk)
+
+    return render(request, 'customers/customer_refacturar_confirm.html', {
+        'customer': customer,
+        'sale': sale,
+    })
+

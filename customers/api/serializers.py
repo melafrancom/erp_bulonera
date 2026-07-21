@@ -43,7 +43,7 @@ class CustomerDetailSerializer(serializers.ModelSerializer):
             'email', 'phone', 'mobile', 'website', 'contact_person',
             'billing_address', 'billing_city', 'billing_state', 'billing_zip_code', 'billing_country',
             'customer_segment', 'payment_term', 'credit_limit', 'discount_percentage',
-            'allow_credit', 'notes', 'is_active',
+            'allow_credit', 'account_modality', 'notes', 'is_active',
             'created_at', 'updated_at', 'created_by', 'updated_by',
             'total_quotes', 'total_sales', 'total_purchased', 'balance'
         ]
@@ -58,35 +58,31 @@ class CustomerDetailSerializer(serializers.ModelSerializer):
         return obj.sales.count()
     
     def get_total_purchased(self, obj):
-        """Retorna monto total comprado."""
-        from django.db.models import Sum, F
-        total = obj.sales.filter(payment_status='paid').aggregate(
-            total=Sum(F('_cached_total'))
-        )['total']
-        return total or 0
-    
-    def get_balance(self, obj):
-        """Retorna estado de cuenta (saldo pendiente)."""
+        """Retorna total facturado/comprado."""
         from django.db.models import Sum, F
         from decimal import Decimal
-        
-        pending = obj.sales.exclude(payment_status='paid').aggregate(
+        paid_sales = obj.sales.filter(payment_status='paid').aggregate(
             total=Sum(F('_cached_total'))
-        )['total']
-        return pending or Decimal('0.00')
+        )['total'] or Decimal('0.00')
+        return str(paid_sales)
+    
+    def get_balance(self, obj):
+        """Retorna saldo pendiente actual (deuda total)."""
+        from customers.services import CuentaCorrienteService
+        return str(CuentaCorrienteService.calcular_deuda_total(obj))
 
 
 class CustomerCreateSerializer(serializers.ModelSerializer):
-    """Serializador para crear/actualizar clientes con validación."""
+    """Serializador para crear y actualizar clientes."""
     
     class Meta:
         model = Customer
         fields = [
-            'customer_type', 'business_name', 'trade_name', 'cuit_cuil', 'tax_condition',
+            'id', 'customer_type', 'business_name', 'trade_name', 'cuit_cuil', 'tax_condition',
             'email', 'phone', 'mobile', 'website', 'contact_person',
             'billing_address', 'billing_city', 'billing_state', 'billing_zip_code', 'billing_country',
             'customer_segment', 'payment_term', 'credit_limit', 'discount_percentage',
-            'allow_credit', 'notes', 'is_active'
+            'allow_credit', 'account_modality', 'notes', 'is_active'
         ]
     
     def validate_cuit_cuil(self, value):

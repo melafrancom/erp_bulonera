@@ -115,10 +115,22 @@ def confirm_sale(sale, user):
     if sale.balance_due < 0:  # ← Por si aceptan pagos adelantados
         raise ValueError('Saldo negativo detectado')
     
+    # Validar crédito si la venta es a cuenta corriente
+    if sale.payment_method == 'account':
+        if not sale.customer:
+            raise ValueError('Las ventas a cuenta corriente requieren un cliente registrado.')
+        
+        from customers.services import CuentaCorrienteService
+        check = CuentaCorrienteService.validar_credito_para_venta(sale.customer, sale.total)
+        if not check['ok']:
+            raise ValueError(check['mensaje'])
+        
+        sale.is_credit_sale = True
+    
     with transaction.atomic():
         sale.status = 'confirmed'
         sale.confirmed_at = timezone.now()
-        sale.save(update_fields=['status', 'confirmed_at'])
+        sale.save(update_fields=['status', 'confirmed_at', 'is_credit_sale'])
         # removed confirmed_at from update_fields as it is not present in the model provided above?
         # Checked models.py provided: Sale does NOT have confirmed_at field explicitly defined in the provided snippet.
         # It says "# confirmed_at = models.DateTimeField..." in commented section.
