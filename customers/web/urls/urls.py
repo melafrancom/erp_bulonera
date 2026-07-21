@@ -16,6 +16,7 @@ urlpatterns = [
     
     # Cuenta Corriente
     path('<int:pk>/credit/', views.customer_credit_view, name='customer_credit'),
+    path('<int:pk>/statement/', views.customer_account_statement_view, name='customer_account_statement'),
     path('<int:pk>/credit/refacturar/<int:sale_id>/', views.customer_refacturar_sale_view, name='customer_refacturar_sale'),
     
     # Excel Import/Export

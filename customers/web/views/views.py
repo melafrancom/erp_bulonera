@@ -306,6 +306,51 @@ def customer_credit_view(request, pk):
 
 
 @login_required
+def customer_account_statement_view(request, pk):
+    """
+    Vista del Mayor / Estado de Cuenta Corriente de un Cliente.
+    Permite filtrar por rango de fechas (date_from, date_to) y exportar en formato Excel o PDF.
+    """
+    from customers.exporters import export_account_statement_excel, export_account_statement_pdf
+
+    customer = get_object_or_404(Customer, pk=pk)
+    date_from = request.GET.get('date_from', '').strip()
+    date_to = request.GET.get('date_to', '').strip()
+    export_format = request.GET.get('export', '').strip().lower()
+
+    statement = CuentaCorrienteService.get_account_statement(
+        customer=customer,
+        date_from=date_from,
+        date_to=date_to
+    )
+
+    if export_format == 'excel':
+        buf = export_account_statement_excel(statement)
+        clean_name = "".join(c for c in customer.business_name if c.isalnum() or c in (' ', '_', '-')).strip()
+        filename = f"Estado_Cuenta_{customer.id}_{clean_name}.xlsx"
+        response = HttpResponse(
+            buf.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+    elif export_format == 'pdf':
+        buf = export_account_statement_pdf(statement)
+        clean_name = "".join(c for c in customer.business_name if c.isalnum() or c in (' ', '_', '-')).strip()
+        filename = f"Estado_Cuenta_{customer.id}_{clean_name}.pdf"
+        response = HttpResponse(buf.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{filename}"'
+        return response
+
+    return render(request, 'customers/account_statement.html', {
+        'customer': customer,
+        'statement': statement,
+        'date_from': date_from,
+        'date_to': date_to,
+    })
+
+
+@login_required
 def customer_refacturar_sale_view(request, pk, sale_id):
     """
     Acción para refacturar una venta en modalidad informal a precio actualizado.
@@ -330,4 +375,6 @@ def customer_refacturar_sale_view(request, pk, sale_id):
         'customer': customer,
         'sale': sale,
     })
+
+
 

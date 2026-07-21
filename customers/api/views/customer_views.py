@@ -166,3 +166,45 @@ class CustomerViewSet(AuditMixin, OwnerQuerysetMixin, ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=400)
 
+    @action(detail=True, methods=['get'], url_path='statement')
+    def account_statement(self, request, pk=None):
+        """Retorna el Mayor / Estado de Cuenta Corriente del cliente (movimientos cronológicos)."""
+        customer = self.get_object()
+        date_from = request.query_params.get('date_from')
+        date_to = request.query_params.get('date_to')
+
+        from customers.services import CuentaCorrienteService
+        statement = CuentaCorrienteService.get_account_statement(customer, date_from, date_to)
+
+        movements_serialized = []
+        for m in statement.get('movements', []):
+            movements_serialized.append({
+                'id': m.get('id'),
+                'date': m['date'].isoformat() if hasattr(m['date'], 'isoformat') else str(m['date']),
+                'type': m.get('type'),
+                'type_display': m.get('type_display'),
+                'reference': m.get('reference'),
+                'comprobante': m.get('comprobante'),
+                'debe': str(m.get('debe', 0)),
+                'haber': str(m.get('haber', 0)),
+                'saldo': str(m.get('saldo', 0)),
+                'url': m.get('url'),
+            })
+
+        return Response({
+            'customer_id': customer.id,
+            'business_name': customer.business_name,
+            'initial_balance': str(statement.get('initial_balance', 0)),
+            'total_debe': str(statement.get('total_debe', 0)),
+            'total_haber': str(statement.get('total_haber', 0)),
+            'saldo_final': str(statement.get('saldo_final', 0)),
+            'deuda_total': str(statement.get('deuda_total', 0)),
+            'credito_disponible': str(statement.get('credito_disponible', 0)),
+            'credit_limit': str(statement.get('credit_limit', 0)),
+            'credit_used_percentage': str(statement.get('credit_used_percentage', 0)),
+            'date_from': statement.get('date_from'),
+            'date_to': statement.get('date_to'),
+            'movements': movements_serialized,
+        })
+
+

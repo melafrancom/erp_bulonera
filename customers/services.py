@@ -116,6 +116,8 @@ from django.db import transaction
 from django.utils import timezone
 from sales.models import Sale
 from bills.models import Invoice
+from payments.models import PaymentAllocation
+from common.services.account_statement import compute_running_balance
 
 
 class CuentaCorrienteService:
@@ -329,4 +331,113 @@ class CuentaCorrienteService:
             'facturas_pendientes': facturas_pendientes_list,
             'aging': aging
         }
+
+    @staticmethod
+    def get_account_statement(customer: Customer, date_from=None, date_to=None) -> dict:
+        """
+        Genera el reporte de Mayor de Cuenta Corriente para un cliente.
+        Recopila todas las Ventas a crédito (Debe) y Alocaciones de pago (Haber),
+        ordenadas cronológicamente con saldo acumulado.
+        Soporta filtrado opcional por rango de fechas (date_from, date_to).
+        """
+        if not customer:
+            return {}
+
+        from datetime import datetime, date
+
+        if isinstance(date_from, str) and date_from.strip():
+            try:
+                date_from = datetime.strptime(date_from.strip(), '%Y-%m-%d').date()
+            except ValueError:
+                date_from = None
+        elif not isinstance(date_from, date):
+            date_from = None
+
+        if isinstance(date_to, str) and date_to.strip():
+            try:
+                date_to = datetime.strptime(date_to.strip(), '%Y-%m-%d').date()
+            except ValueError:
+                date_to = None
+        elif not isinstance(date_to, date):
+            date_to = None
+
+        sales_qs = Sale.objects.filter(
+            customer=customer,
+            is_credit_sale=True
+        ).exclude(
+            status='cancelled'
+        )
+
+        allocations_qs = PaymentAllocation.objects.filter(
+            payment__customer=customer,
+            payment__status='confirmed'
+        ).select_related('payment', 'sale')
+
+        raw_movements = []
+
+        for sale in sales_qs:
+            s_date = sale.date.date() if hasattr(sale.date, 'date') else sale.date
+            raw_movements.append({
+                'id': f"sale_{sale.id}",
+                'raw_id': sale.id,
+                'date': s_date,
+                'sort_key': 1,
+                'type': 'sale',
+                'type_display': 'Venta a Crédito',
+                'reference': sale.number,
+                'comprobante': f"Venta #{sale.number}",
+                'debe': sale.total,
+                'haber': Decimal('0.00'),
+                'url': f"/sales/{sale.id}/"
+            })
+
+        for alloc in allocations_qs:
+            p_date = alloc.payment.date
+            raw_movements.append({
+                'id': f"payment_{alloc.id}",
+                'raw_id': alloc.payment.id,
+                'date': p_date,
+                'sort_key': 2,
+                'type': 'payment',
+                'type_display': f"Pago ({alloc.payment.get_method_display()})",
+                'reference': alloc.payment.reference or f"Pago #{alloc.payment.id}",
+                'comprobante': f"Pago #{alloc.payment.id} (Imputado a Venta #{alloc.sale.number})",
+                'debe': Decimal('0.00'),
+                'haber': alloc.allocated_amount,
+                'url': f"/payments/{alloc.payment.id}/"
+            })
+
+        initial_balance = Decimal('0.00')
+        filtered_movements = []
+
+        for m in raw_movements:
+            m_date = m['date']
+            if date_from and m_date < date_from:
+                initial_balance += (m['debe'] - m['haber'])
+            else:
+                if date_to and m_date > date_to:
+                    continue
+                filtered_movements.append(m)
+
+        statement = compute_running_balance(filtered_movements, initial_balance=initial_balance)
+
+        deuda_total = CuentaCorrienteService.calcular_deuda_total(customer)
+        credito_disponible = CuentaCorrienteService.calcular_credito_disponible(customer)
+
+        used_pct = Decimal('0.00')
+        if customer.credit_limit > 0:
+            used_pct = (deuda_total / customer.credit_limit * Decimal('100')).quantize(Decimal('0.01'))
+
+        statement.update({
+            'customer': customer,
+            'deuda_total': deuda_total,
+            'credito_disponible': credito_disponible,
+            'credit_limit': customer.credit_limit,
+            'credit_used_percentage': used_pct,
+            'date_from': date_from,
+            'date_to': date_to,
+        })
+
+        return statement
+
 
