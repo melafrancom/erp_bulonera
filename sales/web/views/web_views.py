@@ -708,9 +708,9 @@ def sale_create(request):
     El template usa Alpine.js + fetch() hacia /api/sales/sales/ para
     enviar los datos. Esta vista solo renderiza el formulario con maestros.
     """
-    if not _can_manage_quotes(request.user):  # ← no lo elimines
-        messages.error(request, 'No tenés permisos para crear presupuestos.')
-        return redirect('sales_web:quote_list')
+    if not _can_manage_sales(request.user):
+        messages.error(request, 'No tenés permisos para crear ventas.')
+        return redirect('sales_web:sale_list')
 
     prefilled_items = []
     copy_source = None

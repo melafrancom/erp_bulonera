@@ -241,9 +241,14 @@ class SaleViewSet(AuditMixin, OwnerQuerysetMixin, viewsets.ModelViewSet):
         
         ✅ Optimizado: 1 sola query + cache Redis
         """
+        date_from = request.query_params.get('date_from', '')
+        date_to = request.query_params.get('date_to', '')
+        cache_key = f"sales_stats_{request.user.id}_{date_from}_{date_to}"
+        cached_stats = cache.get(cache_key)
+        if cached_stats:
+            return Response(cached_stats)
+
         queryset = self.get_queryset()
-        date_from = request.query_params.get('date_from')
-        date_to = request.query_params.get('date_to')
         if date_from:
             queryset = queryset.filter(date__gte=date_from)
         if date_to:
@@ -277,4 +282,5 @@ class SaleViewSet(AuditMixin, OwnerQuerysetMixin, viewsets.ModelViewSet):
                 'average_sale': str(total_amount / total_sales if total_sales > 0 else 0),
             }
         }
+        cache.set(cache_key, stats, timeout=300)
         return Response(stats)

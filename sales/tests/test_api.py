@@ -106,3 +106,36 @@ class TestSaleAPI:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         errors = response.data.get('error', {}).get('details', response.data)
         assert 'items' in errors
+
+    def test_sync_resolve_conflict_success(self, authenticated_client, admin_user, sale):
+        """Verificar C-04: resolver conflicto con server_wins no da NameError y retorna respuesta correcta."""
+        sale.sync_status = 'conflict'
+        sale.created_by = admin_user
+        sale.save()
+        
+        url = reverse('sales_api:sale-sync-resolve')
+        data = {
+            'sale_id': sale.id,
+            'resolution': 'server_wins'
+        }
+        response = authenticated_client.post(url, data, format='json')
+        
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['message'] == 'Conflict resolved with server_wins'
+        assert 'sale' in response.data
+
+    def test_sync_resolve_conflict_idor_prevented(self, authenticated_client, operator_user, sale):
+        """Verificar C-05: usuario no puede resolver conflicto de venta creada por otro usuario."""
+        sale.sync_status = 'conflict'
+        sale.created_by = operator_user
+        sale.save()
+        
+        # authenticated_client es admin_user, que no es el created_by de la venta
+        url = reverse('sales_api:sale-sync-resolve')
+        data = {
+            'sale_id': sale.id,
+            'resolution': 'server_wins'
+        }
+        response = authenticated_client.post(url, data, format='json')
+        
+        assert response.status_code == status.HTTP_404_NOT_FOUND

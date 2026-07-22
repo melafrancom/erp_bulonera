@@ -485,9 +485,16 @@ class Sale(BaseModel):
         ]
     
     def save(self, *args, **kwargs):
-        # Incrementar versión en actualizaciones
+        # Incrementar versión en actualizaciones que modifiquen datos de negocio
         if self.pk:
-            self.version += 1
+            update_fields = kwargs.get('update_fields')
+            sync_irrelevant = {
+                '_cached_subtotal', '_cached_discount', '_cached_tax', '_cached_total',
+                'sync_status', 'sync_last_attempt', 'sync_succeeded_at',
+                'sync_attempt_count', 'sync_error', 'version'
+            }
+            if not update_fields or not set(update_fields).issubset(sync_irrelevant):
+                self.version += 1
         super().save(*args, **kwargs)
     
     @property

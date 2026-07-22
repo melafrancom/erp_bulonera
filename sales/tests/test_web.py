@@ -65,6 +65,16 @@ class TestSaleWebViews:
         assert str(sale_with_items.number) in response.content.decode('utf-8')
         assert str(sale_with_items.items.first().product.name) in response.content.decode('utf-8')
 
+    def test_sale_create_permission_denied(self, client, viewer_user):
+        """Verificar C-06: usuario sin permiso al ingresar a sale_create redirige a sale_list con mensaje de ventas."""
+        client.force_login(viewer_user)
+        url = reverse('sales_web:sale_create')
+        response = client.get(url, follow=True)
+        assert response.status_code == 200
+        assert response.redirect_chain[0][0] == reverse('sales_web:sale_list')
+        messages = [m.message for m in get_messages(response.wsgi_request)]
+        assert any("ventas" in m for m in messages)
+
 @pytest.mark.django_db
 class TestSaleWebActions:
     """Pruebas para las acciones POST de ventas (Server Actions)."""

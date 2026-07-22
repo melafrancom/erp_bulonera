@@ -83,14 +83,33 @@ class TestSaleService:
         sale = move_sale_status(sale, admin_user, 'in_preparation')
         assert sale.status == 'in_preparation'
         
-        # 3. Mover a ready
+        # 3. Mover a ready (debe reducir el stock del producto)
+        product = sale.items.first().product
+        initial_stock = product.stock_quantity
+        
         sale = move_sale_status(sale, admin_user, 'ready')
         assert sale.status == 'ready'
+        product.refresh_from_db()
+        assert product.stock_quantity == initial_stock - sale.items.first().quantity
         
         # 4. Mover a delivered
         sale = move_sale_status(sale, admin_user, 'delivered')
         assert sale.status == 'delivered'
         assert "Entregado por" in sale.internal_notes
+
+    def test_sale_version_increment_control(self, sale, admin_user):
+        """Verificar C-02: version solo se incrementa al modificar datos de negocio."""
+        initial_version = sale.version
+        
+        # Actualización de totales cacheados con update_fields no incrementa version
+        sale._cached_total = 500
+        sale.save(update_fields=['_cached_total'])
+        assert sale.version == initial_version
+        
+        # Actualización de campo de negocio sin update_fields o con campo de negocio sí incrementa
+        sale.notes = "Nueva nota de negocio"
+        sale.save()
+        assert sale.version == initial_version + 1
 
     def test_move_sale_status_invalid_transition(self, sale_with_items, admin_user):
         """Error en transición no permitida."""

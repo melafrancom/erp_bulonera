@@ -16,7 +16,7 @@ import json
 
 # Local imports
 from sales.models import Sale, SaleItem
-from sales.api.serializers import SaleSerializer
+from sales.api.serializers import SaleSerializer, SaleDetailSerializer
 from common.permissions import ModulePermission
 from common.mixins import AuditMixin
 from common.decorators import audit_log
@@ -30,17 +30,13 @@ logger = logging.getLogger(__name__)
 class SyncThrottle(UserRateThrottle):
     """
     Rate limiter para endpoints de sincronización PWA.
-    
-    Configuración:
-    - 50 syncs/hora = ~1 cada 1.2 minutos
-    - Suficiente para uso normal (aplicación offline)
-    - Previene: spam accidental, DoS de PWAs mal configuradas
-    
-    Respuesta cuando se excede: 429 Too Many Requests
-    
-    Referencia: settings.REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']['sync']
     """
     scope = 'sync'
+
+    def get_rate(self):
+        if not self.THROTTLE_RATES:
+            return None
+        return self.THROTTLE_RATES.get(self.scope)
 
 
 class SyncViewSet(AuditMixin, viewsets.ViewSet):
@@ -621,7 +617,7 @@ class SyncViewSet(AuditMixin, viewsets.ViewSet):
             )
         
         try:
-            sale = Sale.objects.get(id=sale_id, sync_status='conflict')
+            sale = Sale.objects.get(id=sale_id, sync_status='conflict', created_by=request.user)
         except Sale.DoesNotExist:
             return Response(
                 {'error': 'Sale not found or not in conflict state'},
@@ -644,8 +640,8 @@ class SyncViewSet(AuditMixin, viewsets.ViewSet):
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 
-                # Actualizar campos editables
-                editable_fields = ['notes', 'status', 'delivery_address', 'delivery_date']
+                # Actualizar campos editables (excluyendo status para evitar bypass de máquina de estados)
+                editable_fields = ['notes', 'delivery_address', 'delivery_date']
                 for field in editable_fields:
                     if field in client_data:
                         setattr(sale, field, client_data[field])

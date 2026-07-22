@@ -131,22 +131,7 @@ def confirm_sale(sale, user):
         sale.status = 'confirmed'
         sale.confirmed_at = timezone.now()
         sale.save(update_fields=['status', 'confirmed_at', 'is_credit_sale'])
-        # removed confirmed_at from update_fields as it is not present in the model provided above?
-        # Checked models.py provided: Sale does NOT have confirmed_at field explicitly defined in the provided snippet.
-        # It says "# confirmed_at = models.DateTimeField..." in commented section.
-        # I should probably check if I included it in the write_to_file for models.py.
-        # Looking at my previous tool call for models.py...
-        # I see `confirmed_at` commented out in `Metadata` section.
-        # I should UNCOMMENT it if I want this service to work.
-        # Or I remove it from here.
-        # The user provided code has it commented out but the service uses it.
-        # I will assume I need to double check models.py before saving this.
-        
-        # Signal se encargará de:
-        # - Reservar stock (inventory app escucha sale_confirmed)
-        # - Enviar notificación al cliente (notifications app)
-        # - Registrar en audit log
-    
+
     return sale
 
 
@@ -166,8 +151,6 @@ def cancel_sale(sale, user, reason):
         if was_ready:
             from inventory.services import InventoryService
             InventoryService().revert_stock_from_cancelled_sale(sale)
-        
-        # 2. Signal se encargará de liberar reservas previas a la deducción (si aplica)
     
     return sale
 
@@ -198,6 +181,7 @@ def move_sale_status(sale, user, new_status, delivery_notes=None):
         raise ValueError(f'Transición inválida: de "{sale.get_status_display()}" a "{new_status}".')
 
     with transaction.atomic():
+        old_status = sale.status
         sale.status = new_status
 
         # Manejo de notas de entrega (historial en internal_notes)
@@ -210,8 +194,8 @@ def move_sale_status(sale, user, new_status, delivery_notes=None):
             
             sale.internal_notes = (f'{sale.internal_notes}\n\n{note_entry}').strip()
 
-        # Descomentar/deducir el stock real en inventario al pasar a 'ready' (preparado para despacho/lista)
-        if new_status == 'ready' and sale.status != 'ready':
+        # Deducir el stock real en inventario al pasar a 'ready' (preparado para despacho/lista)
+        if new_status == 'ready' and old_status != 'ready':
             from inventory.services import InventoryService
             InventoryService().decrease_stock_from_sale(sale)
 
