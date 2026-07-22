@@ -318,11 +318,91 @@ class ProductImportService:
             'errors': errors,
         }
 
+    def _resolve_category(self, row, user, is_new, product):
+        """Resuelve o crea la categoría asignada de forma normalizada."""
+        cat_name = row.get('category')
+        if cat_name and not (isinstance(cat_name, float) and pd.isna(cat_name)):
+            cat_name = ' '.join(str(cat_name).strip().split())
+            category, _ = Category.objects.get_or_create(
+                name=cat_name,
+                defaults={'created_by': user}
+            )
+            product.category = category
+        elif is_new and not product.category_id:
+            category, _ = Category.objects.get_or_create(
+                name="Sin categoría",
+                defaults={'created_by': user}
+            )
+            product.category = category
+
+    def _resolve_supplier(self, row, user, product):
+        """Resuelve o crea el proveedor asignado al producto."""
+        from suppliers.models import Supplier
+        sup_name = row.get('supplier')
+        sup_cuit = row.get('supplier_cuit')
+        if sup_name and not (isinstance(sup_name, float) and pd.isna(sup_name)):
+            sup_name = ' '.join(str(sup_name).strip().split())
+            sup_cuit = str(sup_cuit).strip() if sup_cuit and not (isinstance(sup_cuit, float) and pd.isna(sup_cuit)) else None
+            
+            supplier = None
+            if sup_cuit:
+                supplier = Supplier.objects.filter(cuit=sup_cuit).first()
+            if not supplier:
+                supplier = Supplier.objects.filter(business_name__iexact=sup_name).first()
+                
+            if not supplier:
+                supplier = Supplier.objects.create(
+                    business_name=sup_name,
+                    cuit=sup_cuit,
+                    created_by=user,
+                )
+            product.supplier = supplier
+
+    def _process_main_image(self, row, product):
+        """Asigna la imagen principal y emite una advertencia si el archivo no existe en el almacenamiento."""
+        from django.core.files.storage import default_storage
+        img_val = row.get('images') or row.get('image')
+        if img_val and not (isinstance(img_val, float) and pd.isna(img_val)):
+            first_image = str(img_val).split(',')[0].strip()
+            if first_image:
+                expected_path = f"photos/products/original/{first_image}"
+                product.main_image = expected_path
+                if not default_storage.exists(expected_path):
+                    logger.warning(
+                        f"Imagen principal '{expected_path}' asignada para producto {product.code}, pero no existe en storage."
+                    )
+
+    def _process_subcategories_and_gallery(self, row, product, user):
+        """Procesa relaciones M2M de subcategorías y la galería de imágenes."""
+        subcat_val = row.get('subcategories')
+        if subcat_val and not (isinstance(subcat_val, float) and pd.isna(subcat_val)):
+            subcat_names = [' '.join(s.strip().split()) for s in str(subcat_val).split(',') if s.strip()]
+            subcats = []
+            for sname in subcat_names:
+                subcat, _ = Subcategory.objects.get_or_create(
+                    name=sname,
+                    defaults={
+                        'category': product.category,
+                        'created_by': user,
+                    }
+                )
+                subcats.append(subcat)
+            product.subcategories.set(subcats)
+
+        if hasattr(product, '_pending_gallery'):
+            from products.models import ProductImage
+            product.images.all().delete()
+            for idx, img_name in enumerate(product._pending_gallery):
+                expected_path = f"photos/products/original/{img_name}"
+                ProductImage.objects.create(
+                    product=product,
+                    image=expected_path,
+                    order=idx
+                )
+
     @transaction.atomic
     def _process_row(self, row, user):
         """Procesa una fila del archivo y crea/actualiza un producto."""
-        from suppliers.models import Supplier
-
         # Validar campos obligatorios
         code = row.get('code')
         price_val = row.get('price')
@@ -354,13 +434,13 @@ class ProductImportService:
         product.price = sale_price
         product.updated_by = user
 
-        # Costo
+        # Costo (M-05: Loguear si es inválido)
         cost_val = row.get('cost_price') or row.get('cost')
         if cost_val and not (isinstance(cost_val, float) and pd.isna(cost_val)):
             try:
                 product.cost = Decimal(str(cost_val))
             except (InvalidOperation, TypeError):
-                pass  # Ignorar costos inválidos
+                logger.warning(f"Costo inválido ignorado '{cost_val}' en producto {code}")
 
         # Nombre
         name = row.get('name')
@@ -369,46 +449,9 @@ class ProductImportService:
         elif is_new:
             product.name = f"Producto {code}"
 
-        # Categoría
-        cat_name = row.get('category')
-        if cat_name and not (isinstance(cat_name, float) and pd.isna(cat_name)):
-            cat_name = str(cat_name).strip()
-            category, _ = Category.objects.get_or_create(
-                name=cat_name,
-                defaults={'created_by': user}
-            )
-            product.category = category
-        elif is_new and not product.category_id:
-            # Categoría por defecto
-            category, _ = Category.objects.get_or_create(
-                name="Sin categoría",
-                defaults={'created_by': user}
-            )
-            product.category = category
-
-        # Proveedor (Opcional - creación al vuelo)
-        sup_name = row.get('supplier')
-        sup_cuit = row.get('supplier_cuit')
-        if sup_name and not (isinstance(sup_name, float) and pd.isna(sup_name)):
-            sup_name = str(sup_name).strip()
-            sup_cuit = str(sup_cuit).strip() if sup_cuit and not (isinstance(sup_cuit, float) and pd.isna(sup_cuit)) else None
-            
-            supplier = None
-            if sup_cuit:
-                # Buscar por CUIT si fue provisto
-                supplier = Supplier.objects.filter(cuit=sup_cuit).first()
-            if not supplier:
-                # Si no hay CUIT o no se encontró por CUIT, buscar por nombre
-                supplier = Supplier.objects.filter(business_name=sup_name).first()
-                
-            if not supplier:
-                # Crear nuevo proveedor
-                supplier = Supplier.objects.create(
-                    business_name=sup_name,
-                    cuit=sup_cuit,
-                    created_by=user,
-                )
-            product.supplier = supplier
+        # Categoría y Proveedor
+        self._resolve_category(row, user, is_new, product)
+        self._resolve_supplier(row, user, product)
 
         # Campos opcionales simples
         OPTIONAL_TEXT_FIELDS = {
@@ -434,12 +477,12 @@ class ProductImportService:
             if val and not (isinstance(val, float) and pd.isna(val)):
                 setattr(product, model_field, str(val).strip())
 
-        # Normalizar condition a lowercase (Excel puede traer "New", "Used", etc.)
+        # Normalizar condition a lowercase
         if product.condition:
             product.condition = product.condition.lower()
             valid_conditions = [c[0] for c in Product.CONDITION_CHOICES]
             if product.condition not in valid_conditions:
-                product.condition = 'new'  # fallback seguro
+                product.condition = 'new'
 
         # Stock
         target_stock = None
@@ -454,17 +497,15 @@ class ProductImportService:
         tax_val = row.get('tax_rate')
         if tax_val and not (isinstance(tax_val, float) and pd.isna(tax_val)):
             try:
-                product.tax_rate = Decimal(str(tax_val))
-            except (InvalidOperation, TypeError):
-                pass
+                tax_dec = Decimal(str(tax_val))
+                from products.models import validate_afip_tax_rate
+                validate_afip_tax_rate(tax_dec)
+                product.tax_rate = tax_dec
+            except (InvalidOperation, TypeError, ValidationError) as e:
+                logger.warning(f"Alícuota IVA inválida '{tax_val}' en producto {code}: {e}")
 
         # Imagen Principal
-        img_val = row.get('images') or row.get('image')
-        if img_val and not (isinstance(img_val, float) and pd.isna(img_val)):
-            first_image = str(img_val).split(',')[0].strip()
-            if first_image:
-                expected_path = f"photos/products/original/{first_image}"
-                product.main_image = expected_path
+        self._process_main_image(row, product)
 
         # Galería de imágenes (pendiente para después del save)
         gallery_val = row.get('gallery')
@@ -495,38 +536,12 @@ class ProductImportService:
                         user=user
                     )
                 except Exception:
-                    # Fallback en caso de incompatibilidad
                     if product.stock_quantity != target_stock:
                         product.stock_quantity = target_stock
                         product.save(update_fields=['stock_quantity'])
 
-        # Subcategorías (M2M, solo después de save)
-        subcat_val = row.get('subcategories')
-        if subcat_val and not (isinstance(subcat_val, float) and pd.isna(subcat_val)):
-            subcat_names = [s.strip() for s in str(subcat_val).split(',') if s.strip()]
-            subcats = []
-            for sname in subcat_names:
-                subcat, _ = Subcategory.objects.get_or_create(
-                    name=sname,
-                    defaults={
-                        'category': product.category,
-                        'created_by': user,
-                    }
-                )
-                subcats.append(subcat)
-            product.subcategories.set(subcats)
-
-        # Galería (después de save)
-        if hasattr(product, '_pending_gallery'):
-            from products.models import ProductImage
-            product.images.all().delete()
-            for idx, img_name in enumerate(product._pending_gallery):
-                expected_path = f"photos/products/original/{img_name}"
-                ProductImage.objects.create(
-                    product=product,
-                    image=expected_path,
-                    order=idx
-                )
+        # Subcategorías y Galería (post-save)
+        self._process_subcategories_and_gallery(row, product, user)
 
         return 'created' if is_new else 'updated'
 

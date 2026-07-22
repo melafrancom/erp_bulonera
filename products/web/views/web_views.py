@@ -174,10 +174,14 @@ def product_list(request):
         # Filtramos el listado
         queryset = queryset.filter(exact_q | name_q).distinct()
         
-        # Anotamos match_score=1 para mantener la compatibilidad con el template y resaltarlos
+        # Anotamos match_score=2 para coincidencias exactas de código/sku y match_score=1 para parciales
         queryset = queryset.annotate(
-            match_score=Value(1, output_field=IntegerField())
-        ).order_by('name')
+            match_score=Case(
+                When(Q(code__iexact=search) | Q(sku__iexact=search), then=Value(2)),
+                default=Value(1),
+                output_field=IntegerField()
+            )
+        ).order_by('-match_score', 'name')
     else:
         # Sin búsqueda
         queryset = queryset.annotate(

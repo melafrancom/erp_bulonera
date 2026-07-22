@@ -9,12 +9,36 @@ Entidades:
 - ProductImage: Galería de imágenes del producto
 """
 
+import logging
 from django.db import models
 from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
 from django.utils.text import slugify, Truncator
 from decimal import Decimal, ROUND_HALF_UP
 
 from common.models import BaseModel
+
+logger = logging.getLogger('api')
+
+VALID_AFIP_TAX_RATES = [
+    Decimal('0.00'), Decimal('2.50'), Decimal('5.00'),
+    Decimal('10.50'), Decimal('21.00'), Decimal('27.00')
+]
+
+
+def validate_afip_tax_rate(value):
+    """Valida que la alícuota de IVA sea una alícuota reconocida por AFIP/ARCA."""
+    if value is not None:
+        try:
+            val_dec = Decimal(str(value)).normalize()
+        except Exception:
+            raise ValidationError(f"Valor de IVA no válido: {value}")
+
+        valid_normalized = [v.normalize() for v in VALID_AFIP_TAX_RATES]
+        if val_dec not in valid_normalized:
+            raise ValidationError(
+                f"Alícuota IVA '{value}%' no válida para AFIP. Alícuotas permitidas: 0, 2.5, 5, 10.5, 21, 27."
+            )
 
 
 # =============================================================================
@@ -174,6 +198,7 @@ class Product(BaseModel):
     tax_rate = models.DecimalField(
         "Tasa de IVA (%)", max_digits=5, decimal_places=2,
         default=Decimal('21.00'),
+        validators=[validate_afip_tax_rate],
         help_text="Porcentaje de IVA: 21, 10.5 o 0 (exento)."
     )
 
@@ -431,6 +456,9 @@ class Product(BaseModel):
                 return slug_with_code
         
         # Fallback: mantener slug actual para no romper URLs internas del ERP
+        logger.warning(
+            f"Colisión de slug para producto '{self.code}': manteniendo slug actual '{self.slug}'"
+        )
         return self.slug
 
     def save(self, *args, **kwargs):
@@ -506,6 +534,7 @@ class PriceList(BaseModel):
     )
     percentage = models.DecimalField(
         "Porcentaje", max_digits=10, decimal_places=6,
+        validators=[MinValueValidator(Decimal('0.01'))],
         help_text="Valor positivo. Ej: 20 para -20% descuento o +20% recargo."
     )
     description = models.TextField(
