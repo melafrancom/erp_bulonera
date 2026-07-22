@@ -162,18 +162,28 @@ class ProductViewSet(AuditMixin, ModelViewSet):
         GET /api/v1/products/export/excel/
         Exportar productos a archivo Excel.
         """
+        from django.utils import timezone
         from products.services import ProductExportService
 
         # Aplicar filtros existentes al queryset
         queryset = self.filter_queryset(self.get_queryset())
 
         service = ProductExportService()
-        file_path = service.export_to_excel(queryset=queryset)
+        buffer_or_path = service.export_to_excel(queryset=queryset)
+        filename = f'products_{timezone.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+
+        if hasattr(buffer_or_path, 'read'):
+            return FileResponse(
+                buffer_or_path,
+                as_attachment=True,
+                filename=filename,
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            )
 
         return FileResponse(
-            open(file_path, 'rb'),
+            open(buffer_or_path, 'rb'),
             as_attachment=True,
-            filename=os.path.basename(file_path),
+            filename=os.path.basename(buffer_or_path),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         )
 
@@ -184,17 +194,27 @@ class ProductViewSet(AuditMixin, ModelViewSet):
         Exportar productos a Excel en formato web (Bulonera Alvear).
         Genera archivo listo para importar en la app web.
         """
+        from django.utils import timezone
         from products.services import ProductExportService
 
         queryset = self.filter_queryset(self.get_queryset())
 
         service = ProductExportService()
-        file_path = service.export_for_web(queryset=queryset)
+        buffer_or_path = service.export_for_web(queryset=queryset)
+        filename = f'products_web_{timezone.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+
+        if hasattr(buffer_or_path, 'read'):
+            return FileResponse(
+                buffer_or_path,
+                as_attachment=True,
+                filename=filename,
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            )
 
         return FileResponse(
-            open(file_path, 'rb'),
+            open(buffer_or_path, 'rb'),
             as_attachment=True,
-            filename=os.path.basename(file_path),
+            filename=os.path.basename(buffer_or_path),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         )
 
@@ -221,15 +241,21 @@ class ProductImportViewSet(AuditMixin, GenericViewSet):
         POST /api/v1/products/import/
         Sube archivo Excel y dispara tarea Celery de importación.
         """
+        from django.utils.text import get_valid_filename
+        from django.utils import timezone
+
         serializer = ProductImportSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         uploaded_file = serializer.validated_data['file']
+        safe_name = get_valid_filename(uploaded_file.name)
+        timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+        file_name = f"import_{timestamp}_{safe_name}"
 
         # Guardar archivo
         imports_dir = os.path.join(settings.MEDIA_ROOT, 'imports')
         os.makedirs(imports_dir, exist_ok=True)
-        file_path = os.path.join(imports_dir, uploaded_file.name)
+        file_path = os.path.join(imports_dir, file_name)
         with open(file_path, 'wb+') as dest:
             for chunk in uploaded_file.chunks():
                 dest.write(chunk)
@@ -249,8 +275,15 @@ class ProductImportViewSet(AuditMixin, GenericViewSet):
         except Exception:
             # Fallback: importación sincrónica
             from products.services import ProductImportService
-            service = ProductImportService()
-            report = service.import_from_file(file_path, request.user.id)
+            try:
+                service = ProductImportService()
+                report = service.import_from_file(file_path, request.user.id)
+            finally:
+                if os.path.exists(file_path):
+                    try:
+                        os.remove(file_path)
+                    except OSError:
+                        pass
 
             return Response(
                 {
@@ -307,6 +340,7 @@ class ProductImportViewSet(AuditMixin, GenericViewSet):
         GET /api/v1/products/import/template/
         Descarga un template Excel con las columnas esperadas.
         """
+        import io
         import pandas as pd
 
         columns = [
@@ -317,13 +351,12 @@ class ProductImportViewSet(AuditMixin, GenericViewSet):
             'other_codes', 'meta_title', 'meta_description', 'meta_keywords',
         ]
         df = pd.DataFrame(columns=columns)
-
-        template_path = os.path.join(settings.MEDIA_ROOT, 'imports', 'template_productos.xlsx')
-        os.makedirs(os.path.dirname(template_path), exist_ok=True)
-        df.to_excel(template_path, index=False, engine='openpyxl')
+        bio = io.BytesIO()
+        df.to_excel(bio, index=False, engine='openpyxl')
+        bio.seek(0)
 
         return FileResponse(
-            open(template_path, 'rb'),
+            bio,
             as_attachment=True,
             filename='template_productos.xlsx',
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

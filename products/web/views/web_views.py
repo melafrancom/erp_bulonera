@@ -22,7 +22,22 @@ logger = logging.getLogger(__name__)
 
 def _require_product_permission(user):
     """Verifica que el usuario tenga permiso para gestionar productos."""
-    return user.can_manage_products if hasattr(user, 'can_manage_products') else user.is_staff
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser or getattr(user, 'role', '') == 'admin':
+        return True
+    return getattr(user, 'can_manage_products', False) or user.is_staff
+
+
+def _can_view_cost(user):
+    """Verifica si el usuario tiene permiso para ver precios de costo y márgenes."""
+    if not user or not user.is_authenticated:
+        return False
+    if getattr(user, 'role', '') == 'viewer':
+        return False
+    if user.is_superuser or getattr(user, 'role', '') in ('admin', 'manager'):
+        return True
+    return getattr(user, 'can_manage_products', False)
 
 
 def _parse_product_form(request):
@@ -207,11 +222,16 @@ def product_list(request):
 
     # Computar Listas de Precio SOLAMENTE para los productos de la página actual
     from decimal import Decimal, ROUND_HALF_UP
+    can_see_cost = _can_view_cost(request.user)
+
     for p in products:
         # Calcular IVA del precio base
         tax_multiplier = 1 + (p.tax_rate / Decimal('100.0'))
         p_base_with_tax = (p.price * tax_multiplier).quantize(Decimal('0.000001'), rounding=ROUND_HALF_UP)
         p.base_price_with_tax = p_base_with_tax
+
+        if not can_see_cost:
+            p.cost = None
         
         # p.price es Decimal, tax_rate es Decimal
         p.computed_prices = []
@@ -221,8 +241,10 @@ def product_list(request):
             
             # Calcular margen específico para esta lista de precios
             margin_val = Decimal('0.00')
-            if p.cost and p.cost > 0:
+            if can_see_cost and p.cost and p.cost > 0:
                 margin_val = (((price_without_tax - p.cost) / p.cost) * Decimal('100.0')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            elif not can_see_cost:
+                margin_val = None
                 
             p.computed_prices.append({
                 'list_name': pl.name,
@@ -249,6 +271,7 @@ def product_list(request):
         'category_filter': category_filter,
         'subcategory_filter': subcategory_filter,
         'total_count': paginator.count,
+        'can_see_cost': can_see_cost,
     }
     return render(request, 'products/product_list.html', context)
 
@@ -267,13 +290,23 @@ def product_detail(request, pk):
         pk=pk
     )
 
+    can_see_cost = _can_view_cost(request.user)
+
     # Calcular precios con listas
     price_service = PriceService()
     price_data = price_service.calculate_prices_with_lists(product)
 
+    if not can_see_cost:
+        product.cost = None
+        if 'base_price' in price_data:
+            price_data['base_price']['cost_price'] = None
+            price_data['base_price']['profit_margin_percentage'] = None
+            price_data['base_price']['profit_amount'] = None
+
     context = {
         'product': product,
         'price_data': price_data,
+        'can_see_cost': can_see_cost,
     }
     return render(request, 'products/product_detail.html', context)
 

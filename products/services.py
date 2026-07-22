@@ -442,12 +442,13 @@ class ProductImportService:
                 product.condition = 'new'  # fallback seguro
 
         # Stock
+        target_stock = None
         stock_val = row.get('stock') or row.get('stock_quantity')
         if stock_val and not (isinstance(stock_val, float) and pd.isna(stock_val)):
             try:
-                product.stock_quantity = int(float(stock_val))
+                target_stock = int(float(stock_val))
             except (ValueError, TypeError):
-                product.stock_quantity = 0
+                pass
 
         # IVA
         tax_val = row.get('tax_rate')
@@ -478,7 +479,26 @@ class ProductImportService:
             product.deleted_at = None
             product.deleted_by = None
 
+        previous_stock = product.stock_quantity if not is_new else 0
         product.save()
+
+        # Ajuste de stock mediante InventoryService si fue provisto
+        if target_stock is not None:
+            if is_new or previous_stock != target_stock:
+                try:
+                    from inventory.services import InventoryService
+                    inv_service = InventoryService()
+                    inv_service.adjust_stock(
+                        product_id=product.id,
+                        new_quantity=target_stock,
+                        reason="Importación masiva de productos",
+                        user=user
+                    )
+                except Exception:
+                    # Fallback en caso de incompatibilidad
+                    if product.stock_quantity != target_stock:
+                        product.stock_quantity = target_stock
+                        product.save(update_fields=['stock_quantity'])
 
         # Subcategorías (M2M, solo después de save)
         subcat_val = row.get('subcategories')
@@ -562,14 +582,15 @@ class ProductExportService:
                 'unit_of_sale': p.unit_of_sale,
             })
 
+        import io
         df = pd.DataFrame(data)
 
-        if not file_path:
-            exports_dir = os.path.join(settings.MEDIA_ROOT, 'exports')
-            os.makedirs(exports_dir, exist_ok=True)
-            from django.utils import timezone
-            timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-            file_path = os.path.join(exports_dir, f'products_{timestamp}.xlsx')
+        if file_path is None:
+            bio = io.BytesIO()
+            df.to_excel(bio, index=False, engine='openpyxl')
+            bio.seek(0)
+            logger.info("Productos exportados a memoria (BytesIO)")
+            return bio
 
         df.to_excel(file_path, index=False, engine='openpyxl')
         logger.info(f"Productos exportados a: {file_path}")
@@ -597,11 +618,13 @@ class ProductExportService:
 
         Args:
             queryset: QuerySet de productos (default: todos activos)
-            file_path: ruta de destino (default: media/exports/)
+            file_path: ruta de destino o None para generar en memoria
 
         Returns:
-            ruta absoluta del archivo generado
+            ruta absoluta del archivo generado o BytesIO si file_path is None
         """
+        import io
+        from openpyxl import load_workbook
         from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
 
         if queryset is None:
@@ -688,22 +711,12 @@ class ProductExportService:
         # Crear DataFrame con orden exacto de columnas
         df = pd.DataFrame(data, columns=WEB_COLUMNS)
 
-        # Generar ruta si no se proporcionó
-        if not file_path:
-            exports_dir = os.path.join(settings.MEDIA_ROOT, 'exports')
-            os.makedirs(exports_dir, exist_ok=True)
-            from django.utils import timezone
-            timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-            file_path = os.path.join(
-                exports_dir, f'products_web_{timestamp}.xlsx'
-            )
-
-        # Escribir con formato de colores
-        df.to_excel(file_path, index=False, engine='openpyxl')
+        temp_buffer = io.BytesIO()
+        df.to_excel(temp_buffer, index=False, engine='openpyxl')
+        temp_buffer.seek(0)
 
         # ── Aplicar formato de colores al header ────────────────────
-        from openpyxl import load_workbook
-        wb = load_workbook(file_path)
+        wb = load_workbook(temp_buffer)
         ws = wb.active
 
         # Colores según política web
@@ -754,6 +767,13 @@ class ProductExportService:
             ws.column_dimensions[cell.column_letter].width = max(
                 max_length, 14
             )
+
+        if file_path is None:
+            output_buffer = io.BytesIO()
+            wb.save(output_buffer)
+            output_buffer.seek(0)
+            logger.info(f"Productos exportados para web en memoria ({len(data)} productos)")
+            return output_buffer
 
         wb.save(file_path)
 

@@ -38,6 +38,13 @@ def import_products_from_excel(self, file_path, user_id):
             f"Importación completada: {result['successful']} OK, "
             f"{result['failed']} errores de {result['total_rows']} filas"
         )
+        import os
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except OSError:
+                pass
+
         return result
 
     except Exception as exc:
