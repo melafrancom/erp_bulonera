@@ -22,12 +22,19 @@ El módulo `sales` gestiona el ciclo comercial completo de la empresa. Permite l
 ## ⚡ Servicios Críticos (`services.py`)
 Toda la lógica de negocio se procesa de forma atómica en los siguientes servicios:
 *   `convert_quote_to_sale(quote, user, modifications=None)`: Realiza la conversión de un presupuesto aceptado a una venta borrador, registrando la conversión en `QuoteConversion`.
-*   `confirm_sale(sale, user)`: Confirma una venta en borrador, valida ítems, ejecuta la validación de cuenta corriente (`CuentaCorrienteService.validar_credito_para_venta`) si `payment_method == 'account'`, marca `is_credit_sale = True` y dispara eventos de reserva de stock.
-*   `cancel_sale(sale, user, reason)`: Anula una venta confirmada, liberando stock y notificando al módulo de pagos para reajustar alocaciones.
+*   `confirm_sale(sale, user)`: Confirma una venta en borrador, valida ítems, ejecuta la validación de cuenta corriente (`CuentaCorrienteService.validar_credito_para_venta`) si `payment_method == 'account'`, y marca `is_credit_sale = True`.
+*   `move_sale_status(sale, user, new_status, delivery_notes=None)`: Avanza el estado del proceso comercial de forma secuencial (`confirmed` → `in_preparation` → `ready` → `delivered`). Al pasar a `ready`, descuenta automáticamente el stock en inventario llamando a `InventoryService().decrease_stock_from_sale(sale)`.
+*   `cancel_sale(sale, user, reason)`: Anula una venta no entregada. Si la venta ya había pasado a estado `ready`, ejecuta `InventoryService().revert_stock_from_cancelled_sale(sale)` para devolver los artículos al stock disponible.
+
+## 🛡️ Reglas de Seguridad y Control de Acceso
+*   **Seguridad en Sincronización PWA (`sync/resolve/`)**: Se aplica restricción estricta de pertenencia (`created_by=request.user`) para evitar vulnerabilidades IDOR. Los datos fusionados mediante `client_wins` excluyen el campo `status` para evitar que un cliente fuerce transiciones no permitidas en la máquina de estados.
+*   **Control de Versiones (`Sale.save`)**: El contador `version` solo se incrementa cuando se modifican campos de negocio. Se omiten recálculos de totales cacheados (`_cached_*`) o actualizaciones de metadatos de sincronización (`sync_*`) para prevenir falsos conflictos en PWA offline.
+*   **Permisos en Vistas Web (`sale_create`)**: La creación directa de ventas en salón valida explícitamente `_can_manage_sales` y redirige a `sale_list` en caso de denegación.
+*   **Caching en API de Estadísticas (`/sales/stats/`)**: Respuesta optimizada con caché en memoria (Redis/Django) de 5 minutos por usuario y rango de fechas.
 
 ## 🌐 Vistas y APIs
 
-### REST API (`api/urls/urls.py`)
+### REST API (`api/urls/sales_urls.py`)
 Base URL: `/api/v1/sales/`
 
 #### 📄 Presupuestos (`/quotes/`)
@@ -40,15 +47,20 @@ Base URL: `/api/v1/sales/`
 *   `GET /api/v1/sales/sales/` - Listar ventas (con filtros por estado, cliente, fecha)
 *   `POST /api/v1/sales/sales/` - Crear venta (draft)
 *   `POST /api/v1/sales/sales/{id}/confirm/` - Confirmar venta
+*   `POST /api/v1/sales/sales/{id}/move_status/` - Avanzar estado comercial (`in_preparation`, `ready`, `delivered`)
 *   `POST /api/v1/sales/sales/{id}/cancel/` - Cancelar venta
+*   `GET /api/v1/sales/sales/stats/` - Métricas generales con caché de 5 min
 
 #### 🔄 Sincronización PWA (`/sync/`)
 *   `POST /api/v1/sales/sync/upload/` - Subir ventas creadas offline
-*   `POST /api/v1/sales/sync/resolve/` - Resolver conflictos de versión
+*   `POST /api/v1/sales/sync/resolve/` - Resolver conflictos de versión (protección IDOR)
+*   `GET /api/v1/sales/sync/pending/` - Listar ventas pendientes
+*   `GET /api/v1/sales/sync/status/{sale_id}/` - Consultar estado de sincronización
 
-### Vistas Web (`web/urls.py`)
+### Vistas Web (`web/urls/urls_web.py`)
 *   `GET /sales/` - Panel principal de ventas e historial de transacciones.
 *   `GET /sales/quotes/` - Gestor de presupuestos y cotizaciones de salón.
+*   `GET /sales/sales/create/` - Venta directa en mostrador.
 
 ## 💸 Gestión de Costos y Margen de Rentabilidad (P&L)
 El sistema utiliza un snapshot histórico de costos en `SaleItem.unit_cost` para calcular de manera precisa el costo de mercadería vendida (COGS) en los reportes de pérdidas y ganancias (P&L).
@@ -59,4 +71,5 @@ El sistema utiliza un snapshot histórico de costos en `SaleItem.unit_cost` para
 ## 📝 Documentación de Detalle
 *   [Arquitectura de Sincronización Offline](docs/sync_architecture.md): Protocolo de colas, UUIDs de salón y resolución de conflictos.
 *   [Cálculo Bidireccional de Precios](docs/price_calculation.md): Lógica matemática aplicada en mostrador para total a precio y viceversa.
+
 

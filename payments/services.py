@@ -104,6 +104,7 @@ class PaymentService:
         # Validar que la suma de alocaciones <= monto del pago
         total_allocated = Decimal('0.00')
         allocation_objects = []
+        accumulated_by_sale = {}
         
         for alloc_dict in allocations:
             sale_id = alloc_dict.get('sale_id')
@@ -116,18 +117,21 @@ class PaymentService:
             if alloc_amount <= 0:
                 raise ValueError(f"Monto de alocación debe ser > 0 (sale_id={sale_id})")
             
-            # Obtener y validar Sale
+            # Obtener y validar Sale (con lock pesimista)
             try:
-                sale = Sale.objects.get(id=sale_id)
+                sale = Sale.objects.select_for_update().get(id=sale_id)
             except Sale.DoesNotExist:
                 raise ValueError(f"Venta #{sale_id} no encontrada")
             
-            # Validar que el monto no excede el saldo de la venta
-            if alloc_amount > sale.balance_due:
+            # Validar que el monto (más lo acumulado en este mismo pago para la misma venta) no excede el saldo
+            already_allocated = accumulated_by_sale.get(sale_id, Decimal('0.00'))
+            if (alloc_amount + already_allocated) > sale.balance_due:
                 raise ValueError(
-                    f"Alocación ${alloc_amount} excede saldo de Venta #{sale.number} "
-                    f"(saldo: ${sale.balance_due})"
+                    f"Alocación ${alloc_amount} (acumulado: ${alloc_amount + already_allocated}) "
+                    f"excede saldo de Venta #{sale.number} (saldo: ${sale.balance_due})"
                 )
+            
+            accumulated_by_sale[sale_id] = already_allocated + alloc_amount
             
             # Si invoice_id: validar coherencia
             invoice = None
@@ -214,7 +218,7 @@ class PaymentService:
             ValueError: Si el pago ya está anulado
         """
         try:
-            payment = Payment.objects.get(id=payment_id)
+            payment = Payment.objects.select_for_update().get(id=payment_id)
         except Payment.DoesNotExist:
             raise ValueError(f"Pago #{payment_id} no encontrado")
         

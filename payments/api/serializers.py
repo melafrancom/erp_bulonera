@@ -176,6 +176,15 @@ class PaymentCreateSerializer(serializers.Serializer):
         amount = data.get('amount')
         
         if allocations:
+            seen_targets = set()
+            for alloc in allocations:
+                key = (alloc.get('sale_id'), alloc.get('invoice_id'))
+                if key in seen_targets:
+                    raise serializers.ValidationError(
+                        f"Alocación duplicada para la combinación sale_id={key[0]}, invoice_id={key[1]}."
+                    )
+                seen_targets.add(key)
+                
             total_allocated = sum(
                 Decimal(str(a['amount'])) for a in allocations
             )

@@ -148,6 +148,11 @@ class TestPaymentAllocationAPI:
         
         assert response.status_code == status.HTTP_200_OK
 
+    def test_allocation_create_rejected_method_not_allowed(self, auth_client):
+        """POST en allocations debe ser rechazado con 405 Method Not Allowed (C-01)."""
+        response = auth_client.post('/api/v1/payments/allocations/', {'allocated_amount': '100.00'})
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
 
 @pytest.mark.django_db
 class TestPaymentAPIPermissions:
@@ -158,6 +163,26 @@ class TestPaymentAPIPermissions:
         client = APIClient()
         response = client.post('/api/v1/payments/payments/', {})
         assert response.status_code in [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]
+
+    def test_cancel_payment_requires_module_permission(self, payment):
+        """Rechaza anulación si el usuario es viewer sin can_manage_payments (C-05)."""
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        viewer = User.objects.create_user(
+            username='viewer_user',
+            email='viewer@test.com',
+            password='pass',
+            role='viewer'
+        )
+        client = APIClient()
+        client.force_authenticate(user=viewer)
+
+        response = client.post(
+            f'/api/v1/payments/payments/{payment.id}/cancel/',
+            {'reason': 'Test'},
+            format='json'
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
     
     def test_cancel_payment_idempotent(self, auth_client, payment):
         """Segundo cancel rechaza (no idempotente)."""
@@ -176,3 +201,17 @@ class TestPaymentAPIPermissions:
             format='json'
         )
         assert response2.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_duplicate_allocation_target_rejected(self, auth_client, sale):
+        """Rechaza alocaciones con destinos duplicados (A-02)."""
+        data = {
+            'amount': '1000.00',
+            'method': 'cash',
+            'allocations': [
+                {'sale_id': sale.id, 'amount': '400.00'},
+                {'sale_id': sale.id, 'amount': '400.00'}
+            ]
+        }
+        response = auth_client.post('/api/v1/payments/payments/', data, format='json')
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+

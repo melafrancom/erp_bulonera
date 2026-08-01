@@ -82,6 +82,17 @@ class PaymentDetailView(LoginRequiredMixin, DetailView):
         )
 
 
+def _can_manage_payments(user):
+    """Auxiliar para verificar permiso de gestión de pagos."""
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser or getattr(user, 'role', '') == 'admin':
+        return True
+    if getattr(user, 'role', '') == 'viewer':
+        return False
+    return getattr(user, 'can_manage_payments', False)
+
+
 @login_required
 @require_POST
 def cancel_payment_view(request, pk):
@@ -89,6 +100,10 @@ def cancel_payment_view(request, pk):
     Anula un pago existente desde la interfaz web.
     Solo los pagos en estado 'confirmed' pueden ser anulados.
     """
+    if not _can_manage_payments(request.user):
+        messages.error(request, 'No tienes permisos para anular pagos.')
+        return redirect('payments_web:payment_detail', pk=pk)
+
     try:
         reason = request.POST.get('reason', '')
         PaymentService.cancel_payment(pk, request.user, reason)

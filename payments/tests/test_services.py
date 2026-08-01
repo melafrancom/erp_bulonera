@@ -89,6 +89,19 @@ class TestPaymentServiceCreateWithAllocations:
         
         assert payment.allocations.count() == 2
         assert payment.allocated_total == Decimal('500.00')
+
+    def test_create_accumulated_allocations_exceeds_sale_balance(self, user, sale):
+        """Rechaza si la suma acumulada de alocaciones a la misma venta excede su saldo (C-02)."""
+        allocations = [
+            {'sale_id': sale.id, 'amount': Decimal('600.00')},
+            {'sale_id': sale.id, 'amount': Decimal('500.00')},
+        ]
+        with pytest.raises(ValueError, match="excede saldo"):
+            PaymentService.create_payment_with_allocations(
+                amount=Decimal('1100.00'),
+                user=user,
+                allocations=allocations
+            )
     
     def test_create_with_invoice_allocation(self, user, sale, invoice):
         """Crea alocación vinculada a factura específica."""

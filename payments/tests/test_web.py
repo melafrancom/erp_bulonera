@@ -60,6 +60,27 @@ class TestPaymentsWeb:
         payment.refresh_from_db()
         assert payment.status == 'cancelled'
 
+    def test_cancel_payment_web_requires_permission(self, db, payment):
+        """Valida que un usuario viewer sin permisos no puede anular pagos vía web (C-06)."""
+        from django.contrib.auth import get_user_model
+        from django.test import Client
+        User = get_user_model()
+        viewer = User.objects.create_user(
+            username='viewer_web',
+            email='viewer_web@test.com',
+            password='pass',
+            role='viewer'
+        )
+        client = Client()
+        client.login(username=viewer.username, password='pass')
+
+        url = reverse('payments_web:payment_cancel', kwargs={'pk': payment.id})
+        response = client.post(url, {'reason': 'Unallowed'}, follow=True)
+
+        assert response.status_code == 200
+        payment.refresh_from_db()
+        assert payment.status == 'confirmed'  # Should NOT be cancelled
+
     def test_payment_list_filters(self, web_client, payment, customer):
         """Valida que los filtros de la lista funcionan."""
         url = reverse('payments_web:payment_list')

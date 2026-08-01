@@ -8,7 +8,7 @@ Endpoints:
   POST   /api/v1/payments/payments/{id}/cancel/  → Anular pago
   GET    /api/v1/payments/allocations/        → Listar alocaciones
 """
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST
@@ -129,14 +129,14 @@ class PaymentViewSet(AuditMixin, ModelViewSet):
                 status=HTTP_201_CREATED
             )
 
-        except (ValueError, Exception) as e:
-            logger.error(f"Error creando pago: {e}")
+        except ValueError as e:
+            logger.error(f"Error de negocio creando pago: {e}")
             return Response(
                 {'error': str(e)},
                 status=HTTP_400_BAD_REQUEST
             )
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
         """
         Anula un pago confirmado.
@@ -167,19 +167,19 @@ class PaymentViewSet(AuditMixin, ModelViewSet):
                 status=HTTP_200_OK
             )
 
-        except (ValueError, Exception) as e:
-            logger.error(f"Error anulando pago {pk}: {e}")
+        except ValueError as e:
+            logger.error(f"Error de negocio anulando pago {pk}: {e}")
             return Response(
                 {'error': str(e)},
                 status=HTTP_400_BAD_REQUEST
             )
 
 
-class PaymentAllocationViewSet(ModelViewSet):
+class PaymentAllocationViewSet(AuditMixin, ReadOnlyModelViewSet):
     """
     ViewSet para gestionar Alocaciones de Pagos.
     
-    Principalmente lectura (las alocaciones se crean/modifican vía PaymentViewSet).
+    Solo lectura (las alocaciones se crean/modifican vía PaymentViewSet y PaymentService).
     """
     queryset = PaymentAllocation.objects.all().select_related(
         'payment', 'sale', 'invoice', 'created_by'
