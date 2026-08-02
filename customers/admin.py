@@ -145,7 +145,7 @@ class CustomerAdmin(admin.ModelAdmin):
         ('Clasificación Comercial', {
             'fields': (
                 'customer_segment',
-                # 'price_list', # Uncomment when Product app exists
+                'price_list',
             )
         }),
         ('Condiciones Comerciales', {

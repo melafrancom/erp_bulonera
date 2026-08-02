@@ -195,15 +195,15 @@ class Customer(BaseModel):
         verbose_name="Segmento de Cliente",
         help_text="Categoría del cliente (Mayorista, Minorista, etc.)"
     )
-    # price_list = models.ForeignKey(
-    #     PriceList,
-    #     on_delete=models.PROTECT,
-    #     related_name='customers',
-    #     null=True,
-    #     blank=True,
-    #     verbose_name="Lista de Precios Asignada",
-    #     help_text="Lista de precios específica para este cliente"
-    # )
+    price_list = models.ForeignKey(
+        'products.PriceList',
+        on_delete=models.PROTECT,
+        related_name='customers',
+        null=True,
+        blank=True,
+        verbose_name="Lista de Precios Asignada",
+        help_text="Lista de precios específica para este cliente"
+    )
     
     # Commercial Terms
     payment_term = models.IntegerField(
@@ -268,6 +268,19 @@ class Customer(BaseModel):
             return f"{self.business_name} ({self.trade_name})"
         return self.business_name
     
+    def delete(self, hard_delete=False, user=None, *args, **kwargs):
+        """
+        Override soft-delete para liberar CUIT/CUIL.
+        Al hacer soft-delete, el CUIT se modifica con un prefijo
+        '__deleted_<id>_' truncado a 11 chars para que el valor original quede disponible.
+        """
+        if hard_delete:
+            super().delete(hard_delete=True, user=user, *args, **kwargs)
+        else:
+            if self.cuit_cuil and not self.cuit_cuil.startswith("__deleted_"):
+                self.cuit_cuil = f"__deleted_{self.id}_{self.cuit_cuil}"[:11]
+            super().delete(hard_delete=False, user=user, *args, **kwargs)
+
     def clean(self):
         """
         Validate customer data before saving.

@@ -133,29 +133,21 @@ class CustomerViewsTests(TestCase):
         
         self.client.login(username='viewer', password='test123')
         
-        # NOTE: Current implementation only checks LoginRequiredMixin.
-        # So a viewer CAN create customers if logged in.
-        # We will test that they CAN create (until permissions are stricter) OR 
-        # we skip this test if we strictly want to enforce "Viewer cannot create" but haven't impl it.
-        # For now, let's assume we WANT to enforce it but the view doesn't. 
-        # To make test PASS and reflect REALITY (or expected fix later):
-        # I will change expectation to ALLOW creation for now, OR skip.
-        # Skipping to avoid false negative until permission system is robust.
-        self.skipTest("Permissions not yet implemented in views (only LoginRequired)")
+        response = self.client.post(reverse('customers:customer_create'), {
+            'business_name': 'Intento Cliente',
+            'cuit_cuil': '20555555556',
+            'tax_condition': 'CF',
+            'billing_country': 'Argentina',
+            'payment_term': 0,
+            'credit_limit': 0,
+            'discount_percentage': 0,
+            'allow_credit': False
+        })
         
-        # response = self.client.post(reverse('customers:customer_create'), {
-        #     'business_name': 'Intento Cliente',
-        #     'cuit_cuil': '20-55555555-6',
-        #     'tax_condition': 'CF',
-        #     'billing_country': 'Argentina',
-        #     'payment_term': 'CASH',
-        #     'credit_limit': 0,
-        #     'discount_percentage': 0,
-        #     'allow_credit': False
-        # })
-        # 
-        # # Check permissions denial (403 or redirect to login/home)
-        # self.assertTrue(response.status_code in [403, 302] or '/login/' in response.url)
+        # Redirecciona a la lista con mensaje de error por falta de permisos
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('customers:customer_list'), response.url)
+        self.assertEqual(Customer.objects.filter(business_name='Intento Cliente').count(), 0)
     
     def test_crear_cliente_cuit_duplicado_falla(self):
         """TC-CV006: CRÍTICO - No se puede crear cliente con CUIT duplicado"""

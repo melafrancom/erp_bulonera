@@ -42,7 +42,7 @@ class CustomerDetailSerializer(serializers.ModelSerializer):
             'id', 'customer_type', 'business_name', 'trade_name', 'cuit_cuil', 'tax_condition',
             'email', 'phone', 'mobile', 'website', 'contact_person',
             'billing_address', 'billing_city', 'billing_state', 'billing_zip_code', 'billing_country',
-            'customer_segment', 'payment_term', 'credit_limit', 'discount_percentage',
+            'customer_segment', 'price_list', 'payment_term', 'credit_limit', 'discount_percentage',
             'allow_credit', 'account_modality', 'notes', 'is_active',
             'created_at', 'updated_at', 'created_by', 'updated_by',
             'total_quotes', 'total_sales', 'total_purchased', 'balance'
@@ -81,7 +81,7 @@ class CustomerCreateSerializer(serializers.ModelSerializer):
             'id', 'customer_type', 'business_name', 'trade_name', 'cuit_cuil', 'tax_condition',
             'email', 'phone', 'mobile', 'website', 'contact_person',
             'billing_address', 'billing_city', 'billing_state', 'billing_zip_code', 'billing_country',
-            'customer_segment', 'payment_term', 'credit_limit', 'discount_percentage',
+            'customer_segment', 'price_list', 'payment_term', 'credit_limit', 'discount_percentage',
             'allow_credit', 'account_modality', 'notes', 'is_active'
         ]
     
@@ -108,6 +108,29 @@ class CustomerCreateSerializer(serializers.ModelSerializer):
                 self.context['deleted_customer_to_restore'] = existing
 
         return clean_value
+
+    def validate(self, attrs):
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        attrs = super().validate(attrs)
+        
+        # Para update/patch, clonar atributos existentes preservando la pk y estado de la DB
+        if self.instance:
+            instance = Customer()
+            instance.pk = self.instance.pk
+            instance._state.adding = False
+            for field in self.instance._meta.fields:
+                setattr(instance, field.name, getattr(self.instance, field.name))
+            for attr, val in attrs.items():
+                setattr(instance, attr, val)
+        else:
+            instance = Customer(**attrs)
+        
+        try:
+            instance.full_clean(exclude=['created_by', 'updated_by', 'deleted_by'])
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(e.message_dict if hasattr(e, 'message_dict') else str(e))
+            
+        return attrs
 
     def create(self, validated_data):
         # Si la validación detectó un cliente eliminado suavemente con el mismo CUIT

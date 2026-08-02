@@ -53,7 +53,7 @@ class CustomerExcelManager:
                             continue
                         
                         # Process customer
-                        customer, created = self._process_customer(item, update_existing_customers)
+                        customer, created = self._process_customer(item, update_existing_customers, row_number)
                         if not customer:
                             results['skipped_rows'] += 1
                             continue
@@ -137,10 +137,11 @@ class CustomerExcelManager:
         cuit = str(cuit).replace(' ', '').replace('-', '')
         return cuit
     
-    def _process_customer(self, item, update_existing=True):
+    def _process_customer(self, item, update_existing=True, row_number=None):
         """
         Process and save/update a customer.
         """
+        from django.core.exceptions import ValidationError
         cuit = self._format_cuit(item.get('cuit_cuil'))
         
         # Try to get existing customer by CUIT
@@ -208,6 +209,18 @@ class CustomerExcelManager:
             customer.created_by = self.user
         if self.user:
             customer.updated_by = self.user
+
+        # Full clean validation
+        try:
+            customer.full_clean()
+        except ValidationError as e:
+            err_msg = e.message_dict if hasattr(e, 'message_dict') else str(e)
+            self.validation_errors.append({
+                'row': row_number or 'N/A',
+                'field': 'validation',
+                'error': f"Validación del modelo fallida para CUIT {cuit}: {err_msg}"
+            })
+            return None, False
         
         customer.save(using=self.db_alias)
         return customer, created

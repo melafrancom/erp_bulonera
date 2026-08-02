@@ -26,7 +26,7 @@ class CustomerForm(forms.ModelForm):
             'cuit_cuil', 'tax_condition',
             'email', 'phone', 'mobile', 'website', 'contact_person',
             'billing_address', 'billing_city', 'billing_state', 'billing_zip_code', 'billing_country',
-            'customer_segment', # 'price_list',
+            'customer_segment', 'price_list',
             'payment_term', 'credit_limit', 'discount_percentage',
             'allow_credit', 'account_modality', 'notes'
         ]
@@ -47,7 +47,7 @@ class CustomerForm(forms.ModelForm):
             'billing_zip_code': forms.TextInput(attrs={'class': 'form-control'}),
             'billing_country': forms.TextInput(attrs={'class': 'form-control'}),
             'customer_segment': forms.Select(attrs={'class': 'form-select'}),
-            # 'price_list': forms.Select(attrs={'class': 'form-select'}),
+            'price_list': forms.Select(attrs={'class': 'form-select'}),
             'payment_term': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
             'credit_limit': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
             'discount_percentage': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),

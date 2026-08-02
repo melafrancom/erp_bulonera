@@ -317,3 +317,27 @@ class CustomerModelTests(TestCase):
         self.assertIsNotNone(customer.id)
         self.assertEqual(customer.email, '')
         self.assertEqual(customer.phone, '')
+
+    def test_soft_delete_mangles_cuit_and_allows_recreate(self):
+        """TC-C023: Soft delete manglea el CUIT liberando el valor original (C-03)"""
+        cuit_orig = '20123456786'
+        c1 = Customer.objects.create(
+            business_name='Cliente Soft Delete',
+            cuit_cuil=cuit_orig,
+            tax_condition='CF',
+            created_by=self.admin
+        )
+        c1.delete()
+        c1.refresh_from_db()
+
+        self.assertFalse(c1.is_active)
+        self.assertTrue(c1.cuit_cuil.startswith('__deleted_'))
+
+        # Ahora crear otro cliente activo con el mismo CUIT debe ser permitido
+        c2 = Customer.objects.create(
+            business_name='Nuevo Cliente Mismo CUIT',
+            cuit_cuil=cuit_orig,
+            tax_condition='CF',
+            created_by=self.admin
+        )
+        self.assertIsNotNone(c2.id)

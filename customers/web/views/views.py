@@ -12,6 +12,19 @@ from customers.models import Customer, CustomerSegment, CustomerNote
 from customers.utils import CustomerExcelManager
 from customers.forms import CustomerForm, CustomerSearchForm, CustomerImportForm, CustomerSegmentForm, CustomerNoteForm
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
+from django.contrib.auth.decorators import login_required
+
+
+def _can_manage_customers(user):
+    """Auxiliar para verificar permisos de administración/edición de clientes."""
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser or getattr(user, 'role', '') in ('admin', 'manager'):
+        return True
+    if getattr(user, 'role', '') == 'viewer':
+        return False
+    return getattr(user, 'can_manage_customers', False)
 
 
 class CustomerListView(LoginRequiredMixin, ListView):
@@ -25,7 +38,7 @@ class CustomerListView(LoginRequiredMixin, ListView):
     
     def get_queryset(self):
         queryset = Customer.objects.filter(is_active=True).select_related(
-            'customer_segment' #, 'price_list'
+            'customer_segment', 'price_list'
         )
         
         # Search
@@ -55,6 +68,7 @@ class CustomerListView(LoginRequiredMixin, ListView):
         context['search_form'] = CustomerSearchForm(self.request.GET)
         context['segments'] = CustomerSegment.objects.filter(is_active=True)
         context['total_customers'] = self.get_queryset().count()
+        context['can_manage'] = _can_manage_customers(self.request.user)
         return context
 
 
@@ -70,6 +84,7 @@ class CustomerDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context['notes'] = self.object.customer_notes.all().order_by('-created_at')[:10]
         context['note_form'] = CustomerNoteForm()
+        context['can_manage'] = _can_manage_customers(self.request.user)
         # TODO: Add purchase history when sales module is implemented
         # context['recent_purchases'] = self.object.sales.all()[:10]
         return context
@@ -83,6 +98,12 @@ class CustomerCreateView(LoginRequiredMixin, CreateView):
     form_class = CustomerForm
     template_name = 'customers/customer_form.html'
     success_url = reverse_lazy('customers:customer_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not _can_manage_customers(request.user):
+            messages.error(request, 'No tienes permisos para crear clientes.')
+            return redirect('customers:customer_list')
+        return super().dispatch(request, *args, **kwargs)
     
     def form_valid(self, form):
         form.instance.created_by = self.request.user
@@ -104,6 +125,12 @@ class CustomerUpdateView(LoginRequiredMixin, UpdateView):
     form_class = CustomerForm
     template_name = 'customers/customer_form.html'
     success_url = reverse_lazy('customers:customer_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not _can_manage_customers(request.user):
+            messages.error(request, 'No tienes permisos para editar clientes.')
+            return redirect('customers:customer_list')
+        return super().dispatch(request, *args, **kwargs)
     
     def form_valid(self, form):
         form.instance.updated_by = self.request.user
@@ -123,6 +150,12 @@ class CustomerDeleteView(LoginRequiredMixin, DeleteView):
     """
     model = Customer
     success_url = reverse_lazy('customers:customer_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not _can_manage_customers(request.user):
+            messages.error(request, 'No tienes permisos para eliminar clientes.')
+            return redirect('customers:customer_list')
+        return super().dispatch(request, *args, **kwargs)
     
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -136,6 +169,12 @@ class CustomerImportView(LoginRequiredMixin, TemplateView):
     Import customers from Excel file.
     """
     template_name = 'customers/customer_import.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not _can_manage_customers(request.user):
+            messages.error(request, 'No tienes permisos para importar clientes.')
+            return redirect('customers:customer_list')
+        return super().dispatch(request, *args, **kwargs)
     
     def post(self, request, *args, **kwargs):
         form = CustomerImportForm(request.POST, request.FILES)
@@ -189,10 +228,15 @@ class CustomerImportView(LoginRequiredMixin, TemplateView):
         return context
 
 
+@login_required
 def customer_export_excel(request):
     """
     Export all customers to Excel file.
     """
+    if not _can_manage_customers(request.user):
+        messages.error(request, 'No tienes permisos para exportar clientes.')
+        return redirect('customers:customer_list')
+
     manager = CustomerExcelManager()
     output = manager.export_customers_to_excel()
     
@@ -206,10 +250,15 @@ def customer_export_excel(request):
     return response
 
 
+@login_required
 def customer_download_template(request):
     """
     Download Excel template for customer import.
     """
+    if not _can_manage_customers(request.user):
+        messages.error(request, 'No tienes permisos para descargar la plantilla de importación.')
+        return redirect('customers:customer_list')
+
     manager = CustomerExcelManager()
     output = manager.generate_import_template()
     
@@ -227,6 +276,12 @@ def customer_download_template(request):
 class CustomerNoteCreateView(LoginRequiredMixin, CreateView):
     model = CustomerNote
     form_class = CustomerNoteForm
+
+    def dispatch(self, request, *args, **kwargs):
+        if not _can_manage_customers(request.user):
+            messages.error(request, 'No tienes permisos para agregar notas.')
+            return redirect('customers:customer_detail', pk=self.kwargs['pk'])
+        return super().dispatch(request, *args, **kwargs)
     
     def form_valid(self, form):
         customer = get_object_or_404(Customer, pk=self.kwargs['pk'])
@@ -261,6 +316,12 @@ class CustomerSegmentCreateView(LoginRequiredMixin, CreateView):
     form_class = CustomerSegmentForm
     template_name = 'customers/segment_form.html'
     success_url = reverse_lazy('customers:segment_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not _can_manage_customers(request.user):
+            messages.error(request, 'No tienes permisos para crear segmentos.')
+            return redirect('customers:segment_list')
+        return super().dispatch(request, *args, **kwargs)
     
     def form_valid(self, form):
         form.instance.created_by = self.request.user
@@ -278,6 +339,12 @@ class CustomerSegmentUpdateView(LoginRequiredMixin, UpdateView):
     form_class = CustomerSegmentForm
     template_name = 'customers/segment_form.html'
     success_url = reverse_lazy('customers:segment_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not _can_manage_customers(request.user):
+            messages.error(request, 'No tienes permisos para editar segmentos.')
+            return redirect('customers:segment_list')
+        return super().dispatch(request, *args, **kwargs)
     
     def form_valid(self, form):
         form.instance.updated_by = self.request.user
@@ -302,6 +369,7 @@ def customer_credit_view(request, pk):
     return render(request, 'customers/customer_credit.html', {
         'customer': customer,
         'estado': estado,
+        'can_manage': _can_manage_customers(request.user),
     })
 
 
@@ -325,6 +393,10 @@ def customer_account_statement_view(request, pk):
     )
 
     if export_format == 'excel':
+        if not _can_manage_customers(request.user):
+            messages.error(request, 'No tienes permisos para exportar estado de cuenta.')
+            return redirect('customers:customer_detail', pk=pk)
+
         buf = export_account_statement_excel(statement)
         clean_name = "".join(c for c in customer.business_name if c.isalnum() or c in (' ', '_', '-')).strip()
         filename = f"Estado_Cuenta_{customer.id}_{clean_name}.xlsx"
@@ -335,6 +407,10 @@ def customer_account_statement_view(request, pk):
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
     elif export_format == 'pdf':
+        if not _can_manage_customers(request.user):
+            messages.error(request, 'No tienes permisos para exportar estado de cuenta.')
+            return redirect('customers:customer_detail', pk=pk)
+
         buf = export_account_statement_pdf(statement)
         clean_name = "".join(c for c in customer.business_name if c.isalnum() or c in (' ', '_', '-')).strip()
         filename = f"Estado_Cuenta_{customer.id}_{clean_name}.pdf"
@@ -347,6 +423,7 @@ def customer_account_statement_view(request, pk):
         'statement': statement,
         'date_from': date_from,
         'date_to': date_to,
+        'can_manage': _can_manage_customers(request.user),
     })
 
 
@@ -355,6 +432,10 @@ def customer_refacturar_sale_view(request, pk, sale_id):
     """
     Acción para refacturar una venta en modalidad informal a precio actualizado.
     """
+    if not _can_manage_customers(request.user):
+        messages.error(request, 'No tienes permisos para refacturar ventas.')
+        return redirect('customers:customer_credit', pk=pk)
+
     from sales.models import Sale
     customer = get_object_or_404(Customer, pk=pk)
     sale = get_object_or_404(Sale, pk=sale_id, customer=customer)

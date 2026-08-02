@@ -136,19 +136,34 @@ class CuentaCorrienteService:
         if not customer:
             return Decimal('0.00')
 
+        from django.db.models import Sum, Case, When, F, DecimalField
+
         sales = Sale.objects.filter(
             customer=customer,
             is_credit_sale=True
         ).exclude(
             status='cancelled'
+        ).exclude(
+            payment_status='paid'
+        ).annotate(
+            _total_paid=Sum(
+                Case(
+                    When(
+                        payment_allocations__payment__status='confirmed',
+                        then=F('payment_allocations__allocated_amount')
+                    ),
+                    default=Decimal('0.00'),
+                    output_field=DecimalField()
+                )
+            )
         )
 
         deuda = Decimal('0.00')
         for sale in sales:
-            if sale.payment_status != 'paid':
-                due = sale.balance_due
-                if due > 0:
-                    deuda += due
+            paid = sale._total_paid or Decimal('0.00')
+            due = sale._cached_total - paid
+            if due > 0:
+                deuda += due
 
         return deuda
 
@@ -275,6 +290,8 @@ class CuentaCorrienteService:
         deuda_total = CuentaCorrienteService.calcular_deuda_total(customer)
         credito_disponible = CuentaCorrienteService.calcular_credito_disponible(customer)
 
+        from django.db.models import Sum, Case, When, F, DecimalField
+
         sales_pendientes = Sale.objects.filter(
             customer=customer,
             is_credit_sale=True
@@ -282,6 +299,17 @@ class CuentaCorrienteService:
             status='cancelled'
         ).exclude(
             payment_status='paid'
+        ).annotate(
+            _total_paid=Sum(
+                Case(
+                    When(
+                        payment_allocations__payment__status='confirmed',
+                        then=F('payment_allocations__allocated_amount')
+                    ),
+                    default=Decimal('0.00'),
+                    output_field=DecimalField()
+                )
+            )
         ).order_by('-date')
 
         facturas_pendientes = Invoice.objects.filter(
@@ -303,7 +331,8 @@ class CuentaCorrienteService:
         }
 
         for sale in sales_pendientes:
-            due = sale.balance_due
+            paid = sale._total_paid or Decimal('0.00')
+            due = sale._cached_total - paid
             if due <= 0:
                 continue
             sale_date = sale.date.date() if hasattr(sale.date, 'date') else sale.date
