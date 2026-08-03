@@ -72,9 +72,6 @@ class ExpenseService:
         # 5. Guardar (ejecuta clean() automáticamente)
         expense.save()
 
-        # 6. Invalidar caché de reportes del período
-        ExpenseService._invalidate_report_cache(expense.period_year, expense.period_month)
-
         return expense
 
     @staticmethod
@@ -82,14 +79,8 @@ class ExpenseService:
     def update_expense(expense_id: int, data: dict, user) -> Expense:
         """
         Actualiza un gasto existente.
-
-        Invalida caché del período viejo Y nuevo si cambió expense_date.
         """
         expense = Expense.objects.get(id=expense_id)
-
-        # Guardar período viejo para invalidar después
-        old_year = expense.period_year
-        old_month = expense.period_month
 
         # Actualizar campos
         if 'category_id' in data:
@@ -126,37 +117,41 @@ class ExpenseService:
         expense.updated_by = user
         expense.save()
 
-        # Invalidar caché de ambos períodos
-        ExpenseService._invalidate_report_cache(old_year, old_month)
-        ExpenseService._invalidate_report_cache(expense.period_year, expense.period_month)
-
         return expense
 
     @staticmethod
     @transaction.atomic
     def delete_expense(expense_id: int, user) -> None:
         """
-        Soft-delete de un gasto. Invalida caché del período.
+        Soft-delete de un gasto.
         """
         expense = Expense.objects.get(id=expense_id)
-        year, month = expense.period_year, expense.period_month
         expense.delete(user=user)
-        ExpenseService._invalidate_report_cache(year, month)
 
     @staticmethod
     @transaction.atomic
     def mark_as_paid(expense_id: int, payment_date, user) -> Expense:
         """
         Marca un gasto como pagado (para Cash Flow).
+        Acepta objeto date/datetime o string 'YYYY-MM-DD'.
         """
+        from datetime import datetime, date
+
+        if isinstance(payment_date, str):
+            try:
+                parsed_date = datetime.strptime(payment_date, '%Y-%m-%d').date()
+            except ValueError:
+                raise ValueError("Formato de fecha de pago inválido. Use YYYY-MM-DD")
+        elif isinstance(payment_date, (datetime, date)):
+            parsed_date = payment_date.date() if isinstance(payment_date, datetime) else payment_date
+        else:
+            raise ValueError("payment_date es requerido")
+
         expense = Expense.objects.get(id=expense_id)
         expense.is_paid = True
-        expense.payment_date = payment_date
+        expense.payment_date = parsed_date
         expense.updated_by = user
         expense.save()
-
-        # Invalidar caché del período de pago
-        ExpenseService._invalidate_report_cache(payment_date.year, payment_date.month)
 
         return expense
 
@@ -177,7 +172,6 @@ class ExpenseService:
         """
         expenses = Expense.objects.filter(
             expense_date__range=[date_from, date_to],
-            is_active=True,
         )
 
         total = expenses.aggregate(t=Sum('amount_total'))['t'] or Decimal('0')
@@ -199,22 +193,4 @@ class ExpenseService:
     @staticmethod
     def get_unpaid_expenses():
         """Gastos devengados pero no pagados (cuentas a pagar)."""
-        return Expense.objects.filter(is_paid=False, is_active=True).select_related('category', 'supplier')
-
-    @staticmethod
-    def _invalidate_report_cache(year, month):
-        """
-        Invalida caché Redis de reportes para el período dado.
-        En futuro: marcar FinancialSnapshot.is_stale = True
-        """
-        from django.core.cache import cache
-        cache_keys = [
-            f'reports:pnl:{year}:{month}',
-            f'reports:cashflow:{year}:{month}',
-            'reports:kpi:*',
-        ]
-        for key in cache_keys:
-            try:
-                cache.delete(key)
-            except Exception:
-                pass  # Redis puede estar caído; no bloqueamos
+        return Expense.objects.filter(is_paid=False).select_related('category', 'supplier')

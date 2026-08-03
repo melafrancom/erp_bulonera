@@ -11,7 +11,11 @@ from rest_framework.permissions import IsAuthenticated
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 
-from common.mixins import AuditMixin
+import django_filters
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter, OrderingFilter
+
+from common.mixins import OwnerQuerysetMixin
 from common.permissions import ModulePermission
 from expenses.models import Expense, ExpenseCategory
 from expenses.services import ExpenseService
@@ -24,25 +28,35 @@ from expenses.api.serializers import (
 )
 
 
+class ExpenseFilterSet(django_filters.FilterSet):
+    """FilterSet para Expense: permite filtrar por category_type o category__type."""
+    category_type = django_filters.CharFilter(field_name='category__type')
+
+    class Meta:
+        model = Expense
+        fields = ['category_type', 'category__type', 'expense_date', 'is_paid', 'is_recurring']
+
+
 class ExpenseCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet de solo lectura para ExpenseCategory.
+    Las categorías son administradas centralizadamente desde Django Admin.
 
     Endpoints:
       GET /api/v1/expenses/categories/           → Lista de categorías
       GET /api/v1/expenses/categories/{id}/      → Detalle de categoría
     """
 
-    queryset = ExpenseCategory.objects.filter(is_active=True)
+    queryset = ExpenseCategory.objects.all()
     serializer_class = ExpenseCategorySerializer
     permission_classes = [IsAuthenticated]
 
 
-class ExpenseViewSet(AuditMixin, viewsets.ModelViewSet):
+class ExpenseViewSet(OwnerQuerysetMixin, viewsets.ModelViewSet):
     """
     ViewSet CRUD completo para Expense.
 
-    Endpo ints:
+    Endpoints:
       GET    /api/v1/expenses/                    → Lista de gastos
       POST   /api/v1/expenses/                    → Crear gasto
       GET    /api/v1/expenses/{id}/               → Detalle de gasto
@@ -55,21 +69,26 @@ class ExpenseViewSet(AuditMixin, viewsets.ModelViewSet):
 
     Permisos:
       - IsAuthenticated: Usuario debe estar autenticado
-      - ModulePermission: Verificar permisos de módulo
+      - ModulePermission: Requiere can_manage_expenses para escritura
     """
 
     permission_classes = [IsAuthenticated, ModulePermission]
+    required_permission = 'can_manage_expenses'
     serializer_class = ExpenseListSerializer
-    filterset_fields = ['category__type', 'expense_date', 'is_paid', 'is_recurring']
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = ExpenseFilterSet
+    search_fields = ['description', 'category__name', 'supplier__business_name']
+    ordering_fields = ['expense_date', 'amount_total', 'created_at']
+    ordering = ['-expense_date']
     search_fields = ['description', 'category__name', 'supplier__business_name']
     ordering_fields = ['expense_date', 'amount_total', 'created_at']
     ordering = ['-expense_date']
 
     def get_queryset(self):
         """
-        Retornar queryset de gastos activos con optimizaciones.
+        Retornar queryset de gastos con optimizaciones (SoftDeleteManager aplica deleted_at__isnull=True).
         """
-        return Expense.objects.filter(is_active=True).select_related(
+        return Expense.objects.all().select_related(
             'category', 'supplier', 'created_by', 'updated_by'
         )
 

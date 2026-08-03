@@ -7,6 +7,7 @@ from expenses.web.views import (
     ExpenseDetailView,
     ExpenseCreateView,
     ExpenseUpdateView,
+    ExpenseDeleteView,
 )
 
 app_name = 'expenses_web'
@@ -16,4 +17,5 @@ urlpatterns = [
     path('create/', ExpenseCreateView.as_view(), name='expense_create'),
     path('<int:pk>/', ExpenseDetailView.as_view(), name='expense_detail'),
     path('<int:pk>/edit/', ExpenseUpdateView.as_view(), name='expense_update'),
+    path('<int:pk>/delete/', ExpenseDeleteView.as_view(), name='expense_delete'),
 ]

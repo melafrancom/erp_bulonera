@@ -109,3 +109,24 @@ class TestExpenseWebViews:
         expense.refresh_from_db()
         assert expense.description == 'Servicio Fibertel Abril Modificado'
         assert expense.is_paid is True
+
+    def test_expense_delete_view(self, client, user, db):
+        """Verificar la vista de soft-delete de gasto (POST)."""
+        client.force_login(user)
+        cat = ExpenseCategory.objects.create(name='Luz', type='utilities')
+        expense = Expense.objects.create(
+            category=cat,
+            description='Gasto a borrar',
+            amount_neto=1000,
+            amount_iva=0,
+            amount_total=1000,
+            expense_date='2026-05-10',
+            created_by=user,
+        )
+
+        url = reverse('expenses_web:expense_delete', kwargs={'pk': expense.pk})
+        response = client.post(url)
+        assert response.status_code == 302
+        assert not Expense.objects.filter(pk=expense.pk).exists()
+        assert Expense.all_objects.filter(pk=expense.pk).exists()
+

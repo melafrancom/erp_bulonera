@@ -48,7 +48,12 @@ class ExpenseCategory(BaseModel):
         ordering = ['type', 'name']
         verbose_name = 'Categoría de Gasto'
         verbose_name_plural = 'Categorías de Gastos'
-        unique_together = [('type', 'name')]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['type', 'name'],
+                name='unique_expense_category_type_name'
+            )
+        ]
 
     def __str__(self):
         return f"{self.get_type_display()} → {self.name}"
@@ -62,7 +67,7 @@ class Expense(BaseModel):
       - Heredada de BaseModel: soft-delete, auditoría, timestamps
       - Dos fechas: expense_date (devengamiento) y payment_date (efectivo)
       - IVA separado: preparación para discriminación en futuro
-      - Period automático: se asigna desde expense_date en clean()
+      - Period automático: se asigna desde expense_date en save()
     """
 
     # Clasificación
@@ -95,7 +100,7 @@ class Expense(BaseModel):
         max_digits=12,
         decimal_places=2,
         validators=[MinValueValidator(Decimal('0.01'))],
-        help_text='Neto + IVA (se auto-calcula en clean())',
+        help_text='Neto + IVA',
     )
 
     # Fechas (económico vs financiero)
@@ -175,11 +180,10 @@ class Expense(BaseModel):
 
     def clean(self):
         """
-        Validaciones locales:
+        Validaciones locales puras (sin mutaciones):
           1. amount_total = amount_neto + amount_iva (tolerancia ±$0.01)
           2. Si is_paid=True → payment_date es obligatorio
-          3. period_month debe estar en rango 1-12
-          4. Si cambia expense_date → invalidar caché
+          3. period_month debe estar en rango 1-12 si viene provisto
         """
         from django.core.exceptions import ValidationError
 
@@ -201,11 +205,6 @@ class Expense(BaseModel):
                 'Si está pagado (is_paid=True), debe especificar una fecha de pago'
             )
 
-        # Auto-asignar period_year y period_month desde expense_date
-        if self.expense_date:
-            self.period_year = self.expense_date.year
-            self.period_month = self.expense_date.month
-
         # Validar period_month si viene especificado
         if self.period_month and not (1 <= self.period_month <= 12):
             errors['period_month'] = 'El mes debe estar entre 1 y 12'
@@ -214,6 +213,16 @@ class Expense(BaseModel):
             raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
-        """Ejecutar clean() antes de guardar."""
+        """Auto-asignar período y ejecutar clean() antes de guardar."""
+        if self.expense_date:
+            if isinstance(self.expense_date, str):
+                from datetime import datetime
+                try:
+                    self.expense_date = datetime.strptime(self.expense_date, '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+            if hasattr(self.expense_date, 'year'):
+                self.period_year = self.expense_date.year
+                self.period_month = self.expense_date.month
         self.full_clean()
         super().save(*args, **kwargs)

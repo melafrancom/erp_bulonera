@@ -28,7 +28,12 @@ Base URL: `/api/v1/expenses/`
 *   `GET /api/v1/expenses/categories/` - ABM de categorías de gastos.
 
 ### Vistas Web (`web/urls/`)
-*   `GET /expenses/` - Panel de registro y control de egresos de caja y egresos pendientes de pago.
+Base URL: `/expenses/` (namespace `expenses_web`)
+*   `GET /expenses/` - Listado de gastos con filtros avanzados por categoría y estado de pago (`templates/expenses/expense_list.html` y partial `_expense_card.html`).
+*   `GET /expenses/create/` - Formulario para registrar un nuevo gasto (`templates/expenses/expense_form.html`).
+*   `GET /expenses/<pk>/` - Ficha de detalle de un gasto (`templates/expenses/expense_detail.html`).
+*   `GET /expenses/<pk>/edit/` - Formulario para actualizar un gasto (`templates/expenses/expense_form.html`).
 
 ## 📝 Documentación de Detalle
 *   [Devengado vs. Percibido (Económico vs. Financiero)](docs/accrual_vs_cash_accounting.md): Detalla la diferencia impositiva y de negocio entre la fecha de devengamiento y la fecha de pago real y cómo impacta en el P&L y el Flujo de Caja.
+

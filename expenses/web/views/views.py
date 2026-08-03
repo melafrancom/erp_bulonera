@@ -7,7 +7,7 @@ Siguiendo la estructura canónica de BULONERA ERP:
   - CreateView con formulario
   - UpdateView con formulario
 """
-from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
@@ -26,7 +26,7 @@ class ExpenseListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         """Filtrar gastos activos con opciones de búsqueda."""
-        qs = Expense.objects.filter(is_active=True).select_related('category', 'supplier')
+        qs = Expense.objects.select_related('category', 'supplier')
 
         # Filtro por categoría
         category_type = self.request.GET.get('category_type')
@@ -50,13 +50,12 @@ class ExpenseListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         """Agregar categorías y estado de filtros."""
         context = super().get_context_data(**kwargs)
-        context['categories'] = ExpenseCategory.objects.filter(is_active=True)
+        context['categories'] = ExpenseCategory.objects.all()
         context['category_types'] = ExpenseCategory.CATEGORY_TYPES
         context['search'] = self.request.GET.get('search', '')
         context['selected_category_type'] = self.request.GET.get('category_type', '')
         context['selected_is_paid'] = self.request.GET.get('is_paid', '')
         return context
-
 
 
 class ExpenseDetailView(LoginRequiredMixin, DetailView):
@@ -68,11 +67,11 @@ class ExpenseDetailView(LoginRequiredMixin, DetailView):
     login_url = reverse_lazy('core_web:login')
 
     def get_queryset(self):
-        return Expense.objects.filter(is_active=True).select_related('category', 'supplier')
+        return Expense.objects.select_related('category', 'supplier')
 
 
 class ExpenseCreateView(LoginRequiredMixin, CreateView):
-    """Formulario para crear un gasto."""
+    """Formulario para crear un gasto usando ExpenseService."""
 
     model = Expense
     template_name = 'expenses/expense_form.html'
@@ -85,13 +84,23 @@ class ExpenseCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('expenses_web:expense_list')
 
     def form_valid(self, form):
-        """Asignar usuario actual."""
-        form.instance.created_by = self.request.user
-        return super().form_valid(form)
+        """Delegar la creación a ExpenseService para lógica centralizada."""
+        data = form.cleaned_data
+        data['category_id'] = data['category'].id
+        if data.get('supplier'):
+            data['supplier_id'] = data['supplier'].id
+
+        try:
+            self.object = ExpenseService.create_expense(data, self.request.user)
+        except ValueError as e:
+            form.add_error(None, str(e))
+            return self.form_invalid(form)
+
+        return redirect('expenses_web:expense_list')
 
 
 class ExpenseUpdateView(LoginRequiredMixin, UpdateView):
-    """Formulario para actualizar un gasto."""
+    """Formulario para actualizar un gasto usando ExpenseService."""
 
     model = Expense
     template_name = 'expenses/expense_form.html'
@@ -103,10 +112,39 @@ class ExpenseUpdateView(LoginRequiredMixin, UpdateView):
     login_url = reverse_lazy('core_web:login')
     success_url = reverse_lazy('expenses_web:expense_list')
 
-    def get_queryset(self):
-        return Expense.objects.filter(is_active=True)
+    def form_valid(self, form):
+        """Delegar la actualización a ExpenseService para lógica centralizada."""
+        data = form.cleaned_data
+        data['category_id'] = data['category'].id
+        if data.get('supplier'):
+            data['supplier_id'] = data['supplier'].id
+        else:
+            data['supplier_id'] = None
+
+        try:
+            self.object = ExpenseService.update_expense(self.object.id, data, self.request.user)
+        except ValueError as e:
+            form.add_error(None, str(e))
+            return self.form_invalid(form)
+
+        return redirect('expenses_web:expense_list')
+
+
+class ExpenseDeleteView(LoginRequiredMixin, DeleteView):
+    """Vista para soft-delete de un gasto usando ExpenseService."""
+
+    model = Expense
+    template_name = 'expenses/expense_confirm_delete.html'
+    context_object_name = 'expense'
+    login_url = reverse_lazy('core_web:login')
+    success_url = reverse_lazy('expenses_web:expense_list')
 
     def form_valid(self, form):
-        """Asignar usuario de actualización."""
-        form.instance.updated_by = self.request.user
-        return super().form_valid(form)
+        """Ejecutar soft-delete vía ExpenseService."""
+        try:
+            ExpenseService.delete_expense(self.object.id, self.request.user)
+        except Exception as e:
+            form.add_error(None, str(e))
+            return self.form_invalid(form)
+
+        return redirect('expenses_web:expense_list')

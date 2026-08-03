@@ -12,15 +12,21 @@ User = get_user_model()
 
 @pytest.fixture
 def user():
-    """Crear un usuario para testing."""
+    """Crear un usuario para testing con permisos de gastos."""
     user, _ = User.objects.get_or_create(
         username='testuser',
         defaults={
             'email': 'test@example.com',
             'first_name': 'Test',
             'last_name': 'User',
+            'role': 'manager',
+            'can_manage_expenses': True,
         }
     )
+    if not user.can_manage_expenses or user.role != 'manager':
+        user.can_manage_expenses = True
+        user.role = 'manager'
+        user.save()
     return user
 
 

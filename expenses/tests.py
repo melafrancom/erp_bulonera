@@ -1,3 +1,1 @@
-from django.test import TestCase
-
-# Create your tests here.
+# Todos los tests de la app se encuentran modularizados en el directorio expenses/tests/

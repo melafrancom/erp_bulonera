@@ -44,6 +44,7 @@ class User(BaseModel, AbstractUser):
     can_manage_payments = models.BooleanField(default=False)
     can_manage_bills = models.BooleanField(default=False)
     can_manage_suppliers = models.BooleanField(default=False)
+    can_manage_expenses = models.BooleanField(default=False)
     can_view_reports = models.BooleanField(default=False)
 
     class Meta:
@@ -68,6 +69,23 @@ class User(BaseModel, AbstractUser):
     @property
     def is_viewer(self):
         return self.role == 'viewer' or self.is_operator
+
+    def save(self, *args, **kwargs):
+        if self._state.adding:
+            if self.role in ('admin', 'manager'):
+                self.can_manage_products = True
+                self.can_manage_customers = True
+                self.can_manage_suppliers = True
+                self.can_manage_sales = True
+                self.can_manage_quotes = True
+                self.can_manage_inventory = True
+                self.can_manage_payments = True
+                self.can_manage_bills = True
+                self.can_manage_expenses = True
+                self.can_view_reports = True
+                if self.role == 'admin':
+                    self.can_manage_users = True
+        super().save(*args, **kwargs)
     
     def clean(self):
         """Validar unicidad de email entre usuarios no eliminados."""

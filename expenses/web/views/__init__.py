@@ -1,9 +1,9 @@
-"""Web: Vistas."""
 from .views import (
     ExpenseListView,
     ExpenseDetailView,
     ExpenseCreateView,
     ExpenseUpdateView,
+    ExpenseDeleteView,
 )
 
 __all__ = [
@@ -11,4 +11,5 @@ __all__ = [
     'ExpenseDetailView',
     'ExpenseCreateView',
     'ExpenseUpdateView',
+    'ExpenseDeleteView',
 ]
