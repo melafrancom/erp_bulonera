@@ -1,0 +1,58 @@
+<!--
+  Partial: _expense_card.html
+  Uso: {% include 'expenses/partials/_expense_card.html' with expense=e %}
+  Card de gasto para vista mobile. Touch-friendly y accesible.
+-->
+<article class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-5 mb-4 hover:shadow-amber-500/10 transition-all relative overflow-hidden group">
+  
+  <!-- Accent decorativo -->
+  <div class="absolute top-0 right-0 w-16 h-16 bg-amber-500/5 -mr-8 -mt-8 rounded-full transition-transform group-hover:scale-150"></div>
+
+  <!-- Header: Categoría + Estado de Pago -->
+  <div class="flex justify-between items-start gap-3 mb-3 relative">
+    <div class="min-w-0 flex-1">
+      <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 ring-1 ring-amber-500/20 mb-1">
+        {{ expense.category.get_type_display }}
+      </span>
+      <h3 class="text-base font-black text-gray-900 dark:text-slate-100 leading-tight truncate px-0.5">
+        {{ expense.description }}
+      </h3>
+    </div>
+    <span class="inline-flex items-center shrink-0 px-2 py-1 text-[10px] font-black rounded-lg uppercase tracking-widest transition-colors
+      {% if expense.is_paid %}bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-600/20
+      {% else %}bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 ring-1 ring-amber-600/20{% endif %}">
+      {% if expense.is_paid %}Pagado{% else %}Pendiente{% endif %}
+    </span>
+  </div>
+
+  <!-- Info grid: Fecha + Proveedor + Monto -->
+  <div class="grid grid-cols-2 gap-4 mb-3 relative p-1 bg-gray-50/50 dark:bg-slate-900/50 rounded-xl">
+    <div>
+      <p class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">Fecha Devengado</p>
+      <p class="text-xs font-mono font-bold text-gray-700 dark:text-slate-300">{{ expense.expense_date|date:"d/m/Y" }}</p>
+    </div>
+    <div>
+      <p class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">Proveedor</p>
+      <p class="text-xs font-bold text-gray-700 dark:text-slate-300 truncate">
+        {% if expense.supplier %}{{ expense.supplier.business_name }}{% else %}—{% endif %}
+      </p>
+    </div>
+  </div>
+
+  <!-- Total -->
+  <div class="pt-3 border-t border-gray-100 dark:border-slate-700/50 relative flex items-center justify-between">
+    <span class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Monto Total</span>
+    <span class="text-base font-black text-gray-900 dark:text-slate-100 tabular-nums">
+      ${{ expense.amount_total|floatformat:2 }}
+    </span>
+  </div>
+
+  <!-- Botón detalle -->
+  <div class="mt-4">
+    <a href="{% url 'expenses_web:expense_detail' expense.pk %}"
+       class="flex items-center justify-center w-full h-11 bg-gradient-to-r from-amber-600 to-orange-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:from-amber-700 hover:to-orange-700 active:scale-[0.98] transition-all shadow-md shadow-amber-500/20">
+      <i data-lucide="eye" class="w-4 h-4 mr-2"></i>
+      Ver Detalle
+    </a>
+  </div>
+</article>

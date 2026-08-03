@@ -22,7 +22,7 @@ class ExpenseListView(LoginRequiredMixin, ListView):
     template_name = 'expenses/expense_list.html'
     context_object_name = 'expenses'
     paginate_by = 50
-    login_url = 'login'
+    login_url = reverse_lazy('core_web:login')
 
     def get_queryset(self):
         """Filtrar gastos activos con opciones de búsqueda."""
@@ -48,11 +48,15 @@ class ExpenseListView(LoginRequiredMixin, ListView):
         return qs.order_by('-expense_date')
 
     def get_context_data(self, **kwargs):
-        """Agregar categorías para filtros."""
+        """Agregar categorías y estado de filtros."""
         context = super().get_context_data(**kwargs)
         context['categories'] = ExpenseCategory.objects.filter(is_active=True)
         context['category_types'] = ExpenseCategory.CATEGORY_TYPES
+        context['search'] = self.request.GET.get('search', '')
+        context['selected_category_type'] = self.request.GET.get('category_type', '')
+        context['selected_is_paid'] = self.request.GET.get('is_paid', '')
         return context
+
 
 
 class ExpenseDetailView(LoginRequiredMixin, DetailView):
@@ -61,7 +65,7 @@ class ExpenseDetailView(LoginRequiredMixin, DetailView):
     model = Expense
     template_name = 'expenses/expense_detail.html'
     context_object_name = 'expense'
-    login_url = 'login'
+    login_url = reverse_lazy('core_web:login')
 
     def get_queryset(self):
         return Expense.objects.filter(is_active=True).select_related('category', 'supplier')
@@ -77,7 +81,7 @@ class ExpenseCreateView(LoginRequiredMixin, CreateView):
         'expense_date', 'payment_date', 'is_paid', 'supplier',
         'is_recurring', 'recurrence', 'notes'
     ]
-    login_url = 'login'
+    login_url = reverse_lazy('core_web:login')
     success_url = reverse_lazy('expenses_web:expense_list')
 
     def form_valid(self, form):
@@ -96,7 +100,7 @@ class ExpenseUpdateView(LoginRequiredMixin, UpdateView):
         'expense_date', 'payment_date', 'is_paid', 'supplier',
         'is_recurring', 'recurrence', 'notes'
     ]
-    login_url = 'login'
+    login_url = reverse_lazy('core_web:login')
     success_url = reverse_lazy('expenses_web:expense_list')
 
     def get_queryset(self):

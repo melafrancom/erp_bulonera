@@ -1,0 +1,259 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{% if object %}Edición de Gasto #{{ object.id }}{% else %}Registro de Gasto Operativo{% endif %} | ERP Bulonera Alvear{% endblock %}
+
+{% block breadcrumb_items %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <a href="{% url 'expenses_web:expense_list' %}" class="text-gray-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors font-bold">Gastos Operativos</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <span class="text-gray-900 dark:text-slate-100 font-black tracking-tight">{% if object %}Actualizar Gasto{% else %}Nuevo Gasto{% endif %}</span>
+{% endblock %}
+
+{% block mobile_title %}{% if object %}Editar Gasto{% else %}Nuevo Gasto{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-12"
+     x-data="{ 
+       isPaid: {% if form.is_paid.value %}true{% else %}false{% endif %},
+       isRecurring: {% if form.is_recurring.value %}true{% else %}false{% endif %}
+     }">
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       HEADER: Contexto de edición
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+    <div>
+      <a href="{% if object %}{% url 'expenses_web:expense_detail' object.pk %}{% else %}{% url 'expenses_web:expense_list' %}{% endif %}" class="inline-flex items-center text-[10px] font-black text-gray-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 uppercase tracking-[0.2em] transition-all mb-4 group">
+        <i data-lucide="arrow-left" class="w-3 h-3 mr-2 group-hover:-translate-x-1 transition-transform"></i>
+        Abortar y Volver
+      </a>
+      <div class="flex items-center gap-4">
+        <div class="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-lg ring-4 ring-amber-500/10">
+          <i data-lucide="{% if object %}pencil-line{% else %}receipt{% endif %}" class="w-6 h-6 text-white"></i>
+        </div>
+        <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight">
+          {% if object %}Editar Gasto #{{ object.id }}{% else %}Nuevo Gasto Operativo{% endif %}
+        </h1>
+      </div>
+    </div>
+    <div class="hidden md:block">
+      <p class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-right">
+        Campos con <span class="text-red-500">*</span> son requeridos
+      </p>
+    </div>
+  </div>
+
+  <form method="POST" action="" id="expenseForm" class="space-y-8" novalidate>
+    {% csrf_token %}
+
+    <!-- ALERTA DE ERRORES -->
+    {% if form.errors %}
+    <div class="bg-red-50 dark:bg-red-900/10 border-2 border-red-200 dark:border-red-900/30 p-6 rounded-[2rem]">
+      <div class="flex items-center gap-4">
+        <i data-lucide="alert-triangle" class="w-8 h-8 text-red-500 shrink-0"></i>
+        <div>
+          <h3 class="text-sm font-black text-red-800 dark:text-red-400 uppercase tracking-widest">Inconsistencia de Datos</h3>
+          <p class="text-xs font-bold text-red-600 dark:text-red-500 mt-1">Por favor, revise los campos resaltados en rojo.</p>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- SECCIÓN 1: Clasificación y Descripción -->
+    <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden transition-colors">
+      <div class="px-8 py-6 border-b border-gray-100 dark:border-slate-700/50 bg-gray-50/50 dark:bg-slate-900/30 flex items-center gap-3">
+        <i data-lucide="folder-tree" class="w-5 h-5 text-amber-500"></i>
+        <h2 class="text-sm font-black text-gray-900 dark:text-slate-100 uppercase tracking-widest">Clasificación del Gasto</h2>
+      </div>
+      
+      <div class="p-8 xl:p-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+          <label for="{{ form.category.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Categoría <span class="text-red-500">*</span></label>
+          {{ form.category }}
+          {% if form.category.errors %}
+            <p class="mt-2 text-[10px] font-bold text-red-500 uppercase tracking-tight">{{ form.category.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label for="{{ form.supplier.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Proveedor (Opcional)</label>
+          {{ form.supplier }}
+          {% if form.supplier.errors %}
+            <p class="mt-2 text-[10px] font-bold text-red-500 uppercase tracking-tight">{{ form.supplier.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <div class="md:col-span-2">
+          <label for="{{ form.description.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Descripción del Gasto <span class="text-red-500">*</span></label>
+          {{ form.description }}
+          {% if form.description.errors %}
+            <p class="mt-2 text-[10px] font-bold text-red-500 uppercase tracking-tight">{{ form.description.errors.0 }}</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 2: Montos e Impuestos -->
+    <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden transition-colors">
+      <div class="px-8 py-6 border-b border-gray-100 dark:border-slate-700/50 bg-gray-50/50 dark:bg-slate-900/30 flex items-center gap-3">
+        <i data-lucide="calculator" class="w-5 h-5 text-orange-500"></i>
+        <h2 class="text-sm font-black text-gray-900 dark:text-slate-100 uppercase tracking-widest">Montos e Impuestos</h2>
+      </div>
+      
+      <div class="p-8 xl:p-10 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div>
+          <label for="{{ form.amount_neto.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Monto Neto ($) <span class="text-red-500">*</span></label>
+          {{ form.amount_neto }}
+          {% if form.amount_neto.errors %}
+            <p class="mt-2 text-[10px] font-bold text-red-500 uppercase tracking-tight">{{ form.amount_neto.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label for="{{ form.amount_iva.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Monto IVA ($)</label>
+          {{ form.amount_iva }}
+          {% if form.amount_iva.errors %}
+            <p class="mt-2 text-[10px] font-bold text-red-500 uppercase tracking-tight">{{ form.amount_iva.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label for="{{ form.amount_total.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Monto Total ($) <span class="text-red-500">*</span></label>
+          {{ form.amount_total }}
+          {% if form.amount_total.errors %}
+            <p class="mt-2 text-[10px] font-bold text-red-500 uppercase tracking-tight">{{ form.amount_total.errors.0 }}</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 3: Fechas y Tesorería -->
+    <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden transition-colors">
+      <div class="px-8 py-6 border-b border-gray-100 dark:border-slate-700/50 bg-gray-50/50 dark:bg-slate-900/30 flex items-center gap-3">
+        <i data-lucide="calendar" class="w-5 h-5 text-emerald-500"></i>
+        <h2 class="text-sm font-black text-gray-900 dark:text-slate-100 uppercase tracking-widest">Fechas y Estado de Pago</h2>
+      </div>
+      
+      <div class="p-8 xl:p-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+          <label for="{{ form.expense_date.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Fecha Devengamiento <span class="text-red-500">*</span></label>
+          {{ form.expense_date }}
+          {% if form.expense_date.errors %}
+            <p class="mt-2 text-[10px] font-bold text-red-500 uppercase tracking-tight">{{ form.expense_date.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <div class="flex items-center pt-6">
+          <label class="flex items-center gap-3 p-4 bg-gray-50 dark:bg-slate-900 border-2 border-dashed border-gray-200 dark:border-slate-700/50 rounded-2xl cursor-pointer hover:border-amber-500/50 transition-all group w-full shadow-inner">
+            <input type="checkbox" name="{{ form.is_paid.name }}" id="{{ form.is_paid.id_for_label }}" 
+                   x-model="isPaid"
+                   {% if form.is_paid.value %}checked{% endif %}>
+            <div class="flex flex-col">
+              <span class="text-xs font-black text-gray-700 dark:text-slate-300 uppercase tracking-tighter group-hover:text-amber-600 transition-colors">¿Gasto Pagado?</span>
+              <span class="text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase">Marcar si la erogación de efectivo ya fue realizada</span>
+            </div>
+          </label>
+        </div>
+
+        <div x-show="isPaid" x-transition class="md:col-span-2">
+          <label for="{{ form.payment_date.id_for_label }}" class="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Fecha de Pago</label>
+          {{ form.payment_date }}
+          {% if form.payment_date.errors %}
+            <p class="mt-2 text-[10px] font-bold text-red-500 uppercase tracking-tight">{{ form.payment_date.errors.0 }}</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 4: Recurrencia y Notas -->
+    <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div class="px-8 py-6 border-b border-gray-100 dark:border-slate-700/50 bg-gray-50/50 dark:bg-slate-900/30 flex items-center gap-3">
+        <i data-lucide="repeat" class="w-5 h-5 text-purple-500"></i>
+        <h2 class="text-sm font-black text-gray-900 dark:text-slate-100 uppercase tracking-widest">Recurrencia y Observaciones</h2>
+      </div>
+      
+      <div class="p-8 xl:p-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="flex items-center">
+          <label class="flex items-center gap-3 p-4 bg-gray-50 dark:bg-slate-900 border-2 border-dashed border-gray-200 dark:border-slate-700/50 rounded-2xl cursor-pointer hover:border-purple-500/50 transition-all group w-full shadow-inner">
+            <input type="checkbox" name="{{ form.is_recurring.name }}" id="{{ form.is_recurring.id_for_label }}" 
+                   x-model="isRecurring"
+                   {% if form.is_recurring.value %}checked{% endif %}>
+            <div class="flex flex-col">
+              <span class="text-xs font-black text-gray-700 dark:text-slate-300 uppercase tracking-tighter group-hover:text-purple-600 transition-colors">Gasto Recurrente</span>
+              <span class="text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase">Ejemplo: Alquiler mensual, sueldos, servicios</span>
+            </div>
+          </label>
+        </div>
+
+        <div x-show="isRecurring" x-transition>
+          <label for="{{ form.recurrence.id_for_label }}" class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">Frecuencia de Recurrencia</label>
+          {{ form.recurrence }}
+          {% if form.recurrence.errors %}
+            <p class="mt-2 text-[10px] font-bold text-red-500 uppercase tracking-tight">{{ form.recurrence.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <div class="md:col-span-2">
+          <label for="{{ form.notes.id_for_label }}" class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">Notas Internas</label>
+          {{ form.notes }}
+          {% if form.notes.errors %}
+            <p class="mt-2 text-[10px] font-bold text-red-500 uppercase tracking-tight">{{ form.notes.errors.0 }}</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTONES DE ACCIÓN (Floating Style) -->
+    <div class="sticky bottom-8 left-0 right-0 z-40 px-4 md:px-0">
+      <div class="max-w-xl mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-gray-200 dark:border-slate-700 p-2 rounded-[2rem] shadow-2xl flex gap-x-3 transition-colors">
+        <a href="{% if object %}{% url 'expenses_web:expense_detail' object.pk %}{% else %}{% url 'expenses_web:expense_list' %}{% endif %}" 
+           class="flex-1 inline-flex items-center justify-center px-8 py-4 bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 rounded-2xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-all text-[10px] font-black uppercase tracking-widest">
+          Descartar
+        </a>
+        <button type="submit" id="submitBtn" class="flex-[2] inline-flex items-center justify-center px-10 py-4 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-2xl hover:from-amber-700 hover:to-orange-700 active:scale-95 transition-all text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-amber-500/20">
+          <i data-lucide="save" class="w-4 h-4 mr-3"></i>
+          {% if object %}Actualizar Gasto{% else %}Registrar Gasto{% endif %}
+        </button>
+      </div>
+    </div>
+
+  </form>
+</div>
+
+<style>
+  /* Custom form styling to inject Bulonera Pattern into Django form fields */
+  input[type="text"], input[type="number"], input[type="date"], select, textarea {
+    @apply w-full px-5 py-4 bg-gray-50 dark:bg-slate-900 border-2 border-transparent dark:border-slate-800 rounded-2xl focus:border-amber-500 dark:focus:border-amber-400 focus:ring-4 focus:ring-amber-500/10 transition-all font-bold text-sm text-gray-900 dark:text-slate-100 outline-none placeholder:text-gray-300 dark:placeholder:text-slate-700 shadow-inner !important;
+  }
+  textarea {
+    @apply min-h-[100px] !important;
+  }
+  input[type="checkbox"] {
+    @apply rounded-lg border-gray-300 dark:border-slate-700 text-amber-600 focus:ring-amber-500 h-6 w-6 bg-white dark:bg-slate-900 transition-all !important;
+  }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const netoInput = document.getElementById('{{ form.amount_neto.id_for_label }}');
+    const ivaInput = document.getElementById('{{ form.amount_iva.id_for_label }}');
+    const totalInput = document.getElementById('{{ form.amount_total.id_for_label }}');
+
+    function calculateTotal() {
+      if (!netoInput || !totalInput) return;
+      const neto = parseFloat(netoInput.value) || 0;
+      const iva = parseFloat(ivaInput ? ivaInput.value : 0) || 0;
+      const total = neto + iva;
+      if (total > 0) {
+        totalInput.value = total.toFixed(2);
+      }
+    }
+
+    if (netoInput) netoInput.addEventListener('input', calculateTotal);
+    if (ivaInput) ivaInput.addEventListener('input', calculateTotal);
+  });
+</script>
+{% endblock %}
