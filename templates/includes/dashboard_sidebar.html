@@ -43,32 +43,32 @@
           Operaciones
         </p>
 
-        {% if user.can_manage_sales %}
-        <a href="{% url 'sales_web:dashboard' %}" class="nav-item">
+        {% if user.can_manage_sales or user.is_admin or user.is_manager %}
+        <a href="{% url 'sales_web:dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'sales_dashboard' %}active{% endif %}">
           <i data-lucide="shopping-cart" class="w-5 h-5"></i>
           <span>Ventas</span>
-          <span
-            class="ml-auto bg-green-500 text-white text-xs px-2 py-0.5 rounded-full"
-            >3</span
-          >
         </a>
 
-        <a href="{% url 'sales_web:quote_list' %}" class="nav-item">
+        <a href="{% url 'sales_web:quote_list' %}" class="nav-item {% if 'presupuestos' in request.path %}active{% endif %}">
           <i data-lucide="file-text" class="w-5 h-5"></i>
           <span>Presupuestos</span>
         </a>
 
-        <a href="{% url 'sales_web:sale_list' %}" class="nav-item {% if 'ventas/list' in request.path %}active{% endif %}">
+        <a href="{% url 'sales_web:sale_list' %}" class="nav-item {% if 'ventas/list' in request.path or 'sales/list' in request.path %}active{% endif %}">
           <i data-lucide="receipt" class="w-5 h-5"></i>
           <span>Lista de Ventas</span>
         </a>
+        {% endif %}
 
-        <a href="{% url 'bills_web:invoice_list' %}" class="nav-item {% if 'facturas' in request.path %}active{% endif %}">
-          <i data-lucide="file-text" class="w-5 h-5"></i>
+        {% if user.can_manage_bills or user.is_admin or user.is_manager %}
+        <a href="{% url 'bills_web:invoice_list' %}" class="nav-item {% if 'facturas' in request.path or 'bills' in request.path %}active{% endif %}">
+          <i data-lucide="file-check" class="w-5 h-5"></i>
           <span>Facturas Emitidas</span>
         </a>
-        {% endif %} {% if user.can_manage_customers %}
-        <a href="{% url 'customers:customer_list' %}" class="nav-item">
+        {% endif %}
+
+        {% if user.can_manage_customers or user.is_admin or user.is_manager %}
+        <a href="{% url 'customers:customer_list' %}" class="nav-item {% if 'customers' in request.path %}active{% endif %}">
           <i data-lucide="users" class="w-5 h-5"></i>
           <span>Clientes</span>
         </a>
@@ -83,10 +83,10 @@
           Inventario
         </p>
 
-        {% if user.can_manage_products %}
+        {% if user.can_manage_products or user.is_admin or user.is_manager %}
         <a
           href="{% url 'products:product_list' %}"
-          class="nav-item {% if 'products' in request.path %}active{% endif %}"
+          class="nav-item {% if 'products' in request.path and not 'listas-precios' in request.path and not 'importar' in request.path %}active{% endif %}"
         >
           <i data-lucide="package" class="w-5 h-5"></i>
           <span>Productos</span>
@@ -102,29 +102,23 @@
           <span>Importar Excel</span>
         </a>
 
-        <a href="#" class="nav-item">
-          <i data-lucide="tags" class="w-5 h-5"></i>
-          <span>Categorías</span>
-        </a>
-
         <a href="{% url 'products:pricelist_list' %}" class="nav-item {% if 'listas-precios' in request.path %}active{% endif %}">
           <i data-lucide="list" class="w-5 h-5"></i>
           <span>Listas de Precios</span>
         </a>
+        {% endif %}
 
+        {% if user.can_manage_suppliers or user.is_admin or user.is_manager %}
         <a href="{% url 'suppliers_web:supplier_list' %}" class="nav-item {% if 'suppliers' in request.path %}active{% endif %}">
           <i data-lucide="truck" class="w-5 h-5"></i>
           <span>Proveedores</span>
         </a>
+        {% endif %}
 
-        <a href="{% url 'inventory_web:dashboard' %}" class="nav-item">
+        {% if user.can_manage_inventory or user.is_admin or user.is_manager %}
+        <a href="{% url 'inventory_web:dashboard' %}" class="nav-item {% if 'inventory' in request.path %}active{% endif %}">
           <i data-lucide="archive" class="w-5 h-5"></i>
-          <span>Stock</span>
-          <span
-            class="ml-auto bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full"
-          >
-            <i data-lucide="alert-triangle" class="w-3 h-3 inline"></i>
-          </span>
+          <span>Stock y Control</span>
         </a>
         {% endif %}
       </div>
@@ -137,38 +131,44 @@
           Finanzas
         </p>
 
+        {% if user.can_manage_payments or user.is_admin or user.is_manager %}
         <a href="{% url 'payments_web:payment_list' %}" class="nav-item {% if 'payments' in request.path %}active{% endif %}">
           <i data-lucide="banknote" class="w-5 h-5"></i>
           <span>Cobros</span>
         </a>
+        {% endif %}
 
-        <a href="#" class="nav-item">
+        {% if user.can_manage_expenses or user.is_admin or user.is_manager %}
+        <a href="{% url 'expenses_web:expense_list' %}" class="nav-item {% if 'expenses' in request.path %}active{% endif %}">
+          <i data-lucide="receipt" class="w-5 h-5"></i>
+          <span>Gastos Operativos</span>
+        </a>
+        {% endif %}
+
+        <a href="{% url 'reports_web:cashflow_statement' %}" class="nav-item {% if 'cashflow' in request.path %}active{% endif %}">
           <i data-lucide="dollar-sign" class="w-5 h-5"></i>
-          <span>Caja</span>
+          <span>Flujo de Caja</span>
         </a>
 
-        <a href="{% url 'reports_web:dashboard' %}" class="nav-item {% if 'reports' in request.path %}active{% endif %}">
+        <a href="{% url 'reports_web:pnl_statement' %}" class="nav-item {% if 'pnl' in request.path %}active{% endif %}">
+          <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+          <span>Estado de Resultados (P&L)</span>
+        </a>
+
+        <a href="{% url 'reports_web:dashboard' %}" class="nav-item {% if 'reports' in request.path and not 'pnl' in request.path and not 'cashflow' in request.path %}active{% endif %}">
           <i data-lucide="trending-up" class="w-5 h-5"></i>
           <span>Dashboard Comercial</span>
         </a>
       </div>
-      <!-- Sección: Notificaciones -->
-      <a href="#" class="nav-item">
-        <i data-lucide="bell" class="w-5 h-5"></i>
-        <span>Notificaciones</span>
-        <span class="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-          3
-        </span>
-      </a>
-      <!-- Sección: Administración (Solo Admins) -->
-      {% if user.is_admin or user.is_manager %}
+
+      <!-- Sección: Administración (Solo Admins / Managers) -->
+      {% if user.is_admin or user.is_manager or user.is_superuser %}
       <div class="pt-6 mt-6 border-t border-white/10">
         <p
           class="text-blue-200 text-xs font-medium uppercase tracking-wide mb-3 px-3"
         >
           Administración
         </p>
-        <!-- Dashboard -->
         <div class="mb-6">
           <a
             href="{% url 'core_web:managers_dashboard' %}"
@@ -180,7 +180,7 @@
         </div>
         <a
           href="{% url 'core_web:users_list' %}"
-          class="nav-item {% if request.resolver_match.url_name == 'users' %}active{% endif %}"
+          class="nav-item {% if request.resolver_match.url_name == 'users_list' or 'users' in request.path %}active{% endif %}"
         >
           <i data-lucide="user-plus" class="w-5 h-5"></i>
           <span>Usuarios</span>
@@ -191,9 +191,9 @@
           <span>AFIP / ARCA</span>
         </a>
 
-        <a href="#" class="nav-item">
-          <i data-lucide="shield" class="w-5 h-5"></i>
-          <span>Seguridad</span>
+        <a href="{% url 'swagger-ui' %}" target="_blank" class="nav-item">
+          <i data-lucide="code-2" class="w-5 h-5"></i>
+          <span>API Docs (Swagger)</span>
         </a>
       </div>
       {% endif %} 
