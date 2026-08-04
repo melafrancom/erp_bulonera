@@ -270,15 +270,15 @@ class Customer(BaseModel):
     
     def delete(self, hard_delete=False, user=None, *args, **kwargs):
         """
-        Override soft-delete para liberar CUIT/CUIL.
-        Al hacer soft-delete, el CUIT se modifica con un prefijo
-        '__deleted_<id>_' truncado a 11 chars para que el valor original quede disponible.
+        Override soft-delete para liberar CUIT/CUIL sin colisiones en la constraint UNIQUE.
+        Al hacer soft-delete, el CUIT se modifica con un identificador único de 11 caracteres
+        (ej: D0000000012) derivado de la PK.
         """
         if hard_delete:
             super().delete(hard_delete=True, user=user, *args, **kwargs)
         else:
-            if self.cuit_cuil and not self.cuit_cuil.startswith("__deleted_"):
-                self.cuit_cuil = f"__deleted_{self.id}_{self.cuit_cuil}"[:11]
+            if self.cuit_cuil and not self.cuit_cuil.startswith("D"):
+                self.cuit_cuil = f"D{self.id:010d}"[:11]
             super().delete(hard_delete=False, user=user, *args, **kwargs)
 
     def clean(self):

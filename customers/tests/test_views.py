@@ -309,3 +309,25 @@ class CustomerViewsTests(TestCase):
         
         self.assertContains(response, 'Cliente Mayorista')
         self.assertNotContains(response, 'Cliente Minorista')
+
+    def test_admin_credit_status_formatting(self):
+        """TC-CV011: CustomerAdmin.credit_status no debe fallar con ValueError al formatear Decimal"""
+        from customers.admin import CustomerAdmin
+        from decimal import Decimal
+        from unittest.mock import MagicMock
+
+        customer = Customer.objects.create(
+            business_name='Cliente Crédito Admin',
+            cuit_cuil='20777777778',
+            tax_condition='RI',
+            allow_credit=True,
+            credit_limit=Decimal('50000.00'),
+            created_by=self.admin
+        )
+        customer.get_available_credit = MagicMock(return_value=Decimal('15000.50'))
+
+        admin_instance = CustomerAdmin(Customer, None)
+        result = admin_instance.credit_status(customer)
+
+        self.assertIn('15,000.50', str(result))
+        self.assertIn('color: green;', str(result))

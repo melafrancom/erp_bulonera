@@ -181,9 +181,10 @@ class CustomerAdmin(admin.ModelAdmin):
         
         available = obj.get_available_credit()
         if available > 0:
+            formatted_val = f"{available:,.2f}"
             return format_html(
-                '<span style="color: green;">✅ ${:,.2f}</span>',
-                available
+                '<span style="color: green;">✅ ${}</span>',
+                formatted_val
             )
         return format_html(
             '<span style="color: red;">⚠️ Sin disponible</span>'

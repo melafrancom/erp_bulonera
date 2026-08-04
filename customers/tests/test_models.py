@@ -331,7 +331,7 @@ class CustomerModelTests(TestCase):
         c1.refresh_from_db()
 
         self.assertFalse(c1.is_active)
-        self.assertTrue(c1.cuit_cuil.startswith('__deleted_'))
+        self.assertTrue(c1.cuit_cuil.startswith('D'))
 
         # Ahora crear otro cliente activo con el mismo CUIT debe ser permitido
         c2 = Customer.objects.create(
@@ -341,3 +341,31 @@ class CustomerModelTests(TestCase):
             created_by=self.admin
         )
         self.assertIsNotNone(c2.id)
+
+    def test_soft_delete_multiple_customers_no_unique_collision(self):
+        """TC-C024: Soft delete de múltiples clientes no produce choques en constraint UNIQUE de cuit_cuil"""
+        c1 = Customer.objects.create(
+            business_name='Cliente A',
+            cuit_cuil='20123456786',
+            tax_condition='CF',
+            created_by=self.admin
+        )
+        c2 = Customer.objects.create(
+            business_name='Cliente B',
+            cuit_cuil='20999999998',
+            tax_condition='CF',
+            created_by=self.admin
+        )
+
+        # Soft delete ambos
+        c1.delete()
+        c2.delete()
+
+        c1.refresh_from_db()
+        c2.refresh_from_db()
+
+        self.assertFalse(c1.is_active)
+        self.assertFalse(c2.is_active)
+        self.assertNotEqual(c1.cuit_cuil, c2.cuit_cuil)
+        self.assertEqual(len(c1.cuit_cuil), 11)
+        self.assertEqual(len(c2.cuit_cuil), 11)
