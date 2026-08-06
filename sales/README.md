@@ -13,15 +13,15 @@ El módulo `sales` gestiona el ciclo comercial completo de la empresa. Permite l
     *   [`bills`](../bills/README.md) (para la emisión de facturas y notas de crédito de AFIP)
 
 ## 🛠️ Modelos Clave
-*   **`Quote`**: Presupuesto emitido a un cliente. Tiene validez temporal. Hereda de `BaseModel` (Soft-delete: Sí).
+*   **`Quote`**: Presupuesto emitido a un cliente. Tiene validez temporal. Posee soporte de descuentos globales (`global_discount_type`, `global_discount_value`, `global_discount_reason`, `customer_segment_discount`) para mantener paridad total con `Sale`. Hereda de `BaseModel` (Soft-delete: Sí).
 *   **`QuoteItem`**: Renglón individual de un presupuesto. Contiene cantidad, precio, descuento e IVA. Hereda de `BaseModel` (Soft-delete: Sí).
-*   **`Sale`**: Venta comercial confirmada o en borrador. Controla tres estados ortogonales: comercial (`status`), financiero (`payment_status`) y fiscal (`fiscal_status`). Incluye el flag `is_credit_sale` para marcar transacciones a cuenta corriente. Hereda de `BaseModel` (Soft-delete: Sí).
+*   **`Sale`**: Venta comercial confirmada o en borrador. Controla tres estados ortogonales: comercial (`status`), financiero (`payment_status`) y fiscal (`fiscal_status`). Incluye soporte de descuento global (`global_discount_*`) y flag `is_credit_sale` para marcar transacciones a cuenta corriente. Hereda de `BaseModel` (Soft-delete: Sí).
 *   **`SaleItem`**: Renglón individual de una venta. Soporta el modo de cálculo bidireccional (precio a total o total a precio). Registra un snapshot de costo unitario (`unit_cost`) que se puede ingresar manualmente en el formulario de venta para asegurar la precisión del P&L en artículos comercializados por unidad pero comprados por peso (kg). Hereda de `BaseModel` (Soft-delete: Sí).
 *   **`QuoteConversion`**: Historial de trazabilidad que documenta cuándo y quién convirtió un presupuesto en venta, incluyendo modificaciones de precios aplicadas. Hereda de `BaseModel` (Soft-delete: Sí).
 
 ## ⚡ Servicios Críticos (`services.py`)
 Toda la lógica de negocio se procesa de forma atómica en los siguientes servicios:
-*   `convert_quote_to_sale(quote, user, modifications=None)`: Realiza la conversión de un presupuesto aceptado a una venta borrador, registrando la conversión en `QuoteConversion`.
+*   `convert_quote_to_sale(quote, user, modifications=None)`: Realiza la conversión de un presupuesto aceptado a una venta borrador, propagando los descuentos globales de cliente/segmento a la venta y registrando la conversión en `QuoteConversion`.
 *   `confirm_sale(sale, user)`: Confirma una venta en borrador, valida ítems, ejecuta la validación de cuenta corriente (`CuentaCorrienteService.validar_credito_para_venta`) si `payment_method == 'account'`, y marca `is_credit_sale = True`.
 *   `move_sale_status(sale, user, new_status, delivery_notes=None)`: Avanza el estado del proceso comercial de forma secuencial (`confirmed` → `in_preparation` → `ready` → `delivered`). Al pasar a `ready`, descuenta automáticamente el stock en inventario llamando a `InventoryService().decrease_stock_from_sale(sale)`.
 *   `cancel_sale(sale, user, reason)`: Anula una venta no entregada. Si la venta ya había pasado a estado `ready`, ejecuta `InventoryService().revert_stock_from_cancelled_sale(sale)` para devolver los artículos al stock disponible.

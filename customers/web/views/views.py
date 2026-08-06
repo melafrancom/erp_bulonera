@@ -85,8 +85,8 @@ class CustomerDetailView(LoginRequiredMixin, DetailView):
         context['notes'] = self.object.customer_notes.all().order_by('-created_at')[:10]
         context['note_form'] = CustomerNoteForm()
         context['can_manage'] = _can_manage_customers(self.request.user)
-        # TODO: Add purchase history when sales module is implemented
-        # context['recent_purchases'] = self.object.sales.all()[:10]
+        context['recent_sales'] = self.object.sales.all().order_by('-date')[:10]
+        context['recent_quotes'] = self.object.quotes.all().order_by('-date')[:10]
         return context
 
 

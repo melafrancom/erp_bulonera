@@ -13,8 +13,8 @@ El módulo `customers` centraliza el CRM (Customer Relationship Management) del 
     *   [`payments`](../payments/README.md) (para registrar ingresos a la cuenta corriente del cliente)
 
 ## 🛠️ Modelos Clave
-*   **`CustomerSegment`**: Clasificación del cliente (ej. "Mayorista", "Minorista", "VIP"). Define un color identificativo y un porcentaje de descuento base que se aplica automáticamente en presupuestos. Hereda de `BaseModel` (Soft-delete: Sí).
-*   **`Customer`**: Datos del cliente, domicilio, contacto, límite de crédito (`credit_limit`), habilitación de cuenta corriente (`allow_credit`), modalidad de cuenta corriente (`account_modality`: `informal` o `formal`), condición tributaria ante el IVA y lista de precios asignada (`price_list` → `products.PriceList`). Hereda de `BaseModel` (Soft-delete: Sí, con liberación automática de CUIT mediante prefijo `__deleted_<id>_`).
+*   **`CustomerSegment`**: Clasificación del cliente (ej. "Mayorista", "Minorista", "VIP"). Define un color identificativo y un porcentaje de descuento base que se aplica automáticamente en presupuestos y ventas. Hereda de `BaseModel` (Soft-delete: Sí).
+*   **`Customer`**: Datos del cliente, domicilio, contacto, límite de crédito (`credit_limit`), habilitación de cuenta corriente (`allow_credit`), modalidad de cuenta corriente (`account_modality`: `informal` o `formal`), condición tributaria ante el IVA y lista de precios asignada (`price_list` → `products.PriceList`). Posee el método `get_effective_discount()` que retorna la tasa de descuento mayor entre cliente y segmento. Hereda de `BaseModel` (Soft-delete: Sí, con liberación de CUIT mediante prefijo único garantizado `D<id:010d>`).
 *   **`CustomerNote`**: Notas y comentarios importantes para el seguimiento de la relación comercial con el cliente. Hereda de `BaseModel` (Soft-delete: Sí).
 
 ## ⚡ Servicios Críticos (`services.py`)
@@ -30,7 +30,7 @@ El módulo `customers` centraliza el CRM (Customer Relationship Management) del 
 
 ### REST API (`api/urls/`)
 Base URL: `/api/v1/customers/`
-*   `GET /api/v1/customers/` - Listado y filtrado de clientes (búsqueda por razón social, CUIT o segmento).
+*   `GET /api/v1/customers/` - Listado y filtrado de clientes. Retorna campos reducidos + `effective_discount`, `allow_credit`, `account_modality`, `price_list` para auto-completado en ventas.
 *   `POST /api/v1/customers/` - Registrar nuevo cliente (ejecuta validaciones locales de CUIT y `full_clean` de modelo).
 *   `POST /api/v1/customers/{id}/sync_tax/` - Forzar la sincronización impositiva contra la AFIP.
 *   `GET /api/v1/customers/{id}/credit/` - Dashboard REST de estado de cuenta corriente, deuda y aging report.
@@ -38,6 +38,7 @@ Base URL: `/api/v1/customers/`
 
 ### Vistas Web (`web/urls/`)
 *   `GET /customers/` - Panel principal de administración y ABM de clientes.
+*   `GET /customers/{id}/` - Detalle completo de cliente con notas, historial de ventas (`recent_sales`) y presupuestos (`recent_quotes`).
 *   `GET /customers/{id}/credit/` - Dashboard visual de cuenta corriente del cliente.
 *   `POST /customers/{id}/credit/refacturar/{sale_id}/` - Acción para refacturar venta informal a precios actualizados.
 *   `POST /customers/import/` - Importación masiva desde plantilla Excel (requiere permiso `can_manage_customers` y ejecuta validaciones del modelo por fila).

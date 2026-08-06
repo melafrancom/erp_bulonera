@@ -79,7 +79,14 @@
               <button type="button"
                       @click="selectCustomer(c)"
                       class="w-full text-left px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition border-b border-gray-100 dark:border-slate-700 last:border-0">
-                <p class="text-sm font-medium text-gray-900 dark:text-slate-100" x-text="c.business_name"></p>
+                <div class="flex items-center justify-between">
+                  <p class="text-sm font-medium text-gray-900 dark:text-slate-100" x-text="c.business_name"></p>
+                  <template x-if="parseFloat(c.effective_discount || 0) > 0">
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300">
+                      🏷️ <span x-text="c.effective_discount"></span>% desc.
+                    </span>
+                  </template>
+                </div>
                 <p class="text-xs text-gray-500 dark:text-slate-400" x-text="c.cuit_cuil || 'Sin CUIT'"></p>
               </button>
             </template>
@@ -91,7 +98,14 @@
           <div class="flex items-center gap-2">
             <i data-lucide="user-check" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
             <div>
-              <p class="text-sm font-medium text-blue-900 dark:text-blue-300" x-text="selectedCustomer?.business_name"></p>
+              <div class="flex items-center gap-2 flex-wrap">
+                <p class="text-sm font-medium text-blue-900 dark:text-blue-300" x-text="selectedCustomer?.business_name"></p>
+                <template x-if="parseFloat(selectedCustomer?.effective_discount || 0) > 0">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                    🏷️ Descuento sugerido: <span x-text="selectedCustomer.effective_discount"></span>%
+                  </span>
+                </template>
+              </div>
               <p class="text-xs text-blue-700 dark:text-blue-400/80" x-text="selectedCustomer?.cuit_cuil || 'Sin CUIT registrado'"></p>
             </div>
           </div>

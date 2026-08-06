@@ -58,6 +58,23 @@ class Quote(BaseModel):
     notes = models.TextField(blank=True)
     internal_notes = models.TextField(blank=True)  # ← Notas internas no visibles para cliente
     
+    # DESCUENTOS GLOBALES
+    customer_segment_discount = models.ForeignKey(
+        CustomerSegment,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='quotes_with_segment_discount',
+        help_text='Descuento por segmento'
+    )
+    global_discount_type = models.CharField(
+        max_length=10,
+        choices=[('percentage', '%'), ('fixed', '$'), ('none', 'N/A')],
+        default='none'
+    )
+    global_discount_value = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    global_discount_reason = models.CharField(max_length=200, blank=True)
+
     # Totales (cacheados, actualizados por signal)
     _cached_subtotal = models.DecimalField(
         max_digits=12, decimal_places=2, default=0, editable=False
@@ -71,6 +88,20 @@ class Quote(BaseModel):
     _cached_total = models.DecimalField(
         max_digits=12, decimal_places=2, default=0, editable=False
     )
+
+    @property
+    def total_discounts(self):
+        """Suma de descuentos por item + descuento global"""
+        items_discount = sum(item.discount_amount for item in self.items.all())
+
+        if self.global_discount_type == 'percentage':
+            global_disc = self._cached_subtotal * (self.global_discount_value / Decimal('100'))
+        elif self.global_discount_type == 'fixed':
+            global_disc = self.global_discount_value
+        else:
+            global_disc = Decimal('0')
+
+        return items_discount + global_disc
     
     class Meta:
         ordering = ['-date', '-number']

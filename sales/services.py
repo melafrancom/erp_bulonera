@@ -32,6 +32,20 @@ def convert_quote_to_sale(quote, user, modifications=None):
     
     with transaction.atomic():
         # 1. Crear venta
+        global_disc_type = quote.global_discount_type
+        global_disc_val = quote.global_discount_value
+        global_disc_reason = quote.global_discount_reason
+        segment_disc = quote.customer_segment_discount
+
+        # Si el quote no tenía un descuento global explícito pero el cliente tiene un descuento efectivo
+        if global_disc_type == 'none' and quote.customer:
+            effective_disc = quote.customer.get_effective_discount()
+            if effective_disc > 0:
+                global_disc_type = 'percentage'
+                global_disc_val = effective_disc
+                segment_disc = quote.customer.customer_segment
+                global_disc_reason = f"Descuento automático cliente/segmento ({effective_disc}%)"
+
         sale = Sale.objects.create(
             customer=quote.customer,          # ← FK (puede ser null)
             # Copiar datos walk-in del presupuesto
@@ -43,7 +57,11 @@ def convert_quote_to_sale(quote, user, modifications=None):
             created_by=user,
             status='draft',
             notes=quote.notes,
-            internal_notes=f'Convertido desde presupuesto {quote.number}'
+            internal_notes=f'Convertido desde presupuesto {quote.number}',
+            global_discount_type=global_disc_type,
+            global_discount_value=global_disc_val,
+            global_discount_reason=global_disc_reason,
+            customer_segment_discount=segment_disc
         )
         
         # 2. Copiar items

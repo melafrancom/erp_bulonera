@@ -17,11 +17,19 @@ class CustomerSegmentSerializer(serializers.ModelSerializer):
 class CustomerListSerializer(serializers.ModelSerializer):
     """Serializador lista de clientes (campos resumidos)."""
     segment_name = serializers.CharField(source='customer_segment.name', read_only=True)
+    effective_discount = serializers.SerializerMethodField()
     
     class Meta:
         model = Customer
-        fields = ['id', 'business_name', 'trade_name', 'cuit_cuil', 'customer_type', 'segment_name', 'is_active', 'created_at']
+        fields = [
+            'id', 'business_name', 'trade_name', 'cuit_cuil', 'customer_type',
+            'segment_name', 'price_list', 'allow_credit', 'account_modality',
+            'discount_percentage', 'effective_discount', 'is_active', 'created_at'
+        ]
         read_only_fields = ['id', 'created_at']
+
+    def get_effective_discount(self, obj):
+        return str(obj.get_effective_discount())
 
 
 class CustomerDetailSerializer(serializers.ModelSerializer):
@@ -36,6 +44,8 @@ class CustomerDetailSerializer(serializers.ModelSerializer):
     total_purchased = serializers.SerializerMethodField()
     balance = serializers.SerializerMethodField()
     
+    effective_discount = serializers.SerializerMethodField()
+    
     class Meta:
         model = Customer
         fields = [
@@ -43,11 +53,14 @@ class CustomerDetailSerializer(serializers.ModelSerializer):
             'email', 'phone', 'mobile', 'website', 'contact_person',
             'billing_address', 'billing_city', 'billing_state', 'billing_zip_code', 'billing_country',
             'customer_segment', 'price_list', 'payment_term', 'credit_limit', 'discount_percentage',
-            'allow_credit', 'account_modality', 'notes', 'is_active',
+            'effective_discount', 'allow_credit', 'account_modality', 'notes', 'is_active',
             'created_at', 'updated_at', 'created_by', 'updated_by',
             'total_quotes', 'total_sales', 'total_purchased', 'balance'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'created_by', 'updated_by']
+
+    def get_effective_discount(self, obj):
+        return str(obj.get_effective_discount())
     
     def get_total_quotes(self, obj):
         """Retorna cantidad de presupuestos."""

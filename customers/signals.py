@@ -44,7 +44,8 @@ def customer_pre_save(sender, instance, **kwargs):
             monitored_fields = [
                 'business_name', 'email', 'phone', 
                 'tax_condition', 'credit_limit', 'allow_credit',
-                'customer_segment', 'payment_term'
+                'customer_segment', 'payment_term', 'discount_percentage',
+                'account_modality', 'price_list'
             ]
             
             for field in monitored_fields:

@@ -69,6 +69,12 @@ class QuoteSerializer(serializers.ModelSerializer):
     created_by_username = serializers.CharField(source='created_by.username', read_only=True)
     public_url = serializers.SerializerMethodField()
     
+class QuoteSerializer(serializers.ModelSerializer):
+    """Serializer ligero para listados"""
+    customer_display = serializers.CharField(read_only=True)  # usa la @property del modelo
+    created_by_username = serializers.CharField(source='created_by.username', read_only=True)
+    public_url = serializers.SerializerMethodField()
+    
     class Meta:
         model = Quote
         fields = [
@@ -78,6 +84,7 @@ class QuoteSerializer(serializers.ModelSerializer):
             'customer_name', 'customer_phone',      # ← campos walk-in
             'customer_email', 'customer_cuit',
             'created_by', 'created_by_username',
+            'global_discount_type', 'global_discount_value', 'global_discount_reason', 'customer_segment_discount',
             '_cached_subtotal', '_cached_discount', '_cached_tax', '_cached_total',
             'created_at', 'updated_at'
         ]
@@ -117,6 +124,7 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
             'created_by', 'created_by_username',
             'items',
             'notes', 'internal_notes',
+            'global_discount_type', 'global_discount_value', 'global_discount_reason', 'customer_segment_discount',
             '_cached_subtotal', '_cached_discount', '_cached_tax', '_cached_total',
             'subtotal', 'total',
             'is_editable', 'can_be_converted',
@@ -165,6 +173,7 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
             'customer_name', 'customer_phone',      # walk-in
             'customer_email', 'customer_cuit',
             'valid_until', 'notes', 'internal_notes',
+            'global_discount_type', 'global_discount_value', 'global_discount_reason', 'customer_segment_discount',
             'items'
         ]
         read_only_fields = ['id', 'number']
@@ -215,8 +224,21 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
             validated_data['customer_phone'] = ''
             validated_data['customer_email'] = ''
 
+    def _apply_default_customer_discount(self, validated_data):
+        customer = validated_data.get('customer')
+        if customer:
+            disc = customer.get_effective_discount()
+            if disc > 0 and validated_data.get('global_discount_type', 'none') == 'none':
+                validated_data['global_discount_type'] = 'percentage'
+                validated_data['global_discount_value'] = disc
+                if customer.customer_segment:
+                    validated_data['customer_segment_discount'] = customer.customer_segment
+                if not validated_data.get('global_discount_reason'):
+                    validated_data['global_discount_reason'] = f"Descuento automático cliente/segmento ({disc}%)"
+
     def create(self, validated_data):
         self._handle_new_customer(validated_data)
+        self._apply_default_customer_discount(validated_data)
         items_data = validated_data.pop('items', [])
         # Asignar usuario creador desde el request si está disponible
         user = self.context['request'].user if 'request' in self.context else None
@@ -457,6 +479,7 @@ class SaleCreateSerializer(serializers.ModelSerializer):
             'quote',
             'notes', 'internal_notes',
             'delivery_address', 'delivery_date',
+            'global_discount_type', 'global_discount_value', 'global_discount_reason', 'customer_segment_discount',
             'items'
         ]
         read_only_fields = ['id', 'number']
@@ -509,8 +532,21 @@ class SaleCreateSerializer(serializers.ModelSerializer):
             validated_data['customer_phone'] = ''
             validated_data['customer_email'] = ''
 
+    def _apply_default_customer_discount(self, validated_data):
+        customer = validated_data.get('customer')
+        if customer:
+            disc = customer.get_effective_discount()
+            if disc > 0 and validated_data.get('global_discount_type', 'none') == 'none':
+                validated_data['global_discount_type'] = 'percentage'
+                validated_data['global_discount_value'] = disc
+                if customer.customer_segment:
+                    validated_data['customer_segment_discount'] = customer.customer_segment
+                if not validated_data.get('global_discount_reason'):
+                    validated_data['global_discount_reason'] = f"Descuento automático cliente/segmento ({disc}%)"
+
     def create(self, validated_data):
         self._handle_new_customer(validated_data)
+        self._apply_default_customer_discount(validated_data)
         items_data = validated_data.pop('items', [])
         user = self.context['request'].user if 'request' in self.context else None
         if user:
