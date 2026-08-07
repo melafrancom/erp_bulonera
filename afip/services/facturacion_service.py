@@ -19,6 +19,7 @@ from datetime import date
 from decimal import Decimal
 
 from django.utils import timezone
+from django.core.cache import cache
 
 from afip.models import (
     ConfiguracionARCA,
@@ -285,103 +286,107 @@ class FacturacionService:
         """Realiza un intento único de emisión."""
         token, sign = self.obtener_token_acceso()
 
-        # Consultar el próximo número correlativo desde ARCA
-        resultado_nro = self.wsfev1_client.fe_cae_consultar_ult_nro(
-            token=token,
-            sign=sign,
-            cuit=self.empresa_cuit,
-            punto_venta=comprobante.punto_venta,
-            tipo_compr=comprobante.tipo_compr,
-        )
-        if not resultado_nro['success']:
-            return {
-                'success': False,
-                'error': f"No se pudo obtener el último número de ARCA: {resultado_nro['error']}",
-                'cae': None,
-                'fecha_vto_cae': None,
-                'motivos_obs': [],
-            }
-
-        proximo_numero = resultado_nro['ultimo_numero'] + 1
-        logger.info(
-            f"[FacturacionService] Próximo número para tipo {comprobante.tipo_compr} "
-            f"PtoVta {comprobante.punto_venta}: {proximo_numero}"
-        )
-
-        # ── IMPORTANTE: Asignar el número en memoria (sin guardar en BD aún).
-        # Solo se persiste en BD si ARCA devuelve éxito, para evitar
-        # IntegrityError por unique_together en caso de reintentos fallidos.
-        comprobante.numero = proximo_numero
-
-        # Marca como PENDIENTE (sin update_fields de numero todavía)
-        comprobante.estado = 'PENDIENTE'
-        comprobante.save(update_fields=['estado'])
-
-        generador = GeneradorSolicitudFECAE(
-            punto_venta=comprobante.punto_venta,
-            tipo_compr=comprobante.tipo_compr,
-            cuit_empresa=self.empresa_cuit,
-            concepto=self._determinar_concepto(comprobante),
-        )
-        generador.agregar_comprobante(comprobante)
-
-        logger.info(
-            f"[FacturacionService] Enviando {comprobante.numero_completo} "
-            f"→ WSFEv1 ({self.ambiente})"
-        )
-
-
-        resultado = self.wsfev1_client.fe_cae_solicitar(
-            token=token,
-            sign=sign,
-            cuit=self.empresa_cuit,
-            generador=generador,
-        )
-
-        if resultado['success']:
-            comprobante.marcar_como_autorizado(
-                cae=resultado['cae'],
-                fecha_vto_cae=resultado['fecha_vto_cae'],
-                respuesta_json={
-                    'cae': resultado['cae'],
-                    'vencimiento': str(resultado['fecha_vto_cae']),
-                    'advertencias': resultado.get('advertencias', []),
-                },
+        lock_key = f"arca_emit:{comprobante.punto_venta}:{comprobante.tipo_compr}"
+        with cache.lock(lock_key, timeout=90):
+            # Consultar el próximo número correlativo desde ARCA
+            resultado_nro = self.wsfev1_client.fe_cae_consultar_ult_nro(
+                token=token,
+                sign=sign,
+                cuit=self.empresa_cuit,
+                punto_venta=comprobante.punto_venta,
+                tipo_compr=comprobante.tipo_compr,
             )
+            if not resultado_nro['success']:
+                return {
+                    'success': False,
+                    'error': f"No se pudo obtener el último número de ARCA: {resultado_nro['error']}",
+                    'cae': None,
+                    'fecha_vto_cae': None,
+                    'motivos_obs': [],
+                }
+
+            proximo_numero = resultado_nro['ultimo_numero'] + 1
             logger.info(
-                f"[FacturacionService] ✅ CAE obtenido: {resultado['cae']} "
-                f"(vence: {resultado['fecha_vto_cae']})"
-            )
-            self._log(
-                tipo='FE_AUTORIZAR',
-                comprobante=comprobante,
-                response_code=200,
-                response_xml=resultado.get('respuesta_completa', ''),
-            )
-        else:
-            error_msg = resultado.get('error', 'Error desconocido')
-            comprobante.marcar_como_rechazado(
-                error_msg=error_msg,
-                respuesta_json={
-                    'error': error_msg,
-                    'observaciones': resultado.get('motivos_obs', []),
-                },
-            )
-            logger.error(f"[FacturacionService] ❌ Rechazado: {error_msg}")
-            self._log(
-                tipo='FE_ERROR',
-                comprobante=comprobante,
-                error=error_msg,
-                response_xml=resultado.get('respuesta_completa', ''),
+                f"[FacturacionService] Próximo número para tipo {comprobante.tipo_compr} "
+                f"PtoVta {comprobante.punto_venta}: {proximo_numero}"
             )
 
-        return {
-            'success':       resultado['success'],
-            'cae':           resultado.get('cae'),
-            'fecha_vto_cae': resultado.get('fecha_vto_cae'),
-            'error':         resultado.get('error'),
-            'motivos_obs':   resultado.get('motivos_obs', []),
-        }
+            # ── IMPORTANTE: Asignar el número en memoria (sin guardar en BD aún).
+            # Solo se persiste en BD si ARCA devuelve éxito, para evitar
+            # IntegrityError por unique_together en caso de reintentos fallidos.
+            comprobante.numero = proximo_numero
+
+            # Marca como PENDIENTE (sin update_fields de numero todavía)
+            comprobante.estado = 'PENDIENTE'
+            comprobante.save(update_fields=['estado'])
+
+            generador = GeneradorSolicitudFECAE(
+                punto_venta=comprobante.punto_venta,
+                tipo_compr=comprobante.tipo_compr,
+                cuit_empresa=self.empresa_cuit,
+                concepto=self._determinar_concepto(comprobante),
+            )
+            generador.agregar_comprobante(comprobante)
+            soap = self.wsfev1_client._construir_soap_fe_cae_solicitar(token, sign, self.empresa_cuit, generador)
+
+            logger.info(
+                f"[FacturacionService] Enviando {comprobante.numero_completo} "
+                f"→ WSFEv1 ({self.ambiente})"
+            )
+
+            resultado = self.wsfev1_client.fe_cae_solicitar(
+                token=token,
+                sign=sign,
+                cuit=self.empresa_cuit,
+                generador=generador,
+            )
+
+            if resultado['success']:
+                comprobante.marcar_como_autorizado(
+                    cae=resultado['cae'],
+                    fecha_vto_cae=resultado['fecha_vto_cae'],
+                    respuesta_json={
+                        'cae': resultado['cae'],
+                        'vencimiento': str(resultado['fecha_vto_cae']),
+                        'advertencias': resultado.get('advertencias', []),
+                    },
+                )
+                logger.info(
+                    f"[FacturacionService] ✅ CAE obtenido: {resultado['cae']} "
+                    f"(vence: {resultado['fecha_vto_cae']})"
+                )
+                self._log(
+                    tipo='FE_AUTORIZAR',
+                    comprobante=comprobante,
+                    request_xml=soap,
+                    response_code=200,
+                    response_xml=resultado.get('respuesta_completa', ''),
+                )
+            else:
+                error_msg = resultado.get('error', 'Error desconocido')
+                comprobante.marcar_como_rechazado(
+                    error_msg=error_msg,
+                    respuesta_json={
+                        'error': error_msg,
+                        'observaciones': resultado.get('motivos_obs', []),
+                    },
+                )
+                logger.error(f"[FacturacionService] ❌ Rechazado: {error_msg}")
+                self._log(
+                    tipo='FE_ERROR',
+                    comprobante=comprobante,
+                    request_xml=soap,
+                    error=error_msg,
+                    response_xml=resultado.get('respuesta_completa', ''),
+                )
+
+            return {
+                'success':       resultado['success'],
+                'cae':           resultado.get('cae'),
+                'fecha_vto_cae': resultado.get('fecha_vto_cae'),
+                'error':         resultado.get('error'),
+                'motivos_obs':   resultado.get('motivos_obs', []),
+            }
     
     def _validar_comprobante(self, comprobante: Comprobante) -> None:
         """

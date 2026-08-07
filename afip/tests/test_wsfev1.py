@@ -198,6 +198,35 @@ class TestParsearFECAESolicitar(TestCase):
         self.assertFalse(result['success'])
         self.assertIsNotNone(result['error'])
 
+    def test_parsea_eventos_ar_evt(self):
+        client = self._make_client()
+        xml = """<?xml version="1.0" encoding="utf-8"?>
+        <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ar="http://ar.gov.afip.dif.FEV1/">
+          <soap:Header><FEHeaderInfo xmlns="http://ar.gov.afip.dif.FEV1/"><ambiente>Produccion</ambiente></FEHeaderInfo></soap:Header>
+          <soap:Body>
+            <FECAESolicitarResponse xmlns="http://ar.gov.afip.dif.FEV1/">
+              <FECAESolicitarResult>
+                <FeCabResp><Resultado>A</Resultado></FeCabResp>
+                <FeDetResp>
+                  <FECAEDetResponse>
+                    <CAE>74312345678901</CAE>
+                    <CAEFchVto>20260815</CAEFchVto>
+                  </FECAEDetResponse>
+                </FeDetResp>
+                <Events>
+                  <Evt>
+                    <Code>39</Code>
+                    <Msg>A partir del 01/09/2026 debera informar el campo CondicionIVAReceptorId</Msg>
+                  </Evt>
+                </Events>
+              </FECAESolicitarResult>
+            </FECAESolicitarResponse>
+          </soap:Body>
+        </soap:Envelope>"""
+        result = client._parsear_fe_cae_solicitar(xml)
+        self.assertTrue(result['success'])
+        self.assertIn('[Evt-39] A partir del 01/09/2026 debera informar el campo CondicionIVAReceptorId', result['advertencias'])
+
 
 # ============================================================================
 # Tests para _parsear_consultar_ult_nro

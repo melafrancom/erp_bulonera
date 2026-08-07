@@ -409,14 +409,23 @@ def anular_factura_y_venta(invoice_id, user):
         orig_comp = invoice.comprobante_arca
         
         with transaction.atomic():
-            # 1. Crear el Comprobante de NC (Número 0 como placeholder, FacturacionService asignará el real)
+            # Determinar número provisional para evitar IntegrityError en Comprobante
+            ultimo_num_arca = Comprobante.objects.filter(
+                empresa_cuit=orig_comp.empresa_cuit,
+                tipo_compr=nc_tipo,
+                punto_venta=orig_comp.punto_venta
+            ).aggregate(Max('numero'))['numero__max'] or 0
+            numero_borrador_arca = ultimo_num_arca + 1
+
+            # 1. Crear el Comprobante de NC (placeholder dinámico Max+1, FacturacionService asignará el definitivo)
             nc_comp = Comprobante.objects.create(
                 empresa_cuit=orig_comp.empresa_cuit,
                 sale=orig_comp.sale,
                 tipo_compr=nc_tipo,
                 punto_venta=orig_comp.punto_venta,
-                numero=0,
+                numero=numero_borrador_arca,
                 fecha_compr=date.today(),
+                condicion_iva_receptor=orig_comp.condicion_iva_receptor,
                 doc_cliente_tipo=orig_comp.doc_cliente_tipo,
                 doc_cliente=orig_comp.doc_cliente,
                 razon_social_cliente=orig_comp.razon_social_cliente,

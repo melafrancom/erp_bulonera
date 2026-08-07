@@ -1,3 +1,5 @@
+from datetime import date
+from unittest.mock import patch
 from django.test import TestCase
 from bills.services import facturar_venta
 from sales.models import Sale
@@ -106,6 +108,83 @@ class TestInvoiceDownloadView(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('Nota_de_Credito', response['Content-Disposition'])
         self.assertIn(self.invoice.number, response['Content-Disposition'])
+
+    def test_views_require_login(self):
+        """Descarga, reintento y anulación requieren inicio de sesión (302)"""
+        self.client.logout()
+        url_pdf = reverse('bills_web:invoice_pdf', args=[self.invoice.pk])
+        url_retry = reverse('bills_web:invoice_retry', args=[self.invoice.pk])
+        url_cancel = reverse('bills_web:invoice_cancel', args=[self.invoice.pk])
+
+        self.assertEqual(self.client.get(url_pdf).status_code, 302)
+        self.assertEqual(self.client.post(url_retry).status_code, 302)
+        self.assertEqual(self.client.post(url_cancel).status_code, 302)
+
+    def test_retry_and_cancel_require_post(self):
+        """Reintento y anulación deben rechazar método GET (405 Method Not Allowed)"""
+        url_retry = reverse('bills_web:invoice_retry', args=[self.invoice.pk])
+        url_cancel = reverse('bills_web:invoice_cancel', args=[self.invoice.pk])
+
+        self.assertEqual(self.client.get(url_retry).status_code, 405)
+        self.assertEqual(self.client.get(url_cancel).status_code, 405)
+
+
+class TestAnularFacturaNC(TestCase):
+    """Pruebas de anulación de factura y propagación de condición IVA en Nota de Crédito"""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='testadmin', password='password')
+        self.config = ConfiguracionARCA.objects.create(
+            empresa_cuit='20180545574',
+            punto_venta=1,
+            activo=True
+        )
+
+    @patch('afip.services.facturacion_service.FacturacionService.emitir_comprobante')
+    def test_anular_factura_propaga_condicion_iva_receptor(self, mock_emitir):
+        from bills.services import anular_factura_y_venta
+        from afip.models import Comprobante
+
+        mock_emitir.return_value = {
+            'success': True,
+            'cae': '74000000000001',
+            'fecha_vto_cae': date(2026, 8, 20),
+        }
+
+        orig_comp = Comprobante.objects.create(
+            empresa_cuit=self.config,
+            tipo_compr=1, # Factura A
+            punto_venta=1,
+            numero=10,
+            fecha_compr=date.today(),
+            condicion_iva_receptor=1, # RI
+            doc_cliente_tipo=80,
+            doc_cliente='30711111112',
+            razon_social_cliente='Cliente RI SA',
+            monto_neto=Decimal('100.00'),
+            monto_iva=Decimal('21.00'),
+            monto_total=Decimal('121.00'),
+            estado='AUTORIZADO',
+            cae='74000000000000'
+        )
+
+        invoice = Invoice.objects.create(
+            comprobante_arca=orig_comp,
+            tipo_comprobante=1,
+            punto_venta=1,
+            numero_secuencial=10,
+            number='0001-00000010',
+            estado_fiscal='autorizada',
+            total=Decimal('121.00')
+        )
+
+        res = anular_factura_y_venta(invoice.id, self.user)
+        self.assertTrue(res['success'])
+
+        nc_comp = Comprobante.objects.filter(tipo_compr=3).first() # NC A
+        self.assertIsNotNone(nc_comp)
+        self.assertEqual(nc_comp.condicion_iva_receptor, 1)
+        self.assertGreaterEqual(nc_comp.numero, 1) # No es 0 (MED-02)
 
 class TestRegistroManualTicket(TestCase):
     """Pruebas para registro manual de tickets fiscales"""

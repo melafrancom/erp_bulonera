@@ -403,15 +403,22 @@ class WSFEv1Client:
             except ValueError:
                 logger.warning(f"[WSFEv1] No se pudo parsear CAEFchVto: '{cae_vto}'")
 
-        # Advertencias (no bloquean la autorización)
+        # Advertencias u Observaciones / Eventos (no bloquean la autorización)
         advertencias = []
         for obs in root.findall('.//ar:Obs', ns):
             code = self._text(obs, 'ar:Code', ns)
             msg  = self._text(obs, 'ar:Msg', ns)
             if msg:
                 advertencias.append(f"[{code}] {msg}")
+
+        for evt in root.findall('.//ar:Evt', ns):
+            code = self._text(evt, 'ar:Code', ns)
+            msg  = self._text(evt, 'ar:Msg', ns)
+            if msg:
+                advertencias.append(f"[Evt-{code}] {msg}")
+
         if advertencias:
-            logger.warning(f"[WSFEv1] Advertencias ARCA: {' | '.join(advertencias)}")
+            logger.warning(f"[WSFEv1] Advertencias/Eventos ARCA: {' | '.join(advertencias)}")
 
         return {
             'success':           True,
