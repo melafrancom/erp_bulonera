@@ -150,13 +150,36 @@ def emitir_comprobante_async(self, comprobante_id: int, empresa_cuit: str) -> di
         try:
             raise self.retry(exc=exc, countdown=BACKOFF_CELERY * (self.request.retries + 1))
         except MaxRetriesExceededError:
+            error_msg = f"Agotados reintentos Celery ({self.max_retries}): {exc}"
             logger.error(
                 f"[Celery/afip] Agotados {self.max_retries} reintentos para "
                 f"comprobante {comprobante_id}: {exc}"
             )
+            # Marcar comprobante e invoice/sale como rechazados para evitar limbo PENDIENTE
+            try:
+                from bills.models import Invoice
+                from afip.models import Comprobante
+                from sales.models import Sale
+
+                comprobante = Comprobante.objects.get(pk=comprobante_id)
+                comprobante.marcar_como_rechazado(
+                    error_msg=error_msg,
+                    respuesta_json={'error': error_msg}
+                )
+                invoice = Invoice.objects.filter(comprobante_arca=comprobante).first()
+                if invoice:
+                    invoice.estado_fiscal = 'rechazada'
+                    invoice.observaciones_afip = error_msg
+                    invoice.save(update_fields=['estado_fiscal', 'observaciones_afip'])
+
+                if comprobante.sale_id:
+                    Sale.objects.filter(pk=comprobante.sale_id).update(fiscal_status='rejected')
+            except Exception as mark_exc:
+                logger.exception(f"[Celery/afip] Error marcando rechazo tras MaxRetriesExceeded: {mark_exc}")
+
             return {
                 'success': False,
-                'error': f"Agotados reintentos Celery: {exc}",
+                'error': error_msg,
                 'cae': None,
                 'fecha_vto_cae': None,
             }

@@ -339,6 +339,7 @@ class FacturacionService:
                 sign=sign,
                 cuit=self.empresa_cuit,
                 generador=generador,
+                soap=soap,
             )
 
             if resultado['success']:

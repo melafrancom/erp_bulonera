@@ -346,6 +346,7 @@ def reintentar_factura(invoice_id):
     Reintenta la emisión en ARCA de una factura que quedó borrador/rechazada.
     """
     from afip.services.facturacion_service import FacturacionService
+    from bills.models import Invoice
     
     invoice = Invoice.objects.select_related('comprobante_arca').get(id=invoice_id)
     comprobante = invoice.comprobante_arca

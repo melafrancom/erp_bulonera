@@ -286,6 +286,7 @@ class WSFEv1Client:
         cuit: str,
         generador: GeneradorSolicitudFECAE,
         timeout: int = WSFEV1_TIMEOUT_SECONDS,
+        soap: Optional[str] = None,
     ) -> dict:
         """
         Solicita CAE para los comprobantes en el generador.
@@ -296,6 +297,7 @@ class WSFEv1Client:
             cuit:      CUIT de la empresa emisora (sin guiones)
             generador: Objeto GeneradorSolicitudFECAE con comprobantes cargados
             timeout:   Timeout HTTP
+            soap:      SOAP XML preconstruido opcional
 
         Returns:
             dict con claves: success, cae, fecha_vto_cae, motivos_obs,
@@ -304,7 +306,7 @@ class WSFEv1Client:
         if generador.cantidad_registros == 0:
             return self._error_result("No hay comprobantes en el generador")
 
-        soap = self._construir_soap_fe_cae_solicitar(token, sign, cuit, generador)
+        soap = soap or self._construir_soap_fe_cae_solicitar(token, sign, cuit, generador)
         logger.info(
             f"[WSFEv1] FECAESolicitar → {self.endpoint} "
             f"(PtoVta={generador.punto_venta}, Tipo={generador.tipo_compr}, "

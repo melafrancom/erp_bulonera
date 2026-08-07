@@ -186,6 +186,57 @@ class TestAnularFacturaNC(TestCase):
         self.assertEqual(nc_comp.condicion_iva_receptor, 1)
         self.assertGreaterEqual(nc_comp.numero, 1) # No es 0 (MED-02)
 
+
+class TestReintentarFactura(TestCase):
+    """Pruebas para la función reintentar_factura()"""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='retryuser', password='password')
+        self.config = ConfiguracionARCA.objects.create(
+            empresa_cuit='20180545574',
+            punto_venta=1,
+            activo=True
+        )
+
+    @patch('afip.services.facturacion_service.FacturacionService.emitir_comprobante')
+    def test_reintentar_factura_ejecuta_correctamente_sin_nameerror(self, mock_emitir):
+        from bills.services import reintentar_factura
+        from afip.models import Comprobante
+
+        mock_emitir.return_value = {
+            'success': True,
+            'cae': '74111111111111',
+            'fecha_vto_cae': date(2026, 8, 30),
+        }
+
+        comp = Comprobante.objects.create(
+            empresa_cuit=self.config,
+            tipo_compr=6, # Factura B
+            punto_venta=1,
+            numero=1,
+            fecha_compr=date.today(),
+            doc_cliente_tipo=99,
+            doc_cliente='0',
+            monto_neto=Decimal('100.00'),
+            monto_iva=Decimal('21.00'),
+            monto_total=Decimal('121.00'),
+            estado='RECHAZADO'
+        )
+
+        invoice = Invoice.objects.create(
+            comprobante_arca=comp,
+            tipo_comprobante=6,
+            punto_venta=1,
+            numero_secuencial=1,
+            number='0001-00000001',
+            estado_fiscal='rechazada',
+            total=Decimal('121.00')
+        )
+
+        res = reintentar_factura(invoice.id)
+        self.assertTrue(res['success'])
+        self.assertIn('emitida y autorizada', res['message'])
+
 class TestRegistroManualTicket(TestCase):
     """Pruebas para registro manual de tickets fiscales"""
 
