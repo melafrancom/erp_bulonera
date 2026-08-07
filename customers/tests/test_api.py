@@ -50,7 +50,8 @@ class CustomerCreditAPITests(APITestCase):
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        data = response.json()
+        res_json = response.json()
+        data = res_json.get('data', res_json) if isinstance(res_json, dict) else res_json
         self.assertEqual(data['customer_id'], self.customer.id)
         self.assertEqual(data['account_modality'], 'informal')
         self.assertEqual(data['credit_limit'], '50000.00')

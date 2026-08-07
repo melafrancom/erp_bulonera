@@ -68,9 +68,19 @@
         {% endif %}
 
         {% if user.can_manage_customers or user.is_admin or user.is_manager %}
-        <a href="{% url 'customers:customer_list' %}" class="nav-item {% if 'customers' in request.path %}active{% endif %}">
+        <a href="{% url 'customers:customer_list' %}" class="nav-item {% if 'customers' in request.path and not 'segments' in request.path and not 'import' in request.path %}active{% endif %}">
           <i data-lucide="users" class="w-5 h-5"></i>
           <span>Clientes</span>
+        </a>
+
+        <a href="{% url 'customers:segment_list' %}" class="nav-item {% if 'segments' in request.path %}active{% endif %}">
+          <i data-lucide="tags" class="w-5 h-5"></i>
+          <span>Segmentos de Clientes</span>
+        </a>
+
+        <a href="{% url 'customers:customer_import' %}" class="nav-item {% if 'customers/import' in request.path %}active{% endif %}">
+          <i data-lucide="upload" class="w-5 h-5"></i>
+          <span>Importar Clientes</span>
         </a>
         {% endif %}
       </div>

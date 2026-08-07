@@ -16,10 +16,11 @@ El módulo `afip` es el componente de integración de bajo nivel con los servici
 *   **`ComprobRenglon`**: Detalle del renglón impositivo del comprobante (cantidad, descripción, precio unitario, alícuota de IVA). Hereda de `models.Model` (Soft-delete: No).
 *   **`LogARCA`**: Registro histórico inmutable de auditoría. Almacena las peticiones (`request_xml`) y respuestas (`response_xml`) crudas con códigos de error devueltos. Hereda de `models.Model` (Soft-delete: No).
 
-## ⚡ Servicios Críticos
+## ⚡ Servicios Críticos y Tareas Async
 *   `WSAAService`: Maneja la autenticación segura. Lee el certificado `.pem` y la clave privada de la empresa, genera un requerimiento de ticket de acceso (TRA) firmado digitalmente mediante CMS (PKCS#7) y solicita el token y sign a la AFIP.
-*   `FacturacionService`: Consume el Web Service WSFEv1. Valida el token WSAA, genera la estructura SOAP requerida por AFIP, realiza la llamada a través de `zeep` utilizando el WSDL local y parsea la respuesta.
+*   `FacturacionService`: Consume el Web Service WSFEv1. Valida el token WSAA, serializa la asignación de números vía `cache.lock` (evitando condiciones de carrera), genera la estructura SOAP requerida por AFIP, registra `request_xml` en `LogARCA` y parsea la respuesta.
 *   `PadronService`: Permite consultar el CUIT de un cliente ante la AFIP para obtener su razón social, domicilio fiscal y condición de IVA actual de forma automática.
+*   `emitir_comprobante_async` (Celery Task en `afip/tasks.py`): Ejecuta la emisión asíncrona. Si se agotan los reintentos (`MaxRetriesExceededError`), actualiza el comprobante a `RECHAZADO` e `Invoice` a `rechazada` para evitar estados atascados en `PENDIENTE`.
 
 ## 🌐 Vistas y APIs
 

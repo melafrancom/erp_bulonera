@@ -18,8 +18,8 @@ El módulo `bills` gestiona la facturación legal y fiscal de **Bulonera Alvear*
 ## ⚡ Servicios Críticos (`services.py`)
 La interacción fiscal se centraliza en los siguientes servicios atómicos:
 *   `facturar_venta(sale, user, tipo_comprobante=None, async_emission=True)`: Valida la venta, genera la factura borrador y encola la autorización ante la AFIP mediante Celery.
-*   `reintentar_factura(invoice_id)`: Reintenta la emisión ante la AFIP de facturas que quedaron en estado de error o borrador.
-*   `anular_factura_y_venta(invoice_id, user)`: Emite una Nota de Crédito automática en AFIP (si la factura original estaba autorizada), cancela la venta (devolviendo stock) y libera los pagos asignados a la misma.
+*   `reintentar_factura(invoice_id)`: Reintenta la emisión ante la AFIP de facturas que quedaron en estado de error o borrador (garantizando importación limpia de `Invoice`).
+*   `anular_factura_y_venta(invoice_id, user)`: Emite una Nota de Crédito automática en AFIP (si la factura original estaba autorizada, propagando la `condicion_iva_receptor` según RG 5616 y usando un número borrador dinámico provisional), cancela la venta (devolviendo stock) y libera los pagos asignados a la misma.
 *   `register_manual_ticket(sale, user, punto_venta, numero_ticket, tipo_comprobante)`: Registra comprobantes emitidos por hardware controlador fiscal físico (omitiendo la comunicación digital con AFIP).
 
 ## 🌐 Vistas y APIs
@@ -32,8 +32,11 @@ Base URL: `/api/v1/bills/`
 *   `POST /api/v1/bills/bills/register_ticket/` - Registrar ticket manual de máquina fiscal.
 
 ### Vistas Web (`web/urls.py`)
-*   `GET /bills/` - Panel de control de facturación, estado del CAE, y descarga de PDFs de facturas.
-*   `GET /bills/export/` - Generación de archivos TXT y CSV para la exportación de libros de IVA Ventas.
+Todas las vistas de acción y descarga requieren autenticación (`@login_required`) y las mutaciones exigen verbo HTTP POST (`@require_POST`).
+*   `GET /bills/facturas/` - Panel de control de facturación, estado del CAE, y descarga de PDFs de facturas.
+*   `GET /bills/facturas/<pk>/pdf/` - Descarga de PDF de comprobantes autorizados o anulados (requiere login).
+*   `POST /bills/facturas/<pk>/reintentar/` - Reintento manual de emisión fiscal para borradores o rechazadas.
+*   `POST /bills/facturas/<pk>/anular/` - Anulación segura de factura y emisión de Nota de Crédito.
 
 ## 📝 Documentación de Detalle
 *   [Integración Fiscal y Notas de Crédito](docs/afip_integration.md): Flujo asíncrono con Celery, mapeo de impuestos de la AFIP y lógica de reversión de saldos por anulación.

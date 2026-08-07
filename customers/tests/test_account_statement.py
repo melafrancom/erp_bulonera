@@ -11,13 +11,14 @@ from customers.exporters import export_account_statement_excel, export_account_s
 
 
 @pytest.fixture
-def customer(db):
+def customer(db, admin_user):
     return Customer.objects.create(
         business_name="Ferretería Central SRL",
-        cuit_cuil="30-71123456-8",
+        cuit_cuil="30711234566",
         allow_credit=True,
         credit_limit=Decimal('100000.00'),
-        account_modality='formal'
+        account_modality='formal',
+        created_by=admin_user
     )
 
 
@@ -175,9 +176,10 @@ class TestCustomerAccountStatementWebAndAPI:
     def test_api_account_statement_endpoint(self, client, admin_user, customer, sample_sales_and_payments):
         client.force_login(admin_user)
         url = f"/api/v1/customers/{customer.pk}/statement/"
-        response = client.get(url)
+        response = client.get(url, HTTP_ACCEPT='application/json')
         assert response.status_code == 200
-        data = response.json()
+        res_json = response.json()
+        data = res_json.get('data', res_json) if isinstance(res_json, dict) else res_json
         assert data['customer_id'] == customer.id
         assert data['saldo_final'] == '11000.00'
         assert len(data['movements']) == 3
