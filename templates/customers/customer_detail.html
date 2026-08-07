@@ -19,16 +19,14 @@
             </div>
         </div>
         <div class="flex gap-2">
-            {% if customer.allow_credit %}
-            <a href="{% url 'customers:customer_credit' customer.pk %}" class="inline-flex items-center px-4 py-2 border border-blue-300 dark:border-blue-700/50 rounded-md shadow-sm text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all">
+            <a href="{% url 'customers:customer_credit' customer.pk %}" class="inline-flex items-center px-4 py-2 border border-blue-300 dark:border-blue-700/50 rounded-md shadow-sm text-sm font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all">
                 <i data-lucide="credit-card" class="h-4 w-4 mr-2"></i>
                 Cuenta Corriente
             </a>
-            <a href="{% url 'customers:customer_account_statement' customer.pk %}" class="inline-flex items-center px-4 py-2 border border-indigo-300 dark:border-indigo-700/50 rounded-md shadow-sm text-sm font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all">
+            <a href="{% url 'customers:customer_account_statement' customer.pk %}" class="inline-flex items-center px-4 py-2 border border-indigo-300 dark:border-indigo-700/50 rounded-md shadow-sm text-sm font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all">
                 <i data-lucide="list-ordered" class="h-4 w-4 mr-2"></i>
                 Mayor de Cuentas
             </a>
-            {% endif %}
             <a href="{% url 'customers:customer_update' customer.pk %}" class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all">
                 <i data-lucide="edit-2" class="h-4 w-4 mr-2"></i>
                 Editar
@@ -41,6 +39,24 @@
                 Volver
             </a>
         </div>
+    </div>
+
+    <!-- Navigation Tabs Bar -->
+    <div class="border-b border-gray-200 dark:border-slate-700">
+        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+            <a href="{% url 'customers:customer_detail' customer.pk %}" class="border-blue-500 text-blue-600 dark:text-blue-400 whitespace-nowrap py-3 px-1 border-b-2 font-bold text-sm flex items-center">
+                <i data-lucide="user" class="w-4 h-4 mr-2"></i>
+                Ficha General
+            </a>
+            <a href="{% url 'customers:customer_credit' customer.pk %}" class="border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300 dark:hover:border-slate-600 whitespace-nowrap py-3 px-1 border-b-2 font-bold text-sm flex items-center transition-colors">
+                <i data-lucide="credit-card" class="w-4 h-4 mr-2"></i>
+                Estado y Crédito Cta. Cte.
+            </a>
+            <a href="{% url 'customers:customer_account_statement' customer.pk %}" class="border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300 dark:hover:border-slate-600 whitespace-nowrap py-3 px-1 border-b-2 font-bold text-sm flex items-center transition-colors">
+                <i data-lucide="list-ordered" class="w-4 h-4 mr-2"></i>
+                Mayor de Movimientos
+            </a>
+        </nav>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

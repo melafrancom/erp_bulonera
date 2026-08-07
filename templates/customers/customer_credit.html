@@ -18,7 +18,7 @@
             </p>
         </div>
         <div class="flex gap-2">
-            <a href="{% url 'customers:customer_account_statement' customer.pk %}" class="inline-flex items-center px-4 py-2 border border-blue-600 rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-all">
+            <a href="{% url 'customers:customer_account_statement' customer.pk %}" class="inline-flex items-center px-4 py-2 border border-blue-600 rounded-md shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all">
                 <i data-lucide="list-ordered" class="h-4 w-4 mr-2"></i>
                 Ver Mayor de Cuentas
             </a>
@@ -27,6 +27,24 @@
                 Ver Ficha de Cliente
             </a>
         </div>
+    </div>
+
+    <!-- Navigation Tabs Bar -->
+    <div class="border-b border-gray-200 dark:border-slate-700">
+        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+            <a href="{% url 'customers:customer_detail' customer.pk %}" class="border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300 dark:hover:border-slate-600 whitespace-nowrap py-3 px-1 border-b-2 font-bold text-sm flex items-center transition-colors">
+                <i data-lucide="user" class="w-4 h-4 mr-2"></i>
+                Ficha General
+            </a>
+            <a href="{% url 'customers:customer_credit' customer.pk %}" class="border-blue-500 text-blue-600 dark:text-blue-400 whitespace-nowrap py-3 px-1 border-b-2 font-bold text-sm flex items-center">
+                <i data-lucide="credit-card" class="w-4 h-4 mr-2"></i>
+                Estado y Crédito Cta. Cte.
+            </a>
+            <a href="{% url 'customers:customer_account_statement' customer.pk %}" class="border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300 dark:hover:border-slate-600 whitespace-nowrap py-3 px-1 border-b-2 font-bold text-sm flex items-center transition-colors">
+                <i data-lucide="list-ordered" class="w-4 h-4 mr-2"></i>
+                Mayor de Movimientos
+            </a>
+        </nav>
     </div>
 
     <!-- Summary Cards -->

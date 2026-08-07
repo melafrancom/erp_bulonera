@@ -1,0 +1,60 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Confirmar Refacturación: {{ sale.number }} - ERP Bulonera{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100">Confirmar Refacturación de Venta</h1>
+            <p class="text-sm text-gray-500 dark:text-slate-400 mt-1">
+                Cliente: <strong class="text-gray-800 dark:text-slate-200">{{ customer.business_name }}</strong>
+            </p>
+        </div>
+        <a href="{% url 'customers:customer_credit' customer.pk %}" class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-md text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 transition-all">
+            <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>Volver
+        </a>
+    </div>
+
+    <!-- Details Card -->
+    <div class="bg-white dark:bg-slate-800 shadow rounded-xl p-6 border border-gray-200 dark:border-slate-700 space-y-6">
+        <div class="flex items-center space-x-3 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 p-4 rounded-lg border border-amber-200 dark:border-amber-800/50">
+            <i data-lucide="alert-triangle" class="w-6 h-6 flex-shrink-0"></i>
+            <p class="text-sm">
+                Esta acción recalculará los precios de todos los productos de la venta <strong>{{ sale.number }}</strong> según la lista de precios vigente y actualizará el saldo debitado en la cuenta corriente del cliente.
+            </p>
+        </div>
+
+        <dl class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+                <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Comprobante</dt>
+                <dd class="text-base font-bold text-gray-900 dark:text-slate-100 mt-1">{{ sale.number }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Fecha Original</dt>
+                <dd class="text-base font-bold text-gray-900 dark:text-slate-100 mt-1">{{ sale.date|date:"d/m/Y H:i" }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Total Actual Registrado</dt>
+                <dd class="text-base font-bold text-red-600 dark:text-red-400 mt-1">${{ sale.total|floatformat:2 }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Estado Fiscal</dt>
+                <dd class="text-base font-bold text-gray-900 dark:text-slate-100 mt-1">{{ sale.get_fiscal_status_display }}</dd>
+            </div>
+        </dl>
+
+        <form method="post" class="pt-4 border-t border-gray-200 dark:border-slate-700 flex justify-end space-x-3">
+            {% csrf_token %}
+            <a href="{% url 'customers:customer_credit' customer.pk %}" class="px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-md text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 transition-all">
+                Cancelar
+            </a>
+            <button type="submit" class="px-5 py-2 border border-transparent rounded-md text-sm font-bold text-white bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600 shadow-sm transition-all flex items-center">
+                <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i>
+                Confirmar Refacturación
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
