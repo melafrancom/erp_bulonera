@@ -70,21 +70,32 @@ class User(BaseModel, AbstractUser):
     def is_viewer(self):
         return self.role == 'viewer' or self.is_operator
 
+    def sync_permissions_from_role(self):
+        """Establece los flags can_manage_* automáticamente según el rol."""
+        if self.role in ('admin', 'manager'):
+            self.can_manage_products = True
+            self.can_manage_customers = True
+            self.can_manage_suppliers = True
+            self.can_manage_sales = True
+            self.can_manage_quotes = True
+            self.can_manage_inventory = True
+            self.can_manage_payments = True
+            self.can_manage_bills = True
+            self.can_manage_expenses = True
+            self.can_view_reports = True
+            if self.role == 'admin':
+                self.can_manage_users = True
+            else:
+                self.can_manage_users = False
+
     def save(self, *args, **kwargs):
         if self._state.adding:
-            if self.role in ('admin', 'manager'):
-                self.can_manage_products = True
-                self.can_manage_customers = True
-                self.can_manage_suppliers = True
-                self.can_manage_sales = True
-                self.can_manage_quotes = True
-                self.can_manage_inventory = True
-                self.can_manage_payments = True
-                self.can_manage_bills = True
-                self.can_manage_expenses = True
-                self.can_view_reports = True
-                if self.role == 'admin':
-                    self.can_manage_users = True
+            self.sync_permissions_from_role()
+        else:
+            if self.pk:
+                orig_role = User.all_objects.filter(pk=self.pk).values_list('role', flat=True).first()
+                if orig_role and orig_role != self.role:
+                    self.sync_permissions_from_role()
         super().save(*args, **kwargs)
     
     def clean(self):
@@ -128,12 +139,23 @@ class User(BaseModel, AbstractUser):
     def restore(self, user=None):
         """
         Override restore para recuperar username y email originales.
+        Valida unicidad previa para evitar colisiones con usuarios activos.
         """
+        from django.core.exceptions import ValidationError
         prefix = f"__deleted_{self.pk}_"
-        if self.username.startswith(prefix):
-            self.username = self.username[len(prefix):]
-        if self.email and self.email.startswith(prefix):
-            self.email = self.email[len(prefix):]
+        target_username = self.username[len(prefix):] if self.username.startswith(prefix) else self.username
+        target_email = self.email[len(prefix):] if (self.email and self.email.startswith(prefix)) else self.email
+
+        # Validar colisión de username
+        if User.all_objects.filter(username=target_username, deleted_at__isnull=True).exclude(pk=self.pk).exists():
+            raise ValidationError(f"No se puede restaurar: El username '{target_username}' ya está en uso por un usuario activo.")
+
+        # Validar colisión de email
+        if target_email and User.all_objects.filter(email__iexact=target_email, deleted_at__isnull=True).exclude(pk=self.pk).exists():
+            raise ValidationError(f"No se puede restaurar: El email '{target_email}' ya está en uso por un usuario activo.")
+
+        self.username = target_username
+        self.email = target_email
         # Llamar al restore del padre
         super().restore(user=user)
 

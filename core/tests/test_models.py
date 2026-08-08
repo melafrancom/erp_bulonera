@@ -86,6 +86,34 @@ class UserModelTests(TestCase):
         self.assertTrue(manager.can_manage_products)
         self.assertFalse(manager.can_manage_users)  # Solo admin
 
+    def test_promocion_rol_sincroniza_flags(self):
+        """TC-005B: Promover operador a manager actualiza los flags can_manage_* en save()"""
+        operator = User.objects.create_user(username='op_to_mgr', password='x', role='operator')
+        self.assertFalse(operator.can_manage_payments)
+        self.assertFalse(operator.can_manage_products)
+
+        # Promover a manager
+        operator.role = 'manager'
+        operator.save()
+
+        # Flags deben actualizarse a True
+        self.assertTrue(operator.can_manage_payments)
+        self.assertTrue(operator.can_manage_products)
+
+    def test_restaurar_usuario_colision_falla(self):
+        """TC-005C: Restaurar usuario cuya credencial fue tomada lanza ValidationError"""
+        from django.core.exceptions import ValidationError
+        
+        old_user = User.objects.create_user(username='john', email='john@example.com', password='x')
+        old_user.delete(user=self.admin)
+
+        # Crear nuevo usuario activo ocupando el mismo username
+        User.objects.create_user(username='john', email='newjohn@example.com', password='x')
+
+        # Intentar restaurar old_user debe lanzar ValidationError
+        with self.assertRaises(ValidationError):
+            old_user.restore(user=self.admin)
+
 
 class RegistrationRequestTests(TestCase):
     """Tests para workflow de solicitudes de registro"""

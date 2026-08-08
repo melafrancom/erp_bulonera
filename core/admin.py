@@ -269,22 +269,42 @@ class UserAdmin(BaseUserAdmin):
     
     @admin.action(description='Cambiar rol a Admin')
     def set_role_admin(self, request, queryset):
-        updated = queryset.update(role='admin')
+        updated = 0
+        for user in queryset:
+            user.role = 'admin'
+            user.sync_permissions_from_role()
+            user.save()
+            updated += 1
         self.message_user(request, f'{updated} usuario(s) ahora son Admin.', messages.SUCCESS)
     
     @admin.action(description='Cambiar rol a Manager')
     def set_role_manager(self, request, queryset):
-        updated = queryset.update(role='manager')
+        updated = 0
+        for user in queryset:
+            user.role = 'manager'
+            user.sync_permissions_from_role()
+            user.save()
+            updated += 1
         self.message_user(request, f'{updated} usuario(s) ahora son Manager.', messages.SUCCESS)
     
     @admin.action(description='Cambiar rol a Operator')
     def set_role_operator(self, request, queryset):
-        updated = queryset.update(role='operator')
+        updated = 0
+        for user in queryset:
+            user.role = 'operator'
+            user.sync_permissions_from_role()
+            user.save()
+            updated += 1
         self.message_user(request, f'{updated} usuario(s) ahora son Operator.', messages.SUCCESS)
     
     @admin.action(description='Cambiar rol a Viewer')
     def set_role_viewer(self, request, queryset):
-        updated = queryset.update(role='viewer')
+        updated = 0
+        for user in queryset:
+            user.role = 'viewer'
+            user.sync_permissions_from_role()
+            user.save()
+            updated += 1
         self.message_user(request, f'{updated} usuario(s) ahora son Viewer.', messages.SUCCESS)
     
     # ==================

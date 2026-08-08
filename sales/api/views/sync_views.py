@@ -22,7 +22,6 @@ from common.mixins import AuditMixin
 from common.decorators import audit_log
 from customers.models import Customer
 from products.models import Product
-from core.permissions import HasPermission
 
 logger = logging.getLogger(__name__)
 

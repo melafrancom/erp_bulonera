@@ -157,8 +157,8 @@ def user_detail_view(request, user_id):
 
 @manager_required
 def user_toggle_active_view(request, user_id):
-    """Activar/Desactivar un usuario"""
-    user = get_object_or_404(User, id=user_id)
+    """Activar/Desactivar un usuario manteniendo contrato de Soft-Delete"""
+    user = get_object_or_404(User.all_objects, id=user_id)
     
     # Evitar que se desactive a si mismo
     if user == request.user:
@@ -166,11 +166,21 @@ def user_toggle_active_view(request, user_id):
         return redirect('core_web:users_list')
     
     if request.method == 'POST':
-        user.is_active = not user.is_active
-        user.save()
-        
-        status = 'activado' if user.is_active else 'desactivado'
-        messages.success(request, f'Usuario {user.username} {status} correctamente.')
+        from django.core.exceptions import ValidationError
+        try:
+            if user.is_active and user.deleted_at is None:
+                user.delete(user=request.user)
+                status = 'desactivado'
+            else:
+                user.restore(user=request.user)
+                status = 'activado'
+            messages.success(request, f'Usuario {user.username} {status} correctamente.')
+        except ValidationError as e:
+            msg = e.message if hasattr(e, 'message') else str(e)
+            messages.error(request, msg)
+        except Exception as e:
+            messages.error(request, f'Error al cambiar estado del usuario: {str(e)}')
+            
         return redirect('core_web:user_detail', user_id=user.id)
     
     context = {

@@ -38,11 +38,15 @@ Base URL: `/api/v1/customers/`
 
 ### Vistas Web (`web/urls/`)
 *   `GET /customers/` - Panel principal de administración y ABM de clientes.
-*   `GET /customers/{id}/` - Detalle completo de cliente con notas, historial de ventas (`recent_sales`) y presupuestos (`recent_quotes`).
-*   `GET /customers/{id}/credit/` - Dashboard visual de cuenta corriente del cliente.
-*   `POST /customers/{id}/credit/refacturar/{sale_id}/` - Acción para refacturar venta informal a precios actualizados.
+*   `GET /customers/{id}/` - Detalle completo del cliente (Ficha General), con notas, historial y barra de solapas de navegación directa.
+*   `GET /customers/{id}/credit/` - Dashboard visual de estado de cuenta corriente, deuda y aging report.
+*   `GET /customers/{id}/statement/` - Mayor de Cuentas Corrientes con cronograma de Debe/Haber, saldo acumulado y exportación en Excel/PDF.
+*   `GET/POST /customers/{id}/credit/refacturar/{sale_id}/` - Vista de confirmación y ejecución para refacturar venta informal a precios actualizados (`customer_refacturar_confirm.html`).
 *   `POST /customers/import/` - Importación masiva desde plantilla Excel (requiere permiso `can_manage_customers` y ejecuta validaciones del modelo por fila).
 *   `GET /customers/export/` - Exportación de padrón a Excel (requiere permiso `can_manage_customers`; rol `viewer` restringido).
+
+## 🛠️ Comandos de Gestión (`management/commands/`)
+*   `python manage.py backfill_cuenta_corriente [--dry-run]`: Comando de reparación en caliente de datos históricos de cuenta corriente. Auto-asigna `Payment.customer` desde las alocaciones activas y marca `is_credit_sale=True` en ventas a cuenta corriente que carecían del flag.
 
 ## 📝 Documentación de Detalle
 *   [Sincronización Fiscal de Clientes y Protección del IVA](docs/tax_sync_rules.md): Detalla la lógica de sincronización con la AFIP, validaciones de CUIT (checksum) y la regla de protección de IVA local.

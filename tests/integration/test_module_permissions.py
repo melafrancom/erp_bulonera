@@ -56,8 +56,23 @@ class TestModulePermission:
         
         assert permission.has_permission(request, view) is True
 
-    def test_manager_denied_without_flag(self, permission, factory):
-        """Manager NO puede acceder si no tiene el flag requerido."""
+    def test_operator_denied_without_flag(self, permission, factory):
+        """Operador NO puede acceder si no tiene el flag requerido."""
+        user = User.objects.create_user(
+            username='operator_no_sales',
+            role='operator',
+            can_manage_sales=False
+        )
+        request = factory.post('/')
+        request.user = user
+        
+        view = Mock()
+        view.required_permission = 'can_manage_sales'
+        
+        assert permission.has_permission(request, view) is False
+
+    def test_manager_has_full_access_by_role_hierarchy(self, permission, factory):
+        """Manager tiene acceso total por jerarquía de rol independientemente de flags."""
         user = User.objects.create_user(
             username='manager_no_sales',
             role='manager',
@@ -69,7 +84,7 @@ class TestModulePermission:
         view = Mock()
         view.required_permission = 'can_manage_sales'
         
-        assert permission.has_permission(request, view) is False
+        assert permission.has_permission(request, view) is True
 
     def test_object_permission_owner_access(self, permission, factory, admin_user):
         """El creador del objeto (created_by) siempre tiene acceso."""

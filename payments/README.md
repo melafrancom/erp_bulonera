@@ -16,7 +16,7 @@ El módulo `payments` gestiona los cobros recibidos de clientes, las cuentas cor
 ## ⚡ Servicios Críticos (`services.py`)
 Toda la gestión de tesorería y saldos se procesa de forma atómica con bloqueos pesimistas (`select_for_update()`) en `PaymentService`:
 *   `create_payment(...)`: Crea un pago confirmado sin alocaciones (anticipo o saldo a cuenta).
-*   `create_payment_with_allocations(...)`: Crea un pago y lo distribuye de forma atómica en una o más ventas y facturas, validando saldos acumulados por `sale_id`, estados fiscales y bloqueando la fila de la venta.
+*   `create_payment_with_allocations(...)`: Crea un pago y lo distribuye de forma atómica en una o más ventas y facturas, validando saldos acumulados por `sale_id`, estados fiscales y bloqueando la fila de la venta. Auto-deriva `customer` desde la venta si no vino provisto.
 *   `cancel_payment(...)`: Anula un cobro confirmado con bloqueo de fila, realiza el soft-delete de sus alocaciones y recalcula en cascada el estado de cobro de las ventas afectadas.
 *   `recalculate_sale_payment_status(sale)`: Suma las alocaciones activas e impacta el `payment_status` de la venta (`unpaid`, `partially_paid`, `paid`, `overpaid`).
 *   `handle_credit_note_impact(original_invoice, credit_note_invoice, user)`: Libera los cobros asociados a una factura cuando esta es anulada por una Nota de Crédito, devolviendo el saldo al pago original.
@@ -26,7 +26,7 @@ Toda la gestión de tesorería y saldos se procesa de forma atómica con bloqueo
 ### REST API (`api/urls/payment_urls.py`)
 Base URL: `/api/v1/payments/`
 *   `GET /api/v1/payments/payments/` - Historial de cobros (`PaymentViewSet`).
-*   `POST /api/v1/payments/payments/` - Registrar cobro (opcionalmente con alocaciones; requiere `can_manage_payments`).
+*   `POST /api/v1/payments/payments/` - Registrar cobro (soporta alocaciones con alias `amount`/`allocated_amount` y `customer_id` explícito u auto-derivado; requiere `can_manage_payments`).
 *   `POST /api/v1/payments/payments/{id}/cancel/` - Anular cobro y revertir alocaciones (requiere `can_manage_payments`).
 *   `GET /api/v1/payments/allocations/` - Listar imputaciones de cobros (`PaymentAllocationViewSet` de solo lectura: `ReadOnlyModelViewSet` + `AuditMixin`).
 

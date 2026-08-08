@@ -9,9 +9,9 @@ class ModulePermission(BasePermission):
     Control de acceso basado en el campo 'role' y flags 'can_manage_*'.
     
     Lógica:
-    1. Admin/Superuser: Acceso total.
+    1. Admin/Superuser/Manager: Acceso total por jerarquía de rol.
     2. Viewer: Solo métodos seguros (GET, HEAD, OPTIONS).
-    3. Otros: Verifica el flag definido en `view.required_permission`.
+    3. Otros roles (Operator, etc.): Verifica el flag definido en `view.required_permission`.
     
     Ejemplo de uso en ViewSet:
         class SaleViewSet(ModelViewSet):
@@ -27,20 +27,20 @@ class ModulePermission(BasePermission):
         if not user or not user.is_authenticated:
             return False
         
-        # Admin o Superuser: acceso total
-        if user.is_superuser or user.role == 'admin':
+        # Admin, Superuser o Manager: acceso total por jerarquía de rol
+        if user.is_superuser or user.role in ('admin', 'manager'):
             return True
         
         # Viewer: solo lectura
         if user.role == 'viewer':
             return request.method in SAFE_METHODS
         
-        # Para otros roles, verificar required_permission
+        # Para otros roles (operator, etc.), verificar required_permission
         required_perm = getattr(view, 'required_permission', None)
         
-        # Si no hay permiso requerido, permitir a managers
+        # Si no hay permiso requerido
         if not required_perm:
-            return user.role in ('manager', 'admin')
+            return False
         
         # Verificar el flag can_manage_*
         return getattr(user, required_perm, False)
@@ -49,17 +49,16 @@ class ModulePermission(BasePermission):
         """Verifica permisos a nivel de objeto."""
         user = request.user
         
-        # Admin/Superuser: acceso total
-        if user.is_superuser or user.role == 'admin':
+        # Admin, Superuser o Manager: acceso total
+        if user.is_superuser or user.role in ('admin', 'manager'):
             return True
         
         # Viewer: solo lectura
         if user.role == 'viewer':
             return request.method in SAFE_METHODS
         
-        # Si el objeto tiene created_by, verificar ownership
+        # Si el objeto tiene created_by, verificar ownership para otros roles
         if hasattr(obj, 'created_by'):
             return obj.created_by == user
         
-        # Si no tiene created_by, permitir a managers
-        return user.role == 'manager'
+        return False
