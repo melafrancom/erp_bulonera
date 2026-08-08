@@ -138,9 +138,12 @@ class CuentaCorrienteService:
 
         from django.db.models import Sum, Case, When, F, DecimalField
 
+        from django.db.models import Q
+
         sales = Sale.objects.filter(
-            customer=customer,
-            is_credit_sale=True
+            customer=customer
+        ).filter(
+            Q(is_credit_sale=True) | Q(payment_method='account')
         ).exclude(
             status='cancelled'
         ).exclude(
@@ -292,9 +295,12 @@ class CuentaCorrienteService:
 
         from django.db.models import Sum, Case, When, F, DecimalField
 
+        from django.db.models import Q
+
         sales_pendientes = Sale.objects.filter(
-            customer=customer,
-            is_credit_sale=True
+            customer=customer
+        ).filter(
+            Q(is_credit_sale=True) | Q(payment_method='account')
         ).exclude(
             status='cancelled'
         ).exclude(
@@ -390,17 +396,20 @@ class CuentaCorrienteService:
         elif not isinstance(date_to, date):
             date_to = None
 
+        from django.db.models import Q
+
         sales_qs = Sale.objects.filter(
-            customer=customer,
-            is_credit_sale=True
+            customer=customer
+        ).filter(
+            Q(is_credit_sale=True) | Q(payment_method='account')
         ).exclude(
             status='cancelled'
         )
 
         allocations_qs = PaymentAllocation.objects.filter(
-            payment__customer=customer,
+            Q(payment__customer=customer) | Q(sale__customer=customer),
             payment__status='confirmed'
-        ).select_related('payment', 'sale')
+        ).select_related('payment', 'sale').distinct()
 
         raw_movements = []
 

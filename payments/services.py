@@ -167,6 +167,10 @@ class PaymentService:
                 f"Total alocado (${total_allocated}) excede monto del pago (${amount})"
             )
         
+        # Auto-derivar cliente desde la venta si no vino especificado en el pago
+        if customer is None and allocation_objects and allocation_objects[0]['sale'].customer:
+            customer = allocation_objects[0]['sale'].customer
+
         # Crear el pago
         if date is None:
             date = timezone.now().date()

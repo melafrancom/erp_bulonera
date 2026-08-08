@@ -186,6 +186,7 @@ function paymentFormModal() {
           date: this.formData.date,
           notes: this.formData.notes,
           status: 'confirmed',
+          customer_id: {% if sale.customer %}{{ sale.customer.id }}{% else %}null{% endif %},
         };
         
         // Si auto_allocate_sale está activo, agregar allocation
