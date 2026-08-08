@@ -16,6 +16,7 @@ class PaymentAllocationInputSerializer(serializers.Serializer):
     """
     Entrada para crear una alocación de pago.
     Usado al crear pagos con múltiples alocaciones.
+    Soporta 'amount' y 'allocated_amount' como alias.
     """
     sale_id = serializers.IntegerField(help_text='ID de la venta a imputar')
     invoice_id = serializers.IntegerField(
@@ -24,11 +25,33 @@ class PaymentAllocationInputSerializer(serializers.Serializer):
         help_text='ID de factura específica (opcional)'
     )
     amount = serializers.DecimalField(
+        required=False,
         max_digits=12,
         decimal_places=2,
         min_value=Decimal('0.01'),
         help_text='Monto a imputar'
     )
+    allocated_amount = serializers.DecimalField(
+        required=False,
+        max_digits=12,
+        decimal_places=2,
+        min_value=Decimal('0.01'),
+        help_text='Monto a imputar (alias)'
+    )
+
+    def to_internal_value(self, data):
+        if isinstance(data, dict):
+            data = data.copy()
+            if 'allocated_amount' in data and 'amount' not in data:
+                data['amount'] = data['allocated_amount']
+            elif 'amount' in data and 'allocated_amount' not in data:
+                data['allocated_amount'] = data['amount']
+        return super().to_internal_value(data)
+
+    def validate(self, data):
+        if not data.get('amount') and not data.get('allocated_amount'):
+            raise serializers.ValidationError({"amount": "Este campo es requerido."})
+        return data
 
 
 class PaymentAllocationSerializer(serializers.ModelSerializer):

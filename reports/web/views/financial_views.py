@@ -18,7 +18,7 @@ from reports.models import FinancialSnapshot
 logger = logging.getLogger('django')
 
 
-@login_required(login_url='login')
+@login_required
 def pnl_statement_view(request):
     """
     Renderiza la página del Estado de Resultados (P&L).
@@ -119,7 +119,7 @@ def pnl_statement_view(request):
     return render(request, 'reports/pnl_statement.html', context)
 
 
-@login_required(login_url='login')
+@login_required
 def cashflow_statement_view(request):
     """
     Renderiza la página de Flujo de Caja.
@@ -302,7 +302,7 @@ def _add_monthly_evolution_cashflow(context: dict, year: int) -> None:
     context['monthly_net'] = json.dumps(net_data)
 
 
-@login_required(login_url='login')
+@login_required
 def pnl_export_view(request):
     """
     Exporta el P&L a Excel del período especificado.
@@ -344,7 +344,7 @@ def pnl_export_view(request):
         return HttpResponse(f"Error al exportar: {str(e)}", status=500)
 
 
-@login_required(login_url='login')
+@login_required
 def cashflow_export_view(request):
     """
     Exporta el CashFlow a Excel del período especificado.

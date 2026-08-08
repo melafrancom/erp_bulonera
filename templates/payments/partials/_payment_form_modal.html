@@ -195,6 +195,7 @@ function paymentFormModal() {
           allocations.push({
             sale_id: {{ sale.id }},
             invoice_id: this.formData.auto_allocate_invoice ? {{ sale.invoice.id|default:'null' }} : null,
+            amount: this.formData.amount,
             allocated_amount: this.formData.amount,
           });
         }
