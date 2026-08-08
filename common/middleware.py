@@ -30,18 +30,6 @@ class RequestLoggingMiddleware(MiddlewareMixin):
     
     def process_response(self, request, response):
         """Registra información de la respuesta."""
-        if request.path.startswith('/api/'):
-            logger.info(
-                f'[{request.method}] {request.path} -> {response.status_code}',
-                extra={
-                    'method': request.method,
-                    'path': request.path,
-                    'status_code': response.status_code,
-                    'user': str(request.user),
-                    'ip': self.get_client_ip(request),
-                }
-            )
-        
         return response
     
     @staticmethod

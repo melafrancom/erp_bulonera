@@ -174,3 +174,21 @@ class ManagerViewsTests(TestCase):
         # Verificar estado de solicitud
         request.refresh_from_db()
         self.assertEqual(request.status, 'approved')
+
+    def test_superuser_accede_vista_manager(self):
+        """TC-016B: Superusuario sin rol manager explicito accede a vistas de manager"""
+        superuser = User.objects.create_superuser(
+            username='su_manager',
+            password='test123',
+            email='su@test.com'
+        )
+        self.client.login(username='su_manager', password='test123')
+        response = self.client.get(reverse('core_web:pending_requests'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_busqueda_global_rbac(self):
+        """TC-016C: Búsqueda global aplica RBAC filtrando transacciones segun el rol"""
+        self.client.login(username='operator', password='test123')
+        response = self.client.get(reverse('core_web:global_search') + '?q=test')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('sales', response.context['results'])

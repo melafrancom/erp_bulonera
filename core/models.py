@@ -4,10 +4,15 @@ from django.utils import timezone
 from django.db import models
 
 # From local apps
-from common.models import BaseModel
+from common.models import BaseModel, SoftDeleteManager
 
 # Create your models here.
 # ========== Users ============
+
+class CoreUserManager(SoftDeleteManager, UserManager):
+    """Manager para User que combina SoftDeleteManager con UserManager de Django."""
+    pass
+
 
 class User(BaseModel, AbstractUser):
     """
@@ -19,6 +24,8 @@ class User(BaseModel, AbstractUser):
     - email: sin unique=True en DB. La unicidad entre usuarios no-eliminados
       se valida a nivel de aplicación (clean(), formularios, approve()).
     """
+    objects = CoreUserManager()
+
     # email sin unique — se valida en clean() y formularios
     email = models.EmailField(verbose_name="Email")
 

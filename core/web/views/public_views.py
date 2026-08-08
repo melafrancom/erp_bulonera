@@ -105,32 +105,7 @@ def settings_view(request):
     return render(request, 'core/public/settings.html', context)
 
 
-# ================================
-# PÁGINAS DE ERROR PERSONALIZADAS
-# ================================
-
-def permission_denied_view(request, exception=None):
-    """Página 403 - Acceso Denegado"""
-    context = {
-        'message': 'No tienes permisos para acceder a esta página.',
-    }
-    return render(request, 'core/errors/403.html', context, status=403)
-
-
-def not_found_view(request, exception=None):
-    """Página 404 - No Encontrado"""
-    context = {
-        'message': 'La página que buscas no existe.',
-    }
-    return render(request, 'core/errors/404.html', context, status=404)
-
-
-def server_error_view(request):
-    """Página 500 - Error del Servidor"""
-    context = {
-        'message': 'Ocurrió un error en el servidor. Estamos trabajando para solucionarlo.',
-    }
-    return render(request, 'core/errors/500.html', context, status=500)
+# Handlers de error centralizados en core.web.views.errors (handler403, handler404, handler500)
 
 
 # ================================

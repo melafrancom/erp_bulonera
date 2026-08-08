@@ -10,9 +10,13 @@ from django.core.mail import send_mail
 from django.db.models import Count
 from django.utils import timezone
 
+import logging
+
 # from local apps
 from core.models import User, RegistrationRequest
 from core.decorators import manager_required
+
+logger = logging.getLogger('api')
 
 # ================================
 # DASHBOARD PARA MANAGERS
@@ -219,7 +223,7 @@ Bienvenido!
             fail_silently=False,
         )
     except Exception as e:
-        print(f"Error enviando email de aprobacion: {e}")
+        logger.error(f"Error enviando email de aprobacion a {reg_request.email}: {e}", exc_info=True)
 
 def _notify_user_rejected(reg_request, reason):
     """Notifica al usuario que su solicitud fue rechazada"""
@@ -241,4 +245,4 @@ Si crees que esto es un error o tienes alguna pregunta, por favor contacta con e
             fail_silently=False,
         )
     except Exception as e:
-        print(f"Error enviando email de rechazo: {e}")
+        logger.error(f"Error enviando email de rechazo a {reg_request.email}: {e}", exc_info=True)

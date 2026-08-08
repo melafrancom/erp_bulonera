@@ -12,9 +12,13 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.db import models
 
+import logging
+
 # from Local apps
 from core.models import User, RegistrationRequest
 from core.forms import LoginForm, RegistrationRequestForm, UserEditForm
+
+logger = logging.getLogger('api')
 
 # ================================
 # LOGIN / LOGOUT
@@ -254,4 +258,4 @@ Ingresa al sistema para aprobar o rechazar la solicitud.
             )
         except Exception as e:
             # Log el error pero no fallar el registro
-            print(f"Error enviando email: {e}")
+            logger.error(f"Error enviando email de nueva solicitud de registro: {e}", exc_info=True)

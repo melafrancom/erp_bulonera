@@ -34,7 +34,7 @@ def validate_cuit(cuit: str) -> bool:
     # Limpiar guiones y espacios
     cuit = re.sub(r'[-\s]', '', str(cuit))
     
-    if not cuit.isdigit() or len(cuit) != 11:
+    if not cuit.isdigit() or len(cuit) != 11 or len(set(cuit)) == 1:
         return False
     
     # Validar dígito verificador
@@ -119,30 +119,34 @@ def truncate_text(text: str, max_length: int = 50, suffix: str = "...") -> str:
 
 def generate_document_number(model_class, prefix: str) -> str:
     """
-    Genera un número de documento secuencial único.
+    Genera un número de documento secuencial único y atómico.
     Formato: PREFIX-YYYYMMDD-XXXXX
     Ejemplo: VTA-20240315-00001
     """
     from django.utils import timezone
-    import random
+    from django.db import transaction
     
     today = timezone.now().strftime('%Y%m%d')
     base = f"{prefix}-{today}-"
     
-    # Buscar el último número generado hoy
-    last_obj = model_class.objects.filter(
-        number__startswith=base
-    ).order_by('-number').first()
+    # Seleccionar manager adecuado (all_objects si existe, sino objects)
+    manager = getattr(model_class, 'all_objects', model_class.objects)
     
-    if last_obj:
-        # Extraer secuencia y sumar 1
-        try:
-            last_sequence = int(last_obj.number.split('-')[-1])
-            new_sequence = last_sequence + 1
-        except ValueError:
-            new_sequence = 1
-    else:
-        new_sequence = 1
+    with transaction.atomic():
+        # Buscar el último número generado hoy con bloqueo pesimista
+        last_obj = manager.select_for_update().filter(
+            number__startswith=base
+        ).order_by('-number').first()
         
-    # Formatear: 5 dígitos (00001)
-    return f"{base}{new_sequence:05d}"
+        if last_obj:
+            # Extraer secuencia y sumar 1
+            try:
+                last_sequence = int(last_obj.number.split('-')[-1])
+                new_sequence = last_sequence + 1
+            except ValueError:
+                new_sequence = 1
+        else:
+            new_sequence = 1
+            
+        # Formatear: 5 dígitos (00001)
+        return f"{base}{new_sequence:05d}"

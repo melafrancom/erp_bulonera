@@ -21,8 +21,8 @@ class TestRequestLoggingMiddleware:
         return RequestLoggingMiddleware(get_response)
 
     @patch('common.middleware.logger')
-    def test_log_api_request(self, mock_logger, middleware, factory):
-        """Verificar que las peticiones /api/ se registren como INFO."""
+    def test_log_api_request_pass_through(self, mock_logger, middleware, factory):
+        """Verificar que RequestLoggingMiddleware procesa la petición /api/ sin duplicar logs de respuesta."""
         request = factory.get('/api/v1/sales/')
         request.user = Mock()
         request.META['REMOTE_ADDR'] = '127.0.0.1'
@@ -30,10 +30,8 @@ class TestRequestLoggingMiddleware:
         response = middleware(request)
         
         assert response.status_code == 200
-        # Debe llamar a logger.info al menos una vez (en process_response)
-        assert mock_logger.info.called
-        log_msg = mock_logger.info.call_args[0][0]
-        assert '[GET] /api/v1/sales/ -> 200' in log_msg
+        # No debe duplicar logger.info para /api/ (responsabilidad de APILoggingMiddleware)
+        assert not mock_logger.info.called
 
     def test_get_client_ip_direct(self):
         """Validar extracción de IP."""

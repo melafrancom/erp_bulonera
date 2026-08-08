@@ -1,13 +1,26 @@
 from django.shortcuts import render
 
 def custom_403(request, exception=None):
-    """Manejador para Error 403 - Permission Denied."""
-    return render(request, 'errors/403.html', status=403)
+    """Página 403 - Acceso Denegado"""
+    context = {
+        'message': 'No tienes permisos para acceder a esta página.',
+    }
+    return render(request, 'errors/403.html', context, status=403)
 
 def custom_404(request, exception=None):
-    """Manejador para Error 404 - Not Found."""
-    return render(request, 'errors/404.html', status=404)
+    """Página 404 - No Encontrado"""
+    context = {
+        'title': 'Página no encontrada',
+        'message': 'La página que buscas no existe o ha sido movida.',
+        'code': '404',
+    }
+    return render(request, 'errors/404.html', context, status=404)
 
 def custom_500(request):
-    """Manejador para Error 500 - Server Error."""
-    return render(request, 'errors/500.html', status=500)
+    """Página 500 - Error Interno del Servidor"""
+    context = {
+        'title': 'Error del servidor',
+        'message': 'Ocurrió un error inesperado en el servidor. Ya estamos trabajando para solucionarlo.',
+        'code': '500',
+    }
+    return render(request, 'errors/500.html', context, status=500)

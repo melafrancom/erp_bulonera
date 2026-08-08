@@ -9,6 +9,7 @@ from bills.models import Invoice
 
 @login_required
 def global_search_view(request):
+    user = request.user
     query = request.GET.get('q', '').strip()
     context = {'query': query, 'results': {}}
     
@@ -38,23 +39,32 @@ def global_search_view(request):
             Q(cuit__icontains=query)
         )[:10]
         
-        # Ventas
-        context['results']['sales'] = Sale.objects.filter(
+        # Ventas y Presupuestos (RBAC: Operador solo sus creaciones salvo permisos de gestión)
+        sales_qs = Sale.objects.all()
+        quotes_qs = Quote.objects.all()
+        
+        if not (user.is_superuser or user.role in ('admin', 'manager') or getattr(user, 'can_manage_sales', False)):
+            sales_qs = sales_qs.filter(created_by=user)
+            quotes_qs = quotes_qs.filter(created_by=user)
+            
+        context['results']['sales'] = sales_qs.filter(
             Q(customer__business_name__icontains=query) |
             Q(customer_name__icontains=query)
         )[:10]
         
-        # Presupuestos
-        context['results']['quotes'] = Quote.objects.filter(
+        context['results']['quotes'] = quotes_qs.filter(
             Q(customer__business_name__icontains=query) |
             Q(customer_name__icontains=query)
         )[:10]
         
-        # Facturas
-        context['results']['bills'] = Invoice.objects.filter(
-            Q(cliente_razon_social__icontains=query) |
-            Q(cliente_cuit__icontains=query) |
-            Q(cae__icontains=query)
-        )[:10]
+        # Facturas (RBAC: Solo visibles si tiene permisos de gestión o es manager/admin)
+        if user.is_superuser or user.role in ('admin', 'manager') or getattr(user, 'can_manage_bills', False):
+            context['results']['bills'] = Invoice.objects.filter(
+                Q(cliente_razon_social__icontains=query) |
+                Q(cliente_cuit__icontains=query) |
+                Q(cae__icontains=query)
+            )[:10]
+        else:
+            context['results']['bills'] = Invoice.objects.none()
         
     return render(request, 'core/search_results.html', context)

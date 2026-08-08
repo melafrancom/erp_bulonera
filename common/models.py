@@ -7,13 +7,13 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 
 # Create your models here.
 
-class SoftDeleteManager(UserManager):
+class SoftDeleteManager(models.Manager):
     """
     Custom manager to handle soft deletion of records.
     """
     def get_queryset(self):
         # By default, it only shows the records that have not been soft deleted.
-        return super().get_queryset().filter(deleted_at__isnull=True ,is_active=True)
+        return super().get_queryset().filter(deleted_at__isnull=True, is_active=True)
     
     def all_with_deleted(self):
         """
