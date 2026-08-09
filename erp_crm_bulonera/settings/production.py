@@ -5,7 +5,8 @@ Hereda toda la configuración de base.py y sobreescribe solo lo necesario.
 """
 from .base import *  # noqa: F401, F403
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Forzar DEBUG=False en producción de forma no negociable (seguridad)
+DEBUG = False
 # SEGURIDAD
 # base.py ya lee DEBUG, SECRET_KEY y ALLOWED_HOSTS desde .env
 # y activa SECURE_SSL_REDIRECT, HSTS, etc. cuando DEBUG=False.

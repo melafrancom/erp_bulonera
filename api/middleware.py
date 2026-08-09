@@ -10,6 +10,7 @@ Only activates for API paths (skips static, admin, web views).
 
 import time
 import logging
+import re
 
 logger = logging.getLogger('api')
 
@@ -45,15 +46,30 @@ class APILoggingMiddleware:
         elif response.status_code >= 400:
             log_level = logging.WARNING
 
+        safe_path = self._redact_pii(request.path)
+
         logger.log(
             log_level,
             'API %s %s %s %dms user=%s',
             response.status_code,
             request.method,
-            request.path,
+            safe_path,
             duration_ms,
             user_id or 'anon',
         )
 
-        # Inject trace_id header if present in response (from exception handler)
+        # Inject trace_id header if present in error payload or custom attribute
+        if hasattr(response, 'data') and isinstance(response.data, dict) and 'error' in response.data:
+            error_val = response.data['error']
+            if isinstance(error_val, dict):
+                trace_id = error_val.get('trace_id')
+                if trace_id:
+                    response['X-Trace-Id'] = trace_id
+
         return response
+
+    @staticmethod
+    def _redact_pii(path: str) -> str:
+        """Enmascarar CUITs (11 dígitos continuos o con guiones) en el path antes de escribir a log."""
+        # Ej: /afip/api/padron/20123456789/ -> /afip/api/padron/***REDACTED***/
+        return re.sub(r'/(?:\d{11}|\d{2}-\d{8}-\d)/', r'/***REDACTED***/', path)

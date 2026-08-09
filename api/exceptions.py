@@ -199,6 +199,8 @@ def _extract_message(exc, response):
             return detail[0] if detail else str(exc)
         if isinstance(detail, dict):
             # DRF validation: {'field': ['error', ...]}
+            if len(detail) > 1:
+                return f"{len(detail)} campos con errores de validación."
             first_key = next(iter(detail), None)
             if first_key:
                 val = detail[first_key]
