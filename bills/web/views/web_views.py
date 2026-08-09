@@ -2,19 +2,30 @@
 Vistas web para el módulo de facturación (Bills).
 Listado y detalle de facturas emitidas.
 """
-from django.views.generic import ListView, DetailView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-from bills.models import Invoice
+import logging
+from datetime import date
 
-class InvoiceListView(LoginRequiredMixin, ListView):
+from django.views.generic import ListView, DetailView
+from django.db.models import Q
+from django.http import JsonResponse, HttpResponse, Http404
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from django.views.decorators.http import require_POST
+
+from core.decorators import ModulePermissionRequiredMixin, permission_required
+from bills.models import Invoice
+from bills.pdf import generate_invoice_pdf
+from bills.services import reintentar_factura, anular_factura_y_venta
+
+logger = logging.getLogger(__name__)
+
+class InvoiceListView(ModulePermissionRequiredMixin, ListView):
     model = Invoice
     template_name = 'bills/invoice_list.html'
     context_object_name = 'invoices'
     paginate_by = 25
     ordering = ['-fecha_emision', '-id']
+    required_permission = 'can_manage_bills'
 
     def get_queryset(self):
         queryset = super().get_queryset().select_related('customer', 'comprobante_arca')
@@ -42,27 +53,16 @@ class InvoiceListView(LoginRequiredMixin, ListView):
         context['status_choices'] = Invoice.ESTADO_FISCAL_CHOICES
         return context
 
-class InvoiceDetailView(LoginRequiredMixin, DetailView):
+class InvoiceDetailView(ModulePermissionRequiredMixin, DetailView):
     model = Invoice
     template_name = 'bills/invoice_detail.html'
     context_object_name = 'invoice'
+    required_permission = 'can_manage_bills'
 
     def get_queryset(self):
         return super().get_queryset().select_related(
             'customer', 'comprobante_arca', 'sale'
         ).prefetch_related('items')
-
-from django.http import HttpResponse, Http404
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib import messages
-from bills.pdf import generate_invoice_pdf
-from bills.services import reintentar_factura, anular_factura_y_venta
-from datetime import date
-from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
-import logging
-
-logger = logging.getLogger(__name__)
 
 def invoice_public_pdf(request, uuid):
     """Vista pública para descargar PDF de la factura mediante UUID."""
@@ -78,7 +78,7 @@ def invoice_public_pdf(request, uuid):
     response['Content-Disposition'] = f'inline; filename="{prefix}_{invoice.number}.pdf"'
     return response
 
-@login_required
+@permission_required('can_manage_bills')
 @require_POST
 def invoice_send_email(request, pk):
     """Envía la factura por email al destinatario provisto."""
@@ -102,7 +102,7 @@ def invoice_send_email(request, pk):
         return redirect('sales_web:sale_detail', pk=invoice.sale.pk)
     return redirect('bills_web:invoice_detail', pk=pk)
 
-@login_required
+@permission_required('can_manage_bills')
 def download_invoice_pdf(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
     
@@ -118,7 +118,7 @@ def download_invoice_pdf(request, pk):
     
     return response
 
-@login_required
+@permission_required('can_manage_bills')
 @require_POST
 def invoice_retry(request, pk):
     """Vista funcional para reintentar enviar una factura a ARCA."""
@@ -138,7 +138,7 @@ def invoice_retry(request, pk):
         return redirect('sales_web:sale_detail', pk=invoice.sale.id)
     return redirect('bills_web:invoice_detail', pk=invoice.id)
 
-@login_required
+@permission_required('can_manage_bills')
 @require_POST
 def invoice_cancel(request, pk):
     """Vista funcional para anular factura y emitir Nota de Crédito."""
@@ -162,7 +162,7 @@ def invoice_cancel(request, pk):
     return redirect('bills_web:invoice_detail', pk=invoice.id)
 
 
-@login_required
+@permission_required('can_manage_bills')
 def invoice_status_api(request, pk):
     """
     API endpoint para polling del estado de una factura.

@@ -62,3 +62,13 @@ class InvoiceAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+    def has_delete_permission(self, request, obj=None):
+        """
+        Inmutabilidad fiscal (RG 2485/2008):
+        No se permite eliminar facturas que estén autorizadas por ARCA.
+        Para borrar borradores o rechazadas, requiere superusuario.
+        """
+        if obj is not None and obj.estado_fiscal == 'autorizada':
+            return False
+        return request.user.is_superuser

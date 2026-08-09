@@ -36,3 +36,24 @@ def permission_required(perm_name):
             raise PermissionDenied('No tienes permisos para acceder a esta seccion.')
         return _wrapped_view
     return decorator
+
+
+class ModulePermissionRequiredMixin:
+    """
+    Mixin para Class-Based Views (CBVs) que verifica permisos de módulo en BULONERA ERP.
+    Exige autenticación y que el usuario sea superuser, rol admin/manager, o posea
+    el permiso de negocio especificado en 'required_permission' (ej: 'can_manage_bills').
+    """
+    required_permission = None
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            from django.contrib.auth.views import redirect_to_login
+            return redirect_to_login(request.get_full_path())
+
+        if (request.user.is_superuser 
+            or request.user.role in ('admin', 'manager') 
+            or (self.required_permission and getattr(request.user, self.required_permission, False))):
+            return super().dispatch(request, *args, **kwargs)
+
+        raise PermissionDenied('No tienes permisos para acceder a esta sección.')

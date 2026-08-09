@@ -631,13 +631,14 @@ Estructura de documentación distribuida por módulos para entender el **por qu�
 ---
 
 ## 🧪 Estado de Pruebas e Infraestructura (Agosto 2026)
-- **Suite de Tests:** 412 tests ejecutados y aprobados (**100% PASSED**).
+- **Suite de Tests:** 421 tests ejecutados y aprobados (**100% PASSED**).
+- **Módulo `bills`:** Remediado al 100%. Aplicación de `ModulePermissionRequiredMixin` y `@permission_required('can_manage_bills')` en vistas web, inmutabilidad fiscal en Admin Django (`has_delete_permission = False` para `autorizadas`), preservación de descarga pública por UUID (`invoice_public_pdf`) y 26 tests pasando.
 - **Módulo `afip`:** Remediado al 100%. Decoradores `@manager_required` en vistas web, redacción de secretos WSAA en debug API, inmutabilidad de registros autorizados y logs en Admin (`has_delete_permission = False`), tarea Celery Beat de reconciliación de comprobantes atascados, escape XML de envelopes SOAP y 43 tests unitarios/E2E pasando.
 - **Módulo `api`:** Paginación segura (`page_size=100`, `max_page_size=200`), forzado de `DEBUG=False` en `production.py`, enmascaramiento de PII (CUIT) en logs y header `X-Trace-Id`.
 - **Módulo `common`:** Desduplicación de middleware de logging (`APILoggingMiddleware` como única fuente de verdad), generación de documentos con `select_for_update()` atómico y desacoplamiento de `SoftDeleteManager`.
-- **Módulo `core`:** Sincronización automática de permisos en `User.save()`, comprobación de unicidad en `User.restore()` y superuser bypass en decoradores web (`@manager_required`).
+- **Módulo `core`:** Sincronización automática de permisos en `User.save()`, comprobación de unicidad en `User.restore()`, superuser bypass en decoradores web (`@manager_required`) y creación del Mixin CBV `ModulePermissionRequiredMixin` en `core/decorators.py`.
 - **Fixtures de Test (`tests/`):** `operator_user` corregido con `role='operator'`, `generate_valid_cuit` centralizado y verificado contra `common.utils.validate_cuit()`, aislamiento de `tmp/` en `.dockerignore`.
 
 ---
 
-*Última actualización: Agosto 2026 (Remediación Core, Common, API, AFIP y Tests)*
+*Última actualización: Agosto 2026 (Remediación Core, Common, API, AFIP, Bills y Tests)*

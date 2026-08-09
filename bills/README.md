@@ -12,31 +12,34 @@ El módulo `bills` gestiona la facturación legal y fiscal de **Bulonera Alvear*
     *   [`payments`](../payments/README.md) (para vincular alocaciones de cobros con facturas autorizadas específicas)
 
 ## 🛠️ Modelos Clave
-*   **`Invoice`**: Documento legal emitido (Factura A/B, Nota de Débito, Nota de Crédito, Tique). Contiene snapshots de datos del cliente, montos, `cae` y `cae_vencimiento`. Hereda de `BaseModel` (Soft-delete: Sí).
+*   **`Invoice`**: Documento legal emitido (Factura A/B, Nota de Débito, Nota de Crédito, Tique). Contiene snapshots de datos del cliente, montos, `cae` y `cae_vencimiento`. Inmutable en Admin Django si está `autorizada` (RG 2485/2008). Hereda de `BaseModel` (Soft-delete: Sí).
 *   **`InvoiceItem`**: Renglón facturado. Representa un snapshot del `SaleItem` correspondiente con sus alícuotas de IVA (21%, 10.5%, etc.) aplicadas. Hereda de `BaseModel` (Soft-delete: Sí).
 
 ## ⚡ Servicios Críticos (`services.py`)
 La interacción fiscal se centraliza en los siguientes servicios atómicos:
 *   `facturar_venta(sale, user, tipo_comprobante=None, async_emission=True)`: Valida la venta, genera la factura borrador y encola la autorización ante la AFIP mediante Celery.
-*   `reintentar_factura(invoice_id)`: Reintenta la emisión ante la AFIP de facturas que quedaron en estado de error o borrador (garantizando importación limpia de `Invoice`).
-*   `anular_factura_y_venta(invoice_id, user)`: Emite una Nota de Crédito automática en AFIP (si la factura original estaba autorizada, propagando la `condicion_iva_receptor` según RG 5616 y usando un número borrador dinámico provisional), cancela la venta (devolviendo stock) y libera los pagos asignados a la misma.
+*   `reintentar_factura(invoice_id)`: Reintenta la emisión ante la AFIP de facturas que quedaron en estado de error o borrador.
+*   `anular_factura_y_venta(invoice_id, user)`: Emite una Nota de Crédito automática en AFIP (si la factura original estaba autorizada, propagando la `condicion_iva_receptor`), cancela la venta (devolviendo stock) y libera los pagos asignados.
 *   `register_manual_ticket(sale, user, punto_venta, numero_ticket, tipo_comprobante)`: Registra comprobantes emitidos por hardware controlador fiscal físico (omitiendo la comunicación digital con AFIP).
 
 ## 🌐 Vistas y APIs
 
-### REST API (`api/urls/urls.py`)
+### REST API (`api/urls/urls.py`) - Protegida con `can_manage_bills`
 Base URL: `/api/v1/bills/`
-*   `POST /api/v1/bills/bills/` - Emitir factura para una venta confirmada.
-*   `POST /api/v1/bills/bills/{id}/retry/` - Volver a intentar la emisión fiscal.
-*   `POST /api/v1/bills/bills/{id}/void/` - Anular factura (emitiendo NC si corresponde) y venta.
-*   `POST /api/v1/bills/bills/register_ticket/` - Registrar ticket manual de máquina fiscal.
+*   `GET /api/v1/bills/` - Listado paginado de facturas.
+*   `GET /api/v1/bills/{id}/` - Detalle de factura y sus renglones.
+*   `POST /api/v1/bills/facturar/` - Emitir factura para una venta confirmada.
+*   `POST /api/v1/bills/{id}/send_email/` - Enviar factura por correo electrónico.
 
-### Vistas Web (`web/urls.py`)
-Todas las vistas de acción y descarga requieren autenticación (`@login_required`) y las mutaciones exigen verbo HTTP POST (`@require_POST`).
-*   `GET /bills/facturas/` - Panel de control de facturación, estado del CAE, y descarga de PDFs de facturas.
-*   `GET /bills/facturas/<pk>/pdf/` - Descarga de PDF de comprobantes autorizados o anulados (requiere login).
-*   `POST /bills/facturas/<pk>/reintentar/` - Reintento manual de emisión fiscal para borradores o rechazadas.
-*   `POST /bills/facturas/<pk>/anular/` - Anulación segura de factura y emisión de Nota de Crédito.
+### Vistas Web (`web/urls/urls.py`) - Protegidas con `can_manage_bills`
+Todas las vistas web internas usan `ModulePermissionRequiredMixin` o `@permission_required('can_manage_bills')`:
+*   `GET /bills/` - Listado de facturas emitidas y filtros (`InvoiceListView`).
+*   `GET /bills/invoices/<pk>/` - Detalle completo de la factura (`InvoiceDetailView`).
+*   `GET /bills/invoices/<pk>/pdf/` - Descarga privada de PDF (`download_invoice_pdf`).
+*   `POST /bills/invoices/<pk>/reintentar/` - Reintento manual de emisión fiscal (`invoice_retry`).
+*   `POST /bills/invoices/<pk>/anular/` - Anulación segura de factura y emisión de Nota de Crédito (`invoice_cancel`).
+*   `POST /bills/invoices/<pk>/send-email/` - Encolar envío por email (`invoice_send_email`).
+*   `GET /bills/invoice/public/<uuid>/` - **Vista pública** de descarga de PDF por UUID sin requerir autenticación (`invoice_public_pdf`).
 
 ## 📝 Documentación de Detalle
 *   [Integración Fiscal y Notas de Crédito](docs/afip_integration.md): Flujo asíncrono con Celery, mapeo de impuestos de la AFIP y lógica de reversión de saldos por anulación.
