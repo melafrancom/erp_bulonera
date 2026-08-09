@@ -122,7 +122,7 @@ def mapear_alicuota_iva(porcentaje) -> int:
 # ============================================================================
 
 DOC_TIPO_CUIT = 80
-DOC_TIPO_CUIL = 87
+DOC_TIPO_CUIL = 86
 DOC_TIPO_DNI = 96
 DOC_TIPO_SIN_IDENTIFICAR = 99
 

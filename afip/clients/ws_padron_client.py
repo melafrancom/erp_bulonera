@@ -30,6 +30,7 @@ y namespaces variables entre ambientes.
 
 import logging
 import xml.etree.ElementTree as ET
+from xml.sax.saxutils import escape
 from typing import Optional
 
 import requests
@@ -211,10 +212,10 @@ class WSPadronClient:
     <soapenv:Header/>
     <soapenv:Body>
         <a5:getPersona_v2>
-            <token>{token}</token>
-            <sign>{sign}</sign>
-            <cuitRepresentada>{cuit_representada}</cuitRepresentada>
-            <idPersona>{id_persona}</idPersona>
+            <token>{escape(str(token))}</token>
+            <sign>{escape(str(sign))}</sign>
+            <cuitRepresentada>{escape(str(cuit_representada))}</cuitRepresentada>
+            <idPersona>{escape(str(id_persona))}</idPersona>
         </a5:getPersona_v2>
     </soapenv:Body>
 </soapenv:Envelope>"""

@@ -96,11 +96,24 @@ class ComprobanteAdmin(admin.ModelAdmin):
         )
     estado_display.short_description = "Estado"
 
+    def has_delete_permission(self, request, obj=None):
+        """
+        Comprobantes AUTORIZADO nunca se borran — auditoría fiscal inmutable.
+        Los demás estados solo pueden borrarse por superuser.
+        """
+        if obj and obj.estado == 'AUTORIZADO':
+            return False
+        return request.user.is_superuser
+
 @admin.register(ComprobRenglon)
 class ComprobRenglonAdmin(admin.ModelAdmin):
     list_display = ('comprobante', 'numero_linea', 'descripcion', 'cantidad', 'subtotal')
     list_filter = ('comprobante__tipo_compr',)
     search_fields = ('comprobante__numero', 'descripcion')
+
+    def has_delete_permission(self, request, obj=None):
+        """Los renglones solo se borran en cascada con el comprobante padre."""
+        return False
 
 @admin.register(LogARCA)
 class LogARCAAdmin(admin.ModelAdmin):
@@ -119,4 +132,8 @@ class LogARCAAdmin(admin.ModelAdmin):
     response_code_display.short_description = 'Código'
     
     def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        """LogARCA es auditoría inmutable por compliance fiscal (RG 2485/2008)."""
         return False

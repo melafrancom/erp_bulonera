@@ -30,6 +30,7 @@ Conceptos:
 
 import logging
 import xml.etree.ElementTree as ET
+from xml.sax.saxutils import escape
 from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional
@@ -337,9 +338,9 @@ class WSFEv1Client:
     <soapenv:Body>
         <ar:FECAESolicitar>
             <ar:Auth>
-                <ar:Token>{token}</ar:Token>
-                <ar:Sign>{sign}</ar:Sign>
-                <ar:Cuit>{cuit}</ar:Cuit>
+                <ar:Token>{escape(str(token))}</ar:Token>
+                <ar:Sign>{escape(str(sign))}</ar:Sign>
+                <ar:Cuit>{escape(str(cuit))}</ar:Cuit>
             </ar:Auth>
             <ar:FeCAEReq>
                 <ar:FeCabReq>
@@ -461,9 +462,9 @@ class WSFEv1Client:
     <soapenv:Body>
         <ar:FECompUltimoAutorizado>
             <ar:Auth>
-                <ar:Token>{token}</ar:Token>
-                <ar:Sign>{sign}</ar:Sign>
-                <ar:Cuit>{cuit}</ar:Cuit>
+                <ar:Token>{escape(str(token))}</ar:Token>
+                <ar:Sign>{escape(str(sign))}</ar:Sign>
+                <ar:Cuit>{escape(str(cuit))}</ar:Cuit>
             </ar:Auth>
             <ar:PtoVta>{punto_venta}</ar:PtoVta>
             <ar:CbteTipo>{tipo_compr}</ar:CbteTipo>

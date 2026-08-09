@@ -17,6 +17,7 @@ import logging
 import time
 from datetime import date
 from decimal import Decimal
+from contextlib import nullcontext
 
 from django.utils import timezone
 from django.core.cache import cache
@@ -226,8 +227,13 @@ class FacturacionService:
                 error_msg=f"Fallaron {REINTENTOS_MAX} intentos: {ultimo_error}",
                 respuesta_json={'error': ultimo_error}
             )
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.critical(
+                f"[FacturacionService] No se pudo marcar comprobante {comprobante_id} "
+                f"como RECHAZADO tras agotar reintentos. Queda en estado limbo PENDIENTE: {exc}",
+                exc_info=True,
+                extra={'comprobante_id': comprobante_id, 'empresa_cuit': self.empresa_cuit}
+            )
 
         self._log(
             tipo='FE_ERROR',
@@ -287,7 +293,8 @@ class FacturacionService:
         token, sign = self.obtener_token_acceso()
 
         lock_key = f"arca_emit:{comprobante.punto_venta}:{comprobante.tipo_compr}"
-        with cache.lock(lock_key, timeout=90):
+        lock_ctx = cache.lock(lock_key, timeout=90) if hasattr(cache, 'lock') else nullcontext()
+        with lock_ctx:
             # Consultar el próximo número correlativo desde ARCA
             resultado_nro = self.wsfev1_client.fe_cae_consultar_ult_nro(
                 token=token,

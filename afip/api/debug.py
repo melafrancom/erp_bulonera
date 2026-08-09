@@ -86,15 +86,19 @@ def debug_padron_xml(request):
         
         xml_raw = response.text
         
-        # Intentar parsear con el parser actual
-        result = padron._parsear_respuesta(xml_raw, cuit_limpio)
+        # Redactar token y sign para prevenir fuga de secretos
+        soap_request_redacted = (
+            soap_request
+            .replace(token_res['token'], '[REDACTED_TOKEN]')
+            .replace(token_res['sign'], '[REDACTED_SIGN]')
+        )
         
         return Response({
             'success': True,
             'cuit': cuit,
             'ambiente': config.ambiente,
             'http_status': response.status_code,
-            'soap_request_sent': soap_request[:2000],  # Lo que ENVIAMOS a AFIP
+            'soap_request_sent': soap_request_redacted[:2000],  # Lo que ENVIAMOS a AFIP (redactado)
             'xml_raw': xml_raw[:5000],  # Lo que RECIBIMOS de AFIP
             'xml_raw_length': len(xml_raw),
             'parser_result': result,

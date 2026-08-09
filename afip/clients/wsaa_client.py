@@ -22,6 +22,7 @@ import base64
 import time
 import logging
 import xml.etree.ElementTree as ET
+from xml.sax.saxutils import escape
 from datetime import datetime, timedelta, timezone as dt_timezone
 from pathlib import Path
 
@@ -203,7 +204,7 @@ def construir_login_request_soap(xml_firmado_b64: str) -> str:
     xmlns:ser="http://wsaa.view.sua.gob.ar/">
     <soapenv:Body>
         <ser:loginCms>
-            <ser:in0>{xml_firmado_b64}</ser:in0>
+            <ser:in0>{escape(str(xml_firmado_b64))}</ser:in0>
         </ser:loginCms>
     </soapenv:Body>
 </soapenv:Envelope>"""

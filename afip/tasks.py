@@ -278,3 +278,62 @@ def consultar_ultimo_numero_async(empresa_cuit: str, tipo_compr: int) -> dict:
     except Exception as exc:
         logger.exception(f"[Celery/afip] Error consultando último número: {exc}")
         return {'success': False, 'error': str(exc), 'ultimo_numero': None}
+
+
+@shared_task(
+    name='afip.reconciliar_comprobantes_pendientes',
+    queue='afip',
+    time_limit=300,
+)
+def reconciliar_comprobantes_pendientes() -> dict:
+    """
+    Detecta comprobantes atascados en estado PENDIENTE (>10 min sin actualizar)
+    y los marca como RECHAZADOS para evitar estado limbo.
+    """
+    from django.utils import timezone
+    from datetime import timedelta
+    from afip.models import Comprobante
+    from bills.models import Invoice
+    from sales.models import Sale
+
+    limite = timezone.now() - timedelta(minutes=10)
+    atascados = Comprobante.objects.filter(
+        estado='PENDIENTE',
+        actualizado_en__lt=limite
+    )
+
+    reconciliados = []
+    errores = []
+
+    for comprobante in atascados:
+        try:
+            error_msg = "Comprobante atascado en PENDIENTE por más de 10 minutos. Marcado para revisión manual."
+            comprobante.marcar_como_rechazado(
+                error_msg=error_msg,
+                respuesta_json={'reconciliacion': 'automatica', 'timestamp': str(timezone.now())}
+            )
+            invoice = Invoice.objects.filter(comprobante_arca=comprobante).first()
+            if invoice:
+                invoice.estado_fiscal = 'rechazada'
+                if hasattr(invoice, 'observaciones_afip'):
+                    invoice.observaciones_afip = error_msg
+                invoice.save(update_fields=['estado_fiscal', 'observaciones_afip'] if hasattr(invoice, 'observaciones_afip') else ['estado_fiscal'])
+            
+            if comprobante.sale_id:
+                Sale.objects.filter(pk=comprobante.sale_id).update(fiscal_status='rejected')
+
+            reconciliados.append(comprobante.numero_completo)
+            logger.warning(
+                f"[Celery/afip] Comprobante {comprobante.numero_completo} "
+                f"marcado como RECHAZADO tras estar >10min en PENDIENTE"
+            )
+        except Exception as exc:
+            errores.append(f"{comprobante.numero_completo}: {exc}")
+            logger.error(
+                f"[Celery/afip] Error reconciliando {comprobante.numero_completo}: {exc}",
+                exc_info=True
+            )
+
+    resumen = {'reconciliados': reconciliados, 'errores': errores}
+    logger.info(f"[Celery/afip] Reconciliación completada: {resumen}")
+    return resumen

@@ -18,6 +18,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from afip.models import ConfiguracionARCA, LogARCA, WSAAToken
+from core.decorators import manager_required
 
 logger = logging.getLogger(__name__)
 
@@ -136,7 +137,7 @@ class ConfiguracionARCAFormUpdate(ConfiguracionARCAForm):
 # CONFIGURACIÓN AFIP
 # ============================================================================
 
-@login_required
+@manager_required
 def afip_dashboard(request):
     """Dashboard principal de AFIP: muestra la configuración activa y estado."""
     configs = ConfiguracionARCA.objects.all()
@@ -151,7 +152,7 @@ def afip_dashboard(request):
     return render(request, 'afip/dashboard.html', context)
 
 
-@login_required
+@manager_required
 def solicitar_token_wsaa(request, pk):
     """
     Solicita un token WSAA nuevo para la configuración indicada.
@@ -165,16 +166,10 @@ def solicitar_token_wsaa(request, pk):
     
     # Pre-validación: verificar que el archivo existe
     if not os.path.isfile(config.ruta_certificado):
-        cert_dir = os.path.dirname(config.ruta_certificado)
-        archivos_existentes = []
-        if os.path.isdir(cert_dir):
-            archivos_existentes = os.listdir(cert_dir)
-        
         messages.error(
             request,
-            f"❌ El certificado no existe en el servidor: {config.ruta_certificado}. "
-            f"Archivos encontrados en {cert_dir}: {archivos_existentes or 'directorio no existe'}. "
-            f"Editá la configuración y seleccioná un archivo válido."
+            "❌ El certificado configurado no se encuentra disponible en el servidor. "
+            "Por favor, verificá la configuración y seleccioná un archivo válido."
         )
         return redirect('afip_web:dashboard')
     
@@ -268,7 +263,7 @@ class LogDetailView(LoginRequiredMixin, AdminRequiredMixin, DetailView):
 # CONSULTA DE CUIT (PADRÓN AFIP)
 # ============================================================================
 
-@login_required
+@manager_required
 def consultar_cuit(request):
     """
     Vista web que recibe un CUIT por GET/POST y muestra los datos del contribuyente.
@@ -292,7 +287,7 @@ def consultar_cuit(request):
     })
 
 
-@login_required
+@manager_required
 def api_consultar_cuit(request, cuit):
     """
     Endpoint API interno para consultar CUIT vía AJAX.
