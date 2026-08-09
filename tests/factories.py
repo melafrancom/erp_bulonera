@@ -71,20 +71,22 @@ class CustomerSegmentFactory(DjangoModelFactory):
     discount_percentage = 0
 
 
-def generate_valid_cuit(n):
-    """Genera un CUIT válido para tests (módulo 11) con formato XX-XXXXXXXX-X."""
-    base = f"20{n:08d}"
-    multipliers = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]
-    total = sum(int(base[i]) * multipliers[i] for i in range(10))
-    remainder = total % 11
-    check_digit = 11 - remainder if remainder != 0 else 0
-    if check_digit == 10:
-        cuit = f"23{n:08d}9"
-    else:
-        cuit = f"{base}{check_digit}"
-    
-    # Agregar guiones
-    return f"{cuit[:2]}-{cuit[2:10]}-{cuit[10]}"
+def generate_valid_cuit(n: int) -> str:
+    """
+    Genera un CUIT válido para tests (módulo 11) con formato XX-XXXXXXXX-X.
+    Garantiza que validate_cuit(cuit) retorne True.
+    """
+    num_str = f"{n:08d}"
+    for prefix in ('20', '23', '24', '27', '30', '33'):
+        cuit_10 = f"{prefix}{num_str}"
+        multipliers = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]
+        total = sum(int(cuit_10[i]) * multipliers[i] for i in range(10))
+        remainder = total % 11
+        check_digit = 11 - remainder if remainder != 0 else 0
+        if check_digit != 10:
+            cuit_raw = f"{cuit_10}{check_digit}"
+            return f"{cuit_raw[:2]}-{cuit_raw[2:10]}-{cuit_raw[10]}"
+    return generate_valid_cuit(n + 1)
 
 
 class CustomerFactory(DjangoModelFactory):

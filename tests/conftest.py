@@ -10,25 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 User = get_user_model()
 
 
-def generate_valid_cuit(base_number: int) -> str:
-    """Genera un CUIT válido usando el algoritmo de verificación argentino."""
-    # Formato: XX-XXXXXXXX-X donde XX es el prefijo (20 para empresa)
-    cuit_str = f"20{base_number:08d}"
-    
-    # Algoritmo de Luhn modificado para CUIT argentino
-    multiplicadores = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]
-    suma = 0
-    
-    for i, digito in enumerate(cuit_str):
-        suma += int(digito) * multiplicadores[i]
-    
-    digito_verificador = 11 - (suma % 11)
-    if digito_verificador == 11:
-        digito_verificador = 0
-    elif digito_verificador == 10:
-        digito_verificador = 9
-    
-    return f"20-{base_number:08d}-{digito_verificador}"
+from tests.factories import generate_valid_cuit
 
 
 @pytest.fixture
@@ -79,12 +61,12 @@ def manager_user(db):
 
 @pytest.fixture
 def operator_user(db):
-    """Usuario operador (sin permisos)."""
+    """Usuario operador autenticado (rol 'operator')."""
     return User.objects.create_user(
         username='operator',
         email='operator@bulonera.app',
         password='operator123!',
-        role='user'
+        role='operator'
     )
 
 

@@ -6,25 +6,6 @@ from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.urls import path
 from django.http import Http404
 
-# Vista de prueba que lanza diferentes excepciones
-class MockErrorView(APIView):
-    def get(self, request, *args, **kwargs):
-        error_type = request.query_params.get('type')
-        if error_type == 'validation':
-            raise ValidationError({'field': ['Este campo es requerido']})
-        elif error_type == 'permission':
-            raise PermissionDenied("No tienes permiso")
-        elif error_type == '404':
-            raise Http404("Recurso no encontrado")
-        elif error_type == 'server':
-            raise Exception("Explosión interna")
-        return Response({'success': True})
-
-# Configuración de URLs para este test
-urlpatterns = [
-    path('test-error/', MockErrorView.as_view(), name='test-error'),
-]
-
 @pytest.mark.django_db
 class TestAPIExceptionHandler:
     """Tests para custom_exception_handler en api/exceptions.py."""
@@ -32,13 +13,7 @@ class TestAPIExceptionHandler:
     def test_validation_error_format(self, api_client, admin_user):
         """Validar formato de error 400."""
         api_client.force_authenticate(user=admin_user)
-        response = api_client.get('/api/v1/test-exceptions/?type=validation')
-        
-        # Nota: Usamos una URL real que use el handler, o mockeamos el config.
-        # En este proyecto, el handler está configurado globalmente.
-        # Probaremos con un endpoint real de sales para validar el handler real.
-        
-        response = api_client.post('/api/v1/sales/sales/', {}) # Post vacío dispara ValidationError
+        response = api_client.post('/api/v1/sales/sales/', {})  # Post vacío dispara ValidationError
         
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         data = response.json()
