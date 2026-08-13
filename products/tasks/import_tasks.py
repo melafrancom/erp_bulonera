@@ -84,7 +84,12 @@ def export_products_to_excel(filters=None):
 def check_low_stock_products():
     """
     Verifica productos con stock bajo y registra alertas.
-    Ejecutar periódicamente con Celery Beat.
+
+    DEPRECATED: La tarea canónica de alertas de stock es
+    inventory.tasks.check_low_stock_task (usa InventoryService,
+    detecta stock negativo y envía email a ADMINS).
+    Esta función se mantiene como utilidad de consulta puntual
+    pero NO se agenda en CELERY_BEAT_SCHEDULE.
     """
     from django.db.models import F
     from products.models import Product

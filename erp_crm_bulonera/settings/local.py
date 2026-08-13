@@ -9,11 +9,12 @@ if isinstance(ALLOWED_HOSTS, list):
     if 'testserver' not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append('testserver')
 
-SITE_URL = env('SITE_URL')
-
 # Email backend for development (imprime en consola en lugar de enviar)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-# CORS settings for development
+
+# ⚠️ WARNING: CORS_ALLOW_ALL_ORIGINS + CORS_ALLOW_CREDENTIALS (heredado de base.py)
+# es una combinación insegura. NUNCA usar fuera de local.py.
+# Si se clona este archivo para staging, reemplazar por CORS_ALLOWED_ORIGINS con lista explícita.
 CORS_ALLOW_ALL_ORIGINS = True
 
 import sys

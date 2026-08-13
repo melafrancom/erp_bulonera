@@ -45,12 +45,20 @@ El sistema utiliza **Redis** como broker de mensajería para Celery y como backe
 *   **Cache URL (Django):** `redis://redis:6379/0` (Base de datos de Redis para caché de sesión yFinancialSnapshots).
 
 ### Tareas Programadas Críticas (Celery Beat):
-1.  **Regeneración de Snapshots Financieros (`reports.tasks.regenerate_stale_snapshots`):**
+1.  **Renovación de Tokens WSAA (`afip.renovar_tokens_expirados`):**
+    *   **Frecuencia:** Cada 30 minutos.
+    *   **Objetivo:** Renovar tokens WSAA próximos a vencer para evitar latencia en la primera facturación de cada turno.
+2.  **Reconciliación de Comprobantes ARCA (`afip.reconciliar_comprobantes_pendientes`):**
+    *   **Frecuencia:** Cada 15 minutos.
+    *   **Objetivo:** Detectar comprobantes atascados en estado PENDIENTE (>10 min) y marcarlos para revisión manual.
+3.  **Regeneración de Snapshots Financieros (`reports.tasks.regenerate_financial_snapshots`):**
     *   **Frecuencia:** Diaria a las 02:00 AM.
-    *   **Objetivo:** Reconstruir todos los P&L y Cash Flow marcados como obsoletos (`is_stale=True`).
-2.  **Verificación de Expiración de Certificados AFIP:**
-    *   **Frecuencia:** Semanal.
-    *   **Objetivo:** Leer los certificados `.pem` configurados en `ConfiguracionARCA` y emitir advertencias de log en `django_prod.log` si restan menos de 30 días para su vencimiento.
-3.  **Alertas de Stock Mínimo (`inventory.tasks.check_low_stock`):**
-    *   **Frecuencia:** Diaria.
-    *   **Objetivo:** Rastrear productos bajo el umbral mínimo y generar reportes para compras.
+    *   **Objetivo:** Reconstruir snapshots financieros diariamente.
+4.  **Alertas de Stock Bajo/Negativo (`inventory.tasks.check_low_stock_task`):**
+    *   **Frecuencia:** Diaria a las 07:00 AM.
+    *   **Objetivo:** Detectar productos con stock bajo o negativo y enviar email de alerta a ADMINS.
+5.  **Monitoreo de Notificaciones Fallidas (`sales.check_failed_notifications`):**
+    *   **Frecuencia:** Cada 6 horas.
+    *   **Objetivo:** Revisar tareas de envío de correo fallidas en las últimas 24h y notificar a ADMINS. Requiere `django_celery_results`.
+
+> **Nota:** La verificación de expiración de certificados AFIP se ejecuta vía crontab del host (no Celery Beat). Ver `afip_renovar_certificado.py`.

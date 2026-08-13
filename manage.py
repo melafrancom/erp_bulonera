@@ -6,9 +6,9 @@ def main():
     """Run administrative tasks."""
     # Si estamos en CI, usar settings de test
     if os.environ.get('GITHUB_ACTIONS'):
-        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'erp_crm_bulonera.settings.local')
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'erp_crm_bulonera.settings.test')
     else:
-        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'erp_crm_bulonera.settings.local')
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'erp_crm_bulonera.settings.production')
     
     try:
         from django.core.management import execute_from_command_line

@@ -47,6 +47,7 @@ DJANGO_APPS = [
     'django.contrib.humanize',
     'django_filters',
     'django_celery_beat',
+    'django_celery_results',
 ]
 THIRD_PARTY_APPS = [
     'rest_framework',
@@ -78,6 +79,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + SHARED_APPS
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Para archivos estáticos
+    'corsheaders.middleware.CorsMiddleware',  # CORS al inicio del stack (antes de CommonMiddleware)
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -85,7 +87,6 @@ MIDDLEWARE = [
     'api.middleware.APILoggingMiddleware',  # API request/response logging
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # CORS antes de CommonMiddleware
 ]
 
 # ============================================================================
@@ -173,7 +174,7 @@ DATABASES = {
         'USER': env('DB_USER'),
         'PASSWORD': env('DB_PASSWORD'),  # La contraseña que estableciste para root
         'HOST': env('DB_HOST'),  # Nombre del servicio en docker-compose
-        'PORT': env('DB_PORT', default='3307'),
+        'PORT': env('DB_PORT', default='3306'),
         'OPTIONS': {
             'charset': 'utf8mb4',
             'collation': 'utf8mb4_spanish_ci',
@@ -406,8 +407,8 @@ SPECTACULAR_SETTINGS = {
 # ============================================================================
 # Celery Configuration (Async Task Queue)
 # ============================================================================
-CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://redis:6379/0')
-CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://redis:6379/0')
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://redis:6379/1')
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://redis:6379/1')
 
 # Serialization
 CELERY_ACCEPT_CONTENT = ['json']
@@ -431,7 +432,6 @@ CELERY_TASK_ROUTES = {
     'sales.tasks.*': {'queue': 'sales'},
     'notifications.tasks.*': {'queue': 'notifications'},
     'afip.tasks.*': {'queue': 'afip'},           # Cola dedicada para ARCA
-    'common.tasks.generate_pdf': {'queue': 'heavy'},
 }
 
 # Beat Schedule (Tareas periódicas)
@@ -443,10 +443,25 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'afip.renovar_tokens_expirados',
         'schedule': crontab(minute='*/30'),
     },
+    # Reconcilia comprobantes ARCA atascados en PENDIENTE (>10 min sin respuesta)
+    'afip-reconciliar-pendientes': {
+        'task': 'afip.reconciliar_comprobantes_pendientes',
+        'schedule': crontab(minute='*/15'),
+    },
     # Regenera snapshots financieros diariamente a las 02:00 AM
     'regenerar-snapshots-financieros': {
         'task': 'reports.tasks.regenerate_financial_snapshots',
         'schedule': crontab(hour=2, minute=0),
+    },
+    # Alertas de stock bajo/negativo — diaria a las 07:00 AM
+    'check-low-stock-inventory': {
+        'task': 'inventory.tasks.check_low_stock_task',
+        'schedule': crontab(hour=7, minute=0),
+    },
+    # Monitorea correos de presupuestos/facturas fallidos (últimas 24h)
+    'check-failed-notifications': {
+        'task': 'sales.check_failed_notifications',
+        'schedule': crontab(hour='*/6'),
     },
 }
 
@@ -640,6 +655,3 @@ LOGGING = {
         },
     },
 }
-
-# Aplicar configuración de logging
-logging.config.dictConfig(LOGGING)

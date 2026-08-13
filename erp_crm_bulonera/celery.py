@@ -1,7 +1,7 @@
 import os
 from celery import Celery
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'erp_crm_bulonera.settings.local')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'erp_crm_bulonera.settings.production')
 
 app = Celery('erp_crm_bulonera')
 
