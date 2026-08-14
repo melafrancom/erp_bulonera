@@ -6,7 +6,13 @@ class StockMovementAdmin(admin.ModelAdmin):
     list_display = ('product', 'movement_type', 'quantity', 'created_at', 'created_by')
     list_filter = ('movement_type',)
     search_fields = ('product__name', 'reference')
-    readonly_fields = ('previous_stock', 'new_stock', 'created_at', 'created_by', 'updated_at', 'updated_by')
+    readonly_fields = ('previous_stock', 'new_stock', 'unit_cost', 'created_at', 'created_by', 'updated_at', 'updated_by')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 class StockCountItemInline(admin.TabularInline):
     model = StockCountItem

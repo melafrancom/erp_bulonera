@@ -524,6 +524,10 @@ GET /afip/            → afip/web/views/
 
 ### Reglas Fundamentales
 - **Lógica SOLO en `services.py`** — las vistas sólo rutean y validan el request
+- **Política de Costeo:** Se rige por *Último Precio de Compra / Costo de Reposición* (`Product.cost`). El costo histórico se preserva solo a modo informativo en `StockMovement.unit_cost` y `SaleItem.unit_cost`.
+- **Jerarquía de Costos:** Carga masiva por Excel (`ProductImportService`) como vía primaria; snapshot manual en mostrador (`SaleItem.unit_cost`) como secundaria; recepción de compra (`increase_stock`) como operativa.
+- **Venta Ininterrumpida:** El mostrador nunca se bloquea por falta de stock; se admite stock cero o negativo. El control estricto y alertas aplican solo cuando `stock_control_enabled=True`.
+- **Concurrencia en Inventario:** Descuentos de stock en ventas ordenan ítems por `product_id` para garantizar locking determinístico libre de deadlocks en MariaDB/InnoDB.
 - **Tests separados por capa** — nunca un `tests.py` monolítico
 - **Serializers en `api/serializers.py`** — nunca inline en las vistas
 - **`__init__.py` exporta** símbolos explícitamente con `__all__`

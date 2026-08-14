@@ -51,7 +51,7 @@ class InventoryService:
         if quantity <= 0:
             raise ValidationError("La cantidad debe ser mayor a 0")
         
-        if movement_type not in ['ENTRY']:
+        if movement_type not in ['ENTRY', 'SALE_REVERSAL']:
             raise ValidationError(f"Tipo de movimiento inválido para entrada: {movement_type}")
         
         product = Product.objects.select_for_update().get(pk=product_id)
@@ -121,9 +121,10 @@ class InventoryService:
     def decrease_stock_from_sale(self, sale):
         """
         Descuenta stock desde una venta confirmada (al pasar a despachado).
+        Ordena determinísticamente por product_id para prevenir deadlocks en transacciones concurrentes.
         """
         movements = []
-        for item in sale.items.select_related('product').all():
+        for item in sale.items.select_related('product').order_by('product_id'):
             movement = self.decrease_stock(
                 product_id=item.product.id,
                 quantity=item.quantity,
@@ -140,13 +141,15 @@ class InventoryService:
     def revert_stock_from_cancelled_sale(self, sale):
         """
         Revierte el stock de una venta cancelada.
+        Registra el movimiento como SALE_REVERSAL para no distorsionar métricas de compras a proveedores.
+        Ordena determinísticamente por product_id para prevenir deadlocks en transacciones concurrentes.
         """
         movements = []
-        for item in sale.items.select_related('product').all():
+        for item in sale.items.select_related('product').order_by('product_id'):
             movement = self.increase_stock(
                 product_id=item.product.id,
                 quantity=item.quantity,
-                movement_type='ENTRY',
+                movement_type='SALE_REVERSAL',
                 reference=f"Reversión de Venta #{sale.number or sale.id} (cancelada)",
                 user=sale.updated_by or sale.created_by,
                 notes=f"Venta cancelada, stock devuelto"

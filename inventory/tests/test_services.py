@@ -160,3 +160,102 @@ class TestInventoryService:
         assert product2.stock_quantity == 5 # Sin cambios
         assert result['adjustments_created'] == 1
         assert result['total_items'] == 2
+
+    def test_decrease_stock_from_sale_orders_by_product_id(self, inventory_manager):
+        from inventory.tests.factories import ProductFactory
+        from sales.models import Sale, SaleItem
+        from customers.models import Customer
+        
+        p1 = ProductFactory(stock_quantity=20)
+        p2 = ProductFactory(stock_quantity=20)
+        # Asegurar p_high y p_low
+        p_low = p1 if p1.id < p2.id else p2
+        p_high = p2 if p1.id < p2.id else p1
+        
+        customer = Customer.objects.create(
+            business_name="Test Customer",
+            created_by=inventory_manager
+        )
+        sale = Sale.objects.create(
+            customer=customer,
+            created_by=inventory_manager
+        )
+        # Crear items en orden inverso (p_high primero)
+        SaleItem.objects.create(sale=sale, product=p_high, quantity=2, unit_price=100)
+        SaleItem.objects.create(sale=sale, product=p_low, quantity=3, unit_price=100)
+        
+        service = InventoryService()
+        movements = service.decrease_stock_from_sale(sale)
+        
+        assert len(movements) == 2
+        # Verificar orden determinístico por product_id ascendente
+        assert movements[0].product_id == p_low.id
+        assert movements[1].product_id == p_high.id
+        assert movements[0].movement_type == 'EXIT'
+        assert movements[1].movement_type == 'EXIT'
+
+    def test_revert_stock_from_cancelled_sale_uses_sale_reversal(self, inventory_manager):
+        from decimal import Decimal
+        from inventory.tests.factories import ProductFactory
+        from sales.models import Sale, SaleItem
+        from customers.models import Customer
+        
+        p1 = ProductFactory(stock_quantity=10, cost=Decimal('45.00'))
+        p2 = ProductFactory(stock_quantity=10, cost=Decimal('80.00'))
+        p_low = p1 if p1.id < p2.id else p2
+        p_high = p2 if p1.id < p2.id else p1
+        
+        customer = Customer.objects.create(
+            business_name="Customer Reversal",
+            cuit_cuil="20123456789",
+            created_by=inventory_manager
+        )
+        sale = Sale.objects.create(customer=customer, created_by=inventory_manager)
+        
+        SaleItem.objects.create(sale=sale, product=p_high, quantity=4, unit_price=100)
+        SaleItem.objects.create(sale=sale, product=p_low, quantity=1, unit_price=100)
+        
+        service = InventoryService()
+        movements = service.revert_stock_from_cancelled_sale(sale)
+        
+        assert len(movements) == 2
+        assert movements[0].product_id == p_low.id
+        assert movements[1].product_id == p_high.id
+        assert movements[0].movement_type == 'SALE_REVERSAL'
+        assert movements[1].movement_type == 'SALE_REVERSAL'
+        
+        # Verificar que el costo del producto NO se modificó
+        p_low.refresh_from_db()
+        p_high.refresh_from_db()
+        assert p_low.cost == Decimal('45.00')
+        assert p_high.cost == Decimal('80.00')
+
+    def test_stock_movement_save_adjustment_fallback_safety(self, inventory_manager):
+        from inventory.tests.factories import ProductFactory
+        product = ProductFactory(stock_quantity=15)
+        
+        # Si un StockMovement ADJUSTMENT se guarda sin new_stock, no debe asumir quantity como new_stock
+        movement = StockMovement(
+            product=product,
+            movement_type='ADJUSTMENT',
+            quantity=3,
+            created_by=inventory_manager
+        )
+        movement.save()
+        
+        assert movement.previous_stock == 15
+        assert movement.new_stock is None
+
+    def test_stock_movement_admin_permissions(self):
+        from django.contrib.admin.sites import AdminSite
+        from django.test import RequestFactory
+        from inventory.admin import StockMovementAdmin
+        from inventory.models import StockMovement
+        
+        site = AdminSite()
+        admin_instance = StockMovementAdmin(StockMovement, site)
+        request = RequestFactory().get('/admin/')
+        
+        assert admin_instance.has_add_permission(request) is False
+        assert admin_instance.has_delete_permission(request) is False
+

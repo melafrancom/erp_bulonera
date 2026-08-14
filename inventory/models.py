@@ -4,12 +4,13 @@ from common.models import BaseModel
 from products.models import Product
 
 MOVEMENT_TYPE_CHOICES = [
-    ('ENTRY', 'Entrada'),           # Compra, devolución de cliente
+    ('ENTRY', 'Entrada'),           # Compra, recepción de proveedor
     ('EXIT', 'Salida'),             # Venta, uso interno
     ('ADJUSTMENT', 'Ajuste'),       # Corrección de inventario
     ('TRANSFER', 'Transferencia'),  # Entre almacenes (futuro)
     ('LOSS', 'Pérdida'),            # Rotura, vencimiento
     ('RETURN', 'Devolución'),       # Devolución a proveedor
+    ('SALE_REVERSAL', 'Reversión de Venta'), # Devolución / anulación de venta despachada
 ]
 
 STATUS_CHOICES = [
@@ -46,12 +47,12 @@ class StockMovement(BaseModel):
                 self.previous_stock = self.product.stock_quantity
             
             if self.new_stock is None:
-                if self.movement_type in ['ENTRY']:
+                if self.movement_type in ['ENTRY', 'SALE_REVERSAL']:
                     self.new_stock = self.previous_stock + self.quantity
                 elif self.movement_type in ['EXIT', 'LOSS', 'RETURN']:
                     self.new_stock = self.previous_stock - self.quantity
                 elif self.movement_type == 'ADJUSTMENT':
-                    self.new_stock = self.quantity
+                    pass  # No inferir ambiguamente si no fue provisto explícitamente
         
         super().save(*args, **kwargs)
 

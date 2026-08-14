@@ -101,6 +101,7 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': ('category', 'subcategories')
         }),
         ('Precios', {
+            'description': 'Valores de venta y costo de reposición. El costo se actualiza primariamente por importación masiva Excel o entradas de compra con costo informado.',
             'fields': ('price', 'cost', 'tax_rate')
         }),
         ('Stock', {
