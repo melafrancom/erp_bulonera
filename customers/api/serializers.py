@@ -106,19 +106,14 @@ class CustomerCreateSerializer(serializers.ModelSerializer):
         if len(clean_value) == 11 and not validate_cuit(clean_value):
             raise serializers.ValidationError("El CUIT/CUIL no es válido (dígito verificador incorrecto).")
         
-        # Unicidad (revisar en todos, incluso eliminados no deben causar choque sorpresa)
+        # Unicidad
         customer = self.instance
         queryset = getattr(Customer, 'all_objects', Customer.objects).filter(cuit_cuil=clean_value)
         if customer:
             queryset = queryset.exclude(pk=customer.pk)
         
-        existing = queryset.first()
-        if existing:
-            if existing.is_active:
-                raise serializers.ValidationError("Ya existe un cliente con este CUIT/CUIL.")
-            else:
-                # Lo permitimos pasar, peeeero avisamos al Context para que create() sepa restaurarlo
-                self.context['deleted_customer_to_restore'] = existing
+        if queryset.exists():
+            raise serializers.ValidationError("Ya existe un cliente con este CUIT/CUIL.")
 
         return clean_value
 
@@ -144,15 +139,3 @@ class CustomerCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(e.message_dict if hasattr(e, 'message_dict') else str(e))
             
         return attrs
-
-    def create(self, validated_data):
-        # Si la validación detectó un cliente eliminado suavemente con el mismo CUIT
-        existing = self.context.get('deleted_customer_to_restore')
-        if existing:
-            request = self.context.get('request')
-            user = request.user if request and hasattr(request, 'user') else None
-            existing.restore(user=user)
-            # Actualizamos toda la información vieja por la nueva
-            return super().update(existing, validated_data)
-            
-        return super().create(validated_data)

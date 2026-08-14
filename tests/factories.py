@@ -73,8 +73,8 @@ class CustomerSegmentFactory(DjangoModelFactory):
 
 def generate_valid_cuit(n: int) -> str:
     """
-    Genera un CUIT válido para tests (módulo 11) con formato XX-XXXXXXXX-X.
-    Garantiza que validate_cuit(cuit) retorne True.
+    Genera un CUIT válido para tests (módulo 11) de 11 dígitos (sin guiones).
+    Garantiza que validate_cuit(cuit) retorne True y respete max_length=11.
     """
     num_str = f"{n:08d}"
     for prefix in ('20', '23', '24', '27', '30', '33'):
@@ -84,8 +84,7 @@ def generate_valid_cuit(n: int) -> str:
         remainder = total % 11
         check_digit = 11 - remainder if remainder != 0 else 0
         if check_digit != 10:
-            cuit_raw = f"{cuit_10}{check_digit}"
-            return f"{cuit_raw[:2]}-{cuit_raw[2:10]}-{cuit_raw[10]}"
+            return f"{cuit_10}{check_digit}"
     return generate_valid_cuit(n + 1)
 
 

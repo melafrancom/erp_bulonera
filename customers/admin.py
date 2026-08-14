@@ -212,13 +212,7 @@ class CustomerAdmin(admin.ModelAdmin):
         obj.updated_by = request.user
         super().save_model(request, obj, form, change)
     
-    actions = ['activate_customers', 'deactivate_customers']
-    
-    def activate_customers(self, request, queryset):
-        """Activate selected customers."""
-        updated = queryset.update(is_active=True)
-        self.message_user(request, f'{updated} clientes activados exitosamente.')
-    activate_customers.short_description = "Activar clientes seleccionados"
+    actions = ['deactivate_customers']
     
     def deactivate_customers(self, request, queryset):
         """Deactivate selected customers (soft delete)."""
