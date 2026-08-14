@@ -152,11 +152,11 @@ class TestProductCreateView:
         assert resp.status_code == 200
 
     def test_create_no_permission(self, viewer_user, category):
-        """Usuario sin permiso no puede crear."""
+        """Usuario sin permiso recibe 403."""
         client = _login_client(viewer_user)
         url = reverse('products:product_create')
         resp = client.get(url)
-        assert resp.status_code == 302  # Redirect a lista
+        assert resp.status_code == 403
 
 
 # =============================================================================
@@ -196,11 +196,11 @@ class TestProductEditView:
         assert product.price == Decimal('250.00')
 
     def test_edit_no_permission(self, viewer_user, product):
-        """Usuario sin permiso no puede editar."""
+        """Usuario sin permiso recibe 403."""
         client = _login_client(viewer_user)
         url = reverse('products:product_edit', kwargs={'pk': product.pk})
         resp = client.get(url)
-        assert resp.status_code == 302
+        assert resp.status_code == 403
 
 
 # =============================================================================
@@ -233,11 +233,11 @@ class TestProductDeleteView:
         assert Product.objects.filter(id=product.pk).exists()
 
     def test_delete_no_permission(self, viewer_user, product):
-        """Sin permiso no puede eliminar."""
+        """Sin permiso recibe 403."""
         client = _login_client(viewer_user)
         url = reverse('products:product_delete', kwargs={'pk': product.pk})
         resp = client.post(url)
-        assert resp.status_code == 302
+        assert resp.status_code == 403
         assert Product.objects.filter(id=product.pk).exists()
 
 
@@ -255,11 +255,11 @@ class TestProductImportView:
         assert resp.status_code == 200
 
     def test_import_no_permission(self, viewer_user):
-        """Sin permiso redirige."""
+        """Sin permiso recibe 403."""
         client = _login_client(viewer_user)
         url = reverse('products:product_import')
         resp = client.get(url)
-        assert resp.status_code == 302
+        assert resp.status_code == 403
 
     def test_import_post_no_file(self, admin_user):
         """POST sin archivo muestra error."""
@@ -333,4 +333,50 @@ class TestProductQRView:
         assert resp.status_code == 200
         assert resp['Content-Type'] == 'image/png'
         assert len(resp.content) > 0
+
+
+# =============================================================================
+# Listas de Precios
+# =============================================================================
+
+class TestPriceListViews:
+
+    def test_pricelist_list_requires_permission(self, viewer_user):
+        """Usuario sin permiso recibe 403 al listar listas de precio."""
+        client = _login_client(viewer_user)
+        url = reverse('products:pricelist_list')
+        resp = client.get(url)
+        assert resp.status_code == 403
+
+    def test_pricelist_create_requires_permission(self, viewer_user):
+        """Usuario sin permiso recibe 403 al intentar crear lista de precio."""
+        client = _login_client(viewer_user)
+        url = reverse('products:pricelist_create')
+        resp = client.get(url)
+        assert resp.status_code == 403
+
+    def test_pricelist_edit_requires_permission(self, viewer_user, admin_user):
+        """Usuario sin permiso recibe 403 al intentar editar lista de precio."""
+        from products.models import PriceList
+        pl = PriceList.objects.create(
+            name="Mayorista Test", list_type="DISCOUNT", percentage=Decimal("10.00"),
+            created_by=admin_user, updated_by=admin_user
+        )
+        client = _login_client(viewer_user)
+        url = reverse('products:pricelist_edit', kwargs={'pk': pl.pk})
+        resp = client.get(url)
+        assert resp.status_code == 403
+
+    def test_pricelist_delete_requires_permission(self, viewer_user, admin_user):
+        """Usuario sin permiso recibe 403 al intentar eliminar lista de precio."""
+        from products.models import PriceList
+        pl = PriceList.objects.create(
+            name="Mayorista Test 2", list_type="DISCOUNT", percentage=Decimal("10.00"),
+            created_by=admin_user, updated_by=admin_user
+        )
+        client = _login_client(viewer_user)
+        url = reverse('products:pricelist_delete', kwargs={'pk': pl.pk})
+        resp = client.post(url)
+        assert resp.status_code == 403
+
 

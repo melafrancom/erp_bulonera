@@ -21,12 +21,13 @@ El módulo `products` centraliza el catálogo maestro de artículos, categorías
 *   **`ProductImage`**: Galería de imágenes asociadas a cada artículo. Hereda de `BaseModel` (Soft-delete: Sí).
 
 ## ⚡ Servicios Críticos (`services.py`)
-*   `ProductService`: CRUD y operaciones sobre productos (`create_product`, `update_product`, `update_price`). Valida la unicidad del código de negocio contemplando registros eliminados lógicamente y genera códigos de barra/QR en memoria.
+*   `ProductService`: CRUD y operaciones sobre productos (`create_product`, `update_product`, `update_price`). Utiliza bloqueo pesimista `select_for_update()` en `update_product` y `update_price` para prevenir *lost updates* concurrentes. Valida la unicidad del código de negocio contemplando registros eliminados lógicamente y genera códigos de barra/QR en memoria.
 *   `PriceService`: Cómputo dinámico de precios netos y finales cruzando la ficha del producto con recargos o bonificaciones de listas comerciales.
 *   `ProductImportService`: Lógica transaccional modular (`_resolve_category`, `_resolve_supplier`, `_process_main_image`, `_process_subcategories_and_gallery`) para la importación y validación masiva de catálogo a través de planillas Excel/CSV. Sincroniza automáticamente el inventario mediante `InventoryService.adjust_stock()` para mantener el trazado de auditoría (`StockMovement`).
 *   `ProductExportService`: Generador y formateador de hojas de cálculo Excel en memoria (`io.BytesIO()`) evitando leaks de disco en producción.
 
 ## 🛡️ Reglas de Seguridad y Control de Acceso
+*   **Permisos de Gestión Canónicos (`@permission_required('can_manage_products')`)**: Las vistas web mutantes (`product_create`, `product_edit`, `product_delete`, `product_import`, `pricelist_*`) están estrictamente protegidas con el decorador canónico que devuelve HTTP 403 `PermissionDenied` ante usuarios no autorizados (ej: rol `viewer` u operadores sin permisos).
 *   **Visibilidad de Costos por Rol (`_can_view_cost`)**: Los usuarios con rol `viewer` pueden consultar el catálogo y los precios de venta, pero los datos de costo (`cost`), margen (`profit_margin_percentage`) y ganancia bruta (`profit_amount`) se ocultan explícitamente (`None`).
 *   **Sanitización y Anti-Path Traversal**: Las cargas de archivos en API y Admin sanitizan nombres mediante `get_valid_filename()` y timestamps de un solo uso, garantizando la eliminación en disco tras procesar o la respuesta en memoria.
 *   **Prevención de XSS en Admin**: Todos los mensajes de aviso y error del admin escapan datos mediante `django.utils.html.escape()` antes de renderizar bloques HTML formateados (`extra_tags='safe'`).

@@ -12,16 +12,16 @@ El módulo `erp_crm_bulonera` es la raíz de configuración del proyecto Django 
 
 ## 🛠️ Archivos de Configuración Clave
 *   **`settings/`**: Directorio de settings modulares:
-    *   `base.py`: Configuraciones compartidas, middlewares, validaciones de claves y zonas horarias.
+    *   `base.py`: Configuraciones compartidas, middlewares (con `corsheaders.middleware.CorsMiddleware` al inicio del stack para preflight OPTIONS correcto), validaciones de claves y zonas horarias.
     *   `local.py`: Settings para desarrollo Docker local (puerto 8000, debug activo, consola de emails).
     *   `test.py`: Settings optimizados para suites de pruebas rápidas (base de datos SQLite/MariaDB en memoria, MD5 hasher para velocidad).
-    *   `production.py`: Configuración para producción en VPS Hostinger (Debug desactivado, logs persistidos, seguridad SSL).
-*   **`celery.py`**: Inicialización de la aplicación Celery, configuración de Redis como broker/cache y auto-descubrimiento de tareas (`tasks.py`) de cada app.
+    *   `production.py`: Configuración para producción en VPS Hostinger (Debug desactivado, logs persistidos en host, seguridad SSL y headers HSTS).
+*   **`celery.py`**: Inicialización de la aplicación Celery, configuración de Redis como broker/cache, auto-descubrimiento de tareas (`tasks.py`) y registro centralizado del cronograma de tareas periódicas (`CELERY_BEAT_SCHEDULE` para alertas de stock bajo, resúmenes diarios e invalidación de snapshots).
 *   **`urls.py`**: Mapeador central de URLs. Divide el tráfico entre las vistas tradicionales de servidor (HTML) y la API REST (/api/v1/...).
 
 ## ⚡ Servicios de Orquestación
-*   WSGI / ASGI (`wsgi.py` / `asgi.py`): Puntos de contacto estándar para servidores web. WSGI carga la configuración de producción y expone el objeto `application` consumido por uWSGI.
-*   Celery Worker & Celery Beat: Procesan en segundo plano tareas como la facturación asíncrona y la invalidación diaria de snapshots financieros.
+*   WSGI / ASGI (`wsgi.py` / `asgi.py`): Puntos de contacto estándar para servidores web. WSGI carga la configuración de producción y expone el objeto `application` consumido por uWSGI / OpenLiteSpeed.
+*   Celery Worker & Celery Beat: Procesan en segundo plano tareas como la facturación asíncrona, importación masiva de planillas y la ejecución del cronograma programado en Beat.
 
 ## 📝 Documentación de Detalle
 *   [Configuración de Ambientes y Celery](docs/settings_environments.md): Detalla las variables de entorno utilizadas, las rutas de logs del host VPS y el enrutamiento de colas de Celery.

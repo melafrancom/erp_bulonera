@@ -444,11 +444,11 @@ if (localStorage.getItem('theme') === 'dark' ||
 |---|---|
 | [`core`](core/README.md) | Modelos base (BaseModel, soft-delete, audit) |
 | [`common`](common/README.md) | Middleware, excepciones, permisos globales |
-| `products` | Catálogo de productos |
+| [`products`](products/README.md) | Catálogo de productos, listas de precio, costeo y control de acceso canónico (`can_manage_products`) |
 | [`sales`](sales/README.md) | Ventas y presupuestos (con sync PWA offline) |
 | [`customers`](customers/README.md) | Clientes y Cuentas Corrientes (modalidades formal/informal, pre-check de crédito, refacturación y aging) |
 | [`suppliers`](suppliers/README.md) | Proveedores |
-| [`inventory`](inventory/README.md) | Stock y movimientos |
+| [`inventory`](inventory/README.md) | Stock, movimientos y auditoría física con trazabilidad de costos (`unit_cost`) |
 | [`payments`](payments/README.md) | Pagos y asignaciones |
 | [`bills`](bills/README.md) | Facturación |
 | [`expenses`](expenses/README.md) | Gastos operativos (OPEX) y clasificación en P&L |

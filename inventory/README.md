@@ -10,14 +10,14 @@ El módulo `inventory` gestiona el control de stock, almacenes, inventarios fís
     *   [`sales`](../sales/README.md) (para descontar stock en los despachos de ventas y revertir movimientos al cancelar)
 
 ## 🛠️ Modelos Clave
-*   **`StockMovement`**: Registro inmutable de transacciones físicas (entrada, salida, ajuste, pérdida, devolución, transferencia). Almacena `previous_stock` y `new_stock` para mantener la trazabilidad. Hereda de `BaseModel` (Soft-delete: No - inmutable por auditoría).
+*   **`StockMovement`**: Registro inmutable de transacciones físicas (entrada, salida, ajuste, pérdida, devolución, transferencia). Almacena `previous_stock`, `new_stock` y `unit_cost` (opcional, para trazabilidad y auditoría de costo de compra en movimientos ENTRY). Hereda de `BaseModel` (Soft-delete: No - inmutable por auditoría).
 *   **`StockCount`**: Cabecera de una auditoría física de stock. Permite a los usuarios cargar conteos progresivamente antes de consolidar. Hereda de `BaseModel` (Soft-delete: Sí).
 *   **`StockCountItem`**: Detalle del conteo físico por producto. Calcula la diferencia entre la cantidad teórica (`expected_quantity`) y la física (`counted_quantity`). Hereda de `BaseModel` (Soft-delete: Sí).
 
 ## ⚡ Servicios Críticos (`services.py`)
 Toda la lógica de negocio se procesa de forma atómica en los siguientes servicios de `InventoryService`:
 *   `decrease_stock(product_id, quantity, movement_type, reference, user, notes=None)`: Descuenta stock de un producto y registra el movimiento de salida. Permite stock negativo.
-*   `increase_stock(product_id, quantity, movement_type, reference, user, notes=None)`: Incrementa stock de un producto y registra el movimiento de entrada.
+*   `increase_stock(product_id, quantity, movement_type, reference, user, notes=None, unit_cost=None)`: Incrementa stock de un producto y registra el movimiento de entrada. Si `movement_type == 'ENTRY'` y se envía `unit_cost`, actualiza automáticamente `Product.cost`, `Product.last_purchase_price` y `Product.last_purchase_date`.
 *   `adjust_stock(product_id, new_quantity, reason, user)`: Fuerza el stock de un producto a una cantidad específica, generando automáticamente el movimiento de ajuste.
 *   `decrease_stock_from_sale(sale)`: Descuenta stock basándose en los ítems de una venta despachada.
 *   `revert_stock_from_cancelled_sale(sale)`: Reestablece el stock cuando una venta confirmada se cancela.

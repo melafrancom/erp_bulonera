@@ -27,6 +27,11 @@ class StockMovement(BaseModel):
     notes = models.TextField(null=True, blank=True)
     previous_stock = models.IntegerField(null=True, blank=True)
     new_stock = models.IntegerField(null=True, blank=True)
+    unit_cost = models.DecimalField(
+        "Costo unitario", max_digits=16, decimal_places=6,
+        null=True, blank=True,
+        help_text="Costo unitario de compra al momento del movimiento (al solo efecto informativo/trazabilidad)."
+    )
 
     class Meta:
         ordering = ['-created_at']

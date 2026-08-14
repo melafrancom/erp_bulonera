@@ -13,20 +13,12 @@ from django.core.exceptions import ValidationError
 from django.db.models import Prefetch, Q, Case, When, IntegerField, Value
 from django.conf import settings
 
+from core.decorators import permission_required
 from products.models import Product, Category, Subcategory, PriceList
 from products.services import ProductService, PriceService
 from suppliers.models import Supplier
 
 logger = logging.getLogger(__name__)
-
-
-def _require_product_permission(user):
-    """Verifica que el usuario tenga permiso para gestionar productos."""
-    if not user or not user.is_authenticated:
-        return False
-    if user.is_superuser or getattr(user, 'role', '') == 'admin':
-        return True
-    return getattr(user, 'can_manage_products', False) or user.is_staff
 
 
 def _can_view_cost(user):
@@ -319,13 +311,9 @@ def product_detail(request, pk):
 # CREAR
 # =============================================================================
 
-@login_required
+@permission_required('can_manage_products')
 def product_create(request):
     """Formulario de creación de producto (GET muestra, POST crea)."""
-    if not _require_product_permission(request.user):
-        messages.error(request, "No tenés permiso para crear productos.")
-        return redirect('products:product_list')
-
     if request.method == 'POST':
         try:
             data = _parse_product_form(request)
@@ -362,13 +350,9 @@ def product_create(request):
 # EDITAR
 # =============================================================================
 
-@login_required
+@permission_required('can_manage_products')
 def product_edit(request, pk):
     """Formulario de edición de producto (GET muestra, POST actualiza)."""
-    if not _require_product_permission(request.user):
-        messages.error(request, "No tenés permiso para editar productos.")
-        return redirect('products:product_list')
-
     product = get_object_or_404(Product, pk=pk)
 
     if request.method == 'POST':
@@ -408,13 +392,9 @@ def product_edit(request, pk):
 # ELIMINAR (soft delete)
 # =============================================================================
 
-@login_required
+@permission_required('can_manage_products')
 def product_delete(request, pk):
     """Soft delete de producto (solo POST)."""
-    if not _require_product_permission(request.user):
-        messages.error(request, "No tenés permiso para eliminar productos.")
-        return redirect('products:product_list')
-
     product = get_object_or_404(Product, pk=pk)
 
     if request.method == 'POST':
@@ -432,13 +412,9 @@ def product_delete(request, pk):
 # IMPORTAR
 # =============================================================================
 
-@login_required
+@permission_required('can_manage_products')
 def product_import(request):
     """Vista para importar productos desde Excel (GET muestra, POST procesa)."""
-    if not _require_product_permission(request.user):
-        messages.error(request, "No tenés permiso para importar productos.")
-        return redirect('products:product_list')
-
     if request.method == 'POST':
         uploaded_file = request.FILES.get('file')
         if not uploaded_file:
@@ -641,13 +617,9 @@ def download_import_template(request):
 # LISTAS DE PRECIOS — CRUD
 # =============================================================================
 
-@login_required
+@permission_required('can_manage_products')
 def pricelist_list(request):
     """Listado de listas de precios con búsqueda y paginación."""
-    if not _require_product_permission(request.user):
-        messages.error(request, "No tenés permisos para gestionar listas de precios.")
-        return redirect('core:dashboard')
-
     pricelists = PriceList.objects.filter(is_active=True)
 
     search = request.GET.get('search', '').strip()
@@ -668,13 +640,9 @@ def pricelist_list(request):
     return render(request, 'products/pricelist_list.html', context)
 
 
-@login_required
+@permission_required('can_manage_products')
 def pricelist_create(request):
     """Crear nueva lista de precios."""
-    if not _require_product_permission(request.user):
-        messages.error(request, "No tenés permisos para crear listas de precios.")
-        return redirect('products:pricelist_list')
-
     if request.method == 'POST':
         try:
             name = request.POST.get('name', '').strip()
@@ -717,13 +685,9 @@ def pricelist_create(request):
     return render(request, 'products/pricelist_form.html', {'is_edit': False})
 
 
-@login_required
+@permission_required('can_manage_products')
 def pricelist_edit(request, pk):
     """Editar lista de precios existente."""
-    if not _require_product_permission(request.user):
-        messages.error(request, "No tenés permisos para editar listas de precios.")
-        return redirect('products:pricelist_list')
-
     pricelist = get_object_or_404(PriceList, pk=pk, is_active=True)
 
     if request.method == 'POST':
@@ -770,13 +734,9 @@ def pricelist_edit(request, pk):
     })
 
 
-@login_required
+@permission_required('can_manage_products')
 def pricelist_delete(request, pk):
     """Soft delete de lista de precios (solo POST)."""
-    if not _require_product_permission(request.user):
-        messages.error(request, "No tenés permisos para eliminar listas de precios.")
-        return redirect('products:pricelist_list')
-
     if request.method != 'POST':
         return redirect('products:pricelist_list')
 

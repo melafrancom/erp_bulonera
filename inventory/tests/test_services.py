@@ -55,7 +55,7 @@ class TestInventoryService:
         product = ProductFactory(stock_quantity=10)
         
         service = InventoryService()
-        service.increase_stock(
+        movement = service.increase_stock(
             product_id=product.id,
             quantity=5,
             movement_type='ENTRY',
@@ -65,6 +65,53 @@ class TestInventoryService:
         
         product.refresh_from_db()
         assert product.stock_quantity == 15
+        assert movement.quantity == 5
+        assert movement.unit_cost is None
+
+    def test_increase_stock_with_unit_cost_updates_product_and_movement(self, inventory_manager):
+        from decimal import Decimal
+        from django.utils import timezone
+        from inventory.tests.factories import ProductFactory
+        
+        product = ProductFactory(stock_quantity=10, cost=Decimal('50.00'))
+        
+        service = InventoryService()
+        movement = service.increase_stock(
+            product_id=product.id,
+            quantity=5,
+            movement_type='ENTRY',
+            reference='Compra con Factura A-001',
+            user=inventory_manager,
+            unit_cost=Decimal('75.50')
+        )
+        
+        product.refresh_from_db()
+        assert product.stock_quantity == 15
+        assert product.cost == Decimal('75.50')
+        assert product.last_purchase_price == Decimal('75.50')
+        assert product.last_purchase_date == timezone.now().date()
+        assert movement.unit_cost == Decimal('75.50')
+
+    def test_increase_stock_without_unit_cost_preserves_existing_cost(self, inventory_manager):
+        from decimal import Decimal
+        from inventory.tests.factories import ProductFactory
+        
+        product = ProductFactory(stock_quantity=10, cost=Decimal('50.00'), last_purchase_price=Decimal('50.00'))
+        
+        service = InventoryService()
+        movement = service.increase_stock(
+            product_id=product.id,
+            quantity=5,
+            movement_type='ENTRY',
+            reference='Ingreso sin costo especificado',
+            user=inventory_manager
+        )
+        
+        product.refresh_from_db()
+        assert product.stock_quantity == 15
+        assert product.cost == Decimal('50.00')
+        assert product.last_purchase_price == Decimal('50.00')
+        assert movement.unit_cost is None
 
     def test_adjust_stock_success(self, inventory_manager):
         from inventory.tests.factories import ProductFactory

@@ -26,6 +26,11 @@ El módulo `customers` centraliza el CRM (Customer Relationship Management) del 
     *   `refacturar_venta_a_precio_actual(sale, user)`: Modalidad informal — actualiza renglones de ventas entregadas a precios vigentes de catálogo antes de emitir la factura.
     *   `get_estado_cuenta(customer)`: Métricas consolidadas y reporte de antigüedad/aging (0-30d, 31-60d, 61-90d, +90d).
 
+## 🛡️ Reglas de Seguridad y Control de Acceso
+*   **Permisos de Gestión Canónicos (`@permission_required('can_manage_customers')`)**: Las vistas web mutantes (`customer_create`, `customer_edit`, `customer_delete`, `customer_import`, `customer_export`, `customer_refacturar_sale`) retornan HTTP 403 `PermissionDenied` ante usuarios sin permisos asignados (ej: rol `viewer`).
+*   **Ciclo Seguro Soft-Delete & Restore**: El soft-delete libera el CUIT mediante mangling con prefijo determinista único `D<id:010d>_` para no bloquear re-creaciones. Al restaurar un cliente archivado, se valida previamente la unicidad del CUIT original contra registros activos, impidiendo duplicaciones o `DataError` por colisión de clave única.
+*   **Bloqueo Concurrente en Refacturación**: `refacturar_venta_a_precio_actual` aplica `select_for_update()` a nivel de fila y valida que la venta sea informal y no haya sido previamente autorizada en ARCA.
+
 ## 🌐 Vistas y APIs
 
 ### REST API (`api/urls/`)

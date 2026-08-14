@@ -71,6 +71,8 @@ class ProductService:
     @transaction.atomic
     def update_product(self, product, data, user):
         """Actualiza un producto existente."""
+        # Row-level lock para evitar lost updates en entornos concurrentes
+        product = Product.objects.select_for_update().get(pk=product.pk)
         subcategories_data = data.pop('subcategories', None)
 
         for field, value in data.items():

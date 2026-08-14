@@ -42,9 +42,11 @@ class InventoryService:
         return movement
     
     @transaction.atomic
-    def increase_stock(self, product_id, quantity, movement_type, reference, user, notes=None):
+    def increase_stock(self, product_id, quantity, movement_type, reference, user, notes=None, unit_cost=None):
         """
         Aumenta stock de un producto y registra el movimiento.
+        Si es un movimiento de tipo ENTRY y se provee unit_cost,
+        actualiza el costo del producto y la información de última compra.
         """
         if quantity <= 0:
             raise ValidationError("La cantidad debe ser mayor a 0")
@@ -59,6 +61,16 @@ class InventoryService:
         product.stock_quantity += quantity
         new_stock = product.stock_quantity
         product.updated_by = user
+
+        if movement_type == 'ENTRY' and unit_cost is not None:
+            from decimal import Decimal
+            from django.utils import timezone
+            unit_cost_dec = Decimal(str(unit_cost))
+            if unit_cost_dec > Decimal('0.00'):
+                product.cost = unit_cost_dec
+                product.last_purchase_price = unit_cost_dec
+                product.last_purchase_date = timezone.now().date()
+
         product.save()
         
         movement = StockMovement.objects.create(
@@ -69,6 +81,7 @@ class InventoryService:
             notes=notes,
             previous_stock=previous_stock,
             new_stock=new_stock,
+            unit_cost=unit_cost,
             created_by=user
         )
         
