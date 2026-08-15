@@ -297,6 +297,7 @@ class PaymentService:
                 payment_status=new_status,
                 updated_by=None  # Sistema
             )
+            sale.payment_status = new_status
             logger.info(
                 f"Venta #{sale.number} payment_status actualizado a '{new_status}' "
                 f"(pagado: ${total_paid} de ${sale_total})"

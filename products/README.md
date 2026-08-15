@@ -29,6 +29,7 @@ El módulo `products` centraliza el catálogo maestro de artículos, categorías
 ## 🛡️ Reglas de Seguridad y Control de Acceso
 *   **Permisos de Gestión Canónicos (`@permission_required('can_manage_products')`)**: Las vistas web mutantes (`product_create`, `product_edit`, `product_delete`, `product_import`, `pricelist_*`) están estrictamente protegidas con el decorador canónico que devuelve HTTP 403 `PermissionDenied` ante usuarios no autorizados (ej: rol `viewer` u operadores sin permisos).
 *   **Visibilidad de Costos por Rol (`_can_view_cost`)**: Los usuarios con rol `viewer` pueden consultar el catálogo y los precios de venta, pero los datos de costo (`cost`), margen (`profit_margin_percentage`) y ganancia bruta (`profit_amount`) se ocultan explícitamente (`None`).
+*   **Política de Costo de Reposición**: `Product.cost` se rige por el valor de reposición (última compra o última lista de proveedor). La vía primaria de actualización es la carga masiva Excel (`ProductImportService`); en el Django Admin, la edición en línea (`list_editable`) se mantiene como atajo de emergencia documentado para el superadministrador.
 *   **Sanitización y Anti-Path Traversal**: Las cargas de archivos en API y Admin sanitizan nombres mediante `get_valid_filename()` y timestamps de un solo uso, garantizando la eliminación en disco tras procesar o la respuesta en memoria.
 *   **Prevención de XSS en Admin**: Todos los mensajes de aviso y error del admin escapan datos mediante `django.utils.html.escape()` antes de renderizar bloques HTML formateados (`extra_tags='safe'`).
 

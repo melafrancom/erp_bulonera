@@ -189,3 +189,43 @@ class TestSaleService:
         assert confirmed_sale.status == 'confirmed'
         assert confirmed_sale.is_credit_sale is True
 
+    def test_cancel_sale_releases_payment_allocations(self, sale_with_items, admin_user, customer):
+        """C-03: Al cancelar una venta, sus alocaciones de pago activas se liberan."""
+        from payments.models import Payment, PaymentAllocation
+        from payments.services import PaymentService
+        
+        # 1. Confirmar venta
+        sale = confirm_sale(sale_with_items, admin_user)
+        sale._cached_total = Decimal('500.00')
+        sale.save(update_fields=['_cached_total'])
+        
+        # 2. Registrar pago y alocación
+        payment = Payment.objects.create(
+            amount=Decimal('500.00'),
+            customer=customer,
+            status='confirmed',
+            created_by=admin_user
+        )
+        allocation = PaymentAllocation.objects.create(
+            payment=payment,
+            sale=sale,
+            allocated_amount=Decimal('500.00'),
+            created_by=admin_user,
+            is_active=True
+        )
+        PaymentService.recalculate_sale_payment_status(sale)
+        sale.refresh_from_db()
+        assert sale.total_paid == Decimal('500.00')
+        assert sale.payment_status == 'paid'
+        assert payment.unallocated_balance == Decimal('0.00')
+        
+        # 3. Cancelar la venta
+        cancelled_sale = cancel_sale(sale, admin_user, reason="Devolución de pedido")
+        
+        # 4. Verificar que la alocación se soft-deleted y el saldo del pago se liberó
+        allocation.refresh_from_db()
+        assert allocation.is_active is False
+        assert cancelled_sale.total_paid == Decimal('0.00')
+        assert cancelled_sale.payment_status == 'unpaid'
+        assert payment.unallocated_balance == Decimal('500.00')
+

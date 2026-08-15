@@ -556,7 +556,8 @@ class Sale(BaseModel):
             from payments.models import PaymentAllocation
             result = PaymentAllocation.objects.filter(
                 sale=self,
-                payment__status='confirmed'
+                payment__status='confirmed',
+                is_active=True
             ).aggregate(
                 total=models.Sum('allocated_amount')
             )

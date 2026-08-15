@@ -69,12 +69,6 @@ class QuoteSerializer(serializers.ModelSerializer):
     created_by_username = serializers.CharField(source='created_by.username', read_only=True)
     public_url = serializers.SerializerMethodField()
     
-class QuoteSerializer(serializers.ModelSerializer):
-    """Serializer ligero para listados"""
-    customer_display = serializers.CharField(read_only=True)  # usa la @property del modelo
-    created_by_username = serializers.CharField(source='created_by.username', read_only=True)
-    public_url = serializers.SerializerMethodField()
-    
     class Meta:
         model = Quote
         fields = [
@@ -315,6 +309,7 @@ class SaleItemSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             'id', 'created_at', 'updated_at',
+            'unit_cost',
             'line_subtotal', 'discount_amount', 'subtotal_with_discount',
             'tax_amount', 'total', 'profit', 'margin_percentage'
         ]

@@ -123,3 +123,28 @@ class TestSaleModel:
         
         sale.status = 'confirmed'
         assert sale.is_editable() is False
+
+    def test_sale_total_paid_ignores_soft_deleted_allocations(self, sale, admin_user, customer):
+        """C-02: total_paid debe ignorar alocaciones soft-deleted (is_active=False)."""
+        from payments.models import Payment, PaymentAllocation
+        
+        payment = Payment.objects.create(
+            amount=Decimal('1000.00'),
+            customer=customer,
+            status='confirmed',
+            created_by=admin_user
+        )
+        allocation = PaymentAllocation.objects.create(
+            payment=payment,
+            sale=sale,
+            allocated_amount=Decimal('600.00'),
+            created_by=admin_user,
+            is_active=True
+        )
+        assert sale.total_paid == Decimal('600.00')
+        
+        # Soft delete
+        allocation.is_active = False
+        allocation.save()
+        
+        assert sale.total_paid == Decimal('0.00')

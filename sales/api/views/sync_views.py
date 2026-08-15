@@ -132,7 +132,8 @@ class SyncViewSet(AuditMixin, viewsets.ViewSet):
             try:
                 result = self._sync_single_sale(sale_data, request.user)
                 results.append(result)
-                summary[result['status']] += 1
+                status_key = 'successful' if result.get('status') == 'success' else ('conflicts' if result.get('status') == 'conflict' else 'errors')
+                summary[status_key] += 1
             
             except Exception as e:
                 results.append({
@@ -352,6 +353,7 @@ class SyncViewSet(AuditMixin, viewsets.ViewSet):
                             product=product,
                             quantity=quantity,
                             unit_price=unit_price,
+                            unit_cost=product.current_cost,
                             discount_type=item_data.get('discount_type', 'none'),
                             discount_value=Decimal(str(item_data.get('discount_value', 0))),
                             tax_percentage=Decimal(str(item_data.get('tax_percentage', 0))),

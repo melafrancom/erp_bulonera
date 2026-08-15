@@ -23,14 +23,16 @@ def convert_quote_to_sale(quote, user, modifications=None):
     Raises:
         ValueError: Si el presupuesto no puede convertirse
     """
-    
-    if not quote.can_be_converted():
-        raise ValueError(
-            f'Presupuesto {quote.number} no puede convertirse. '
-            f'Estado: {quote.status}, Válido hasta: {quote.valid_until}'
-        )
-    
     with transaction.atomic():
+        # Lock pesimista del presupuesto para prevenir conversiones concurrentes duplicadas
+        quote = Quote.objects.select_for_update().get(pk=quote.pk)
+        
+        if not quote.can_be_converted():
+            raise ValueError(
+                f'Presupuesto {quote.number} no puede convertirse. '
+                f'Estado: {quote.status}, Válido hasta: {quote.valid_until}'
+            )
+        
         # 1. Crear venta
         global_disc_type = quote.global_discount_type
         global_disc_val = quote.global_discount_value
@@ -154,7 +156,7 @@ def confirm_sale(sale, user):
 
 
 def cancel_sale(sale, user, reason):
-    """Cancela una venta (libera stock si estaba reservado)"""
+    """Cancela una venta (libera stock si estaba reservado y libera alocaciones de pago)"""
     if sale.status in ['delivered', 'cancelled']:
         raise ValueError(f'Venta {sale.number} no puede cancelarse. Estado: {sale.status}')
     
@@ -169,6 +171,13 @@ def cancel_sale(sale, user, reason):
         if was_ready:
             from inventory.services import InventoryService
             InventoryService().revert_stock_from_cancelled_sale(sale)
+        
+        # 2. Liberar alocaciones de pago asociadas (soft-delete para liberar saldo)
+        from payments.services import PaymentService
+        active_allocations = list(sale.payment_allocations.filter(is_active=True))
+        for alloc in active_allocations:
+            alloc.delete(user=user)
+        PaymentService.recalculate_sale_payment_status(sale)
     
     return sale
 

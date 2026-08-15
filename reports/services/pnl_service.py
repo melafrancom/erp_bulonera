@@ -123,14 +123,14 @@ class ProfitAndLossService(CachedKPIService):
         """
         Calcula COGS = Σ (SaleItem.unit_cost × SaleItem.quantity).
 
-        Solo considera SaleItems de ventas confirmadas/entregadas en el período.
+        Solo considera SaleItems de ventas confirmadas, en preparación, listas o entregadas en el período.
         Usa F() expressions para cálculo en BD (performance).
         """
         from sales.models import SaleItem
 
         cogs = (
             SaleItem.objects.filter(
-                sale__status__in=['confirmed', 'delivered'],
+                sale__status__in=['confirmed', 'in_preparation', 'ready', 'delivered'],
                 sale__date__date__range=[date_from, date_to],
                 sale__is_active=True,
             ).aggregate(
@@ -146,19 +146,19 @@ class ProfitAndLossService(CachedKPIService):
 
     def _compute_opex(self, date_from: date, date_to: date) -> dict:
         """
-        Calcula OPEX = Σ Expense.amount_total devengados en el período.
+        Calcula OPEX = Σ Expense.amount_neto devengados en el período.
 
         El criterio es expense_date (cuando se devengó), no payment_date.
         Agrupado por categoría.
         """
         from expenses.models import Expense, ExpenseCategory
 
-        # Total de gastos
+        # Total de gastos (usando monto neto sin IVA para P&L Económico)
         opex_total = (
             Expense.objects.filter(
                 expense_date__range=[date_from, date_to],
                 is_active=True,
-            ).aggregate(total=Coalesce(Sum('amount_total'), Value(Decimal('0'))))['total']
+            ).aggregate(total=Coalesce(Sum('amount_neto'), Value(Decimal('0'))))['total']
             or Decimal('0')
         )
 
@@ -170,7 +170,7 @@ class ProfitAndLossService(CachedKPIService):
                     expense_date__range=[date_from, date_to],
                     category__type=cat_type,
                     is_active=True,
-                ).aggregate(total=Coalesce(Sum('amount_total'), Value(Decimal('0'))))['total']
+                ).aggregate(total=Coalesce(Sum('amount_neto'), Value(Decimal('0'))))['total']
                 or Decimal('0')
             )
             opex_by_category[cat_type] = float(cat_total)

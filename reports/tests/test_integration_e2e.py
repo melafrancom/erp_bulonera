@@ -158,8 +158,8 @@ class TestFinancialReportingE2E:
         # Calcular CashFlow (NO incluye gasto no pagado)
         cf = CashFlowService().get_cashflow(today, today)
 
-        # P&L incluye gasto devengado
-        assert pnl['opex']['total'] >= Decimal('242.00')
+        # P&L incluye gasto devengado (monto neto sin IVA)
+        assert pnl['opex']['total'] >= Decimal('200.00')
 
         # CashFlow NO incluye gasto no pagado
         assert cf['outflows']['total'] == Decimal('0.00')
