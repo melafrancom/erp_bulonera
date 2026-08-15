@@ -67,6 +67,23 @@ class TestPaymentModel:
         payment.refresh_from_db()
         assert payment.status == 'cancelled'
 
+    def test_unallocated_balance_zero_when_cancelled(self, payment):
+        """Valida que unallocated_balance retorna 0.00 si el pago está cancelado (C-07)."""
+        assert payment.unallocated_balance == Decimal('500.00')
+        payment.status = 'cancelled'
+        payment.save()
+        assert payment.unallocated_balance == Decimal('0.00')
+
+    def test_payment_amount_positive_constraint(self, user):
+        """Valida que el modelo no permite crear pagos con monto <= 0 en DB (C-08)."""
+        from django.db import IntegrityError
+        with pytest.raises((IntegrityError, ValueError)):
+            Payment.objects.create(
+                amount=Decimal('0.00'),
+                method='cash',
+                created_by=user
+            )
+
 
 @pytest.mark.django_db
 class TestPaymentAllocationModel:

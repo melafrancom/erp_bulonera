@@ -161,9 +161,10 @@ class PaymentViewSet(AuditMixin, ModelViewSet):
                 reason=reason
             )
 
-            output_serializer = PaymentDetailSerializer(payment.refresh_from_db() or payment)
+            payment.refresh_from_db()
+            output_serializer = PaymentDetailSerializer(payment)
             return Response(
-                output_serializer.data if hasattr(payment, 'id') else {'status': 'cancelled'},
+                output_serializer.data,
                 status=HTTP_200_OK
             )
 

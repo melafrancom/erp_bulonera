@@ -1,6 +1,6 @@
 # payments/signals.py
 
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 import logging
 
@@ -11,9 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 @receiver(post_save, sender=PaymentAllocation)
-def update_sale_payment_status_on_allocation_create(sender, instance, created, **kwargs):
+def update_sale_payment_status_on_allocation_save(sender, instance, created, **kwargs):
     """
-    Cuando se crea o modifica una alocación,
+    Cuando se crea, modifica o hace soft-delete de una alocación (is_active=False),
     recalcular el payment_status de la Sale asociada.
     
     Esto es el trigger principal para mantener Sale.payment_status actualizado.
@@ -23,15 +23,3 @@ def update_sale_payment_status_on_allocation_create(sender, instance, created, *
     
     PaymentService.recalculate_sale_payment_status(instance.sale)
 
-
-@receiver(post_delete, sender=PaymentAllocation)
-def update_sale_payment_status_on_allocation_delete(sender, instance, **kwargs):
-    """
-    Cuando se elimina (soft-delete) una alocación,
-    recalcular el payment_status de la Sale asociada.
-    """
-    logger.info(f"Alocación eliminada: {instance}")
-    
-    # Nota: instance.sale puede estar marcado como deleted también
-    # pero el signal se dispara ANTES del soft-delete del signal de BaseModel
-    PaymentService.recalculate_sale_payment_status(instance.sale)

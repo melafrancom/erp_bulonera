@@ -3,7 +3,7 @@ Vistas web para el módulo de pagos (Payments).
 Listado y detalle de pagos recibidos de clientes.
 """
 from django.views.generic import ListView, DetailView
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.views.decorators.http import require_POST
@@ -14,7 +14,27 @@ from payments.models import Payment
 from payments.services import PaymentService
 
 
-class PaymentListView(LoginRequiredMixin, ListView):
+def _can_view_payments(user):
+    """Auxiliar para verificar permiso de lectura de pagos."""
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser or getattr(user, 'role', '') in ('admin', 'manager', 'viewer'):
+        return True
+    return getattr(user, 'can_manage_payments', False)
+
+
+def _can_manage_payments(user):
+    """Auxiliar para verificar permiso de gestión de pagos."""
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser or getattr(user, 'role', '') in ('admin', 'manager'):
+        return True
+    if getattr(user, 'role', '') == 'viewer':
+        return False
+    return getattr(user, 'can_manage_payments', False)
+
+
+class PaymentListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     """
     Listado de pagos registrados con filtros y paginación.
     Muestra todos los cobros recibidos de clientes.
@@ -24,6 +44,10 @@ class PaymentListView(LoginRequiredMixin, ListView):
     context_object_name = 'payments'
     paginate_by = 25
     ordering = ['-date', '-created_at']
+    raise_exception = True
+
+    def test_func(self):
+        return _can_view_payments(self.request.user)
 
     def get_queryset(self):
         """Obtiene pagos con filters opcionales."""
@@ -63,7 +87,7 @@ class PaymentListView(LoginRequiredMixin, ListView):
         return context
 
 
-class PaymentDetailView(LoginRequiredMixin, DetailView):
+class PaymentDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     """
     Detalle de un pago individual con todas sus alocaciones.
     Muestra información de cómo se imputó el pago a ventas/facturas.
@@ -71,6 +95,10 @@ class PaymentDetailView(LoginRequiredMixin, DetailView):
     model = Payment
     template_name = 'payments/payment_detail.html'
     context_object_name = 'payment'
+    raise_exception = True
+
+    def test_func(self):
+        return _can_view_payments(self.request.user)
 
     def get_queryset(self):
         """Obtiene pago con relaciones precargadas."""
@@ -80,17 +108,6 @@ class PaymentDetailView(LoginRequiredMixin, DetailView):
             'allocations__sale',
             'allocations__invoice'
         )
-
-
-def _can_manage_payments(user):
-    """Auxiliar para verificar permiso de gestión de pagos."""
-    if not user or not user.is_authenticated:
-        return False
-    if user.is_superuser or getattr(user, 'role', '') == 'admin':
-        return True
-    if getattr(user, 'role', '') == 'viewer':
-        return False
-    return getattr(user, 'can_manage_payments', False)
 
 
 @login_required

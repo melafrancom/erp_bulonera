@@ -96,3 +96,59 @@ class TestPaymentsWeb:
         response = web_client.get(url, {'search': payment.reference})
         assert response.status_code == 200
         assert payment.reference in response.content.decode()
+
+    def test_unauthorized_operator_cannot_access_payment_list_web(self, db, payment):
+        """Valida que un usuario sin can_manage_payments recibe 403 en listado (A-01)."""
+        from django.contrib.auth import get_user_model
+        from django.test import Client
+        User = get_user_model()
+        operator = User.objects.create_user(
+            username='operator_no_perms',
+            email='op@test.com',
+            password='pass',
+            role='operator'
+        )
+        client = Client()
+        client.login(username=operator.username, password='pass')
+
+        url = reverse('payments_web:payment_list')
+        response = client.get(url)
+        assert response.status_code == 403
+
+    def test_unauthorized_operator_cannot_access_payment_detail_web(self, db, payment):
+        """Valida que un usuario sin can_manage_payments recibe 403 en detalle (A-01)."""
+        from django.contrib.auth import get_user_model
+        from django.test import Client
+        User = get_user_model()
+        operator = User.objects.create_user(
+            username='operator_no_perms_2',
+            email='op2@test.com',
+            password='pass',
+            role='operator'
+        )
+        client = Client()
+        client.login(username=operator.username, password='pass')
+
+        url = reverse('payments_web:payment_detail', kwargs={'pk': payment.id})
+        response = client.get(url)
+        assert response.status_code == 403
+
+    def test_viewer_can_view_payment_list_and_detail_web(self, db, payment):
+        """Valida que un usuario viewer puede ver listado y detalle pero no anular (A-01)."""
+        from django.contrib.auth import get_user_model
+        from django.test import Client
+        User = get_user_model()
+        viewer = User.objects.create_user(
+            username='viewer_allowed',
+            email='viewer_allowed@test.com',
+            password='pass',
+            role='viewer'
+        )
+        client = Client()
+        client.login(username=viewer.username, password='pass')
+
+        list_url = reverse('payments_web:payment_list')
+        assert client.get(list_url).status_code == 200
+
+        detail_url = reverse('payments_web:payment_detail', kwargs={'pk': payment.id})
+        assert client.get(detail_url).status_code == 200

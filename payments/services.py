@@ -66,6 +66,18 @@ class PaymentService:
         return payment
 
     @staticmethod
+    def _release_allocations(queryset, user):
+        """
+        Soft-delete de un queryset de alocaciones y retorna sale_ids afectados.
+        Método canónico para evitar duplicación entre cancel_payment y
+        handle_credit_note_impact.
+        """
+        affected_sales = set(queryset.values_list('sale_id', flat=True))
+        for alloc in queryset:
+            alloc.delete(user=user)
+        return affected_sales
+
+    @staticmethod
     @transaction.atomic
     def create_payment_with_allocations(amount, user, allocations,
                                         customer=None, method='cash',
@@ -92,8 +104,11 @@ class PaymentService:
             - amount <= 0
             - sum(allocations) > amount
             - allocation.amount > sale.balance_due
+            - allocation.amount > invoice balance
             - invoice no autorizada
             - invoice.sale_id != allocation.sale_id
+            - alocaciones pertenecen a clientes distintos
+            - cliente del pago no coincide con clientes de las ventas
         """
         if not amount or amount <= 0:
             raise ValueError("El monto del pago debe ser positivo.")
@@ -101,6 +116,18 @@ class PaymentService:
         if not allocations or len(allocations) == 0:
             raise ValueError("Se requiere al menos una alocación.")
         
+        # Validar duplicados a nivel de (sale_id, invoice_id)
+        seen_targets = set()
+        for alloc_dict in allocations:
+            sale_id = alloc_dict.get('sale_id')
+            invoice_id = alloc_dict.get('invoice_id')
+            target_key = (sale_id, invoice_id)
+            if target_key in seen_targets:
+                raise ValueError(
+                    f"Alocación duplicada para la combinación sale_id={sale_id}, invoice_id={invoice_id}"
+                )
+            seen_targets.add(target_key)
+
         # Validar que la suma de alocaciones <= monto del pago
         total_allocated = Decimal('0.00')
         allocation_objects = []
@@ -123,17 +150,23 @@ class PaymentService:
             except Sale.DoesNotExist:
                 raise ValueError(f"Venta #{sale_id} no encontrada")
             
+            # Locking read del saldo ya alocado (evita snapshot stale bajo REPEATABLE READ)
+            current_allocated = PaymentAllocation.objects.select_for_update().filter(
+                sale_id=sale_id, is_active=True, payment__status='confirmed'
+            ).aggregate(total=models.Sum('allocated_amount'))['total'] or Decimal('0.00')
+            effective_balance = abs(sale.total) - current_allocated
+
             # Validar que el monto (más lo acumulado en este mismo pago para la misma venta) no excede el saldo
             already_allocated = accumulated_by_sale.get(sale_id, Decimal('0.00'))
-            if (alloc_amount + already_allocated) > sale.balance_due:
+            if (alloc_amount + already_allocated) > effective_balance:
                 raise ValueError(
                     f"Alocación ${alloc_amount} (acumulado: ${alloc_amount + already_allocated}) "
-                    f"excede saldo de Venta #{sale.number} (saldo: ${sale.balance_due})"
+                    f"excede saldo de Venta #{sale.number} (saldo: ${effective_balance})"
                 )
             
             accumulated_by_sale[sale_id] = already_allocated + alloc_amount
             
-            # Si invoice_id: validar coherencia
+            # Si invoice_id: validar coherencia y saldo restante de la factura
             invoice = None
             if invoice_id:
                 try:
@@ -153,6 +186,16 @@ class PaymentService:
                         f"Factura #{invoice.number} no autorizada "
                         f"(estado: {invoice.get_estado_fiscal_display()})"
                     )
+
+                # Validar que la alocación no excede el saldo de la factura
+                invoice_allocated = PaymentAllocation.objects.select_for_update().filter(
+                    invoice_id=invoice_id, is_active=True, payment__status='confirmed'
+                ).aggregate(total=models.Sum('allocated_amount'))['total'] or Decimal('0.00')
+                invoice_balance = invoice.total - invoice_allocated
+                if alloc_amount > invoice_balance:
+                    raise ValueError(
+                        f"Alocación ${alloc_amount} excede saldo de Factura #{invoice.number} (saldo: ${invoice_balance})"
+                    )
             
             total_allocated += alloc_amount
             allocation_objects.append({
@@ -167,6 +210,17 @@ class PaymentService:
                 f"Total alocado (${total_allocated}) excede monto del pago (${amount})"
             )
         
+        # Validar consistencia de cliente entre todas las alocaciones
+        unique_customers = {
+            obj['sale'].customer_id for obj in allocation_objects if obj['sale'].customer_id
+        }
+        if len(unique_customers) > 1:
+            raise ValueError("Todas las alocaciones deben pertenecer al mismo cliente")
+        if customer and unique_customers and customer.id not in unique_customers:
+            raise ValueError(
+                f"Cliente del pago ({customer.business_name}) no coincide con el cliente de las ventas"
+            )
+
         # Auto-derivar cliente desde la venta si no vino especificado en el pago
         if customer is None and allocation_objects and allocation_objects[0]['sale'].customer:
             customer = allocation_objects[0]['sale'].customer
@@ -229,25 +283,21 @@ class PaymentService:
         if payment.status == 'cancelled':
             raise ValueError(f"Pago #{payment.id} ya está anulado")
         
-        # Recopilar sales afectadas ANTES de borrar alocaciones
-        affected_sales = set(
-            payment.allocations.filter(is_active=True)
-            .values_list('sale_id', flat=True)
+        # Soft-delete de alocaciones mediante método canónico
+        affected_sales = PaymentService._release_allocations(
+            payment.allocations.filter(is_active=True),
+            user=user
         )
-        
-        # Soft-delete de alocaciones
-        for alloc in payment.allocations.filter(is_active=True):
-            alloc.delete(user=user)  # soft-delete vía BaseModel
         
         # Anular el pago
         payment.status = 'cancelled'
         payment.updated_by = user
         payment.save(update_fields=['status', 'updated_by', 'updated_at'])
         
-        # Recalcular payment_status de cada venta afectada
+        # Recalcular payment_status de cada venta afectada con select_for_update
         for sale_id in affected_sales:
             try:
-                sale = Sale.objects.get(id=sale_id)
+                sale = Sale.objects.select_for_update().get(id=sale_id)
                 PaymentService.recalculate_sale_payment_status(sale)
             except Sale.DoesNotExist:
                 pass
@@ -333,19 +383,14 @@ class PaymentService:
             logger.info(f"NC: Factura #{original_invoice.number} no tenía alocaciones activas")
             return
         
-        affected_sales = set()
-        total_released = Decimal('0.00')
-        
-        # Soft-delete de alocaciones
-        for alloc in allocations:
-            affected_sales.add(alloc.sale_id)
-            total_released += alloc.allocated_amount
-            alloc.delete(user=user)
+        # Soft-delete de alocaciones mediante método canónico
+        affected_sales = PaymentService._release_allocations(allocations, user=user)
+        total_released = allocations.aggregate(total=models.Sum('allocated_amount'))['total'] or Decimal('0.00')
         
         # Recalcular payment_status de ventas afectadas
         for sale_id in affected_sales:
             try:
-                sale = Sale.objects.get(id=sale_id)
+                sale = Sale.objects.select_for_update().get(id=sale_id)
                 PaymentService.recalculate_sale_payment_status(sale)
             except Sale.DoesNotExist:
                 pass

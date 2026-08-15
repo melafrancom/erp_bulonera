@@ -74,11 +74,17 @@ class TestPaymentServiceCreateWithAllocations:
         assert alloc.allocated_amount == Decimal('500.00')
         assert alloc.sale_id == sale.id
     
-    def test_create_with_multiple_allocations(self, user, sale):
-        """Crea pago con múltiples alocaciones a la misma venta."""
+    def test_create_with_multiple_allocations(self, user, sale, customer):
+        """Crea pago con múltiples alocaciones a distintas ventas del mismo cliente."""
+        from sales.models import Sale
+        sale2 = Sale.objects.create(
+            customer=customer,
+            created_by=user,
+            _cached_total=Decimal('500.00')
+        )
         allocations = [
             {'sale_id': sale.id, 'amount': Decimal('300.00')},
-            {'sale_id': sale.id, 'amount': Decimal('200.00')},
+            {'sale_id': sale2.id, 'amount': Decimal('200.00')},
         ]
         
         payment = PaymentService.create_payment_with_allocations(
@@ -90,11 +96,11 @@ class TestPaymentServiceCreateWithAllocations:
         assert payment.allocations.count() == 2
         assert payment.allocated_total == Decimal('500.00')
 
-    def test_create_accumulated_allocations_exceeds_sale_balance(self, user, sale):
-        """Rechaza si la suma acumulada de alocaciones a la misma venta excede su saldo (C-02)."""
+    def test_create_accumulated_allocations_exceeds_sale_balance(self, user, sale, invoice):
+        """Rechaza si la suma acumulada de alocaciones a la misma venta (con y sin factura) excede su saldo."""
         allocations = [
-            {'sale_id': sale.id, 'amount': Decimal('600.00')},
-            {'sale_id': sale.id, 'amount': Decimal('500.00')},
+            {'sale_id': sale.id, 'invoice_id': invoice.id, 'amount': Decimal('600.00')},
+            {'sale_id': sale.id, 'invoice_id': None, 'amount': Decimal('500.00')},
         ]
         with pytest.raises(ValueError, match="excede saldo"):
             PaymentService.create_payment_with_allocations(
@@ -210,6 +216,81 @@ class TestPaymentServiceCreateWithAllocations:
         with pytest.raises(ValueError, match="no pertenece"):
             PaymentService.create_payment_with_allocations(
                 amount=Decimal('500.00'),
+                user=user,
+                allocations=allocations
+            )
+
+    def test_cross_customer_allocation_rejected(self, user, sale):
+        """Rechaza si las alocaciones pertenecen a clientes distintos (C-02)."""
+        from customers.models import Customer
+        from sales.models import Sale
+        other_customer = Customer.objects.create(
+            business_name='Other Customer',
+            cuit_cuil='20222222223'
+        )
+        other_sale = Sale.objects.create(
+            customer=other_customer,
+            created_by=user,
+            _cached_total=Decimal('1000.00')
+        )
+        allocations = [
+            {'sale_id': sale.id, 'amount': Decimal('300.00')},
+            {'sale_id': other_sale.id, 'amount': Decimal('300.00')},
+        ]
+        with pytest.raises(ValueError, match="mismo cliente"):
+            PaymentService.create_payment_with_allocations(
+                amount=Decimal('600.00'),
+                user=user,
+                allocations=allocations
+            )
+
+    def test_customer_mismatch_rejected(self, user, sale):
+        """Rechaza si el cliente especificado no coincide con las ventas (C-02)."""
+        from customers.models import Customer
+        other_customer = Customer.objects.create(
+            business_name='Other Customer',
+            cuit_cuil='20222222223'
+        )
+        allocations = [
+            {'sale_id': sale.id, 'amount': Decimal('300.00')},
+        ]
+        with pytest.raises(ValueError, match="no coincide"):
+            PaymentService.create_payment_with_allocations(
+                amount=Decimal('300.00'),
+                user=user,
+                customer=other_customer,
+                allocations=allocations
+            )
+
+    def test_invoice_over_allocation_rejected(self, user, sale, invoice):
+        """Rechaza si la alocación excede el saldo restante de la factura (C-04)."""
+        # Aumentamos el total de la venta para que el límite sea la factura ($1000.00) y no la venta
+        sale._cached_total = Decimal('2000.00')
+        sale.save()
+
+        # Primer pago aloca $800.00 a la factura
+        PaymentService.create_payment_with_allocations(
+            amount=Decimal('800.00'),
+            user=user,
+            allocations=[{'sale_id': sale.id, 'invoice_id': invoice.id, 'amount': Decimal('800.00')}]
+        )
+        # Segundo pago intenta alocar $300.00 a la misma factura (saldo restante de factura: $200.00; venta aún tiene saldo $1200.00)
+        with pytest.raises(ValueError, match="excede saldo de Factura"):
+            PaymentService.create_payment_with_allocations(
+                amount=Decimal('300.00'),
+                user=user,
+                allocations=[{'sale_id': sale.id, 'invoice_id': invoice.id, 'amount': Decimal('300.00')}]
+            )
+
+    def test_duplicate_allocation_target_rejected_in_service(self, user, sale):
+        """Rechaza alocaciones duplicadas al mismo target en el servicio (C-11)."""
+        allocations = [
+            {'sale_id': sale.id, 'amount': Decimal('200.00')},
+            {'sale_id': sale.id, 'amount': Decimal('200.00')},
+        ]
+        with pytest.raises(ValueError, match="Alocación duplicada"):
+            PaymentService.create_payment_with_allocations(
+                amount=Decimal('400.00'),
                 user=user,
                 allocations=allocations
             )
