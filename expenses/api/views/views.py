@@ -80,9 +80,6 @@ class ExpenseViewSet(OwnerQuerysetMixin, viewsets.ModelViewSet):
     search_fields = ['description', 'category__name', 'supplier__business_name']
     ordering_fields = ['expense_date', 'amount_total', 'created_at']
     ordering = ['-expense_date']
-    search_fields = ['description', 'category__name', 'supplier__business_name']
-    ordering_fields = ['expense_date', 'amount_total', 'created_at']
-    ordering = ['-expense_date']
 
     def get_queryset(self):
         """

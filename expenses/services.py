@@ -78,9 +78,9 @@ class ExpenseService:
     @transaction.atomic
     def update_expense(expense_id: int, data: dict, user) -> Expense:
         """
-        Actualiza un gasto existente.
+        Actualiza un gasto existente con bloqueo pesimista.
         """
-        expense = Expense.objects.get(id=expense_id)
+        expense = Expense.objects.select_for_update().get(id=expense_id)
 
         # Actualizar campos
         if 'category_id' in data:
@@ -123,16 +123,22 @@ class ExpenseService:
     @transaction.atomic
     def delete_expense(expense_id: int, user) -> None:
         """
-        Soft-delete de un gasto.
+        Soft-delete de un gasto con bloqueo pesimista.
+        Impide eliminar gastos ya pagados.
         """
-        expense = Expense.objects.get(id=expense_id)
+        expense = Expense.objects.select_for_update().get(id=expense_id)
+        if expense.is_paid:
+            raise ValueError(
+                "No se puede eliminar un gasto ya pagado. "
+                "Primero revierta el estado de pago."
+            )
         expense.delete(user=user)
 
     @staticmethod
     @transaction.atomic
     def mark_as_paid(expense_id: int, payment_date, user) -> Expense:
         """
-        Marca un gasto como pagado (para Cash Flow).
+        Marca un gasto como pagado (para Cash Flow) con bloqueo pesimista.
         Acepta objeto date/datetime o string 'YYYY-MM-DD'.
         """
         from datetime import datetime, date
@@ -147,7 +153,7 @@ class ExpenseService:
         else:
             raise ValueError("payment_date es requerido")
 
-        expense = Expense.objects.get(id=expense_id)
+        expense = Expense.objects.select_for_update().get(id=expense_id)
         expense.is_paid = True
         expense.payment_date = parsed_date
         expense.updated_by = user
@@ -158,7 +164,7 @@ class ExpenseService:
     @staticmethod
     def get_opex_summary(date_from, date_to) -> dict:
         """
-        Agrega gastos por categoría para el P&L.
+        Agrega gastos por categoría para el P&L (usando monto neto sin IVA).
 
         Returns:
             {
@@ -172,15 +178,16 @@ class ExpenseService:
         """
         expenses = Expense.objects.filter(
             expense_date__range=[date_from, date_to],
+            is_active=True,
         )
 
-        total = expenses.aggregate(t=Sum('amount_total'))['t'] or Decimal('0')
+        total = expenses.aggregate(t=Sum('amount_neto'))['t'] or Decimal('0')
 
         by_category = {}
         for cat_type, cat_label in ExpenseCategory.CATEGORY_TYPES:
             cat_total = (
                 expenses.filter(category__type=cat_type)
-                .aggregate(t=Sum('amount_total'))['t']
+                .aggregate(t=Sum('amount_neto'))['t']
                 or Decimal('0')
             )
             by_category[cat_type] = float(cat_total)
@@ -193,4 +200,4 @@ class ExpenseService:
     @staticmethod
     def get_unpaid_expenses():
         """Gastos devengados pero no pagados (cuentas a pagar)."""
-        return Expense.objects.filter(is_paid=False).select_related('category', 'supplier')
+        return Expense.objects.filter(is_paid=False, is_active=True).select_related('category', 'supplier')

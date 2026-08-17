@@ -130,3 +130,83 @@ class TestExpenseWebViews:
         assert not Expense.objects.filter(pk=expense.pk).exists()
         assert Expense.all_objects.filter(pk=expense.pk).exists()
 
+    def test_expense_list_allowed_for_viewer(self, client, viewer_user, db):
+        """Viewer puede ver el listado de gastos (200)."""
+        client.force_login(viewer_user)
+        url = reverse('expenses_web:expense_list')
+        response = client.get(url)
+        assert response.status_code == 200
+
+    def test_expense_detail_allowed_for_viewer(self, client, viewer_user, db, user):
+        """Viewer puede ver el detalle de un gasto (200)."""
+        client.force_login(viewer_user)
+        cat = ExpenseCategory.objects.create(name='Luz Local 2', type='utilities')
+        expense = Expense.objects.create(
+            category=cat,
+            description='Factura Test Viewer',
+            amount_neto=5000,
+            amount_iva=1050,
+            amount_total=6050,
+            expense_date='2026-05-10',
+            created_by=user,
+        )
+        url = reverse('expenses_web:expense_detail', kwargs={'pk': expense.pk})
+        response = client.get(url)
+        assert response.status_code == 200
+
+    def test_expense_list_forbidden_for_operator_without_permission(self, client, operator_user, db):
+        """Operador sin can_manage_expenses recibe 403 en listado."""
+        client.force_login(operator_user)
+        url = reverse('expenses_web:expense_list')
+        response = client.get(url)
+        assert response.status_code == 403
+
+    def test_expense_create_forbidden_for_viewer(self, client, viewer_user, db):
+        """Viewer recibe 403 al intentar acceder o postear al formulario de creación."""
+        client.force_login(viewer_user)
+        url = reverse('expenses_web:expense_create')
+        assert client.get(url).status_code == 403
+        assert client.post(url, {}).status_code == 403
+
+    def test_expense_create_forbidden_for_operator(self, client, operator_user, db):
+        """Operador sin permisos recibe 403 al intentar crear un gasto."""
+        client.force_login(operator_user)
+        url = reverse('expenses_web:expense_create')
+        assert client.get(url).status_code == 403
+        assert client.post(url, {}).status_code == 403
+
+    def test_expense_update_forbidden_for_viewer(self, client, viewer_user, db, user):
+        """Viewer recibe 403 al intentar editar un gasto."""
+        client.force_login(viewer_user)
+        cat = ExpenseCategory.objects.create(name='Luz 3', type='utilities')
+        expense = Expense.objects.create(
+            category=cat,
+            description='Gasto',
+            amount_neto=1000,
+            amount_iva=0,
+            amount_total=1000,
+            expense_date='2026-05-10',
+            created_by=user,
+        )
+        url = reverse('expenses_web:expense_update', kwargs={'pk': expense.pk})
+        assert client.get(url).status_code == 403
+        assert client.post(url, {}).status_code == 403
+
+    def test_expense_delete_forbidden_for_viewer(self, client, viewer_user, db, user):
+        """Viewer recibe 403 al intentar borrar un gasto."""
+        client.force_login(viewer_user)
+        cat = ExpenseCategory.objects.create(name='Luz 4', type='utilities')
+        expense = Expense.objects.create(
+            category=cat,
+            description='Gasto',
+            amount_neto=1000,
+            amount_iva=0,
+            amount_total=1000,
+            expense_date='2026-05-10',
+            created_by=user,
+        )
+        url = reverse('expenses_web:expense_delete', kwargs={'pk': expense.pk})
+        assert client.get(url).status_code == 403
+        assert client.post(url).status_code == 403
+
+

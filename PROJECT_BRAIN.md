@@ -635,7 +635,10 @@ Estructura de documentación distribuida por módulos para entender el **por qu�
 ---
 
 ## 🧪 Estado de Pruebas e Infraestructura (Agosto 2026)
-- **Suite de Tests:** 421 tests ejecutados y aprobados (**100% PASSED**).
+- **Suite de Tests Global:** 535 tests ejecutados y aprobados (**100% PASSED**) en Docker.
+- **Módulo `expenses` (Fase 5):** Remediado al 100%. Control de acceso web con `ExpenseViewPermissionMixin` y `ModulePermissionRequiredMixin` (`can_manage_expenses`), cálculo de OPEX neto (`amount_neto`) en `get_opex_summary` para coherencia absoluta con el P&L, bloqueo pesimista `select_for_update()` en mutaciones de `ExpenseService`, protección contra borrado de gastos pagados (`is_paid=True`), inmutabilidad en Admin Django (`has_delete_permission=False` para pagados), eliminación de stubs vacíos (`views.py`, `tests.py`), 100% de cobertura en `services.py` y 71 tests pasando.
+- **Módulo `payments` (Fase 5):** Remediado al 100%. Bloqueo pesimista con `select_for_update()` sobre alocaciones para evitar snapshot stale bajo `REPEATABLE READ`, validación multi-cliente y contra `customer_id` explícito, tope de alocación a nivel `Invoice`, validación canónica de duplicados por `(sale_id, invoice_id)`, protección de vistas web con `UserPassesTestMixin` (`_can_view_payments`), constraint de base de datos `payment_amount_positive`, corrección de `unallocated_balance` en anulados y 62 tests pasando.
+- **Módulo `sales` (Fase 4):** Remediado al 100%. Asignación de `unit_cost` en sync upload, `total_paid` respetando alocaciones activas, liberación automática de fondos en `cancel_sale`, totales cacheados con descuentos globales y 272 tests pasando.
 - **Módulo `bills`:** Remediado al 100%. Aplicación de `ModulePermissionRequiredMixin` y `@permission_required('can_manage_bills')` en vistas web, inmutabilidad fiscal en Admin Django (`has_delete_permission = False` para `autorizadas`), preservación de descarga pública por UUID (`invoice_public_pdf`) y 26 tests pasando.
 - **Módulo `afip`:** Remediado al 100%. Decoradores `@manager_required` en vistas web, redacción de secretos WSAA en debug API, inmutabilidad de registros autorizados y logs en Admin (`has_delete_permission = False`), tarea Celery Beat de reconciliación de comprobantes atascados, escape XML de envelopes SOAP y 43 tests unitarios/E2E pasando.
 - **Módulo `api`:** Paginación segura (`page_size=100`, `max_page_size=200`), forzado de `DEBUG=False` en `production.py`, enmascaramiento de PII (CUIT) en logs y header `X-Trace-Id`.
@@ -645,4 +648,4 @@ Estructura de documentación distribuida por módulos para entender el **por qu�
 
 ---
 
-*Última actualización: Agosto 2026 (Remediación Core, Common, API, AFIP, Bills y Tests)*
+*Última actualización: Agosto 2026 (Remediación Core, Common, API, AFIP, Bills, Sales, Payments, Expenses y Tests)*

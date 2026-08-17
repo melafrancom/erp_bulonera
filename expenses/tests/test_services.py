@@ -182,3 +182,90 @@ class TestExpenseService:
         
         assert expense.is_recurring is True
         assert expense.recurrence == 'monthly'
+
+    def test_get_opex_summary_uses_amount_neto(self, expense_category, user):
+        """get_opex_summary debe sumar amount_neto (sin IVA) para el P&L."""
+        Expense.objects.create(
+            category=expense_category,
+            description='Gasto con IVA',
+            amount_neto=Decimal('1000.00'),
+            amount_iva=Decimal('210.00'),
+            amount_total=Decimal('1210.00'),
+            expense_date=date(2026, 5, 10),
+            created_by=user,
+        )
+        summary = ExpenseService.get_opex_summary(date(2026, 5, 1), date(2026, 5, 31))
+        # Total debe ser 1000 (neto), no 1210 (total con IVA)
+        assert summary['total'] == 1000.0
+        assert summary['by_category']['rent'] == 1000.0
+
+    def test_delete_paid_expense_raises_error(self, expense_paid, user):
+        """Intentar eliminar un gasto ya pagado debe lanzar ValueError."""
+        with pytest.raises(ValueError) as excinfo:
+            ExpenseService.delete_expense(expense_paid.id, user)
+        assert "No se puede eliminar un gasto ya pagado" in str(excinfo.value)
+
+    def test_mark_as_paid_idempotent(self, expense_paid, user):
+        """Marcar como pagado un gasto que ya está pagado actualiza payment_date sin error."""
+        updated = ExpenseService.mark_as_paid(expense_paid.id, date(2026, 5, 20), user)
+        assert updated.is_paid is True
+        assert updated.payment_date == date(2026, 5, 20)
+
+    def test_create_expense_invalid_category_raises_error(self, user):
+        """Crear un gasto con category_id inexistente lanza ValueError."""
+        data = {
+            'category_id': 999999,
+            'description': 'Invalido',
+            'amount_neto': Decimal('100.00'),
+            'expense_date': date(2026, 5, 1),
+        }
+        with pytest.raises(ValueError) as exc:
+            ExpenseService.create_expense(data, user)
+        assert "no existe o está inactiva" in str(exc.value)
+
+    def test_update_expense_all_fields(self, expense, expense_salary_category, user):
+        """Actualizar todos los campos posibles de un gasto."""
+        data = {
+            'category_id': expense_salary_category.id,
+            'description': 'Gasto modificado completo',
+            'amount_neto': Decimal('1000.00'),
+            'amount_iva': Decimal('210.00'),
+            'expense_date': date(2026, 6, 1),
+            'payment_date': date(2026, 6, 5),
+            'is_paid': True,
+            'supplier_id': None,
+            'is_recurring': True,
+            'recurrence': 'quarterly',
+            'notes': 'Notas de prueba',
+        }
+        updated = ExpenseService.update_expense(expense.id, data, user)
+        assert updated.category == expense_salary_category
+        assert updated.amount_total == Decimal('1210.00')
+        assert updated.recurrence == 'quarterly'
+        assert updated.notes == 'Notas de prueba'
+
+    def test_update_expense_invalid_category_raises_error(self, expense, user):
+        """Actualizar un gasto con categoría inexistente lanza ValueError."""
+        with pytest.raises(ValueError) as exc:
+            ExpenseService.update_expense(expense.id, {'category_id': 999999}, user)
+        assert "no existe" in str(exc.value)
+
+    def test_mark_as_paid_with_string_date(self, expense, user):
+        """Marcar como pagado usando string YYYY-MM-DD."""
+        updated = ExpenseService.mark_as_paid(expense.id, '2026-05-15', user)
+        assert updated.is_paid is True
+        assert updated.payment_date == date(2026, 5, 15)
+
+    def test_mark_as_paid_invalid_string_format_raises_error(self, expense, user):
+        """Marcar como pagado con formato string inválido lanza ValueError."""
+        with pytest.raises(ValueError) as exc:
+            ExpenseService.mark_as_paid(expense.id, 'invalid-date', user)
+        assert "Formato de fecha de pago inválido" in str(exc.value)
+
+    def test_mark_as_paid_invalid_type_raises_error(self, expense, user):
+        """Marcar como pagado con tipo inválido (ej: None o int) lanza ValueError."""
+        with pytest.raises(ValueError) as exc:
+            ExpenseService.mark_as_paid(expense.id, None, user)
+        assert "payment_date es requerido" in str(exc.value)
+
+

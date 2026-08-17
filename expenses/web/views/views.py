@@ -6,23 +6,48 @@ Siguiendo la estructura canónica de BULONERA ERP:
   - DetailView
   - CreateView con formulario
   - UpdateView con formulario
+  - DeleteView con confirmación
 """
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
+from core.decorators import ModulePermissionRequiredMixin
 from expenses.models import Expense, ExpenseCategory
 from expenses.services import ExpenseService
 
 
-class ExpenseListView(LoginRequiredMixin, ListView):
+def _can_view_expenses(user):
+    """Auxiliar para verificar permiso de lectura de gastos."""
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser or getattr(user, 'role', '') in ('admin', 'manager', 'viewer'):
+        return True
+    return getattr(user, 'can_manage_expenses', False)
+
+
+class ExpenseViewPermissionMixin(UserPassesTestMixin):
+    """Mixin para vistas de solo lectura de gastos con soporte para viewer y redirección a login."""
+    login_url = reverse_lazy('core_web:login')
+
+    def test_func(self):
+        return _can_view_expenses(self.request.user)
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            from django.contrib.auth.views import redirect_to_login
+            return redirect_to_login(self.request.get_full_path(), self.get_login_url())
+        from django.core.exceptions import PermissionDenied
+        raise PermissionDenied('No tienes permisos para acceder a esta sección.')
+
+
+class ExpenseListView(ExpenseViewPermissionMixin, ListView):
     """Lista de gastos con filtros por categoría y fecha."""
 
     model = Expense
     template_name = 'expenses/expense_list.html'
     context_object_name = 'expenses'
     paginate_by = 50
-    login_url = reverse_lazy('core_web:login')
 
     def get_queryset(self):
         """Filtrar gastos activos con opciones de búsqueda."""
@@ -58,23 +83,23 @@ class ExpenseListView(LoginRequiredMixin, ListView):
         return context
 
 
-class ExpenseDetailView(LoginRequiredMixin, DetailView):
+class ExpenseDetailView(ExpenseViewPermissionMixin, DetailView):
     """Detalle de un gasto."""
 
     model = Expense
     template_name = 'expenses/expense_detail.html'
     context_object_name = 'expense'
-    login_url = reverse_lazy('core_web:login')
 
     def get_queryset(self):
         return Expense.objects.select_related('category', 'supplier')
 
 
-class ExpenseCreateView(LoginRequiredMixin, CreateView):
+class ExpenseCreateView(ModulePermissionRequiredMixin, CreateView):
     """Formulario para crear un gasto usando ExpenseService."""
 
     model = Expense
     template_name = 'expenses/expense_form.html'
+    required_permission = 'can_manage_expenses'
     fields = [
         'category', 'description', 'amount_neto', 'amount_iva', 'amount_total',
         'expense_date', 'payment_date', 'is_paid', 'supplier',
@@ -99,11 +124,12 @@ class ExpenseCreateView(LoginRequiredMixin, CreateView):
         return redirect('expenses_web:expense_list')
 
 
-class ExpenseUpdateView(LoginRequiredMixin, UpdateView):
+class ExpenseUpdateView(ModulePermissionRequiredMixin, UpdateView):
     """Formulario para actualizar un gasto usando ExpenseService."""
 
     model = Expense
     template_name = 'expenses/expense_form.html'
+    required_permission = 'can_manage_expenses'
     fields = [
         'category', 'description', 'amount_neto', 'amount_iva', 'amount_total',
         'expense_date', 'payment_date', 'is_paid', 'supplier',
@@ -130,12 +156,13 @@ class ExpenseUpdateView(LoginRequiredMixin, UpdateView):
         return redirect('expenses_web:expense_list')
 
 
-class ExpenseDeleteView(LoginRequiredMixin, DeleteView):
+class ExpenseDeleteView(ModulePermissionRequiredMixin, DeleteView):
     """Vista para soft-delete de un gasto usando ExpenseService."""
 
     model = Expense
     template_name = 'expenses/expense_confirm_delete.html'
     context_object_name = 'expense'
+    required_permission = 'can_manage_expenses'
     login_url = reverse_lazy('core_web:login')
     success_url = reverse_lazy('expenses_web:expense_list')
 

@@ -5,11 +5,11 @@ El módulo `reports` es el motor de inteligencia de negocios e informes financie
 
 ## 🔗 Dependencias y Grafo
 *   **Consume de:**
-    *   [`sales`](../sales/README.md) (para el volumen de facturación y efectividad de vendedores)
-    *   [`bills`](../bills/README.md) (para las ventas registradas fiscalmente ante la AFIP)
-    *   [`payments`](../payments/README.md) (para las cobranzas efectivas percibidas en caja)
-    *   [`expenses`](../expenses/README.md) (para deducir los costos y egresos operativos de la empresa)
-    *   [`inventory`](../inventory/README.md) (para calcular la rotación y valorización de mercadería)
+    *   [`sales`](../sales/README.md) (para volumen de facturación devengada y costo de mercadería vendida COGS)
+    *   [`bills`](../bills/README.md) (para ventas registradas fiscalmente ante la AFIP)
+    *   [`payments`](../payments/README.md) (para cobranzas efectivas percibidas en caja / inflows)
+    *   [`expenses`](../expenses/README.md) (para egresos operativos / outflows y deducción OPEX)
+    *   [`inventory`](../inventory/README.md) (para rotación y valorización de mercadería)
 *   **Es consumido por:**
     *   Ninguno (es el módulo final de consulta gerencial).
 
@@ -18,8 +18,13 @@ El módulo `reports` es el motor de inteligencia de negocios e informes financie
 
 ## ⚡ Servicios Críticos (`services/`)
 El procesamiento analítico se distribuye en servicios especializados:
-*   `PNLService`: Agrupa ventas confirmadas devengadas, COGS (Costo de Mercadería Vendida) y gastos devengados para reportar el margen neto y la utilidad real mensual.
-*   `CashFlowService`: Computa las cobranzas efectivas realizadas y los gastos pagados reales para proyectar la liquidez de caja diaria/mensual.
+*   `PnLService` (`pnl_service.py`):
+    *   `_compute_revenue`: Suma ingresos netos de ventas confirmadas (`confirmed`, `in_preparation`, `ready`, `delivered`).
+    *   `_compute_cogs`: Computa el Costo de Mercadería Vendida (COGS) considerando todas las ventas en preparación, listas y entregadas (`in_preparation`, `ready`, `delivered`), calculando `quantity * unit_cost`.
+    *   `_compute_opex`: Suma los gastos operativos devengados utilizando `amount_neto` (excluyendo el IVA crédito fiscal para mantener congruencia con el ingreso neto).
+*   `CashFlowService` (`cashflow_service.py`):
+    *   `_compute_inflows`: Suma cobros reales confirmados (`Payment.status='confirmed'`, por `date`).
+    *   `_compute_outflows`: Suma gastos reales pagados (`Expense.is_paid=True`, utilizando `amount_total` por `payment_date`).
 *   `DashboardService`: Consolida KPIs generales de salón en tiempo real para el panel directivo.
 *   `ExportService`: Genera archivos TXT impositivos (Libro IVA Ventas digital) y planillas de cálculo (XLSX, CSV) para el contador público.
 

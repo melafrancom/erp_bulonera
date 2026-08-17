@@ -31,6 +31,46 @@ def user():
 
 
 @pytest.fixture
+def viewer_user():
+    """Usuario con rol viewer (solo lectura)."""
+    user, _ = User.objects.get_or_create(
+        username='vieweruser',
+        defaults={
+            'email': 'viewer@example.com',
+            'first_name': 'Viewer',
+            'last_name': 'User',
+            'role': 'viewer',
+            'can_manage_expenses': False,
+        }
+    )
+    if user.role != 'viewer' or user.can_manage_expenses:
+        user.role = 'viewer'
+        user.can_manage_expenses = False
+        user.save()
+    return user
+
+
+@pytest.fixture
+def operator_user():
+    """Usuario operador sin permisos de gestión de gastos."""
+    user, _ = User.objects.get_or_create(
+        username='operatoruser',
+        defaults={
+            'email': 'operator@example.com',
+            'first_name': 'Operator',
+            'last_name': 'User',
+            'role': 'operator',
+            'can_manage_expenses': False,
+        }
+    )
+    if user.role != 'operator' or user.can_manage_expenses:
+        user.role = 'operator'
+        user.can_manage_expenses = False
+        user.save()
+    return user
+
+
+@pytest.fixture
 def expense_category():
     """Crear una categoría de gasto para testing."""
     category, _ = ExpenseCategory.objects.get_or_create(

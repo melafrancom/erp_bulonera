@@ -73,6 +73,22 @@ class ExpenseAdmin(admin.ModelAdmin):
         """Hacer period_year y period_month read-only pero visibles."""
         return self.readonly_fields
 
+    def has_delete_permission(self, request, obj=None):
+        """Bloquear borrado de gastos ya pagados desde el Admin."""
+        if obj and obj.is_paid:
+            return False
+        return super().has_delete_permission(request, obj)
+
+    def delete_model(self, request, obj):
+        """Ejecutar soft-delete preservando usuario auditor."""
+        obj.delete(user=request.user)
+
+    def delete_queryset(self, request, queryset):
+        """Ejecutar soft-delete para cada registro del bulk delete."""
+        for obj in queryset:
+            if not obj.is_paid:
+                obj.delete(user=request.user)
+
     def save_model(self, request, obj, form, change):
         """Asignar usuario actual en created_by."""
         if not change:
