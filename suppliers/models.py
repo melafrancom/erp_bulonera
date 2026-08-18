@@ -95,6 +95,8 @@ class Supplier(BaseModel):
     ]
 
     def validate_cuit_checksum(value):
+        if not value:
+            return
         from common.utils import validate_cuit
         clean_value = value.replace('-', '')
         if not validate_cuit(clean_value):
@@ -181,7 +183,7 @@ class Supplier(BaseModel):
     )
     early_payment_discount = models.DecimalField(
         "Descuento pronto pago (%)", max_digits=5, decimal_places=2,
-        default=Decimal('0.00'),
+        default=Decimal('0.00'), blank=True,
         validators=[MinValueValidator(Decimal('0.00'))],
         help_text="Porcentaje de descuento por pronto pago."
     )

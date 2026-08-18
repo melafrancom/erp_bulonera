@@ -1,12 +1,14 @@
 """
 Vistas web (templates) para la app Suppliers.
 """
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.conf import settings
 import os
 import logging
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.contrib import messages
+from django.conf import settings
+from django.db import models
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +16,32 @@ from suppliers.models import Supplier, SupplierTag
 from suppliers.web.forms import SupplierForm
 
 
+def _can_view_suppliers(user):
+    """Auxiliar para verificar permiso de lectura de proveedores."""
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser or getattr(user, 'role', '') in ('admin', 'manager', 'viewer'):
+        return True
+    return getattr(user, 'can_manage_suppliers', False)
+
+
+def _can_manage_suppliers(user):
+    """Auxiliar para verificar permiso de gestión de proveedores."""
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser or getattr(user, 'role', '') in ('admin', 'manager'):
+        return True
+    if getattr(user, 'role', '') == 'viewer':
+        return False
+    return getattr(user, 'can_manage_suppliers', False)
+
+
 @login_required
 def supplier_list(request):
     """Listado de proveedores con búsqueda y filtros."""
+    if not _can_view_suppliers(request.user):
+        raise PermissionDenied("No tienes permisos para acceder a esta sección.")
+
     suppliers = Supplier.objects.prefetch_related('tags').all()
 
     # Búsqueda
@@ -53,10 +78,15 @@ def supplier_list(request):
 @login_required
 def supplier_detail(request, pk):
     """Detalle completo de un proveedor."""
+    if not _can_view_suppliers(request.user):
+        raise PermissionDenied("No tienes permisos para acceder a esta sección.")
+
     supplier = get_object_or_404(Supplier, pk=pk)
     
     # Manejar eliminación desde la vista de detalle
     if request.method == 'POST' and request.POST.get('action') == 'delete':
+        if not _can_manage_suppliers(request.user):
+            raise PermissionDenied("No tienes permisos para eliminar proveedores.")
         from suppliers.services import SupplierService
         SupplierService.soft_delete(supplier, request.user)
         messages.success(request, f'Proveedor "{supplier.business_name}" eliminado correctamente.')
@@ -75,6 +105,9 @@ def supplier_detail(request, pk):
 @login_required
 def supplier_create(request):
     """Crear proveedor."""
+    if not _can_manage_suppliers(request.user):
+        raise PermissionDenied("No tienes permisos para crear proveedores.")
+
     if request.method == 'POST':
         form = SupplierForm(request.POST)
         if form.is_valid():
@@ -96,6 +129,9 @@ def supplier_create(request):
 @login_required
 def supplier_edit(request, pk):
     """Editar proveedor."""
+    if not _can_manage_suppliers(request.user):
+        raise PermissionDenied("No tienes permisos para editar proveedores.")
+
     supplier = get_object_or_404(Supplier, pk=pk)
 
     if request.method == 'POST':
@@ -120,6 +156,9 @@ def supplier_edit(request, pk):
 @login_required
 def supplier_import(request):
     """Vista para importar proveedores desde Excel/CSV (GET muestra, POST procesa)."""
+    if not _can_manage_suppliers(request.user):
+        raise PermissionDenied("No tienes permisos para importar proveedores.")
+
     if request.method == 'POST':
         uploaded_file = request.FILES.get('file')
         if not uploaded_file:
@@ -150,22 +189,28 @@ def supplier_import(request):
             from suppliers.tasks import import_suppliers_task
             task = import_suppliers_task.delay(file_path, request.user.id)
             messages.info(request, "Importación iniciada. Se procesará en segundo plano.")
-            # Redirigir a una vista de estado o reporte
-            return redirect('suppliers_web:supplier_list') # TODO: Crear vista de reporte si es necesario
+            return redirect('suppliers_web:supplier_list')
         except Exception as e:
             logger.error(f"Error al lanzar tarea de importación de proveedores: {e}", exc_info=True)
-            # Fallback sincrónico
-            from suppliers.services import SupplierImportService
-            service = SupplierImportService()
-            report = service.import_from_file(file_path, request.user.id)
-            
-            if report['status'] == 'completed':
-                messages.success(
-                    request, 
-                    f"Importación completada: {report['created']} creados, {report['updated']} actualizados."
-                )
-            else:
-                messages.error(request, f"Error en importación: {report.get('error', 'Desconocido')}")
+            # Fallback sincrónico con limpieza garantizada
+            try:
+                from suppliers.services import SupplierImportService
+                service = SupplierImportService()
+                report = service.import_from_file(file_path, request.user.id)
+                
+                if report['status'] == 'completed':
+                    messages.success(
+                        request, 
+                        f"Importación completada: {report['created']} creados, {report['updated']} actualizados."
+                    )
+                else:
+                    messages.error(request, f"Error en importación: {report.get('error', 'Desconocido')}")
+            finally:
+                if os.path.exists(file_path):
+                    try:
+                        os.remove(file_path)
+                    except OSError:
+                        pass
             
             return redirect('suppliers_web:supplier_list')
 
@@ -175,6 +220,9 @@ def supplier_import(request):
 @login_required
 def supplier_download_template(request):
     """Genera y descarga la plantilla Excel para importación de proveedores."""
+    if not _can_view_suppliers(request.user):
+        raise PermissionDenied("No tienes permisos para acceder a esta sección.")
+
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
     from django.http import HttpResponse
@@ -230,7 +278,3 @@ def supplier_download_template(request):
     response['Content-Disposition'] = 'attachment; filename="plantilla_importacion_proveedores.xlsx"'
     wb.save(response)
     return response
-
-
-# Importar models para uso en búsqueda
-from django.db import models

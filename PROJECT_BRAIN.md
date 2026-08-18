@@ -635,7 +635,8 @@ Estructura de documentación distribuida por módulos para entender el **por qu�
 ---
 
 ## 🧪 Estado de Pruebas e Infraestructura (Agosto 2026)
-- **Suite de Tests Global:** 535 tests ejecutados y aprobados (**100% PASSED**) en Docker.
+- **Suite de Tests Global:** 560 tests ejecutados y aprobados (**100% PASSED**) en Docker.
+- **Módulo `suppliers` (Fase 6):** Remediado al 100%. Control de acceso web con `_can_view_suppliers` y `_can_manage_suppliers`, soporte oficial y validación segura de proveedores sin CUIT (`validate_cuit_checksum` en Model, Form y Serializer permitiendo `None` o `""`), protección contra hard-delete masivo en Admin Django (`delete_queryset` y `delete_model` en `SupplierAdmin` y `SupplierTagAdmin` preservando soft-delete y mangling de CUIT/slug), eliminación de `OwnerQuerysetMixin` en `SupplierViewSet` para garantizar catálogo maestro compartido para todo el equipo, randomización con UUID en upload API, limpieza garantizada con `finally` en fallback síncrono, eliminación de `suppliers/views.py` obsoleto, creación de `test_web.py` y 63 tests pasando.
 - **Módulo `expenses` (Fase 5):** Remediado al 100%. Control de acceso web con `ExpenseViewPermissionMixin` y `ModulePermissionRequiredMixin` (`can_manage_expenses`), cálculo de OPEX neto (`amount_neto`) en `get_opex_summary` para coherencia absoluta con el P&L, bloqueo pesimista `select_for_update()` en mutaciones de `ExpenseService`, protección contra borrado de gastos pagados (`is_paid=True`), inmutabilidad en Admin Django (`has_delete_permission=False` para pagados), eliminación de stubs vacíos (`views.py`, `tests.py`), 100% de cobertura en `services.py` y 71 tests pasando.
 - **Módulo `payments` (Fase 5):** Remediado al 100%. Bloqueo pesimista con `select_for_update()` sobre alocaciones para evitar snapshot stale bajo `REPEATABLE READ`, validación multi-cliente y contra `customer_id` explícito, tope de alocación a nivel `Invoice`, validación canónica de duplicados por `(sale_id, invoice_id)`, protección de vistas web con `UserPassesTestMixin` (`_can_view_payments`), constraint de base de datos `payment_amount_positive`, corrección de `unallocated_balance` en anulados y 62 tests pasando.
 - **Módulo `sales` (Fase 4):** Remediado al 100%. Asignación de `unit_cost` en sync upload, `total_paid` respetando alocaciones activas, liberación automática de fondos en `cancel_sale`, totales cacheados con descuentos globales y 272 tests pasando.
@@ -648,4 +649,4 @@ Estructura de documentación distribuida por módulos para entender el **por qu�
 
 ---
 
-*Última actualización: Agosto 2026 (Remediación Core, Common, API, AFIP, Bills, Sales, Payments, Expenses y Tests)*
+*Última actualización: Agosto 2026 (Remediación Core, Common, API, AFIP, Bills, Sales, Payments, Expenses, Suppliers y Tests)*

@@ -51,10 +51,12 @@ class SupplierForm(forms.ModelForm):
         }
 
     def clean_cuit(self):
-        """Valida CUIT con dígito verificador."""
-        from common.utils import validate_cuit
-
+        """Valida CUIT con dígito verificador (opcional)."""
         cuit = self.cleaned_data.get('cuit', '')
+        if not cuit or not str(cuit).strip():
+            return None
+        cuit = str(cuit).strip()
+        from common.utils import validate_cuit
         clean_value = cuit.replace('-', '')
         if not validate_cuit(clean_value):
             raise forms.ValidationError(

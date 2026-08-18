@@ -14,7 +14,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django_filters.rest_framework import DjangoFilterBackend
 
 from common.permissions import ModulePermission
-from common.mixins import AuditMixin, OwnerQuerysetMixin
+from common.mixins import AuditMixin
 from suppliers.models import Supplier, SupplierTag
 from suppliers.api.serializers import (
     SupplierListSerializer,
@@ -48,14 +48,15 @@ class SupplierTagViewSet(AuditMixin, ModelViewSet):
 # SupplierViewSet
 # =============================================================================
 
-class SupplierViewSet(AuditMixin, OwnerQuerysetMixin, ModelViewSet):
+class SupplierViewSet(AuditMixin, ModelViewSet):
     """
-    ViewSet para gestionar Proveedores.
+    ViewSet para gestionar Proveedores (Catálogo Maestro Global).
 
     Permisos:
     - Admin/Superuser: acceso total
     - Manager: acceso total
     - Viewer: solo lectura
+    - Operator con can_manage_suppliers: acceso completo al catálogo
 
     Acciones customizadas:
     - GET {id}/products/ → productos del proveedor
@@ -156,10 +157,12 @@ class SupplierImportViewSet(ViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Guardar archivo temporalmente
+        # Guardar archivo temporalmente con nombre único
+        import uuid
         upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads', 'suppliers')
         os.makedirs(upload_dir, exist_ok=True)
-        file_path = os.path.join(upload_dir, file.name)
+        unique_name = f"{uuid.uuid4().hex}_{file.name}"
+        file_path = os.path.join(upload_dir, unique_name)
 
         with open(file_path, 'wb+') as dest:
             for chunk in file.chunks():

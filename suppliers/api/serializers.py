@@ -92,7 +92,11 @@ class SupplierCreateSerializer(serializers.ModelSerializer):
         ]
 
     def validate_cuit(self, value: str) -> str:
-        """Valida CUIT: dígito verificador + unicidad."""
+        """Valida CUIT: dígito verificador + unicidad (opcional)."""
+        if not value or not str(value).strip():
+            return None
+
+        value = str(value).strip()
         from common.utils import validate_cuit
 
         # Limpiar guiones para validación

@@ -123,6 +123,53 @@ class TestSupplierAPI:
         response = client.post('/api/v1/suppliers/', data)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
+    def test_create_supplier_without_cuit(self, admin_user):
+        """POST /api/v1/suppliers/ permite crear proveedor sin CUIT."""
+        client = get_auth_client(admin_user)
+        data = {
+            'business_name': 'Proveedor API Sin CUIT',
+            'cuit': '',
+            'tax_condition': 'MONO',
+        }
+        response = client.post('/api/v1/suppliers/', data)
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data['cuit'] is None or response.data['cuit'] == ''
+
+    def test_operator_without_permission_cannot_create_supplier(self, operator_user):
+        """Operador sin can_manage_suppliers recibe 403."""
+        client = get_auth_client(operator_user)
+        data = {
+            'business_name': 'Hacked S.A.',
+            'cuit': generate_valid_cuit(50000002),
+            'tax_condition': 'RI',
+        }
+        response = client.post('/api/v1/suppliers/', data)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_viewer_can_list_and_retrieve_suppliers_but_cannot_create(self, viewer_user, supplier):
+        """Viewer puede consultar catálogo pero no crear (200 GET, 403 POST)."""
+        client = get_auth_client(viewer_user)
+        response_list = client.get('/api/v1/suppliers/')
+        assert response_list.status_code == status.HTTP_200_OK
+
+        response_detail = client.get(f'/api/v1/suppliers/{supplier.id}/')
+        assert response_detail.status_code == status.HTTP_200_OK
+
+        response_post = client.post('/api/v1/suppliers/', {'business_name': 'Viewer Create'})
+        assert response_post.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_shared_catalog_visible_across_operators(self, operator_user, supplier):
+        """Catálogo es compartido: operador con can_manage_suppliers ve proveedores creados por otros."""
+        operator_user.can_manage_suppliers = True
+        operator_user.save()
+
+        client = get_auth_client(operator_user)
+        response = client.get('/api/v1/suppliers/')
+        assert response.status_code == status.HTTP_200_OK
+        ids = [item['id'] for item in response.data['results']]
+        assert supplier.id in ids
+
+
 
 @pytest.mark.django_db
 class TestSupplierTagAPI:

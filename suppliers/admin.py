@@ -14,6 +14,15 @@ class SupplierTagAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('name',)}
     ordering = ('name',)
 
+    def delete_model(self, request, obj):
+        """Ejecutar soft-delete preservando mangling de nombre/slug y auditoría."""
+        obj.delete(user=request.user)
+
+    def delete_queryset(self, request, queryset):
+        """Ejecutar soft-delete por instancia en acciones masivas."""
+        for obj in queryset:
+            obj.delete(user=request.user)
+
 
 @admin.register(Supplier)
 class SupplierAdmin(admin.ModelAdmin):
@@ -26,6 +35,15 @@ class SupplierAdmin(admin.ModelAdmin):
     search_fields = ('business_name', 'trade_name', 'cuit', 'email')
     filter_horizontal = ('tags',)
     ordering = ('business_name',)
+
+    def delete_model(self, request, obj):
+        """Ejecutar soft-delete preservando mangling de CUIT y auditoría."""
+        obj.delete(user=request.user)
+
+    def delete_queryset(self, request, queryset):
+        """Ejecutar soft-delete por instancia en acciones masivas."""
+        for obj in queryset:
+            obj.delete(user=request.user)
 
     fieldsets = (
         ('Datos Básicos', {

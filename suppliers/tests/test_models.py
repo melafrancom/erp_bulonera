@@ -176,3 +176,26 @@ class TestSupplier:
         )
         with pytest.raises(ValidationError):
             s.full_clean()
+
+    def test_supplier_create_without_cuit_null_and_empty_string(self, admin_user):
+        """Permite crear proveedores informales con CUIT None o string vacío."""
+        s1 = Supplier(
+            business_name='Sin CUIT 1',
+            cuit=None,
+            tax_condition='MONO',
+            created_by=admin_user,
+        )
+        s1.full_clean()
+        s1.save()
+        assert s1.pk is not None
+
+        s2 = Supplier(
+            business_name='Sin CUIT 2',
+            cuit='',
+            tax_condition='MONO',
+            created_by=admin_user,
+        )
+        s2.full_clean()
+        s2.save()
+        assert s2.pk is not None
+
