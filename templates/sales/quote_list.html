@@ -57,89 +57,109 @@
       </div>
     </div>
 
-    <!-- Stats Cards Mini -->
+    <!-- Stats Cards Mini (Filtros Rápidos) -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
+      <a href="{% url 'sales_web:quote_list' %}" 
+         class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border {% if not status_filter %}border-blue-500 ring-2 ring-blue-500/20 dark:border-blue-500{% else %}border-gray-200 dark:border-slate-700{% endif %} p-4 hover:shadow-md transition-all group block">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600 dark:text-slate-400">Total</p>
-            <p class="text-2xl font-bold text-gray-900 dark:text-slate-100 mt-1">{{ total_quotes }}</p>
+            <p class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Total</p>
+            <p class="text-2xl font-black text-gray-900 dark:text-slate-100 mt-1">{{ total_quotes }}</p>
           </div>
-          <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-            <i data-lucide="file-text" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+          <div class="p-2.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl group-hover:scale-110 transition-transform">
+            <i data-lucide="file-text" class="w-5 h-5"></i>
           </div>
         </div>
-      </div>
+      </a>
 
-      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
+      <a href="{% url 'sales_web:quote_list' %}?status=sent" 
+         class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border {% if status_filter == 'sent' %}border-orange-500 ring-2 ring-orange-500/20 dark:border-orange-500{% else %}border-gray-200 dark:border-slate-700{% endif %} p-4 hover:shadow-md transition-all group block">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600 dark:text-slate-400">Enviados</p>
-            <p class="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-1">{{ quotes_sent }}</p>
+            <p class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Enviados</p>
+            <p class="text-2xl font-black text-orange-600 dark:text-orange-400 mt-1">{{ quotes_sent }}</p>
           </div>
-          <div class="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-            <i data-lucide="send" class="w-5 h-5 text-orange-600 dark:text-orange-400"></i>
+          <div class="p-2.5 bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-xl group-hover:scale-110 transition-transform">
+            <i data-lucide="send" class="w-5 h-5"></i>
           </div>
         </div>
-      </div>
+      </a>
 
-      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
+      <a href="{% url 'sales_web:quote_list' %}?status=accepted" 
+         class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border {% if status_filter == 'accepted' %}border-green-500 ring-2 ring-green-500/20 dark:border-green-500{% else %}border-gray-200 dark:border-slate-700{% endif %} p-4 hover:shadow-md transition-all group block">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600 dark:text-slate-400">Aceptados</p>
-            <p class="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">{{ quotes_accepted }}</p>
+            <p class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Aceptados</p>
+            <p class="text-2xl font-black text-green-600 dark:text-green-400 mt-1">{{ quotes_accepted }}</p>
           </div>
-          <div class="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-            <i data-lucide="check-circle" class="w-5 h-5 text-green-600 dark:text-green-400"></i>
+          <div class="p-2.5 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-xl group-hover:scale-110 transition-transform">
+            <i data-lucide="check-circle" class="w-5 h-5"></i>
           </div>
         </div>
-      </div>
+      </a>
 
-      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
+      <a href="{% url 'sales_web:quote_list' %}?status=draft" 
+         class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border {% if status_filter == 'draft' %}border-yellow-500 ring-2 ring-yellow-500/20 dark:border-yellow-500{% else %}border-gray-200 dark:border-slate-700{% endif %} p-4 hover:shadow-md transition-all group block">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600 dark:text-slate-400">Borradores</p>
-            <p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mt-1">{{ quotes_draft }}</p>
+            <p class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Borradores</p>
+            <p class="text-2xl font-black text-yellow-600 dark:text-yellow-400 mt-1">{{ quotes_draft }}</p>
           </div>
-          <div class="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-            <i data-lucide="edit" class="w-5 h-5 text-yellow-600 dark:text-yellow-400"></i>
+          <div class="p-2.5 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded-xl group-hover:scale-110 transition-transform">
+            <i data-lucide="edit" class="w-5 h-5"></i>
           </div>
         </div>
-      </div>
+      </a>
     </div>
   </div>
 
-  <!-- Barra de búsqueda y filtros -->
-  <div class="mb-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-4" x-data="{ search: '', statusFilter: '{{ status_filter|default:'' }}' }">
-    <div class="flex flex-col md:flex-row gap-3">
+  <!-- Barra de búsqueda y filtros funcionales (GET Form) -->
+  <div class="mb-6 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-4 transition-colors">
+    <form method="get" action="{% url 'sales_web:quote_list' %}" class="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
       <!-- Búsqueda -->
-      <div class="flex-1 relative">
-        <i data-lucide="search" class="w-5 h-5 text-gray-400 dark:text-slate-500 absolute left-3 top-1/2 transform -translate-y-1/2"></i>
+      <div class="flex-1 relative group">
+        <i data-lucide="search" class="w-5 h-5 text-gray-400 dark:text-slate-500 absolute left-3.5 top-1/2 transform -translate-y-1/2 group-focus-within:text-blue-600 transition-colors"></i>
         <input 
           type="text" 
-          x-model="search"
-          placeholder="Buscar por número o cliente..."
-          class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+          name="search"
+          value="{{ search|default:'' }}"
+          placeholder="Buscar por número de presupuesto o cliente..."
+          class="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-slate-700 rounded-xl bg-gray-50/50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition font-medium">
       </div>
       
       <!-- Filtro por Estado -->
-      <select x-model="statusFilter" class="px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
-        <option value="">Todos los estados</option>
-        <option value="draft">Borrador</option>
-        <option value="sent">Enviado</option>
-        <option value="accepted">Aceptado</option>
-        <option value="rejected">Rechazado</option>
-        <option value="expired">Vencido</option>
-        <option value="converted">Convertido</option>
-        <option value="cancelled">Cancelado</option>
-      </select>
+      <div class="w-full md:w-64">
+        <select name="status" onchange="this.form.submit()"
+                class="w-full px-3.5 py-2.5 border border-gray-300 dark:border-slate-700 rounded-xl bg-gray-50/50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition cursor-pointer">
+          <option value="" {% if not status_filter %}selected{% endif %}>Todos los estados</option>
+          <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>🟡 Borrador</option>
+          <option value="sent" {% if status_filter == 'sent' %}selected{% endif %}>🟠 Enviado</option>
+          <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>🟢 Aceptado</option>
+          <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>🔴 Rechazado</option>
+          <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>⏳ Vencido</option>
+          <option value="converted" {% if status_filter == 'converted' %}selected{% endif %}>🔵 Convertido</option>
+          <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>⛔ Cancelado</option>
+        </select>
+      </div>
 
-      <!-- Botón Limpiar Filtros -->
-      <button @click="search = ''; statusFilter = ''" 
-              class="px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition">
-        <i data-lucide="x" class="w-4 h-4"></i>
-      </button>
-    </div>
+      <!-- Botones de Acción -->
+      <div class="flex items-center gap-2">
+        <button type="submit" 
+                class="px-5 py-2.5 bg-gray-900 dark:bg-blue-600 text-white rounded-xl hover:bg-gray-800 dark:hover:bg-blue-500 transition font-bold text-sm shadow-sm flex items-center gap-2">
+          <i data-lucide="filter" class="w-4 h-4"></i>
+          Filtrar
+        </button>
+
+        {% if search or status_filter %}
+        <a href="{% url 'sales_web:quote_list' %}" 
+           class="px-4 py-2.5 border border-gray-300 dark:border-slate-700 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 transition text-sm font-bold flex items-center gap-1.5"
+           title="Restablecer filtros">
+          <i data-lucide="x" class="w-4 h-4"></i>
+          Limpiar
+        </a>
+        {% endif %}
+      </div>
+    </form>
   </div>
 
   <!-- Tabla de Presupuestos -->
@@ -288,34 +308,34 @@
     <!-- Paginación -->
     {% if quotes.has_other_pages %}
     <div class="px-6 py-4 border-t border-gray-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <div class="text-sm text-gray-700">
-        Mostrando <span class="font-medium">{{ quotes.start_index }}</span> a 
-        <span class="font-medium">{{ quotes.end_index }}</span> de 
-        <span class="font-medium">{{ quotes.paginator.count }}</span> resultados
+      <div class="text-sm text-gray-700 dark:text-slate-300">
+        Mostrando <span class="font-bold">{{ quotes.start_index }}</span> a 
+        <span class="font-bold">{{ quotes.end_index }}</span> de 
+        <span class="font-bold">{{ quotes.paginator.count }}</span> presupuestos
       </div>
       <div class="flex gap-2">
         {% if quotes.has_previous %}
-        <a href="?page={{ quotes.previous_page_number }}" 
-           class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 dark:bg-slate-800/50 transition">
+        <a href="?page={{ quotes.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+           class="px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition">
           <i data-lucide="chevron-left" class="w-4 h-4"></i>
         </a>
         {% else %}
-        <button disabled class="px-4 py-2 border border-gray-300 rounded-lg text-gray-400 dark:text-slate-500 cursor-not-allowed">
+        <button disabled class="px-4 py-2 border border-gray-300 rounded-lg text-gray-400 dark:text-slate-600 dark:border-slate-800 cursor-not-allowed">
           <i data-lucide="chevron-left" class="w-4 h-4"></i>
         </button>
         {% endif %}
 
-        <span class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium">
-          {{ quotes.number }}
+        <span class="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold text-sm">
+          {{ quotes.number }} / {{ quotes.paginator.num_pages }}
         </span>
 
         {% if quotes.has_next %}
-        <a href="?page={{ quotes.next_page_number }}" 
-           class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 dark:bg-slate-800/50 transition">
+        <a href="?page={{ quotes.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+           class="px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition">
           <i data-lucide="chevron-right" class="w-4 h-4"></i>
         </a>
         {% else %}
-        <button disabled class="px-4 py-2 border border-gray-300 rounded-lg text-gray-400 dark:text-slate-500 cursor-not-allowed">
+        <button disabled class="px-4 py-2 border border-gray-300 rounded-lg text-gray-400 dark:text-slate-600 dark:border-slate-800 cursor-not-allowed">
           <i data-lucide="chevron-right" class="w-4 h-4"></i>
         </button>
         {% endif %}

@@ -57,125 +57,152 @@
       </div>
     </div>
 
-    <!-- Stats Cards Mini -->
+    <!-- Stats Cards Mini (Filtros Rápidos) -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        <!-- Total -->
-      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
+      <!-- Total -->
+      <a href="{% url 'sales_web:sale_list' %}" 
+         class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border {% if not status_filter and not payment_status_filter %}border-purple-500 ring-2 ring-purple-500/20 dark:border-purple-500{% else %}border-gray-200 dark:border-slate-700{% endif %} p-4 hover:shadow-md transition-all group block">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600 dark:text-slate-300">Total</p>
-            <p class="text-2xl font-bold text-gray-900 dark:text-slate-100 mt-1">{{ total_sales }}</p>
+            <p class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Total</p>
+            <p class="text-2xl font-black text-gray-900 dark:text-slate-100 mt-1">{{ total_sales }}</p>
           </div>
-          <div class="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-            <i data-lucide="shopping-cart" class="w-5 h-5 text-purple-600 dark:text-purple-400"></i>
+          <div class="p-2.5 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-xl group-hover:scale-110 transition-transform">
+            <i data-lucide="shopping-cart" class="w-5 h-5"></i>
           </div>
         </div>
-      </div>
+      </a>
+
       <!-- Confirmadas -->
-      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
+      <a href="{% url 'sales_web:sale_list' %}?status=confirmed" 
+         class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border {% if status_filter == 'confirmed' %}border-green-500 ring-2 ring-green-500/20 dark:border-green-500{% else %}border-gray-200 dark:border-slate-700{% endif %} p-4 hover:shadow-md transition-all group block">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600 dark:text-slate-300">Confirmadas</p>
-            <p class="text-2xl font-bold text-green-600 mt-1">{{ sales_confirmed }}</p>
+            <p class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Confirmadas</p>
+            <p class="text-2xl font-black text-green-600 dark:text-green-400 mt-1">{{ sales_confirmed }}</p>
           </div>
-          <div class="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-            <i data-lucide="check-circle" class="w-5 h-5 text-green-600 dark:text-green-400"></i>
+          <div class="p-2.5 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-xl group-hover:scale-110 transition-transform">
+            <i data-lucide="check-circle" class="w-5 h-5"></i>
           </div>
         </div>
-      </div>
+      </a>
 
-      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
+      <!-- Entregadas -->
+      <a href="{% url 'sales_web:sale_list' %}?status=delivered" 
+         class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border {% if status_filter == 'delivered' %}border-blue-500 ring-2 ring-blue-500/20 dark:border-blue-500{% else %}border-gray-200 dark:border-slate-700{% endif %} p-4 hover:shadow-md transition-all group block">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600 dark:text-slate-300">Entregadas</p>
-            <p class="text-2xl font-bold text-blue-600 mt-1">{{ sales_delivered }}</p>
+            <p class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Entregadas</p>
+            <p class="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">{{ sales_delivered }}</p>
           </div>
-          <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-            <i data-lucide="package" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+          <div class="p-2.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl group-hover:scale-110 transition-transform">
+            <i data-lucide="package" class="w-5 h-5"></i>
           </div>
         </div>
-      </div>
+      </a>
 
-      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
+      <!-- Sin Pagar -->
+      <a href="{% url 'sales_web:sale_list' %}?payment_status=unpaid" 
+         class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border {% if payment_status_filter == 'unpaid' %}border-red-500 ring-2 ring-red-500/20 dark:border-red-500{% else %}border-gray-200 dark:border-slate-700{% endif %} p-4 hover:shadow-md transition-all group block">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600 dark:text-slate-300">Sin Pagar</p>
-            <p class="text-2xl font-bold text-red-600 mt-1">{{ sales_unpaid }}</p>
+            <p class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Sin Pagar</p>
+            <p class="text-2xl font-black text-red-600 dark:text-red-400 mt-1">{{ sales_unpaid }}</p>
           </div>
-          <div class="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-            <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 dark:text-red-400"></i>
+          <div class="p-2.5 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl group-hover:scale-110 transition-transform">
+            <i data-lucide="alert-circle" class="w-5 h-5"></i>
           </div>
         </div>
-      </div>
+      </a>
 
-      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
+      <!-- Pago Parcial -->
+      <a href="{% url 'sales_web:sale_list' %}?payment_status=partially_paid" 
+         class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border {% if payment_status_filter == 'partially_paid' %}border-orange-500 ring-2 ring-orange-500/20 dark:border-orange-500{% else %}border-gray-200 dark:border-slate-700{% endif %} p-4 hover:shadow-md transition-all group block">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600 dark:text-slate-300">Pago Parcial</p>
-            <p class="text-2xl font-bold text-orange-600 mt-1">{{ sales_partially_paid }}</p>
+            <p class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Pago Parcial</p>
+            <p class="text-2xl font-black text-orange-600 dark:text-orange-400 mt-1">{{ sales_partially_paid }}</p>
           </div>
-          <div class="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-            <i data-lucide="clock" class="w-5 h-5 text-orange-600 dark:text-orange-400"></i>
+          <div class="p-2.5 bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-xl group-hover:scale-110 transition-transform">
+            <i data-lucide="clock" class="w-5 h-5"></i>
           </div>
         </div>
-      </div>
+      </a>
 
-      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
+      <!-- Pagadas -->
+      <a href="{% url 'sales_web:sale_list' %}?payment_status=paid" 
+         class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border {% if payment_status_filter == 'paid' %}border-emerald-500 ring-2 ring-emerald-500/20 dark:border-emerald-500{% else %}border-gray-200 dark:border-slate-700{% endif %} p-4 hover:shadow-md transition-all group block">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600 dark:text-slate-300">Pagadas</p>
-            <p class="text-2xl font-bold text-green-600 mt-1">{{ sales_paid }}</p>
+            <p class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Pagadas</p>
+            <p class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{{ sales_paid }}</p>
           </div>
-          <div class="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-            <i data-lucide="check-circle-2" class="w-5 h-5 text-green-600 dark:text-green-400"></i>
+          <div class="p-2.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl group-hover:scale-110 transition-transform">
+            <i data-lucide="check-circle-2" class="w-5 h-5"></i>
           </div>
         </div>
-      </div>
+      </a>
     </div>
   </div>
 
-  <!-- Barra de búsqueda y filtros dobles -->
-  <div class="mb-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-4" x-data="{ search: '', statusFilter: '{{ status_filter|default:'' }}', paymentFilter: '{{ payment_status_filter|default:'' }}' }">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+  <!-- Barra de búsqueda y filtros funcionales (GET Form) -->
+  <div class="mb-6 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-4 transition-colors">
+    <form method="get" action="{% url 'sales_web:sale_list' %}" class="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
       <!-- Búsqueda -->
-      <div class="md:col-span-2 relative">
-        <i data-lucide="search" class="w-5 h-5 text-gray-400 dark:text-slate-500 absolute left-3 top-1/2 transform -translate-y-1/2"></i>
+      <div class="flex-1 relative group">
+        <i data-lucide="search" class="w-5 h-5 text-gray-400 dark:text-slate-500 absolute left-3.5 top-1/2 transform -translate-y-1/2 group-focus-within:text-blue-600 transition-colors"></i>
         <input 
           type="text" 
-          x-model="search"
-          placeholder="Buscar por número o cliente..."
-          class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          name="search"
+          value="{{ search|default:'' }}"
+          placeholder="Buscar por número de venta o cliente..."
+          class="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-slate-700 rounded-xl bg-gray-50/50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition font-medium">
       </div>
       
       <!-- Filtro por Estado Comercial -->
-      <select x-model="statusFilter" class="px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-        <option value="">Todos los estados</option>
-        <option value="draft">Borrador</option>
-        <option value="confirmed">Confirmado</option>
-        <option value="in_preparation">En Preparación</option>
-        <option value="ready">Listo</option>
-        <option value="delivered">Entregado</option>
-        <option value="cancelled">Cancelado</option>
-      </select>
+      <div class="w-full md:w-56">
+        <select name="status" onchange="this.form.submit()"
+                class="w-full px-3.5 py-2.5 border border-gray-300 dark:border-slate-700 rounded-xl bg-gray-50/50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition cursor-pointer">
+          <option value="" {% if not status_filter %}selected{% endif %}>Todos los estados comerciales</option>
+          <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>🟡 Borrador</option>
+          <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>🟢 Confirmado</option>
+          <option value="in_preparation" {% if status_filter == 'in_preparation' %}selected{% endif %}>🔵 En Preparación</option>
+          <option value="ready" {% if status_filter == 'ready' %}selected{% endif %}>🟣 Listo</option>
+          <option value="delivered" {% if status_filter == 'delivered' %}selected{% endif %}>🚚 Entregado</option>
+          <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>🔴 Cancelado</option>
+        </select>
+      </div>
 
       <!-- Filtro por Estado de Pago -->
-      <select x-model="paymentFilter" class="px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-        <option value="">Todos los pagos</option>
-        <option value="unpaid">Sin Pagar</option>
-        <option value="partially_paid">Pago Parcial</option>
-        <option value="paid">Pagado</option>
-        <option value="overpaid">Sobrepago</option>
-      </select>
-    </div>
+      <div class="w-full md:w-52">
+        <select name="payment_status" onchange="this.form.submit()"
+                class="w-full px-3.5 py-2.5 border border-gray-300 dark:border-slate-700 rounded-xl bg-gray-50/50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition cursor-pointer">
+          <option value="" {% if not payment_status_filter %}selected{% endif %}>Todos los pagos</option>
+          <option value="unpaid" {% if payment_status_filter == 'unpaid' %}selected{% endif %}>🔴 Sin Pagar</option>
+          <option value="partially_paid" {% if payment_status_filter == 'partially_paid' %}selected{% endif %}>🟠 Pago Parcial</option>
+          <option value="paid" {% if payment_status_filter == 'paid' %}selected{% endif %}>🟢 Pagado</option>
+          <option value="overpaid" {% if payment_status_filter == 'overpaid' %}selected{% endif %}>🔵 Sobrepago</option>
+        </select>
+      </div>
 
-    <!-- Botón Limpiar Filtros -->
-    <div class="mt-3 flex justify-end">
-      <button @click="search = ''; statusFilter = ''; paymentFilter = ''" 
-              class="px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 dark:bg-slate-800/50 transition text-gray-700 dark:text-slate-300 text-sm flex items-center gap-2">
-        <i data-lucide="x" class="w-4 h-4"></i>
-        Limpiar filtros
-      </button>
-    </div>
+      <!-- Botones de Acción -->
+      <div class="flex items-center gap-2">
+        <button type="submit" 
+                class="px-5 py-2.5 bg-gray-900 dark:bg-blue-600 text-white rounded-xl hover:bg-gray-800 dark:hover:bg-blue-500 transition font-bold text-sm shadow-sm flex items-center gap-2">
+          <i data-lucide="filter" class="w-4 h-4"></i>
+          Filtrar
+        </button>
+
+        {% if search or status_filter or payment_status_filter %}
+        <a href="{% url 'sales_web:sale_list' %}" 
+           class="px-4 py-2.5 border border-gray-300 dark:border-slate-700 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 transition text-sm font-bold flex items-center gap-1.5"
+           title="Restablecer filtros">
+          <i data-lucide="x" class="w-4 h-4"></i>
+          Limpiar
+        </a>
+        {% endif %}
+      </div>
+    </form>
   </div>
 
   <!-- ═══════ CARDS MOBILE (< md) ═══════════════════════════════════ -->
@@ -278,21 +305,21 @@
     {% if sales.has_other_pages %}
     <div class="flex items-center justify-between py-2">
       {% if sales.has_previous %}
-        <a href="?page={{ sales.previous_page_number }}"
-           class="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 dark:bg-slate-800/50 transition text-sm font-medium">
+        <a href="?page={{ sales.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_status_filter %}&payment_status={{ payment_status_filter }}{% endif %}"
+           class="px-4 py-2.5 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition text-sm font-medium">
           ← Anterior
         </a>
       {% else %}
-        <button disabled class="px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-300 cursor-not-allowed text-sm">← Anterior</button>
+        <button disabled class="px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-300 dark:text-slate-600 cursor-not-allowed text-sm">← Anterior</button>
       {% endif %}
       <span class="text-sm text-gray-600 dark:text-slate-300 font-medium">{{ sales.number }} / {{ sales.paginator.num_pages }}</span>
       {% if sales.has_next %}
-        <a href="?page={{ sales.next_page_number }}"
-           class="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 dark:bg-slate-800/50 transition text-sm font-medium">
+        <a href="?page={{ sales.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_status_filter %}&payment_status={{ payment_status_filter }}{% endif %}"
+           class="px-4 py-2.5 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition text-sm font-medium">
           Siguiente →
         </a>
       {% else %}
-        <button disabled class="px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-300 cursor-not-allowed text-sm">Siguiente →</button>
+        <button disabled class="px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-300 dark:text-slate-600 cursor-not-allowed text-sm">Siguiente →</button>
       {% endif %}
     </div>
     {% endif %}
@@ -491,18 +518,18 @@
       </table>
     </div>
 
-    <!-- Paginación -->
+    <!-- Paginación Desktop -->
     {% if sales.has_other_pages %}
     <div class="px-6 py-4 border-t border-gray-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <div class="text-sm text-gray-700">
-        Mostrando <span class="font-medium">{{ sales.start_index }}</span> a 
-        <span class="font-medium">{{ sales.end_index }}</span> de 
-        <span class="font-medium">{{ sales.paginator.count }}</span> resultados
+      <div class="text-sm text-gray-700 dark:text-slate-300">
+        Mostrando <span class="font-bold">{{ sales.start_index }}</span> a 
+        <span class="font-bold">{{ sales.end_index }}</span> de 
+        <span class="font-bold">{{ sales.paginator.count }}</span> ventas
       </div>
       <div class="flex gap-2">
         {% if sales.has_previous %}
-        <a href="?page={{ sales.previous_page_number }}" 
-           class="px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 dark:bg-slate-800/50 transition">
+        <a href="?page={{ sales.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_status_filter %}&payment_status={{ payment_status_filter }}{% endif %}" 
+           class="px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition">
           <i data-lucide="chevron-left" class="w-4 h-4"></i>
         </a>
         {% else %}
@@ -511,13 +538,13 @@
         </button>
         {% endif %}
 
-        <span class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium">
-          {{ sales.number }}
+        <span class="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold text-sm">
+          {{ sales.number }} / {{ sales.paginator.num_pages }}
         </span>
 
         {% if sales.has_next %}
-        <a href="?page={{ sales.next_page_number }}" 
-           class="px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 dark:bg-slate-800/50 transition">
+        <a href="?page={{ sales.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_status_filter %}&payment_status={{ payment_status_filter }}{% endif %}" 
+           class="px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition">
           <i data-lucide="chevron-right" class="w-4 h-4"></i>
         </a>
         {% else %}

@@ -2,200 +2,469 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Presupuesto {{ quote.number }}</title>
+    <title>Presupuesto {{ quote.number }} - {{ company.name }}</title>
     <style>
         @page {
-            size: A4;
-            margin: 15mm;
+            size: A4 portrait;
+            margin: 10mm;
         }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            font-size: 12px;
-            color: #000;
-            background: #fff;
-            margin: 0;
-            padding: 0;
+        * {
+            box-sizing: border-box;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            font-size: 11px;
+            color: #111;
+            background: #fff;
+            margin: 0;
+            padding: 10px;
+        }
+        .container {
+            max-width: 190mm;
+            margin: 0 auto;
         }
         .text-center { text-align: center; }
         .text-right { text-align: right; }
         .text-left { text-align: left; }
         .bold { font-weight: bold; }
-        
-        .header {
+        .uppercase { text-transform: uppercase; }
+
+        /* Banner Superior */
+        .top-banner {
+            text-align: center;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            padding: 4px;
+            background: #f1f5f9;
+            border: 1.5px solid #000;
+            border-bottom: none;
+        }
+
+        /* Cabecera Tripartita */
+        .header-box {
             display: flex;
-            justify-content: space-between;
-            border-bottom: 2px solid #000;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+            border: 1.5px solid #000;
+            position: relative;
+            min-height: 125px;
+            margin-bottom: 8px;
         }
-        .header h1 { font-size: 24px; margin: 0; }
-        .header p { margin: 2px 0; font-size: 14px; }
-        
-        .info-grid {
+        .header-left {
+            width: 45%;
+            padding: 10px 12px;
+        }
+        .header-left h1 {
+            font-size: 16px;
+            font-weight: 900;
+            color: #1B3A5C;
+            margin: 0 0 4px 0;
+            letter-spacing: 0.5px;
+        }
+        .header-left p {
+            margin: 2px 0;
+            font-size: 10px;
+            line-height: 1.3;
+            color: #333;
+        }
+
+        /* Caja Central de Letra */
+        .letter-container {
+            position: absolute;
+            left: 50%;
+            top: -1px;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 60px;
+            background: #fff;
+            border: 1.5px solid #000;
+            border-top: none;
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
         }
-        .info-box {
-            width: 48%;
+        .letter-box {
+            font-size: 32px;
+            font-weight: 900;
+            line-height: 1;
+            margin-top: 2px;
         }
-        .info-box p { margin: 4px 0; }
-        
-        table {
+        .letter-sub {
+            font-size: 5.5px;
+            font-weight: 900;
+            text-align: center;
+            line-height: 1;
+            margin-top: 2px;
+            padding: 0 2px;
+        }
+        .letter-code {
+            font-size: 7px;
+            font-weight: 700;
+            margin-top: 1px;
+        }
+        .center-divider {
+            position: absolute;
+            left: 50%;
+            top: 59px;
+            bottom: 0;
+            width: 1px;
+            background: #000;
+        }
+
+        .header-right {
+            width: 45%;
+            margin-left: auto;
+            padding: 10px 12px;
+            text-align: left;
+        }
+        .header-right h2 {
+            font-size: 16px;
+            font-weight: 900;
+            color: #000;
+            margin: 0 0 6px 0;
+            letter-spacing: 1px;
+        }
+        .header-right p {
+            margin: 2.5px 0;
+            font-size: 10px;
+            line-height: 1.3;
+            color: #222;
+        }
+
+        /* Datos del Cliente */
+        .client-box {
+            border: 1.5px solid #000;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            background: #fafafa;
+        }
+        .client-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 4px 16px;
+            font-size: 10.5px;
+        }
+        .client-grid p {
+            margin: 2px 0;
+        }
+
+        /* Tabla de Conceptos */
+        table.items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 8px;
+            border: 1.5px solid #000;
         }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-        }
-        th {
-            background-color: #f8f9fa;
+        table.items-table th {
+            background: #f1f5f9;
             color: #000;
+            font-size: 9.5px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 6px 8px;
+            border: 1px solid #cbd5e1;
+            border-bottom: 1.5px solid #000;
         }
-        .totals {
-            width: 50%;
-            margin-left: auto;
-        }
-        .totals th, .totals td {
-            border: none;
-            padding: 4px 8px;
-        }
-        .totals th { background: transparent; }
-        .border-top { border-top: 1px solid #000 !important; }
-        
-        .footer {
-            margin-top: 50px;
-            text-align: center;
+        table.items-table td {
+            padding: 6px 8px;
             font-size: 10px;
-            color: #666;
-            border-top: 1px solid #eee;
-            padding-top: 10px;
+            border: 1px solid #e2e8f0;
+            vertical-align: middle;
         }
-        
+        table.items-table tr:nth-child(even) {
+            background-color: #fcfcfc;
+        }
+
+        /* Totales y Liquidación */
+        .bottom-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        .notes-box {
+            flex: 1;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 8px 10px;
+            font-size: 9.5px;
+            background: #f8fafc;
+            min-height: 80px;
+        }
+        .notes-box h4 {
+            margin: 0 0 4px 0;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #475569;
+        }
+        .notes-box p {
+            margin: 0;
+            line-height: 1.4;
+            color: #334155;
+        }
+
+        .totals-table {
+            width: 240px;
+            border-collapse: collapse;
+            border: 1.5px solid #000;
+        }
+        .totals-table td {
+            padding: 5px 8px;
+            font-size: 10.5px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .totals-table tr.total-row {
+            background: #f1f5f9;
+            border-top: 1.5px solid #000;
+        }
+        .totals-table tr.total-row td {
+            font-size: 13px;
+            font-weight: 900;
+            padding: 8px;
+            border-bottom: none;
+        }
+
+        /* Pie Legal */
+        .footer-legal {
+            border: 1.5px solid #000;
+            padding: 6px 10px;
+            text-align: center;
+            background: #fff;
+            margin-top: 6px;
+        }
+        .footer-legal p.warning {
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            margin: 2px 0;
+            color: #b91c1c;
+        }
+        .footer-legal p.info {
+            font-size: 8.5px;
+            color: #64748b;
+            margin: 2px 0;
+        }
+
+        /* Botón de Impresión en Pantalla */
+        .no-print {
+            display: block;
+        }
         @media print {
             .no-print { display: none !important; }
+            body { padding: 0; }
+            .container { max-width: 100%; }
         }
-        
-        .print-btn {
+        .print-toolbar {
             position: fixed;
-            top: 20px;
+            bottom: 20px;
             right: 20px;
-            padding: 10px 20px;
-            background: #2563eb;
+            display: flex;
+            gap: 10px;
+            z-index: 999;
+        }
+        .print-btn {
+            padding: 12px 24px;
+            background: #1B3A5C;
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 10px;
             cursor: pointer;
             font-size: 14px;
-            font-weight: bold;
+            font-weight: 800;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .print-btn:hover {
+            background: #254d7a;
+            transform: translateY(-2px);
+        }
+        .close-btn {
+            padding: 12px 20px;
+            background: #64748b;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .print-btn:hover { background: #1d4ed8; }
     </style>
 </head>
 <body>
 
-    <button onclick="window.print()" class="no-print print-btn">🖨️ Imprimir A4 o Ticket</button>
-
-    <div class="header">
-        <div>
-            <h1>{{ company_name }}</h1>
-            {% if company_cuit %}<p>CUIT: {{ company_cuit }}</p>{% endif %}
-        </div>
-        <div class="text-right">
-            <h2>PRESUPUESTO Nº {{ quote.number }}</h2>
-            <p>Fecha: {{ quote.date|date:"d/m/Y" }}</p>
-            {% if quote.valid_until %}<p>Válido hasta: {{ quote.valid_until|date:"d/m/Y" }}</p>{% endif %}
-        </div>
+    <div class="no-print print-toolbar">
+        <button onclick="window.print()" class="print-btn">
+            🖨️ Imprimir Presupuesto (A4)
+        </button>
+        <button onclick="window.close()" class="close-btn">
+            Cerrar
+        </button>
     </div>
 
-    <div class="info-grid">
-        <div class="info-box">
-            <p class="bold">Cliente:</p>
-            <p>{{ quote.customer_display }}</p>
-            {% if quote.customer_cuit %}<p>CUIT: {{ quote.customer_cuit }}</p>{% endif %}
+    <div class="container">
+        
+        <!-- Banner Superior -->
+        <div class="top-banner">
+            DOCUMENTO NO VÁLIDO COMO FACTURA
         </div>
-        <div class="info-box text-right">
-            <p>Vendedor: {{ quote.created_by.get_full_name|default:quote.created_by.username }}</p>
+
+        <!-- Cabecera Tripartita -->
+        <div class="header-box">
+            
+            <!-- Emisor (Izquierda) -->
+            <div class="header-left">
+                <h1>{{ company.name|default:"BULONERA ALVEAR" }}</h1>
+                <p><b>Razón Social:</b> {{ company.razon_social|default:company.name }}</p>
+                <p><b>Domicilio:</b> {{ company.address|default:"Av. Alvear 1234, Resistencia - Chaco" }}</p>
+                {% if company.phone %}<p><b>Tel / WhatsApp:</b> {{ company.phone }}</p>{% endif %}
+                {% if company.email %}<p><b>Email:</b> {{ company.email }}</p>{% endif %}
+                <p><b>Condición IVA:</b> {{ company.iva_condition|default:"IVA Responsable Inscripto" }}</p>
+            </div>
+
+            <!-- Caja Central de Letra 'X' -->
+            <div class="letter-container">
+                <div class="letter-box">X</div>
+                <div class="letter-sub">NO VÁLIDO COMO FACTURA</div>
+                <div class="letter-code">CÓD. 000</div>
+            </div>
+            <div class="center-divider"></div>
+
+            <!-- Comprobante (Derecha) -->
+            <div class="header-right">
+                <h2>PRESUPUESTO</h2>
+                <p><b>Punto de Venta:</b> {{ company.punto_venta|stringformat:"04d"|default:"0001" }} &nbsp; <b>Nº:</b> {{ quote.number }}</p>
+                <p><b>Fecha de Emisión:</b> {{ quote.date|date:"d/m/Y" }}</p>
+                <p><b>Validez de Oferta:</b> {% if quote.valid_until %}{{ quote.valid_until|date:"d/m/Y" }}{% else %}15 días{% endif %}</p>
+                {% if company.cuit %}<p><b>CUIT:</b> {{ company.cuit }}</p>{% endif %}
+                <p><b>Ingresos Brutos:</b> {{ company.ingresos_brutos|default:company.cuit|default:"-" }}</p>
+                {% if company.inicio_actividades %}<p><b>Inicio Actividades:</b> {{ company.inicio_actividades }}</p>{% endif %}
+            </div>
+
         </div>
-    </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th class="text-center" style="width: 10%;">Cant.</th>
-                <th class="text-left" style="width: 50%;">Descripción</th>
-                <th class="text-right" style="width: 15%;">P. Unit.</th>
-                <th class="text-right" style="width: 10%;">Desc.</th>
-                <th class="text-right" style="width: 15%;">Subtotal</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in items %}
-            <tr>
-                <td class="text-center">{{ item.quantity|floatformat:0 }}</td>
-                <td>
-                    {{ item.product.name }}
-                    {% if item.discount_reason %}<br><small>({{ item.discount_reason }})</small>{% endif %}
-                </td>
-                <td class="text-right">$ {{ item.unit_price|floatformat:2 }}</td>
-                <td class="text-right">
-                    {% if item.discount_amount > 0 %}
-                    -$ {{ item.discount_amount|floatformat:2 }}
-                    {% else %}—{% endif %}
-                </td>
-                <td class="text-right bold">$ {{ item.subtotal_with_discount|floatformat:2 }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5" class="text-center">No hay items cargados.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        <!-- Marco Datos del Cliente / Receptor -->
+        <div class="client-box">
+            <div class="client-grid">
+                <div>
+                    <p><b>Cliente / Razón Social:</b> {{ quote.customer_display }}</p>
+                    <p><b>CUIT / CUIL / DNI:</b> {{ quote.customer_cuit|default:quote.customer.cuit_cuil|default:"Consumidor Final" }}</p>
+                    <p><b>Condición de IVA:</b> {{ quote.customer.get_iva_condition_display|default:"Consumidor Final" }}</p>
+                </div>
+                <div>
+                    <p><b>Condición de Venta:</b> Contado / Cuenta Corriente</p>
+                    <p><b>Domicilio:</b> {{ quote.customer.address|default:"-" }}</p>
+                    <p><b>Vendedor / Operador:</b> {{ quote.created_by.get_full_name|default:quote.created_by.username }}</p>
+                </div>
+            </div>
+        </div>
 
-    <table class="totals">
-        <tr>
-            <th class="text-right">Subtotal:</th>
-            <td class="text-right">$ {{ quote.subtotal|floatformat:2 }}</td>
-        </tr>
-        {% if quote.discount > 0 %}
-        <tr>
-            <th class="text-right">Descuentos:</th>
-            <td class="text-right">-$ {{ quote.discount|floatformat:2 }}</td>
-        </tr>
-        {% endif %}
-        <tr>
-            <th class="text-right">IVA:</th>
-            <td class="text-right">$ {{ quote.tax|floatformat:2 }}</td>
-        </tr>
-        <tr>
-            <th class="text-right border-top" style="font-size: 16px;">TOTAL:</th>
-            <td class="text-right border-top bold" style="font-size: 16px;">$ {{ quote.total|floatformat:2 }}</td>
-        </tr>
-    </table>
+        <!-- Tabla de Items / Conceptos -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th class="text-center" style="width: 8%;">Cant.</th>
+                    <th class="text-left" style="width: 14%;">Código</th>
+                    <th class="text-left" style="width: 44%;">Descripción / Concepto</th>
+                    <th class="text-right" style="width: 11%;">P. Unitario</th>
+                    <th class="text-right" style="width: 10%;">Bonif.</th>
+                    <th class="text-right" style="width: 13%;">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td class="text-center bold">{{ item.quantity|floatformat:0 }}</td>
+                    <td class="text-left" style="font-family: monospace; font-size: 9.5px;">{{ item.product.sku|default:item.product.code|default:"-" }}</td>
+                    <td>
+                        <span class="bold">{{ item.product.name }}</span>
+                        {% if item.discount_reason %}<br><span style="font-size: 8.5px; color: #64748b;">({{ item.discount_reason }})</span>{% endif %}
+                    </td>
+                    <td class="text-right">$ {{ item.unit_price|floatformat:2 }}</td>
+                    <td class="text-right">
+                        {% if item.discount_amount > 0 %}
+                        -$ {{ item.discount_amount|floatformat:2 }}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td class="text-right bold">$ {{ item.subtotal_with_discount|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center" style="padding: 20px;">No hay ítems registrados en este presupuesto.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
 
-    {% if quote.notes %}
-    <div style="margin-top: 30px; padding-top: 10px; border-top: 1px dotted #ccc;">
-        <p class="bold">Notas:</p>
-        <p>{{ quote.notes|linebreaksbr }}</p>
-    </div>
-    {% endif %}
+        <!-- Sección Inferior: Observaciones y Totales -->
+        <div class="bottom-section">
+            <div class="notes-box">
+                <h4>Observaciones / Condiciones Comerciales</h4>
+                <p>
+                    {% if quote.notes %}
+                        {{ quote.notes|linebreaksbr }}
+                    {% else %}
+                        • Precios sujetos a modificación sin previo aviso tras el vencimiento de la oferta.<br>
+                        • Los productos cotizados se encuentran sujetos a disponibilidad de stock al momento de la confirmación.<br>
+                        • Presupuesto emitido para fines informativos comerciales.
+                    {% endif %}
+                </p>
+            </div>
 
-    <div class="footer print-text">
-        <p>Documento no válido como factura. {% if quote.valid_until %}Los precios se mantienen hasta el {{ quote.valid_until|date:"d/m/Y" }}.{% endif %}</p>
-        <p>Generado por ERP Bulonera Alvear</p>
+            <table class="totals-table">
+                <tr>
+                    <td class="text-right bold">Subtotal:</td>
+                    <td class="text-right">$ {{ quote.subtotal|floatformat:2 }}</td>
+                </tr>
+                {% if quote.discount > 0 %}
+                <tr>
+                    <td class="text-right bold" style="color: #b91c1c;">Descuentos:</td>
+                    <td class="text-right" style="color: #b91c1c;">-$ {{ quote.discount|floatformat:2 }}</td>
+                </tr>
+                {% endif %}
+                {% if quote.tax > 0 %}
+                <tr>
+                    <td class="text-right bold">IVA (21% / Inc):</td>
+                    <td class="text-right">$ {{ quote.tax|floatformat:2 }}</td>
+                </tr>
+                {% endif %}
+                <tr class="total-row">
+                    <td class="text-right">TOTAL:</td>
+                    <td class="text-right">$ {{ quote.total|floatformat:2 }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Pie de Página Legal -->
+        <div class="footer-legal">
+            <p class="warning">DOCUMENTO NO VÁLIDO COMO FACTURA — COMPROBANTE CLASE "X"</p>
+            <p class="info">
+                Generado por el sistema de gestión ERP Bulonera Alvear | 
+                {% if quote.valid_until %}Oferta válida hasta el {{ quote.valid_until|date:"d/m/Y" }} | {% endif %}
+                Página 1 de 1
+            </p>
+        </div>
+
     </div>
 
     <script>
-        // Auto-print al abrir
-        window.onload = function() {
-            setTimeout(() => window.print(), 300);
-        };
+        // Auto-print sugerido tras cargar estilos
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                // Descomentar si se desea auto-disparar el print:
+                // window.print();
+            }, 300);
+        });
     </script>
 </body>
 </html>

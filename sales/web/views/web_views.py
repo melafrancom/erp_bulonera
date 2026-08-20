@@ -1335,6 +1335,7 @@ def quote_print(request, pk):
     context = {
         'quote': quote,
         'items': quote.items.select_related('product').order_by('line_order'),
+        'company': company_info,
         'company_name': company_info['name'],
         'company_cuit': company_info['cuit']
     }
@@ -1357,6 +1358,7 @@ def quote_public_view(request, uuid):
     context = {
         'quote': quote,
         'items': quote.items.select_related('product').order_by('line_order'),
+        'company': company_info,
         'company_name': company_info['name'],
         'company_cuit': company_info['cuit'],
         'company_phone': company_info['phone'].replace('+', '').replace(' ', '').replace('-', '')
