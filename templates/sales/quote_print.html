@@ -384,7 +384,7 @@
             <tbody>
                 {% for item in items %}
                 <tr>
-                    <td class="text-center bold">{{ item.quantity|floatformat:0 }}</td>
+                    <td class="text-center bold">{{ item.quantity_display }}</td>
                     <td class="text-left" style="font-family: monospace; font-size: 9.5px;">{{ item.product.sku|default:item.product.code|default:"-" }}</td>
                     <td>
                         <span class="bold">{{ item.product.name }}</span>

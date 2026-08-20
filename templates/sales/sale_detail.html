@@ -240,7 +240,7 @@
                   <div class="text-xs text-gray-400 dark:text-slate-500 mt-1 italic">{{ item.notes|truncatewords:8 }}</div>
                   {% endif %}
                 </td>
-                <td class="px-4 py-4 text-right text-sm text-gray-900 dark:text-slate-100">{{ item.quantity|floatformat:0 }}</td>
+                <td class="px-4 py-4 text-right text-sm font-semibold text-gray-900 dark:text-slate-100 tabular-nums">{{ item.quantity_display }}</td>
                 <td class="px-4 py-4 text-right text-sm text-gray-900 dark:text-slate-100 hidden sm:table-cell">${{ item.unit_price|floatformat:2 }}</td>
                 {% if user.is_manager or user.is_admin or user.is_superuser %}
                 <td class="px-4 py-4 text-right text-sm text-gray-500 dark:text-slate-400 hidden lg:table-cell">${{ item.unit_cost|floatformat:2 }}</td>

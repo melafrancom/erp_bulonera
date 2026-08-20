@@ -4,6 +4,7 @@ from common.models import BaseModel
 from common.utils import (
     generate_document_number,
     format_currency,
+    format_quantity,
     validate_cuit,
     format_cuit,
     slugify_spanish,
@@ -11,6 +12,7 @@ from common.utils import (
 
 from django.utils import timezone
 from sales.models import Quote
+from decimal import Decimal
 
 
 class UtilsTests(TestCase):
@@ -18,6 +20,17 @@ class UtilsTests(TestCase):
         """Formatear montos a moneda argentina"""
         self.assertEqual(format_currency(1234.5), "$ 1.234,50")
         self.assertEqual(format_currency(None), "$ 0,00")
+
+    def test_format_quantity(self):
+        """Formatear cantidades con notación argentina limpia"""
+        self.assertEqual(format_quantity(Decimal('20.000')), "20")
+        self.assertEqual(format_quantity(Decimal('20')), "20")
+        self.assertEqual(format_quantity(20), "20")
+        self.assertEqual(format_quantity(Decimal('1500.000')), "1.500")
+        self.assertEqual(format_quantity(Decimal('2.500')), "2,5")
+        self.assertEqual(format_quantity(Decimal('0.750')), "0,75")
+        self.assertEqual(format_quantity(Decimal('1234.56')), "1.234,56")
+        self.assertEqual(format_quantity(None), "0")
 
     def test_validate_cuit(self):
         """Validar CUIT argentino con digito verificador"""

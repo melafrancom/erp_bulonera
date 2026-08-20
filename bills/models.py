@@ -8,6 +8,7 @@ from decimal import Decimal
 from django.utils import timezone
 
 from common.models import BaseModel
+from common.utils import format_quantity
 
 
 class Invoice(BaseModel):
@@ -322,3 +323,7 @@ class InvoiceItem(BaseModel):
 
     def __str__(self):
         return f"Línea {self.numero_linea}: {self.producto_nombre}"
+
+    @property
+    def cantidad_display(self):
+        return format_quantity(self.cantidad)

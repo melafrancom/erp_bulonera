@@ -21,6 +21,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.graphics.barcode import code128
 from reportlab.graphics.shapes import Drawing
 from reportlab.graphics import renderPDF
+from common.utils import format_quantity
 
 
 # ─── Layout ──────────────────────────────────────────────────────────────────
@@ -395,7 +396,7 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
             rows.append([
                 codigo[:15],
                 Paragraph(item.producto_nombre, style_item_desc),
-                f'{item.cantidad:.2f}',
+                format_quantity(item.cantidad),
                 'unidades',
                 _fmt(item.precio_unitario),
                 bonif,

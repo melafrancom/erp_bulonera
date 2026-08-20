@@ -16,6 +16,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.graphics import renderPDF
 
 from common.company import get_company_info
+from common.utils import format_quantity
 
 try:
     from bills.pdf import _fmt
@@ -230,7 +231,7 @@ def generate_quote_pdf(quote) -> io.BytesIO:
     ]]
 
     for item in quote.items.all().order_by('line_order'):
-        cant = f"{item.quantity:g}"
+        cant = format_quantity(item.quantity)
         code = getattr(item.product, 'sku', '') or getattr(item.product, 'code', '') or '-'
         p_name = getattr(item.product, 'name', str(item.product))
         if item.discount_reason:

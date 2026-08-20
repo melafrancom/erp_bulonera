@@ -26,6 +26,34 @@ def format_currency(amount, symbol="$", decimals=2):
     return f"{symbol} {int_part},{dec_part}"
 
 
+def format_quantity(amount) -> str:
+    """
+    Formatea una cantidad respetando la convención argentina:
+    - Cantidades enteras se muestran sin decimales (ej. 20 -> "20", 1500 -> "1.500").
+    - Cantidades con decimales se muestran con coma decimal y sin ceros redundantes (ej. 2.500 -> "2,5", 0.750 -> "0,75", 1234.50 -> "1.234,5").
+    """
+    if amount is None:
+        return "0"
+    try:
+        val = Decimal(str(amount))
+    except Exception:
+        return str(amount)
+    
+    # Si es entero
+    if val == val.to_integral():
+        int_val = int(val)
+        return f"{int_val:,}".replace(",", ".")
+    
+    # Si tiene decimales
+    s = f"{val:f}".rstrip('0').rstrip('.')
+    if '.' in s:
+        int_part, dec_part = s.split('.')
+        int_part_fmt = f"{int(int_part):,}".replace(",", ".")
+        return f"{int_part_fmt},{dec_part}"
+    else:
+        return f"{int(s):,}".replace(",", ".")
+
+
 def validate_cuit(cuit: str) -> bool:
     """
     Valida un CUIT/CUIL argentino.

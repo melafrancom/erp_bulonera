@@ -12,6 +12,7 @@ from core.models import User
 from customers.models import Customer, CustomerSegment
 from products.models import Product
 from common.models import BaseModel
+from common.utils import format_quantity
 
 class Quote(BaseModel):
     """Presupuestos - Documento pre-venta"""
@@ -256,6 +257,10 @@ class QuoteItem(BaseModel):
     @property
     def total(self):
         return self.subtotal_with_discount + self.tax_amount
+
+    @property
+    def quantity_display(self):
+        return format_quantity(self.quantity)
     
     # === MÉTODOS DE CÁLCULO ===
     def recalculate_from_price(self):
@@ -716,6 +721,10 @@ class SaleItem(BaseModel):
     @property
     def total(self):
         return self.subtotal_with_discount + self.tax_amount
+
+    @property
+    def quantity_display(self):
+        return format_quantity(self.quantity)
     
     @property
     def profit(self):

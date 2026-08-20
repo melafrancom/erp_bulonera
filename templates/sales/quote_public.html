@@ -3,43 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Presupuesto {{ quote.number }} - {{ company_name }}</title>
+    <title>Presupuesto {{ quote.number }} - {{ company_name|default:"Bulonera Alvear" }}</title>
+    
+    <!-- Google Fonts: Barlow (Marca y Títulos) e Inter (Datos y Números) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <!-- Tailwind CSS (via CDN p/ PWA publica ultraliviana) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            primary: '#1B3A5C',
+                            secondary: '#4A6FA5',
+                            tertiary: '#9ac1f0',
+                            accent: '#D42B1E',
+                            neutral: '#E2ECF6',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Barlow', 'sans-serif'],
+                    }
+                }
+            }
+        }
+
         // Sincronizar con el sistema por defecto
         if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.documentElement.classList.add('dark');
         }
     </script>
+    <style>
+        .font-heading { font-family: 'Barlow', sans-serif; }
+        .font-sans { font-family: 'Inter', sans-serif; }
+    </style>
 </head>
-<body class="bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 font-sans antialiased min-h-screen p-4 sm:p-6 lg:p-8 transition-colors duration-300">
-    <div class="max-w-3xl mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+<body class="bg-[#F4F8FC] dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased min-h-screen p-4 sm:p-6 lg:p-8 transition-colors duration-300">
+    <div class="max-w-3xl mx-auto bg-white dark:bg-slate-900 rounded-2xl shadow-md border border-[#E2ECF6] dark:border-slate-800 overflow-hidden">
         
-        <!-- Header con estética formal tipo comprobante 'X' -->
-        <div class="bg-[#1B3A5C] dark:bg-slate-950 px-6 py-6 text-white border-b-2 border-amber-500/80">
+        <!-- Header con Identidad Visual Bulonera Alvear -->
+        <div class="bg-gradient-to-r from-[#1B3A5C] via-[#20456E] to-[#1B3A5C] px-6 py-6 text-white border-b-4 border-[#D42B1E]">
             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <div class="flex items-center gap-4">
-                    <!-- Letra X Fiscal -->
-                    <div class="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-white text-gray-900 border-2 border-amber-400 font-black shadow-md flex-shrink-0">
-                        <span class="text-2xl leading-none font-black">X</span>
-                        <span class="text-[6px] uppercase tracking-tighter font-extrabold text-gray-600">Doc No Fiscal</span>
+                    <!-- Letra X Comprobante No Fiscal -->
+                    <div class="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-white text-[#1B3A5C] border-2 border-[#E2ECF6] font-heading font-black shadow-inner flex-shrink-0">
+                        <span class="text-2xl leading-none font-black tracking-tight">X</span>
+                        <span class="text-[6.5px] uppercase tracking-tighter font-extrabold text-slate-500">Doc No Fiscal</span>
                     </div>
                     <div>
-                        <div class="flex items-center gap-2">
-                            <h1 class="text-2xl font-black tracking-tight">PRESUPUESTO</h1>
-                            <span class="text-xs bg-amber-400 text-gray-950 font-black px-2 py-0.5 rounded uppercase tracking-wider">No Válido como Factura</span>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h1 class="font-heading text-2xl sm:text-3xl font-extrabold tracking-wide uppercase">PRESUPUESTO</h1>
+                            <span class="text-[10px] bg-[#D42B1E] text-white font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                                No Válido como Factura
+                            </span>
                         </div>
-                        <p class="text-blue-200 text-base font-bold mt-0.5">N° {{ quote.number }}</p>
+                        <p class="text-[#9ac1f0] text-sm font-semibold tracking-wider font-heading mt-0.5">
+                            COMPROBANTE N° {{ quote.number }}
+                        </p>
                     </div>
                 </div>
-                <div class="flex flex-col sm:items-end gap-2">
+                <div class="flex flex-col sm:items-end gap-2.5">
                     <div class="sm:text-right">
-                        <p class="font-black text-base">{{ company_name|default:"BULONERA ALVEAR" }}</p>
-                        {% if company_cuit %}<p class="text-blue-200 text-xs">CUIT: {{ company_cuit }}</p>{% endif %}
+                        <p class="font-heading font-black text-lg text-white tracking-wide">{{ company_name|default:"BULONERA ALVEAR" }}</p>
+                        {% if company_cuit %}<p class="text-[#9ac1f0] text-xs font-medium">CUIT: {{ company_cuit }}</p>{% endif %}
                     </div>
-                    <a href="{% url 'sales_web:quote_public_pdf' quote.uuid %}" class="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 px-3.5 py-1.5 rounded-lg font-bold transition-colors w-max text-xs backdrop-blur-sm shadow-sm">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    <a href="{% url 'sales_web:quote_public_pdf' quote.uuid %}" class="inline-flex items-center gap-2 bg-[#4A6FA5]/40 hover:bg-[#4A6FA5]/60 border border-white/20 px-3.5 py-1.5 rounded-xl font-bold transition-all w-max text-xs backdrop-blur-sm shadow-sm hover:scale-[1.02] active:scale-95">
+                        <svg class="w-4 h-4 text-[#9ac1f0]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                         Descargar PDF Oficial
                     </a>
                 </div>
@@ -47,113 +82,115 @@
         </div>
 
         <div class="p-6 sm:p-8">
-            <!-- Datos Relevantes -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 bg-gray-50 dark:bg-slate-900/50 rounded-xl p-5 border border-gray-100 dark:border-slate-700">
+            <!-- Datos Relevantes / Cliente y Vigencia -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 bg-[#F8FAFC] dark:bg-slate-850/60 rounded-xl p-5 border border-[#E2ECF6] dark:border-slate-800">
                 <div>
-                    <h3 class="text-xs font-black text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-1">Cliente / Receptor</h3>
-                    <p class="font-bold text-gray-900 dark:text-slate-100 text-base">{{ quote.customer_display }}</p>
-                    <p class="text-gray-500 dark:text-slate-400 text-xs mt-0.5">
-                        CUIT/DNI: <span class="font-medium text-gray-700 dark:text-slate-300">{{ quote.customer_cuit_display }}</span>
+                    <h3 class="font-heading text-xs font-extrabold text-[#4A6FA5] dark:text-[#9ac1f0] uppercase tracking-widest mb-1.5">Cliente / Receptor</h3>
+                    <p class="font-heading font-bold text-slate-900 dark:text-white text-lg leading-snug">{{ quote.customer_display }}</p>
+                    <p class="text-slate-600 dark:text-slate-400 text-xs mt-1">
+                        CUIT / DNI: <span class="font-semibold text-slate-800 dark:text-slate-200">{{ quote.customer_cuit_display }}</span>
                     </p>
-                    <p class="text-gray-500 dark:text-slate-400 text-xs">
-                        Condición IVA: <span class="font-medium text-gray-700 dark:text-slate-300">{{ quote.customer_iva_condition_display }}</span>
+                    <p class="text-slate-600 dark:text-slate-400 text-xs mt-0.5">
+                        Condición IVA: <span class="font-semibold text-slate-800 dark:text-slate-200">{{ quote.customer_iva_condition_display }}</span>
                     </p>
                 </div>
                 <div class="sm:text-right">
-                    <h3 class="text-xs font-black text-gray-400 dark:text-slate-400 uppercase tracking-widest mb-1">Vigencia y Emisión</h3>
-                    <p class="font-bold text-gray-900 dark:text-slate-100 text-base">
-                        Válido hasta: <span class="text-blue-600 dark:text-blue-400">{{ quote.valid_until|date:"d/m/Y"|default:"15 días" }}</span>
+                    <h3 class="font-heading text-xs font-extrabold text-[#4A6FA5] dark:text-[#9ac1f0] uppercase tracking-widest mb-1.5">Vigencia y Emisión</h3>
+                    <p class="font-heading font-bold text-slate-900 dark:text-white text-lg">
+                        Válido hasta: <span class="text-[#1B3A5C] dark:text-[#9ac1f0] font-black">{{ quote.valid_until|date:"d/m/Y"|default:"15 días" }}</span>
                     </p>
-                    <p class="text-gray-500 dark:text-slate-400 text-xs mt-0.5">Fecha de Emisión: {{ quote.date|date:"d/m/Y" }}</p>
-                    <p class="text-gray-500 dark:text-slate-400 text-xs">Condición: Contado / Cta Cte</p>
+                    <p class="text-slate-600 dark:text-slate-400 text-xs mt-1">Fecha de Emisión: <span class="font-medium text-slate-800 dark:text-slate-200">{{ quote.date|date:"d/m/Y" }}</span></p>
+                    <p class="text-slate-600 dark:text-slate-400 text-xs mt-0.5">Condición: <span class="font-medium text-slate-800 dark:text-slate-200">Contado / Cta Cte</span></p>
                 </div>
             </div>
 
-            <!-- Items -->
-            <div class="overflow-x-auto mb-8">
+            <!-- Tabla de Ítems -->
+            <div class="overflow-x-auto mb-8 rounded-xl border border-[#E2ECF6] dark:border-slate-800">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="border-b-2 border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/30">
-                            <th class="py-3 px-3 text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider">Concepto</th>
-                            <th class="py-3 px-3 text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider text-center">Cant.</th>
-                            <th class="py-3 px-3 text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider text-right">P. Unitario</th>
-                            <th class="py-3 px-3 text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider text-right">Subtotal</th>
+                        <tr class="bg-[#1B3A5C] text-white">
+                            <th class="py-3.5 px-3 text-xs font-heading font-extrabold uppercase tracking-wider">Concepto / Producto</th>
+                            <th class="py-3.5 px-3 text-xs font-heading font-extrabold uppercase tracking-wider text-center">Cant.</th>
+                            <th class="py-3.5 px-3 text-xs font-heading font-extrabold uppercase tracking-wider text-right">P. Unitario</th>
+                            <th class="py-3.5 px-3 text-xs font-heading font-extrabold uppercase tracking-wider text-right">Subtotal</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
+                    <tbody class="divide-y divide-[#E2ECF6] dark:divide-slate-800 bg-white dark:bg-slate-900">
                         {% for item in items %}
-                        <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors">
+                        <tr class="hover:bg-[#F8FAFC] dark:hover:bg-slate-800/40 transition-colors">
                             <td class="py-3.5 px-3">
-                                <p class="font-bold text-gray-900 dark:text-slate-100 text-sm">{{ item.product.name }}</p>
-                                <p class="text-xs text-gray-400 dark:text-slate-500 font-mono">Código: {{ item.product.sku|default:item.product.code|default:"-" }}</p>
+                                <p class="font-semibold text-slate-900 dark:text-slate-100 text-sm">{{ item.product.name }}</p>
+                                <p class="text-xs text-slate-400 dark:text-slate-500 font-mono mt-0.5">Código: {{ item.product.sku|default:item.product.code|default:"-" }}</p>
                                 {% if item.discount_reason %}
-                                <p class="text-xs text-amber-600 dark:text-amber-400 font-medium">Bonificación: {{ item.discount_reason }}</p>
+                                <p class="text-xs text-[#D42B1E] font-medium mt-0.5">Bonificación: {{ item.discount_reason }}</p>
                                 {% endif %}
                             </td>
-                            <td class="py-3.5 px-3 text-center text-gray-700 dark:text-slate-300 font-bold whitespace-nowrap">{{ item.quantity|floatformat:0 }}</td>
-                            <td class="py-3.5 px-3 text-right text-gray-700 dark:text-slate-300 whitespace-nowrap">$ {{ item.unit_price|floatformat:2 }}</td>
-                            <td class="py-3.5 px-3 text-right font-black text-gray-900 dark:text-slate-100 whitespace-nowrap">$ {{ item.subtotal_with_discount|floatformat:2 }}</td>
+                            <td class="py-3.5 px-3 text-center text-slate-800 dark:text-slate-200 font-bold text-sm tabular-nums whitespace-nowrap">
+                                {{ item.quantity_display }}
+                            </td>
+                            <td class="py-3.5 px-3 text-right text-slate-700 dark:text-slate-300 text-sm tabular-nums whitespace-nowrap">$ {{ item.unit_price|floatformat:2 }}</td>
+                            <td class="py-3.5 px-3 text-right font-bold text-slate-900 dark:text-white text-sm tabular-nums whitespace-nowrap">$ {{ item.subtotal_with_discount|floatformat:2 }}</td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="py-8 text-center text-gray-500 dark:text-slate-400">No hay ítems cargados en este presupuesto.</td>
+                            <td colspan="4" class="py-8 text-center text-slate-500 dark:text-slate-400">No hay ítems cargados en este presupuesto.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
 
-            <!-- Totales -->
-            <div class="flex justify-end border-t border-gray-200 dark:border-slate-700 pt-6">
+            <!-- Sección de Totales -->
+            <div class="flex justify-end border-t border-[#E2ECF6] dark:border-slate-800 pt-6">
                 <div class="w-full sm:w-1/2 space-y-2.5">
-                    <div class="flex justify-between text-sm text-gray-600 dark:text-slate-400 font-medium">
+                    <div class="flex justify-between text-sm text-slate-600 dark:text-slate-400 font-medium">
                         <span>Subtotal</span>
-                        <span>$ {{ quote.subtotal|floatformat:2 }}</span>
+                        <span class="tabular-nums font-semibold text-slate-800 dark:text-slate-200">$ {{ quote.subtotal|floatformat:2 }}</span>
                     </div>
                     {% if quote.total_discounts > 0 or quote.discount > 0 %}
-                    <div class="flex justify-between text-sm text-red-500 dark:text-red-400 font-medium">
+                    <div class="flex justify-between text-sm text-[#D42B1E] font-bold">
                         <span>Descuentos / Bonificaciones</span>
-                        <span>- $ {{ quote.total_discounts|default:quote.discount|floatformat:2 }}</span>
+                        <span class="tabular-nums">- $ {{ quote.total_discounts|default:quote.discount|floatformat:2 }}</span>
                     </div>
                     {% endif %}
                     {% if quote.tax > 0 %}
-                    <div class="flex justify-between text-sm text-gray-600 dark:text-slate-400 font-medium">
+                    <div class="flex justify-between text-sm text-slate-600 dark:text-slate-400 font-medium">
                         <span>IVA (21%)</span>
-                        <span>$ {{ quote.tax|floatformat:2 }}</span>
+                        <span class="tabular-nums font-semibold text-slate-800 dark:text-slate-200">$ {{ quote.tax|floatformat:2 }}</span>
                     </div>
                     {% endif %}
-                    <div class="flex justify-between text-2xl font-black text-gray-900 dark:text-slate-100 pt-3 border-t-2 border-gray-900 dark:border-slate-600">
-                        <span>Total Neto</span>
-                        <span>$ {{ quote.total|floatformat:2 }}</span>
+                    <div class="flex justify-between text-2xl font-heading font-black text-[#1B3A5C] dark:text-[#9ac1f0] pt-3 border-t-2 border-[#1B3A5C] dark:border-slate-700">
+                        <span>TOTAL</span>
+                        <span class="tabular-nums text-slate-950 dark:text-white">$ {{ quote.total|floatformat:2 }}</span>
                     </div>
                 </div>
             </div>
             
             {% if quote.notes %}
-            <div class="mt-8 bg-blue-50/60 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30 text-blue-900 dark:text-blue-300">
-                <h4 class="font-bold text-xs uppercase tracking-wider text-blue-800 dark:text-blue-400 mb-1 flex items-center gap-1.5">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div class="mt-8 bg-[#F4F8FC] dark:bg-slate-850/60 p-4 rounded-xl border border-[#E2ECF6] dark:border-slate-800 text-slate-800 dark:text-slate-300">
+                <h4 class="font-heading font-bold text-xs uppercase tracking-wider text-[#1B3A5C] dark:text-[#9ac1f0] mb-1 flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-[#4A6FA5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     Condiciones y Observaciones
                 </h4>
-                <p class="whitespace-pre-line text-xs text-blue-800/90 dark:text-blue-300/80 leading-relaxed">{{ quote.notes }}</p>
+                <p class="whitespace-pre-line text-xs leading-relaxed text-slate-700 dark:text-slate-300">{{ quote.notes }}</p>
             </div>
             {% endif %}
         </div>
         
         {% if company_phone %}
-        <div class="p-6 border-t border-gray-100 dark:border-slate-700/60 text-center bg-gray-50/50 dark:bg-slate-850">
-            <h4 class="text-gray-900 dark:text-slate-100 font-bold mb-3">¿Querés confirmar este pedido o tenés dudas?</h4>
+        <div class="p-6 border-t border-[#E2ECF6] dark:border-slate-800 text-center bg-[#F8FAFC]/70 dark:bg-slate-900/40">
+            <h4 class="font-heading text-slate-900 dark:text-slate-100 font-bold text-base mb-3">¿Querés confirmar este pedido o tenés consultas?</h4>
             <a href="https://wa.me/{{ company_phone }}?text=Hola,%20quería%20consultar%20sobre%20el%20presupuesto%20{{ quote.number }}..." target="_blank"
-               class="inline-flex justify-center items-center px-6 py-2.5 bg-[#25D366] text-white rounded-xl hover:bg-[#128C7E] transition font-bold text-sm shadow-sm">
+               class="inline-flex justify-center items-center px-6 py-2.5 bg-[#25D366] text-white rounded-xl hover:bg-[#128C7E] transition font-bold text-sm shadow-md hover:scale-[1.02] active:scale-95">
                 <svg class="w-4 h-4 mr-2 fill-current" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
                 Contactar por WhatsApp
             </a>
         </div>
         {% endif %}
 
-        <div class="bg-gray-100 dark:bg-slate-950 p-4 text-center border-t border-gray-200 dark:border-slate-700">
-            <p class="text-xs font-bold text-gray-600 dark:text-slate-400">DOCUMENTO NO VÁLIDO COMO FACTURA — COMPROBANTE CLASE "X"</p>
-            <p class="text-[11px] text-gray-500 dark:text-slate-500 mt-0.5">Los precios expresados están sujetos a modificaciones tras el vencimiento de la oferta indicada.</p>
+        <div class="bg-[#F1F5F9] dark:bg-slate-950 p-4 text-center border-t border-[#E2ECF6] dark:border-slate-800">
+            <p class="font-heading text-xs font-bold text-[#D42B1E] uppercase tracking-wider">DOCUMENTO NO VÁLIDO COMO FACTURA — COMPROBANTE CLASE "X"</p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Los precios expresados están sujetos a modificaciones tras el vencimiento de la oferta indicada.</p>
         </div>
     </div>
 </body>
