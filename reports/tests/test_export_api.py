@@ -15,20 +15,35 @@ class TestExportAPI:
 
     @pytest.fixture
     def api_client_auth(self):
-        """Cliente API autenticado."""
+        """Cliente API autenticado con permisos de reportes."""
         user = User.objects.create_user(
             username='testuser',
             password='testpass123',
             email='test@example.com',
+            role='admin',
+            can_view_reports=True,
         )
         client = APIClient()
         client.force_authenticate(user=user)
         return client
 
     def test_pnl_export_unauthenticated(self, client):
-        """Endpoint sin autenticación retorna 403."""
+        """Endpoint sin autenticación retorna 401."""
         response = client.get('/api/v1/reports/pnl/export/')
         assert response.status_code == 401
+
+    def test_pnl_export_forbidden_without_permission(self):
+        """Usuario sin can_view_reports recibe 403."""
+        user = User.objects.create_user(
+            username='unauthorized_user',
+            password='testpass123',
+            role='operator',
+            can_view_reports=False,
+        )
+        client = APIClient()
+        client.force_authenticate(user=user)
+        response = client.get('/api/v1/reports/pnl/export/')
+        assert response.status_code == 403
 
     def test_pnl_export_authenticated_returns_xlsx(self, api_client_auth):
         """Endpoint autenticado retorna archivo XLSX."""

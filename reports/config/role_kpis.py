@@ -85,18 +85,22 @@ AVAILABLE_KPIS = {
     'monthly_revenue': {
         'service': 'financial_kpis.get_monthly_revenue',
         'roles': ['admin', 'manager'],
+        'permission': 'can_view_reports',
     },
     'monthly_ebitda': {
         'service': 'financial_kpis.get_monthly_ebitda',
         'roles': ['admin', 'manager'],
+        'permission': 'can_view_reports',
     },
     'monthly_cashflow': {
         'service': 'financial_kpis.get_monthly_cashflow',
         'roles': ['admin', 'manager'],
+        'permission': 'can_view_reports',
     },
     'payment_methods': {
         'service': 'financial_kpis.get_payment_methods_breakdown',
         'roles': ['admin', 'manager'],
+        'permission': 'can_view_reports',
     },
 }
 
@@ -106,3 +110,17 @@ def get_kpis_for_role(role: str) -> list[str]:
         key for key, config in AVAILABLE_KPIS.items()
         if role in config.get('roles', [])
     ]
+
+
+def get_kpis_for_user(user) -> list[str]:
+    """Retorna lista de claves de KPI visibles para el usuario dado según su rol y permisos granulares."""
+    role = getattr(user, 'role', 'viewer')
+    keys = []
+    for key, config in AVAILABLE_KPIS.items():
+        if role in config.get('roles', []):
+            keys.append(key)
+        elif config.get('permission') and getattr(user, config['permission'], False):
+            if key not in keys:
+                keys.append(key)
+    return keys
+

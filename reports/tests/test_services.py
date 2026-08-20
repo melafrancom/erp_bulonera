@@ -81,10 +81,9 @@ class TestKPIServices:
         assert 'wa_today' in keys
         assert 'printed_today' in keys
 
-    def test_dashboard_service_viewer_role(self, admin_user):
-        # Viewer no debería ver KPIs operativos según config actual
-        admin_user.role = 'viewer'
-        kpis = self.dashboard_service.get_dashboard_kpis(admin_user)
+    def test_dashboard_service_viewer_role(self, viewer_user):
+        # Viewer sin can_view_reports no debería ver KPIs según config actual
+        kpis = self.dashboard_service.get_dashboard_kpis(viewer_user)
         assert len(kpis) == 0
 
 

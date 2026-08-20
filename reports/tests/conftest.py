@@ -25,8 +25,76 @@ def user():
     """Crea un usuario de prueba."""
     return User.objects.get_or_create(
         username='testuser',
-        defaults={'email': 'test@example.com', 'role': 'admin'},
+        defaults={'email': 'test@example.com', 'role': 'admin', 'can_view_reports': True},
     )[0]
+
+
+@pytest.fixture
+def admin_user():
+    """Usuario con rol admin."""
+    user, _ = User.objects.get_or_create(
+        username='adminuser',
+        defaults={
+            'email': 'admin@example.com',
+            'role': 'admin',
+            'can_view_reports': True,
+        }
+    )
+    user.role = 'admin'
+    user.can_view_reports = True
+    user.save()
+    return user
+
+
+@pytest.fixture
+def manager_user():
+    """Usuario con rol manager."""
+    user, _ = User.objects.get_or_create(
+        username='manageruser',
+        defaults={
+            'email': 'manager@example.com',
+            'role': 'manager',
+            'can_view_reports': True,
+        }
+    )
+    user.role = 'manager'
+    user.can_view_reports = True
+    user.save()
+    return user
+
+
+@pytest.fixture
+def operator_user():
+    """Usuario con rol operator sin permisos de reportes por defecto."""
+    user, _ = User.objects.get_or_create(
+        username='operatoruser',
+        defaults={
+            'email': 'operator@example.com',
+            'role': 'operator',
+            'can_view_reports': False,
+        }
+    )
+    user.role = 'operator'
+    user.can_view_reports = False
+    user.save()
+    return user
+
+
+@pytest.fixture
+def viewer_user():
+    """Usuario con rol viewer."""
+    user, _ = User.objects.get_or_create(
+        username='vieweruser',
+        defaults={
+            'email': 'viewer@example.com',
+            'role': 'viewer',
+            'can_view_reports': False,
+        }
+    )
+    user.role = 'viewer'
+    user.can_view_reports = False
+    user.save()
+    return user
 
 
 @pytest.fixture

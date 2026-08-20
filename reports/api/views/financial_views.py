@@ -5,7 +5,7 @@ Endpoints GET que retornan los snapshots o recalculan on-demand.
 """
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, BasePermission
 from rest_framework import status
 from django.utils import timezone
 from datetime import date, timedelta
@@ -17,8 +17,22 @@ from reports.models import FinancialSnapshot
 logger = logging.getLogger('api')
 
 
+class ReportsPermission(BasePermission):
+    """
+    Control de acceso para reportes financieros y estados contables.
+    Permite acceso si el usuario es superuser, rol admin/manager, o tiene can_view_reports=True.
+    """
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_superuser or user.role in ('admin', 'manager'):
+            return True
+        return getattr(user, 'can_view_reports', False)
+
+
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, ReportsPermission])
 def pnl_statement_view(request):
     """
     GET /api/v1/reports/pnl/?year=2026&month=5
@@ -109,7 +123,7 @@ def pnl_statement_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, ReportsPermission])
 def cashflow_statement_view(request):
     """
     GET /api/v1/reports/cashflow/?year=2026&month=5

@@ -31,3 +31,89 @@ class TestReportsAPI:
         assert 'label' in kpi
         assert 'value' in kpi
         assert 'unit' in kpi
+
+    def test_pnl_api_denied_for_unauthorized_user(self, operator_user):
+        """Operador sin can_view_reports recibe 403 en P&L API."""
+        operator_user.can_view_reports = False
+        operator_user.save()
+        self.client.force_authenticate(user=operator_user)
+        url = reverse('reports_api:pnl_statement')
+        response = self.client.get(url)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_cashflow_api_denied_for_unauthorized_user(self, operator_user):
+        """Operador sin can_view_reports recibe 403 en CashFlow API."""
+        operator_user.can_view_reports = False
+        operator_user.save()
+        self.client.force_authenticate(user=operator_user)
+        url = reverse('reports_api:cashflow_statement')
+        response = self.client.get(url)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_pnl_export_api_denied_for_unauthorized_user(self, operator_user):
+        """Operador sin can_view_reports recibe 403 en P&L Export API."""
+        operator_user.can_view_reports = False
+        operator_user.save()
+        self.client.force_authenticate(user=operator_user)
+        url = reverse('reports_api:pnl_export')
+        response = self.client.get(url)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_cashflow_export_api_denied_for_unauthorized_user(self, operator_user):
+        """Operador sin can_view_reports recibe 403 en CashFlow Export API."""
+        operator_user.can_view_reports = False
+        operator_user.save()
+        self.client.force_authenticate(user=operator_user)
+        url = reverse('reports_api:cashflow_export')
+        response = self.client.get(url)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_pnl_api_allowed_for_operator_with_can_view_reports(self, operator_user):
+        """Operador con can_view_reports=True puede consultar P&L API."""
+        operator_user.can_view_reports = True
+        operator_user.save()
+        self.client.force_authenticate(user=operator_user)
+        url = reverse('reports_api:pnl_statement')
+        response = self.client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_cashflow_api_allowed_for_operator_with_can_view_reports(self, operator_user):
+        """Operador con can_view_reports=True puede consultar CashFlow API."""
+        operator_user.can_view_reports = True
+        operator_user.save()
+        self.client.force_authenticate(user=operator_user)
+        url = reverse('reports_api:cashflow_statement')
+        response = self.client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_pnl_api_allowed_for_manager(self, manager_user):
+        """Manager puede consultar P&L API automáticamente."""
+        self.client.force_authenticate(user=manager_user)
+        url = reverse('reports_api:pnl_statement')
+        response = self.client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_dashboard_kpis_financial_hidden_for_operator_without_permission(self, operator_user):
+        """Operador sin can_view_reports no recibe KPIs financieros."""
+        operator_user.can_view_reports = False
+        operator_user.save()
+        self.client.force_authenticate(user=operator_user)
+        response = self.client.get(self.url)
+        assert response.status_code == status.HTTP_200_OK
+        kpi_keys = [kpi['key'] for kpi in response.data['kpis']]
+        assert 'monthly_revenue' not in kpi_keys
+        assert 'monthly_ebitda' not in kpi_keys
+        assert 'monthly_cashflow' not in kpi_keys
+
+    def test_dashboard_kpis_financial_visible_with_can_view_reports(self, operator_user):
+        """Operador con can_view_reports=True recibe KPIs financieros en Dashboard."""
+        operator_user.can_view_reports = True
+        operator_user.save()
+        self.client.force_authenticate(user=operator_user)
+        response = self.client.get(self.url)
+        assert response.status_code == status.HTTP_200_OK
+        kpi_keys = [kpi['key'] for kpi in response.data['kpis']]
+        assert 'monthly_revenue' in kpi_keys
+        assert 'monthly_ebitda' in kpi_keys
+        assert 'monthly_cashflow' in kpi_keys
+

@@ -12,12 +12,13 @@ from datetime import datetime, date
 import logging
 
 from reports.services.export_service import ExportService
+from reports.api.views.financial_views import ReportsPermission
 
 logger = logging.getLogger('api')
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, ReportsPermission])
 def pnl_export_view(request):
     """
     GET /api/v1/reports/pnl/export/?from=2026-05-01&to=2026-05-31&format=xlsx
@@ -98,7 +99,7 @@ def pnl_export_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, ReportsPermission])
 def cashflow_export_view(request):
     """
     GET /api/v1/reports/cashflow/export/?from=2026-05-01&to=2026-05-31&format=xlsx

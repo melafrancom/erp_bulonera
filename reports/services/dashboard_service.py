@@ -7,23 +7,21 @@ from .base import KPIResult
 from .sales_kpis import SalesKPIService
 from .quote_kpis import QuoteKPIService
 from . import stock_kpis, customer_kpis, financial_kpis, conversion_kpis
-from ..config.role_kpis import AVAILABLE_KPIS, get_kpis_for_role
+from ..config.role_kpis import AVAILABLE_KPIS, get_kpis_for_role, get_kpis_for_user
 
 logger = logging.getLogger('api')
 
 class DashboardService:
     """
     Orquestador: recibe un User, retorna lista de KPIResult
-    según su rol, usando caché Redis.
+    según su rol y permisos, usando caché Redis.
     """
     def __init__(self):
         self.sales_service = SalesKPIService()
         self.quote_service = QuoteKPIService()
 
     def get_dashboard_kpis(self, user) -> List[KPIResult]:
-        # El sistema de roles está en 'core.User.role' según el contexto
-        role = getattr(user, 'role', 'viewer')
-        kpi_keys = get_kpis_for_role(role)
+        kpi_keys = get_kpis_for_user(user)
         
         results = []
         for key in kpi_keys:
