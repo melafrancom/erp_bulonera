@@ -620,8 +620,6 @@ Estructura de documentación distribuida por módulos para entender el **por qu�
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Arquitectura completa del módulo Sales (modelos, API, PWA) |
 | [DATABASE_ARCHITECTURE.md](DATABASE_ARCHITECTURE.md) | Flujos transaccionales, decisiones e ingeniería inversa de Base de Datos ([HTML](DATABASE_ARCHITECTURE.html)) |
 | [FULL_DATABASE_ER_DIAGRAM.md](FULL_DATABASE_ER_DIAGRAM.md) | Diagrama Entidad-Relación (Mermaid) completo y exhaustivo de la base de datos ([HTML](FULL_DATABASE_ER_DIAGRAM.html)) |
-| [DATABASE_ARCHITECTURE.md](DATABASE_ARCHITECTURE.md) | Flujos transaccionales, decisiones e ingeniería inversa de Base de Datos ([HTML](DATABASE_ARCHITECTURE.html)) |
-| [FULL_DATABASE_ER_DIAGRAM.md](FULL_DATABASE_ER_DIAGRAM.md) | Diagrama Entidad-Relación (Mermaid) completo y exhaustivo de la base de datos ([HTML](FULL_DATABASE_ER_DIAGRAM.html)) |
 | [API_STRUCTURE.md](API_STRUCTURE.md) | Todos los endpoints REST documentados |
 | [REQUEST_FLOW.md](REQUEST_FLOW.md) | Flujo de request end-to-end |
 | [ARCHITECTURE_VIEWS.md](ARCHITECTURE_VIEWS.md) | Separación Web vs API explicada |
@@ -631,6 +629,9 @@ Estructura de documentación distribuida por módulos para entender el **por qu�
 | [script_creados.md](script_creados.md) | Historial de scripts de infraestructura creados |
 | [PRODUCTION_DEPLOY_STEPS.md](PRODUCTION_DEPLOY_STEPS.md) | Pasos de sincronización y despliegue en producción |
 | [.agents/workflows/feature-rollout.md](.agents/workflows/feature-rollout.md) | Protocolo de E2E y Monitoreo post-lanzamiento |
+| [expenses/README.md](expenses/README.md) | Documentación y arquitectura del módulo Gastos Operativos (OPEX) |
+| [suppliers/README.md](suppliers/README.md) | Documentación y arquitectura del catálogo maestro de Proveedores |
+| [reports/README.md](reports/README.md) | Documentación y arquitectura del motor de reportes financieros y KPIs |
 
 ---
 
