@@ -117,10 +117,62 @@ class Quote(BaseModel):
         if self.customer_name:
             return self.customer_name
         return 'Consumidor Final'
+
+    @property
+    def customer_cuit_display(self):
+        """CUIT/CUIL/DNI seguro (soporta walk-in sin Customer FK)."""
+        if self.customer and getattr(self.customer, 'cuit_cuil', None):
+            return self.customer.cuit_cuil
+        if self.customer_cuit:
+            return self.customer_cuit
+        return 'Consumidor Final'
+
+    @property
+    def customer_iva_condition_display(self):
+        """Condición IVA segura (soporta walk-in sin Customer FK)."""
+        if self.customer and hasattr(self.customer, 'get_iva_condition_display'):
+            return self.customer.get_iva_condition_display()
+        return 'Consumidor Final'
+
+    @property
+    def customer_address_display(self):
+        """Domicilio seguro del cliente o comprobante."""
+        if self.customer and getattr(self.customer, 'address', None):
+            return self.customer.address
+        return '-'
+
+    @property
+    def customer_phone_display(self):
+        """Teléfono seguro del cliente."""
+        if self.customer and getattr(self.customer, 'phone', None):
+            return self.customer.phone
+        return self.customer_phone or ''
+
+    @property
+    def customer_email_display(self):
+        """Email seguro del cliente."""
+        if self.customer and getattr(self.customer, 'email', None):
+            return self.customer.email
+        return self.customer_email or ''
+
+    @property
+    def seller_display(self):
+        """Nombre del operador o vendedor que emitió el presupuesto."""
+        if self.created_by:
+            return self.created_by.get_full_name() or self.created_by.username
+        return 'Mostrador'
     
     @property
     def subtotal(self):
         return self._cached_subtotal
+
+    @property
+    def discount(self):
+        return self._cached_discount
+
+    @property
+    def tax(self):
+        return self._cached_tax
     
     @property
     def total(self):

@@ -358,13 +358,13 @@
             <div class="client-grid">
                 <div>
                     <p><b>Cliente / Razón Social:</b> {{ quote.customer_display }}</p>
-                    <p><b>CUIT / CUIL / DNI:</b> {{ quote.customer_cuit|default:quote.customer.cuit_cuil|default:"Consumidor Final" }}</p>
-                    <p><b>Condición de IVA:</b> {{ quote.customer.get_iva_condition_display|default:"Consumidor Final" }}</p>
+                    <p><b>CUIT / CUIL / DNI:</b> {{ quote.customer_cuit_display }}</p>
+                    <p><b>Condición de IVA:</b> {{ quote.customer_iva_condition_display }}</p>
                 </div>
                 <div>
                     <p><b>Condición de Venta:</b> Contado / Cuenta Corriente</p>
-                    <p><b>Domicilio:</b> {{ quote.customer.address|default:"-" }}</p>
-                    <p><b>Vendedor / Operador:</b> {{ quote.created_by.get_full_name|default:quote.created_by.username }}</p>
+                    <p><b>Domicilio:</b> {{ quote.customer_address_display }}</p>
+                    <p><b>Vendedor / Operador:</b> {{ quote.seller_display }}</p>
                 </div>
             </div>
         </div>

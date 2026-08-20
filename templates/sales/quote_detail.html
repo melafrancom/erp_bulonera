@@ -13,7 +13,7 @@
 {% block mobile_title %}{{ quote.number }}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto" x-data="{ shareModalOpen: false, activeTab: 'email', phone: '{{ quote.customer.phone|default:quote.customer_phone|default:'' }}' }">
+<div class="max-w-7xl mx-auto" x-data="{ shareModalOpen: false, activeTab: 'email', phone: '{{ quote.customer_phone_display }}' }">
   
   <!-- Header -->
   <div class="mb-6">
@@ -267,7 +267,7 @@
         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div>
             <dt class="text-gray-500 dark:text-slate-400">Creado por:</dt>
-            <dd class="text-gray-900 dark:text-slate-100 font-medium">{{ quote.created_by.get_full_name|default:quote.created_by.username }}</dd>
+            <dd class="text-gray-900 dark:text-slate-100 font-medium">{{ quote.seller_display }}</dd>
           </div>
           <div>
             <dt class="text-gray-500 dark:text-slate-400">Fecha de creación:</dt>
@@ -425,7 +425,7 @@
   {% if quote.status in 'draft,sent,accepted' %}
     {% url 'sales_web:quote_send_email' quote.id as email_action %}
     {% url 'sales_web:quote_public' quote.uuid as public_url %}
-    {% include 'sales/partials/_share_document_modal.html' with modal_title="Compartir Presupuesto" alpine_open_var="shareModalOpen" alpine_tab_var="activeTab" email_action_url=email_action public_doc_url=public_url default_email=quote.customer.email|default:quote.customer_email|default:"" default_phone=quote.customer.phone|default:quote.customer_phone|default:"" whatsapp_msg="Hola, te comparto el presupuesto solicitado. Podés verlo en el siguiente enlace:" tracking_url_wa="/api/v1/sales/quotes/"|add:quote.id|add:"/mark_as_wa_sent/" %}
+    {% include 'sales/partials/_share_document_modal.html' with modal_title="Compartir Presupuesto" alpine_open_var="shareModalOpen" alpine_tab_var="activeTab" email_action_url=email_action public_doc_url=public_url default_email=quote.customer_email_display default_phone=quote.customer_phone_display whatsapp_msg="Hola, te comparto el presupuesto solicitado. Podés verlo en el siguiente enlace:" tracking_url_wa="/api/v1/sales/quotes/"|add:quote.id|add:"/mark_as_wa_sent/" %}
   {% endif %}
 
 {% endblock %}
