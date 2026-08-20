@@ -13,7 +13,7 @@ El módulo `bills` gestiona la facturación legal y fiscal de **Bulonera Alvear*
 
 ## 🛠️ Modelos Clave
 *   **`Invoice`**: Documento legal emitido (Factura A/B, Nota de Débito, Nota de Crédito, Tique). Contiene snapshots de datos del cliente, montos, `cae` y `cae_vencimiento`. Inmutable en Admin Django si está `autorizada` (RG 2485/2008). Hereda de `BaseModel` (Soft-delete: Sí).
-*   **`InvoiceItem`**: Renglón facturado. Representa un snapshot del `SaleItem` correspondiente con sus alícuotas de IVA (21%, 10.5%, etc.) aplicadas. Hereda de `BaseModel` (Soft-delete: Sí).
+*   **`InvoiceItem`**: Renglón facturado. Representa un snapshot del `SaleItem` correspondiente con sus alícuotas de IVA (21%, 10.5%, etc.) aplicadas. Incluye la propiedad `cantidad_display` para formateo numérico estándar argentino (sin ceros innecesarios en unidades enteras). Hereda de `BaseModel` (Soft-delete: Sí).
 
 ## ⚡ Servicios Críticos (`services.py`)
 La interacción fiscal se centraliza en los siguientes servicios atómicos:

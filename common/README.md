@@ -17,6 +17,7 @@ El módulo `common` provee la infraestructura transversal básica y los estánda
 *   `SoftDeleteManager`: Manager personalizado que filtra los querysets por defecto (`deleted_at__isnull=True` y `is_active=True`). Permite acceder a eliminados usando `all_with_deleted()` o `deleted_only()`.
 *   `ModulePermission`: Permiso global basado en roles y flags del usuario (bypassea a admins, restringe a Safe Methods para viewers y delega en flags `can_manage_*` para operadores).
 *   `@audit_log`: Decorador que intercepta las vistas para registrar automáticamente en `logs/audit.log` el usuario, método HTTP, ruta, dirección IP, código de estado y errores arrojados.
+*   `format_quantity(amount)` / `format_currency(amount)`: Utilidades transversales en `common/utils.py` para formatear valores monetarios y cantidades respetando la convención argentina (enteros limpios sin decimales innecesarios como `20` o `1.500`, y decimales con coma como `2,5` o `0,75`).
 
 ## 🌐 Vistas y APIs
 Este módulo no provee endpoints directos ni vistas de negocio. Provee middlewares y clases base que interceptan y formatean el comportamiento de las vistas de todo el ERP.

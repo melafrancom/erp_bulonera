@@ -13,13 +13,13 @@ El módulo `sales` gestiona el ciclo comercial completo de la empresa. Permite l
     *   [`bills`](../bills/README.md) (para la emisión de facturas y notas de crédito de AFIP)
 
 ## 🛠️ Modelos Clave
-*   **`Quote`**: Presupuesto emitido a un cliente. Tiene validez temporal. Posee soporte de descuentos globales (`global_discount_type`, `global_discount_value`, `global_discount_reason`, `customer_segment_discount`) para mantener paridad total con `Sale`. Hereda de `BaseModel` (Soft-delete: Sí).
-*   **`QuoteItem`**: Renglón individual de un presupuesto. Contiene cantidad, precio, descuento e IVA. Hereda de `BaseModel` (Soft-delete: Sí).
+*   **`Quote`**: Presupuesto emitido a un cliente con validez temporal. Posee soporte de descuentos globales y propiedades seguras de acceso a datos de clientes registrados o mostrador (`customer_display`, `customer_cuit_display`, `customer_iva_condition_display`, `customer_address_display`, `customer_phone_display`, `customer_email_display`, `seller_display`). Hereda de `BaseModel` (Soft-delete: Sí).
+*   **`QuoteItem`**: Renglón individual de un presupuesto. Contiene cantidad, precio, descuento e IVA, y la propiedad `quantity_display` para formato argentino limpio. Hereda de `BaseModel` (Soft-delete: Sí).
 *   **`Sale`**: Venta comercial confirmada o en borrador. Controla tres estados ortogonales: comercial (`status`), financiero (`payment_status`) y fiscal (`fiscal_status`).
     *   `total_paid`: Propiedad calculada que suma exclusivamente alocaciones activas y confirmadas (`is_active=True`, `payment__status='confirmed'`), ignorando alocaciones anuladas.
     *   Incluye soporte de descuento global (`global_discount_*`) y flag `is_credit_sale` para transacciones a cuenta corriente.
     *   Hereda de `BaseModel` (Soft-delete: Sí).
-*   **`SaleItem`**: Renglón individual de una venta. Soporta el modo de cálculo bidireccional (precio a total o total a precio). Registra un snapshot de costo unitario (`unit_cost`) que se puede ingresar manualmente o inferir desde `Product.current_cost` para asegurar la precisión del P&L en artículos comercializados por unidad pero comprados por peso (kg). Hereda de `BaseModel` (Soft-delete: Sí).
+*   **`SaleItem`**: Renglón individual de una venta. Soporta modo de cálculo bidireccional, propiedad `quantity_display`, y snapshot de costo unitario (`unit_cost`). Hereda de `BaseModel` (Soft-delete: Sí).
 *   **`QuoteConversion`**: Historial de trazabilidad que documenta cuándo y quién convirtió un presupuesto en venta, incluyendo modificaciones de precios aplicadas. Hereda de `BaseModel` (Soft-delete: Sí).
 
 ## ⚡ Servicios Críticos (`services.py`)
@@ -66,8 +66,12 @@ Base URL: `/api/v1/sales/`
 *   `GET /api/v1/sales/sync/status/{sale_id}/` - Consultar estado de sincronización
 
 ### Vistas Web (`web/urls/urls_web.py`)
-*   `GET /sales/` - Panel principal de ventas e historial de transacciones.
-*   `GET /sales/quotes/` - Gestor de presupuestos y cotizaciones de salón.
+*   `GET /sales/` - Panel principal de ventas con KPIs interactivos y filtros semánticos.
+*   `GET /sales/quotes/` - Gestor de presupuestos y cotizaciones de salón con filtros de estado y búsqueda.
+*   `GET /sales/presupuestos/<pk>/` - Detalle completo interno del presupuesto con opciones para compartir.
+*   `GET /sales/presupuestos/<pk>/imprimir/` - Vista formal de impresión HTML estructurada como comprobante 'X'.
+*   `GET /sales/presupuestos/publico/<uuid>/` - **Vista pública responsive** para clientes externos, adaptada a la paleta corporativa (`#1B3A5C`, `#4A6FA5`, `#D42B1E`) y tipografías *Barlow* e *Inter*.
+*   `GET /sales/presupuestos/publico/<uuid>/pdf/` - Descarga de PDF oficial generado con ReportLab bajo normativa AFIP de comprobante Clase 'X' ("DOCUMENTO NO VÁLIDO COMO FACTURA").
 *   `GET /sales/sales/create/` - Venta directa en mostrador.
 
 ## 💸 Gestión de Costos y Margen de Rentabilidad (P&L)

@@ -443,14 +443,14 @@ if (localStorage.getItem('theme') === 'dark' ||
 | App | Propósito |
 |---|---|
 | [`core`](core/README.md) | Modelos base (BaseModel, soft-delete, audit) |
-| [`common`](common/README.md) | Middleware, excepciones, permisos globales |
+| [`common`](common/README.md) | Middleware, excepciones, permisos globales y utilidades (`format_quantity`, `format_currency`) |
 | [`products`](products/README.md) | Catálogo de productos, listas de precio, costeo y control de acceso canónico (`can_manage_products`) |
-| [`sales`](sales/README.md) | Ventas y presupuestos (con sync PWA offline) |
+| [`sales`](sales/README.md) | Ventas y presupuestos (sync PWA offline, PDF Comprobante Clase 'X' y vistas públicas de presupuestos) |
 | [`customers`](customers/README.md) | Clientes y Cuentas Corrientes (modalidades formal/informal, pre-check de crédito, refacturación y aging) |
 | [`suppliers`](suppliers/README.md) | Proveedores |
 | [`inventory`](inventory/README.md) | Stock, movimientos y auditoría física con trazabilidad de costos (`unit_cost`) |
 | [`payments`](payments/README.md) | Pagos y asignaciones |
-| [`bills`](bills/README.md) | Facturación |
+| [`bills`](bills/README.md) | Facturación electrónica ARCA/AFIP y generación de PDF fiscal |
 | [`expenses`](expenses/README.md) | Gastos operativos (OPEX) y clasificación en P&L |
 | [`afip`](afip/README.md) | Integración fiscal Argentina (AFIP/ARCA) |
 | [`reports`](reports/README.md) | Dashboard y reportes |
