@@ -626,7 +626,7 @@ Estructura de documentaci처n distribuida por m처dulos para entender el **por qu�
 | [ROLES_Y_PROMPTS.md](ROLES_Y_PROMPTS.md) | Framework de Prompts y Roles (XML) |
 | [VALIDATION_CHECKLIST.md](VALIDATION_CHECKLIST.md) | Checklist de QA antes de mergear |
 | [PWA-IMPLEMENTATION.md](PWA-IMPLEMENTATION.md) | Implementaci처n PWA offline-first |
-| [script_creados.md](script_creados.md) | Historial de scripts de infraestructura creados |
+| [docs/infra/script_creados.md](docs/infra/script_creados.md) | Historial de scripts de infraestructura creados |
 | [PRODUCTION_DEPLOY_STEPS.md](PRODUCTION_DEPLOY_STEPS.md) | Pasos de sincronizaci처n y despliegue en producci처n |
 | [.agents/workflows/feature-rollout.md](.agents/workflows/feature-rollout.md) | Protocolo de E2E y Monitoreo post-lanzamiento |
 | [expenses/README.md](expenses/README.md) | Documentaci처n y arquitectura del m처dulo Gastos Operativos (OPEX) |
