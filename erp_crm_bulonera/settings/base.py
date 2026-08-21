@@ -655,3 +655,9 @@ LOGGING = {
         },
     },
 }
+
+# ============================================================================
+# Silenced System Checks
+# ============================================================================
+# models.W036: MariaDB no soporta indices unicos condicionales a nivel DDL (se validan por codigo)
+SILENCED_SYSTEM_CHECKS = ['models.W036']
