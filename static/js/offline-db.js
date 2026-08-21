@@ -200,6 +200,29 @@ class OfflineDB {
     );
   }
 
+  /**
+   * Genera un UUID v4 compatible si crypto.randomUUID no está disponible.
+   */
+  _generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  }
+
+  /**
+   * Extrae el array de resultados soportando DRF estándar y EnvelopeRenderer ({ data: { results: [...] } }).
+   */
+  _extractResults(data) {
+    if (!data) return [];
+    if (data.data?.results && Array.isArray(data.data.results)) return data.data.results;
+    if (data.results && Array.isArray(data.results)) return data.results;
+    if (Array.isArray(data.data)) return data.data;
+    if (Array.isArray(data)) return data;
+    return [];
+  }
+
   // ─── VENTAS PENDIENTES (OFFLINE) ──────────────────────────────
 
   /**
@@ -210,14 +233,16 @@ class OfflineDB {
   async savePendingSale(saleData) {
     return this._transaction('pending_sales', 'readwrite', (store) =>
       new Promise((resolve, reject) => {
+        const localId = saleData.local_id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : this._generateUUID());
         const record = {
           ...saleData,
+          local_id:   localId,
           createdAt:  new Date().toISOString(),
           syncStatus: 'pending',
         };
         const req    = store.add(record);
         req.onsuccess = () => {
-          console.log(`[OfflineDB] Venta pendiente guardada. ID local: ${req.result}`);
+          console.log(`[OfflineDB] Venta pendiente guardada. ID local: ${req.result}, UUID: ${localId}`);
           resolve(req.result);
         };
         req.onerror   = () => reject(req.error);
@@ -253,39 +278,70 @@ class OfflineDB {
   }
 
   /**
-   * Sincroniza ventas pendientes con el backend.
-   * Intenta POST a /api/v1/sales/sales/ para cada venta offline.
-   * @returns {Object} - { synced: number, failed: number }
+   * Sincroniza ventas pendientes con el backend vía /api/v1/sales/sync/upload/.
+   * @returns {Object} - { synced: number, failed: number, conflicts: number }
    */
   async syncPendingSales() {
     const pending = await this.getPendingSales();
     if (pending.length === 0) {
       console.log('[OfflineDB] No hay ventas pendientes.');
-      return { synced: 0, failed: 0 };
+      return { synced: 0, failed: 0, conflicts: 0 };
     }
 
     console.log(`[OfflineDB] Sincronizando ${pending.length} ventas pendientes...`);
     let synced = 0;
     let failed = 0;
+    let conflicts = 0;
 
     for (const sale of pending) {
       try {
         const csrfToken = this._getCsrfToken();
-        const response  = await fetch('/api/v1/sales/sales/', {
+        const localId = sale.local_id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : this._generateUUID());
+        const payloadSale = {
+          local_id: localId,
+          customer_id: sale.customer_id || sale.customer || null,
+          status: sale.status || 'draft',
+          items: (sale.items || []).map((item, idx) => ({
+            product_id: item.product_id || item.product,
+            quantity: String(item.quantity || 1),
+            unit_price: String(item.unit_price || 0),
+            discount_type: item.discount_type || 'none',
+            discount_value: String(item.discount_value || 0),
+            tax_percentage: String(item.tax_percentage || 21),
+            line_order: item.line_order !== undefined ? item.line_order : idx,
+          })),
+          notes: sale.notes || '',
+          version: sale.version || 1,
+        };
+
+        const response = await fetch('/api/v1/sales/sync/upload/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken':  csrfToken,
           },
-          body: JSON.stringify(sale),
+          body: JSON.stringify({ sales: [payloadSale] }),
         });
 
         if (response.ok) {
+          const respData = await response.json();
+          const results = this._extractResults(respData);
+          const firstRes = results[0] || (respData.data?.results ? respData.data.results[0] : respData.results?.[0]);
+
+          if (firstRes && firstRes.status === 'conflict') {
+            conflicts++;
+            console.warn(`[OfflineDB] Venta sincronizada con conflicto/advertencia: tempId=${sale.tempId}`, firstRes.warnings || firstRes.message);
+          } else if (firstRes && firstRes.status === 'error') {
+            console.error(`[OfflineDB] Error devuelto por el servidor para tempId=${sale.tempId}:`, firstRes.error);
+            failed++;
+            continue;
+          }
+
           await this.deletePendingSale(sale.tempId);
           synced++;
-          console.log(`[OfflineDB] Venta sincronizada: tempId=${sale.tempId}`);
+          console.log(`[OfflineDB] Venta sincronizada: tempId=${sale.tempId} (local_id=${localId})`);
         } else {
-          const err = await response.json();
+          const err = await response.json().catch(() => ({}));
           console.error(`[OfflineDB] Error al sincronizar venta tempId=${sale.tempId}:`, err);
           failed++;
         }
@@ -295,8 +351,8 @@ class OfflineDB {
       }
     }
 
-    console.log(`[OfflineDB] Sync completo. Sinc: ${synced}, Fallidos: ${failed}`);
-    return { synced, failed };
+    console.log(`[OfflineDB] Sync completo. Sinc: ${synced}, Fallidos: ${failed}, Conflictos: ${conflicts}`);
+    return { synced, failed, conflicts };
   }
 
   // ─── PRECARGA DE DATOS ────────────────────────────────────────
@@ -313,7 +369,7 @@ class OfflineDB {
       const resp = await fetch('/api/v1/products/products/?page_size=500&ordering=name');
       if (resp.ok) {
         const data = await resp.json();
-        await this.cacheProducts(data.results || data);
+        await this.cacheProducts(this._extractResults(data));
       }
     } catch (e) {
       errors.push('products');
@@ -324,7 +380,7 @@ class OfflineDB {
       const resp = await fetch('/api/v1/customers/customers/?page_size=500&ordering=business_name');
       if (resp.ok) {
         const data = await resp.json();
-        await this.cacheCustomers(data.results || data);
+        await this.cacheCustomers(this._extractResults(data));
       }
     } catch (e) {
       errors.push('customers');
@@ -335,7 +391,7 @@ class OfflineDB {
       const resp = await fetch('/api/v1/products/pricelists/');
       if (resp.ok) {
         const data = await resp.json();
-        await this.cachePriceLists(data.results || data);
+        await this.cachePriceLists(this._extractResults(data));
       }
     } catch (e) {
       errors.push('price_lists');

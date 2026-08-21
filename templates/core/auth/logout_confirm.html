@@ -65,6 +65,29 @@
         document.getElementById('cancel-btn').addEventListener('click', () => {
             clearInterval(timer);
         });
+
+        // Purgar almacenamiento local / IndexedDB al cerrar sesión
+        async function purgeOfflineData() {
+            try {
+                if (window.offlineDB && typeof window.offlineDB.clearAll === 'function') {
+                    await window.offlineDB.clearAll();
+                } else if (window.indexedDB) {
+                    window.indexedDB.deleteDatabase('bulonera-erp-offline');
+                }
+            } catch (err) {
+                console.warn('[Logout] Error al purgar base offline:', err);
+            }
+        }
+
+        const logoutForm = document.querySelector('form[action*="logout"]');
+        if (logoutForm) {
+            logoutForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                clearInterval(timer);
+                await purgeOfflineData();
+                logoutForm.submit();
+            });
+        }
     </script>
 </body>
 </html>

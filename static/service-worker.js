@@ -12,13 +12,23 @@
  */
 
 // ─── CONSTANTES ─────────────────────────────────────────────────
-const APP_VERSION   = 'v2.0.1';
+const APP_VERSION   = 'v2.0.2';
 const STATIC_CACHE  = `bulonera-static-${APP_VERSION}`;
 const DYNAMIC_CACHE = `bulonera-dynamic-${APP_VERSION}`;
 const API_CACHE     = `bulonera-api-${APP_VERSION}`;
 
 // Todos los caches de esta app (para limpiar versiones viejas)
 const KNOWN_CACHES = [STATIC_CACHE, DYNAMIC_CACHE, API_CACHE];
+
+// Rutas de API que NUNCA deben cachearse (datos financieros/fiscales/sensibles)
+const SENSITIVE_API_PATTERNS = [
+  '/api/v1/bills/',
+  '/api/v1/afip/',
+  '/api/v1/payments/',
+  '/api/v1/reports/',
+  '/api/v1/expenses/',
+  '/api/v1/auth/',
+];
 
 // Assets críticos: se pre-cachean en la instalación
 const PRECACHE_ASSETS = [
@@ -186,8 +196,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. API REST → Stale While Revalidate (datos rápidos + frescos)
+  // 3. API REST → Stale While Revalidate (datos rápidos + frescos, salvo rutas sensibles)
   if (url.pathname.startsWith('/api/')) {
+    const isSensitive = SENSITIVE_API_PATTERNS.some((pattern) => url.pathname.startsWith(pattern));
+    if (isSensitive) {
+      // Rutas sensibles: Network Only (no interceptar / no guardar en caché)
+      return;
+    }
     event.respondWith(staleWhileRevalidate(request, API_CACHE));
     return;
   }

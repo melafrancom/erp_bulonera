@@ -26,6 +26,9 @@ from products.models import Product
 logger = logging.getLogger(__name__)
 
 
+PRICE_TOLERANCE = Decimal('0.05')  # 5% de tolerancia entre precio offline y catálogo vigente
+
+
 class SyncThrottle(UserRateThrottle):
     """
     Rate limiter para endpoints de sincronización PWA.
@@ -294,7 +297,8 @@ class SyncViewSet(AuditMixin, viewsets.ViewSet):
                     sync_succeeded_at=timezone.now()
                 )
                 
-                # ═══ Copiar items con validaciones (6-7) ═══
+                # ═══ Copiar items con validaciones (6-8) ═══
+                price_mismatches = []
                 for idx, item_data in enumerate(items_data):
                     try:
                         # ─── VALIDACIÓN 6: product_id existe y es válido ───
@@ -347,6 +351,19 @@ class SyncViewSet(AuditMixin, viewsets.ViewSet):
                                 f'Item #{idx}: unit_price no puede ser negativo, recibido: {unit_price}'
                             )
                         
+                        # ─── VALIDACIÓN 8: price_mismatch vs catálogo vigente ───
+                        if product.price and product.price > 0:
+                            diff_ratio = abs(unit_price - product.price) / product.price
+                            if diff_ratio > PRICE_TOLERANCE:
+                                price_mismatches.append({
+                                    'item': idx,
+                                    'product_id': product.id,
+                                    'product_code': product.code,
+                                    'client_price': str(unit_price),
+                                    'catalog_price': str(product.price),
+                                    'diff_pct': f'{diff_ratio * 100:.1f}%',
+                                })
+                        
                         # Crear SaleItem con datos validados
                         SaleItem.objects.create(
                             sale=sale,
@@ -377,24 +394,46 @@ class SyncViewSet(AuditMixin, viewsets.ViewSet):
                         )
                         # Re-raise con contexto
                         raise
-                # ═══ Sync exitoso ═══
+
+                # ═══ Post-items: Flaggear price mismatch si aplica ═══
+                if price_mismatches:
+                    sale.sync_status = 'conflict'
+                    mismatch_detail = '; '.join(
+                        f"Item#{m['item']} ({m['product_code']}): offline=${m['client_price']} vs catálogo=${m['catalog_price']} ({m['diff_pct']})"
+                        for m in price_mismatches
+                    )
+                    sale.internal_notes = (sale.internal_notes + f'\n[PRICE MISMATCH] {mismatch_detail}').strip()
+                    sale.save(update_fields=['sync_status', 'internal_notes'])
+                    logger.warning(
+                        f'Sync price mismatch detected for sale {sale.id}',
+                        extra={
+                            'user_id': user.id,
+                            'local_id': local_id,
+                            'sale_id': sale.id,
+                            'mismatches': price_mismatches,
+                        }
+                    )
+
+                # ═══ Sync exitoso / conflicto no bloqueante ═══
                 logger.info(
-                    f'Sale synced successfully',
+                    f"Sale synced {'with price conflict' if price_mismatches else 'successfully'}",
                     extra={
                         'user_id': user.id,
                         'local_id': local_id,
                         'sale_id': sale.id,
                         'sale_number': sale.number,
                         'customer_id': customer.id,
-                        'items_count': sale.items.count()
+                        'items_count': sale.items.count(),
+                        'has_price_mismatch': bool(price_mismatches),
                     }
                 )
                 
                 return {
                     'local_id': local_id,
-                    'status': 'success',
+                    'status': 'conflict' if price_mismatches else 'success',
                     'sale_id': sale.id,
                     'sale_number': sale.number,
+                    'warnings': price_mismatches if price_mismatches else None,
                 }
             
             except ValidationError as e:
