@@ -318,6 +318,11 @@ class Customer(BaseModel):
         """Check if customer has a valid email address."""
         return bool(self.email and '@' in self.email)
 
+    @property
+    def address(self):
+        """Alias para billing_address (compatibilidad y seguridad de plantillas)."""
+        return self.billing_address or ''
+
 
 class CustomerNote(BaseModel):
     """

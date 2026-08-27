@@ -138,8 +138,8 @@ class Quote(BaseModel):
     @property
     def customer_address_display(self):
         """Domicilio seguro del cliente o comprobante."""
-        if self.customer and getattr(self.customer, 'address', None):
-            return self.customer.address
+        if self.customer:
+            return getattr(self.customer, 'billing_address', None) or getattr(self.customer, 'address', None) or '-'
         return '-'
 
     @property

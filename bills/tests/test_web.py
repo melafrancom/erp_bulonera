@@ -124,11 +124,16 @@ class TestBillsWebAccessControl:
 
     def test_manager_can_access_invoice_create_view(self, client, manager_user):
         """Manager puede acceder al formulario de nueva factura directa (HTTP 200)."""
+        from customers.models import Customer
+        Customer.objects.create(business_name='Cliente Con Direccion', cuit_cuil='20111111112', billing_address='Av. San Martin 123')
+        Customer.objects.create(business_name='Cliente Sin Direccion', cuit_cuil='20222222223', billing_address='')
         client.login(username='mgr_bills_user', password='password123')
         url = reverse('bills_web:invoice_create')
         response = client.get(url)
         assert response.status_code == 200
         assert 'Nueva Factura Directa' in response.content.decode('utf-8')
+        assert 'Cliente Con Direccion' in response.content.decode('utf-8')
+        assert 'Cliente Sin Direccion' in response.content.decode('utf-8')
 
     def test_manager_can_access_creditnote_create_view(self, client, manager_user):
         """Manager puede acceder al formulario de nueva nota de crédito (HTTP 200)."""

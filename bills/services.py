@@ -744,7 +744,7 @@ def crear_factura_directa(data: dict, user, emitir_arca: bool = True, async_emis
         cliente_cuit = customer.cuit_cuil.replace('-', '') if customer.cuit_cuil else ''
         cliente_razon_social = customer.business_name
         condicion_iva = customer.tax_condition
-        cliente_domicilio = customer.billing_address or customer.address or ''
+        cliente_domicilio = customer.billing_address or ''
     else:
         # Walk-in
         cliente_cuit = (data.get('customer_cuit') or '').replace('-', '')
@@ -1117,7 +1117,7 @@ def emitir_nota_credito_standalone(data: dict, user, emitir_arca: bool = True, a
     punto_venta = data.get('punto_venta') or config.punto_venta
     cliente_cuit = customer.cuit_cuil.replace('-', '') if customer.cuit_cuil else ''
     cliente_razon_social = customer.business_name
-    cliente_domicilio = customer.billing_address or customer.address or ''
+    cliente_domicilio = customer.billing_address or ''
 
     doc_tipo, doc_nro = mapear_tipo_documento(condicion_iva, cliente_cuit)
 
