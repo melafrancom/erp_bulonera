@@ -250,6 +250,10 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
             return quote
 
     def update(self, instance, validated_data):
+        if not instance.is_editable():
+            raise serializers.ValidationError(
+                "Solo se pueden editar presupuestos en estado borrador o enviado."
+            )
         self._handle_new_customer(validated_data)
         items_data = validated_data.pop('items', None)
         
@@ -558,6 +562,10 @@ class SaleCreateSerializer(serializers.ModelSerializer):
             return sale
 
     def update(self, instance, validated_data):
+        if not instance.is_editable():
+            raise serializers.ValidationError(
+                "Solo se pueden editar ventas en estado borrador."
+            )
         self._handle_new_customer(validated_data)
         items_data = validated_data.pop('items', None)
         

@@ -125,59 +125,79 @@ def confirm_sale(sale, user):
     Confirma una venta (cambia estado a 'confirmed').
     Desencadena: reserva de stock, notificaciones, etc.
     """
-    # Validaciones
-    if sale.status != 'draft':
-        raise ValueError(f'Estado inválido: {sale.status}')
-    
-    if not sale.items.exists():  # ← NUEVA VALIDACIÓN
-        raise ValueError('No puedes confirmar una venta sin items')
-    
-    if sale.balance_due < 0:  # ← Por si aceptan pagos adelantados
-        raise ValueError('Saldo negativo detectado')
-    
-    # Validar crédito si la venta es a cuenta corriente
-    if sale.payment_method == 'account':
-        if not sale.customer:
-            raise ValueError('Las ventas a cuenta corriente requieren un cliente registrado.')
-        
-        from customers.services import CuentaCorrienteService
-        check = CuentaCorrienteService.validar_credito_para_venta(sale.customer, sale.total)
-        if not check['ok']:
-            raise ValueError(check['mensaje'])
-        
-        sale.is_credit_sale = True
-    
     with transaction.atomic():
+        # Lock pesimista para serializar confirmaciones concurrentes y refrescar estado
+        locked_sale = Sale.objects.select_for_update().get(pk=sale.pk)
+
+        # Validaciones
+        if locked_sale.status != 'draft':
+            raise ValueError(f'Estado inválido: {locked_sale.status}')
+        
+        if not locked_sale.items.exists():
+            raise ValueError('No puedes confirmar una venta sin items')
+        
+        if locked_sale.balance_due < 0:
+            raise ValueError('Saldo negativo detectado')
+        
+        # Validar crédito si la venta es a cuenta corriente
+        is_credit = False
+        if locked_sale.payment_method == 'account':
+            if not locked_sale.customer:
+                raise ValueError('Las ventas a cuenta corriente requieren un cliente registrado.')
+            
+            from customers.models import Customer
+            from customers.services import CuentaCorrienteService
+            customer = Customer.objects.select_for_update().get(pk=locked_sale.customer_id)
+            check = CuentaCorrienteService.validar_credito_para_venta(customer, locked_sale.total)
+            if not check['ok']:
+                raise ValueError(check['mensaje'])
+            
+            is_credit = True
+
+        now = timezone.now()
+        locked_sale.status = 'confirmed'
+        locked_sale.confirmed_at = now
+        locked_sale.is_credit_sale = is_credit
+        locked_sale.save(update_fields=['status', 'confirmed_at', 'is_credit_sale'])
+
+        # Sincronizar la instancia pasada para que los llamadores mantengan consistencia in-memory
         sale.status = 'confirmed'
-        sale.confirmed_at = timezone.now()
-        sale.save(update_fields=['status', 'confirmed_at', 'is_credit_sale'])
+        sale.confirmed_at = now
+        sale.is_credit_sale = is_credit
 
     return sale
 
 
 def cancel_sale(sale, user, reason):
     """Cancela una venta (libera stock si estaba reservado y libera alocaciones de pago)"""
-    if sale.status in ['delivered', 'cancelled']:
-        raise ValueError(f'Venta {sale.number} no puede cancelarse. Estado: {sale.status}')
-    
     with transaction.atomic():
-        was_ready = sale.status == 'ready'
-        sale.status = 'cancelled'
+        locked_sale = Sale.objects.select_for_update().get(pk=sale.pk)
+        if locked_sale.status in ['delivered', 'cancelled']:
+            raise ValueError(f'Venta {locked_sale.number} no puede cancelarse. Estado: {locked_sale.status}')
+        
+        was_ready = locked_sale.status == 'ready'
+        locked_sale.status = 'cancelled'
         ts = timezone.now().strftime('%d/%m/%Y %H:%M')
-        sale.internal_notes += f'\n\n[{ts}] Cancelada por {user.get_full_name() or user.username}: {reason}'
-        sale.save(update_fields=['status', 'internal_notes'])
+        author = user.get_full_name() or user.username
+        locked_sale.internal_notes += f'\n\n[{ts}] Cancelada por {author}: {reason}'
+        locked_sale.save(update_fields=['status', 'internal_notes'])
         
         # 1. Devuelve stock si ya había sido descontado (cuando pasó a 'ready')
         if was_ready:
             from inventory.services import InventoryService
-            InventoryService().revert_stock_from_cancelled_sale(sale)
+            InventoryService().revert_stock_from_cancelled_sale(locked_sale)
         
         # 2. Liberar alocaciones de pago asociadas (soft-delete para liberar saldo)
         from payments.services import PaymentService
-        active_allocations = list(sale.payment_allocations.filter(is_active=True))
+        active_allocations = list(locked_sale.payment_allocations.filter(is_active=True))
         for alloc in active_allocations:
             alloc.delete(user=user)
-        PaymentService.recalculate_sale_payment_status(sale)
+        PaymentService.recalculate_sale_payment_status(locked_sale)
+
+        # Sincronizar instancia pasada
+        sale.status = 'cancelled'
+        sale.internal_notes = locked_sale.internal_notes
+        sale.payment_status = locked_sale.payment_status
     
     return sale
 
@@ -199,17 +219,18 @@ def move_sale_status(sale, user, new_status, delivery_notes=None):
         'ready':          'delivered',
     }
 
-    expected = VALID_TRANSITIONS.get(sale.status)
-
-    if not expected:
-        raise ValueError(f'La venta en estado "{sale.get_status_display()}" no puede avanzar de etapa.')
-
-    if new_status != expected:
-        raise ValueError(f'Transición inválida: de "{sale.get_status_display()}" a "{new_status}".')
-
     with transaction.atomic():
-        old_status = sale.status
-        sale.status = new_status
+        locked_sale = Sale.objects.select_for_update().get(pk=sale.pk)
+        expected = VALID_TRANSITIONS.get(locked_sale.status)
+
+        if not expected:
+            raise ValueError(f'La venta en estado "{locked_sale.get_status_display()}" no puede avanzar de etapa.')
+
+        if new_status != expected:
+            raise ValueError(f'Transición inválida: de "{locked_sale.get_status_display()}" a "{new_status}".')
+
+        old_status = locked_sale.status
+        locked_sale.status = new_status
 
         # Manejo de notas de entrega (historial en internal_notes)
         if new_status == 'delivered':
@@ -219,13 +240,17 @@ def move_sale_status(sale, user, new_status, delivery_notes=None):
             if delivery_notes:
                 note_entry += f': {delivery_notes}'
             
-            sale.internal_notes = (f'{sale.internal_notes}\n\n{note_entry}').strip()
+            locked_sale.internal_notes = (f'{locked_sale.internal_notes}\n\n{note_entry}').strip()
 
         # Deducir el stock real en inventario al pasar a 'ready' (preparado para despacho/lista)
         if new_status == 'ready' and old_status != 'ready':
             from inventory.services import InventoryService
-            InventoryService().decrease_stock_from_sale(sale)
+            InventoryService().decrease_stock_from_sale(locked_sale)
 
-        sale.save(update_fields=['status', 'internal_notes'])
+        locked_sale.save(update_fields=['status', 'internal_notes'])
+
+        # Sincronizar instancia pasada
+        sale.status = new_status
+        sale.internal_notes = locked_sale.internal_notes
     
     return sale

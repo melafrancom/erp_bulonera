@@ -32,6 +32,7 @@ MAPA_CONDICION_IVA_AFIP = {
 }
 
 
+@transaction.atomic
 def facturar_venta(sale, user, tipo_comprobante=None, async_emission=True, item_overrides=None):
     """
     Factura una venta: crea Invoice (bills), Comprobante (afip), y envía a ARCA.
@@ -58,6 +59,9 @@ def facturar_venta(sale, user, tipo_comprobante=None, async_emission=True, item_
         mapear_tipo_documento,
         mapear_alicuota_iva,
     )
+
+    # Lock pesimista de la venta para serializar emisiones concurrentes y refrescar estado
+    sale = Sale.objects.select_for_update().get(pk=sale.pk)
 
     # ── Validaciones ──────────────────────────────────────────
     if not sale.can_be_invoiced():
@@ -400,6 +404,7 @@ def reintentar_factura(invoice_id):
         logger.exception(f"[BILLS] Excepción reintentando factura {invoice.id}: {exc}")
         return {'success': False, 'error': str(exc)}
 
+@transaction.atomic
 def anular_factura_y_venta(invoice_id, user):
     """
     Anula una factura. 
@@ -413,7 +418,7 @@ def anular_factura_y_venta(invoice_id, user):
     from sales.services import cancel_sale
     from bills.models import Invoice
 
-    invoice = Invoice.objects.select_related('comprobante_arca', 'sale').get(id=invoice_id)
+    invoice = Invoice.objects.select_for_update().select_related('comprobante_arca', 'sale').get(id=invoice_id)
     
     if invoice.estado_fiscal == 'anulada':
         return {'success': False, 'error': 'La factura ya está anulada.'}
@@ -836,15 +841,18 @@ def crear_factura_directa(data: dict, user, emitir_arca: bool = True, async_emis
     is_credit = (payment_method == 'account')
     is_paid = data.get('is_paid', not is_credit)
 
-    if is_credit:
-        if not customer:
-            raise ValueError("Las ventas a cuenta corriente requieren un cliente registrado.")
-        check = CuentaCorrienteService.validar_credito_para_venta(customer, monto_total)
-        if not check['ok']:
-            raise ValueError(check['mensaje'])
+    if is_credit and not customer:
+        raise ValueError("Las ventas a cuenta corriente requieren un cliente registrado.")
 
     # 7. Ejecutar transacción atómica
     with transaction.atomic():
+        if is_credit:
+            # Lock pesimista sobre el cliente para serializar validaciones de crédito concurrentes
+            customer = Customer.objects.select_for_update().get(pk=customer.pk)
+            check = CuentaCorrienteService.validar_credito_para_venta(customer, monto_total)
+            if not check['ok']:
+                raise ValueError(check['mensaje'])
+
         # A) Crear Venta (Sale)
         sale = Sale.objects.create(
             customer=customer,

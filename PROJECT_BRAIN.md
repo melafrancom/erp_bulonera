@@ -639,6 +639,11 @@ Estructura de documentación distribuida por módulos para entender el **por qu�
 ---
 
 ## 🧪 Estado de Pruebas e Infraestructura (Agosto 2026)
+- **Hardening Transaccional y Serializers V9/V10 (Completada):**
+  1. *Blindaje de Race Conditions en ARCA (P0):* `facturar_venta` y `anular_factura_y_venta` envueltas bajo `@transaction.atomic` con bloqueo de fila `select_for_update()` sobre `Sale` e `Invoice` previo a validaciones de estado, eliminando dobles facturas y dobles NCs autorizadas en AFIP.
+  2. *Protección contra Mass Assignment (P1):* Inclusión de guardias `if not instance.is_editable()` en `SaleCreateSerializer.update()` y `QuoteCreateSerializer.update()` impidiendo alterar ventas entregadas/confirmadas o cotizaciones convertidas vía API REST.
+  3. *Validación Concurrente de Crédito (P1):* `CuentaCorrienteService.validar_credito_para_venta` trasladada adentro del bloque atómico con lock pesimista sobre `Customer` en `crear_factura_directa` y `confirm_sale`.
+  4. *Serialización de Estados de Venta (P1/P2):* `confirm_sale`, `cancel_sale` y `move_sale_status` protegidos con `select_for_update()` y sincronización de instancias in-memory.
 - **Facturación Avanzada y Notas de Crédito Standalone (Completada):**
   1. *Sobreescritura de nombres de producto:* Soporte de `item_overrides` en `facturar_venta` manteniendo inmutable `Product.code` para trazabilidad de inventario.
   2. *Facturación Directa de 0:* Emisión de facturas directas desde el ERP (`crear_factura_directa`) orquestando venta `delivered`, descuento de inventario, cobro automático / cuenta corriente y envío a ARCA/AFIP. Interfaz web en `/bills/facturas/nueva/` y API en `POST /api/v1/bills/invoices/directa/`.
@@ -666,4 +671,4 @@ Estructura de documentación distribuida por módulos para entender el **por qu�
 
 ---
 
-*Última actualización: Agosto 2026 (Facturación Directa de 0, Sobreescritura de Nombres con Código Inmutable, Notas de Crédito Standalone y Remediación Integral)*
+*Última actualización: Agosto 2026 (Hardening Transaccional V9/V10, Facturación Directa de 0, Sobreescritura de Nombres con Código Inmutable, Notas de Crédito Standalone y Remediación Integral)*

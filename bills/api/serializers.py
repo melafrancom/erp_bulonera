@@ -1,6 +1,4 @@
-"""
-Serializers para la API de Facturación (bills).
-"""
+from decimal import Decimal
 from rest_framework import serializers
 from bills.models import Invoice, InvoiceItem
 
@@ -172,10 +170,10 @@ class DirectInvoiceItemInputSerializer(serializers.Serializer):
     """Renglón para creación de Factura Directa de 0."""
     product_code = serializers.CharField(max_length=50, help_text='Código de catálogo del producto (inmutable)')
     producto_nombre = serializers.CharField(max_length=255, required=False, allow_blank=True, default='', help_text='Descripción personalizada')
-    quantity = serializers.DecimalField(max_digits=12, decimal_places=4, min_value=0.0001)
-    unit_price = serializers.DecimalField(max_digits=16, decimal_places=6, required=False, allow_null=True, min_value=0.00)
-    discount_value = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, default=0.00, min_value=0.00)
-    tax_percentage = serializers.DecimalField(max_digits=5, decimal_places=2, required=False, default=21.00)
+    quantity = serializers.DecimalField(max_digits=12, decimal_places=4, min_value=Decimal('0.0001'))
+    unit_price = serializers.DecimalField(max_digits=16, decimal_places=6, required=False, allow_null=True, min_value=Decimal('0.00'))
+    discount_value = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, default=Decimal('0.00'), min_value=Decimal('0.00'))
+    tax_percentage = serializers.DecimalField(max_digits=5, decimal_places=2, required=False, default=Decimal('21.00'))
 
 
 class DirectInvoiceCreateSerializer(serializers.Serializer):
@@ -200,9 +198,9 @@ class DirectInvoiceCreateSerializer(serializers.Serializer):
 class CreditNoteItemInputSerializer(serializers.Serializer):
     """Renglón para creación de Nota de Crédito Standalone."""
     descripcion = serializers.CharField(max_length=255, help_text='Concepto o descripción del ajuste/bonificación')
-    cantidad = serializers.DecimalField(max_digits=12, decimal_places=4, required=False, default=1, min_value=0.0001)
-    precio_unitario = serializers.DecimalField(max_digits=16, decimal_places=6, min_value=0.01)
-    tax_percentage = serializers.DecimalField(max_digits=5, decimal_places=2, required=False, default=21.00)
+    cantidad = serializers.DecimalField(max_digits=12, decimal_places=4, required=False, default=Decimal('1'), min_value=Decimal('0.0001'))
+    precio_unitario = serializers.DecimalField(max_digits=16, decimal_places=6, min_value=Decimal('0.01'))
+    tax_percentage = serializers.DecimalField(max_digits=5, decimal_places=2, required=False, default=Decimal('21.00'))
 
 
 class CreditNoteCreateSerializer(serializers.Serializer):
