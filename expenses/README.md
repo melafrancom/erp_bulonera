@@ -27,8 +27,8 @@ El módulo `expenses` registra y clasifica todos los gastos operativos (OPEX) de
     *   `ExpenseListView` y `ExpenseDetailView`: Protegidas con `ExpenseViewPermissionMixin` (`viewer`, `manager`, `admin`, `superuser` o `can_manage_expenses`). Los usuarios anónimos son redirigidos a login (302) y usuarios autenticados no autorizados reciben 403.
     *   `ExpenseCreateView`, `ExpenseUpdateView` y `ExpenseDeleteView`: Protegidas con `ModulePermissionRequiredMixin(required_permission='can_manage_expenses')`.
 *   **API REST:**
-    *   `ExpenseViewSet`: Protegido con `IsAuthenticated` + `ModulePermission(required_permission='can_manage_expenses')`.
-    *   `ExpenseCategoryViewSet`: Protegido con `IsAuthenticated`.
+    *   `ExpenseViewSet`: Protegido con `IsAuthenticated` + `ModulePermission(required_permission='can_manage_expenses')` + `OwnerQuerysetMixin`. Filtra automáticamente `get_queryset()` y las acciones `unpaid` y `summary` al creador del registro (`created_by=request.user`) si el usuario no es admin ni manager.
+    *   `ExpenseCategoryViewSet`: Protegido con `IsAuthenticated` + `ModulePermission(required_permission='can_manage_expenses')`.
 *   **Admin Django:**
     *   `ExpenseAdmin`: `has_delete_permission` deniega el borrado de gastos ya pagados. `delete_model` y `delete_queryset` canalizan soft-delete auditado.
 
@@ -40,15 +40,15 @@ El módulo `expenses` registra y clasifica todos los gastos operativos (OPEX) de
 
 ### REST API (`api/urls/`)
 Base URL: `/api/v1/expenses/`
-*   `GET /api/v1/expenses/expenses/` - Historial y filtrado de gastos por categorías, estado de pago o período.
+*   `GET /api/v1/expenses/expenses/` - Historial y filtrado de gastos por categorías, estado de pago o período (con scoping de `OwnerQuerysetMixin`).
 *   `POST /api/v1/expenses/expenses/` - Registrar un gasto operativo.
 *   `GET /api/v1/expenses/expenses/{id}/` - Detalle de un gasto.
 *   `PUT / PATCH /api/v1/expenses/expenses/{id}/` - Actualizar gasto.
 *   `DELETE /api/v1/expenses/expenses/{id}/` - Eliminar gasto (soft-delete, bloqueado si está pagado).
 *   `POST /api/v1/expenses/expenses/{id}/mark_as_paid/` - Marcar gasto como pagado con `payment_date`.
-*   `GET /api/v1/expenses/expenses/unpaid/` - Listado de cuentas a pagar (gastos pendientes).
-*   `GET /api/v1/expenses/expenses/summary/` - Resumen de OPEX neto por período.
-*   `GET /api/v1/expenses/categories/` - Lectura de categorías de gastos.
+*   `GET /api/v1/expenses/expenses/unpaid/` - Listado de cuentas a pagar (gastos pendientes con scoping por usuario).
+*   `GET /api/v1/expenses/expenses/summary/` - Resumen de OPEX neto por período (con scoping por usuario).
+*   `GET /api/v1/expenses/categories/` - Lectura de categorías de gastos (`ReadOnlyModelViewSet` con `ModulePermission`).
 
 ### Vistas Web (`web/urls/`)
 Base URL: `/expenses/` (namespace `expenses_web`)

@@ -68,7 +68,8 @@ class SyncViewSet(AuditMixin, viewsets.ViewSet):
     """
     
     queryset = Sale.objects.none()  # QuerySet vacío para ViewSet sin CRUD
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModulePermission]
+    required_permission = 'can_manage_sales'
     throttle_classes = [SyncThrottle]  # Rate limiter: 50 syncs/hora
     
     @action(detail=False, methods=['post'])

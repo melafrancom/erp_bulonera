@@ -5,6 +5,8 @@ Solo accesibles para admins en modo DEBUG.
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.http import require_http_methods
 from afip.clients.ws_padron_client import WSPadronClient
@@ -20,17 +22,14 @@ logger = logging.getLogger(__name__)
 def debug_padron_xml(request):
     """
     DEBUG ENDPOINT: Consulta AFIP y retorna el XML crudo (sin parsear).
-    Solo para admins. Uso: GET /afip/api/debug/padron/{CUIT}/
-    
-    Respuesta:
-    {
-        "success": bool,
-        "cuit": str,
-        "xml_raw": str (XML completo de respuesta),
-        "xml_parsed": dict (resultado del parser),
-        "parser_result": dict (condición IVA detectada)
-    }
+    Solo para admins en modo DEBUG. Uso: GET /afip/api/debug/padron/?cuit={CUIT}
     """
+    if not settings.DEBUG:
+        return Response(
+            {'error': 'Este endpoint de depuración solo está disponible cuando DEBUG=True.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
     cuit = request.GET.get('cuit') or request.query_params.get('cuit')
     
     if not cuit:

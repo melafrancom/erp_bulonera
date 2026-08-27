@@ -1,10 +1,12 @@
-from rest_framework import viewsets, status, filters
+from rest_framework import viewsets, status, filters, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django.core.exceptions import ValidationError
 
+from common.permissions import ModulePermission
+from common.mixins import AuditMixin
 from inventory.models import StockMovement, StockCount, StockCountItem
 from inventory.api.serializers import (
     StockMovementSerializer, StockCountSerializer, 
@@ -13,7 +15,7 @@ from inventory.api.serializers import (
 from inventory.services import InventoryService
 
 
-class StockMovementViewSet(viewsets.ReadOnlyModelViewSet):
+class StockMovementViewSet(AuditMixin, viewsets.ReadOnlyModelViewSet):
     """
     ViewSet para registrar y consultar movimientos de stock.
     Es de solo lectura porque las modificaciones suceden mediante el servicio.
@@ -21,7 +23,8 @@ class StockMovementViewSet(viewsets.ReadOnlyModelViewSet):
     """
     queryset = StockMovement.objects.all().select_related('product', 'created_by')
     serializer_class = StockMovementSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModulePermission]
+    required_permission = 'can_manage_inventory'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['movement_type', 'product']
     search_fields = ['product__name', 'product__code', 'reference']
@@ -47,18 +50,19 @@ class StockMovementViewSet(viewsets.ReadOnlyModelViewSet):
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class StockCountViewSet(viewsets.ModelViewSet):
+class StockCountViewSet(AuditMixin, viewsets.ModelViewSet):
     """ViewSet para la gestión de conteos físicos de stock."""
     queryset = StockCount.objects.all().select_related('counted_by').prefetch_related('items__product')
     serializer_class = StockCountSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModulePermission]
+    required_permission = 'can_manage_inventory'
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['status']
     ordering_fields = ['count_date', 'created_at']
     ordering = ['-count_date', '-created_at']
 
     def perform_create(self, serializer):
-        serializer.save(counted_by=self.request.user)
+        serializer.save(counted_by=self.request.user, created_by=self.request.user)
 
     @action(detail=True, methods=['post'], url_path='complete')
     def complete(self, request, pk=None):
@@ -87,11 +91,12 @@ class StockCountViewSet(viewsets.ModelViewSet):
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class StockCountItemViewSet(viewsets.ModelViewSet):
+class StockCountItemViewSet(AuditMixin, viewsets.ModelViewSet):
     """ViewSet para gestionar renglones dentro de un conteo."""
     queryset = StockCountItem.objects.all().select_related('product', 'stock_count')
     serializer_class = StockCountItemSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModulePermission]
+    required_permission = 'can_manage_inventory'
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['stock_count']
 

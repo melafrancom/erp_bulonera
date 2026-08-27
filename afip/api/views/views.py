@@ -106,6 +106,7 @@ class ObtenerComprobanteView(APIView):
     def get(self, request, comprobante_id):
         try:
             comprobante = Comprobante.objects.get(id=comprobante_id)
+            self.check_object_permissions(request, comprobante)
 
             return Response({
                 'success': True,

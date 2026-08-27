@@ -36,10 +36,10 @@ El módulo `afip` es el componente de integración de bajo nivel con los servici
 
 ### REST API (`afip/api/urls/urls.py`) - Permiso: `can_manage_bills`
 Base URL: `/api/v1/afip/`
-*   `POST /api/v1/afip/emitir/` - Emite un comprobante previamente creado.
-*   `GET /api/v1/afip/ultimo-numero/` - Consulta el último número autorizado en ARCA.
-*   `GET /api/v1/afip/comprobante/<id>/` - Detalle del comprobante ARCA y su CAE.
-*   `GET /afip/api/debug/padron/` - Endpoint de troubleshooting (redacta token y sign).
+*   `POST /api/v1/afip/emitir/` - Emite un comprobante previamente creado (`EmitirComprobanteView`).
+*   `GET /api/v1/afip/ultimo-numero/` - Consulta el último número autorizado en ARCA (`ConsultarUltimoNumeroView`).
+*   `GET /api/v1/afip/comprobante/<id>/` - Detalle del comprobante ARCA y su CAE (`ObtenerComprobanteView`, con validación de permisos de objeto `check_object_permissions`).
+*   `GET /afip/api/debug/padron/` - Endpoint de troubleshooting (redacta token y sign, restringido estrictamente a `DEBUG=True` y usuarios `staff`).
 
 ## 📝 Documentación de Detalle
 *   [Autenticación WSAA y Protocolo SOAP](docs/wsaa_soap_protocol.md): Gestión de certificados PEM, firma digital de tickets de acceso y consumo de servicios SOAP.

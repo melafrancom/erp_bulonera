@@ -30,12 +30,15 @@ Toda la lógica de negocio se procesa de forma atómica en los siguientes servic
 
 ## 🌐 Vistas y APIs
 
-### REST API (`api/urls/urls.py`)
+### REST API (`api/urls/urls.py`) - Protegida con `can_manage_inventory`
 Base URL: `/api/v1/inventory/`
-*   `GET /api/v1/inventory/stocks/` - Listar stock actual de productos (filtros por stock mínimo/negativo).
-*   `POST /api/v1/inventory/stocks/adjust/` - Ejecutar ajuste manual de stock.
+*   Todos los ViewSets (`StockMovementViewSet`, `StockCountViewSet`, `StockCountItemViewSet`) implementan `IsAuthenticated`, `ModulePermission(required_permission='can_manage_inventory')` y `AuditMixin`.
+*   `GET /api/v1/inventory/movements/` - Listar movimientos de stock (filtros por tipo, producto, fecha).
+*   `POST /api/v1/inventory/movements/adjust/` - Ejecutar ajuste manual de stock (`adjust` custom action vía `InventoryService.adjust_stock`).
 *   `GET /api/v1/inventory/counts/` - Listar auditorías físicas en progreso o completadas.
+*   `POST /api/v1/inventory/counts/` - Iniciar un nuevo conteo físico (registra automáticamente `counted_by` y `created_by`).
 *   `POST /api/v1/inventory/counts/{id}/complete/` - Completar conteo físico y gatillar ajustes automáticos.
+*   `GET / POST /api/v1/inventory/count-items/` - Cargar renglones individuales a un conteo en progreso.
 
 ### Vistas Web (`web/urls.py`)
 *   `GET /inventory/` - Dashboard de inventario, consulta rápida de stock y alertas de reposición.

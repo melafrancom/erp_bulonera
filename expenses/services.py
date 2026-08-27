@@ -162,7 +162,7 @@ class ExpenseService:
         return expense
 
     @staticmethod
-    def get_opex_summary(date_from, date_to) -> dict:
+    def get_opex_summary(date_from, date_to, queryset=None) -> dict:
         """
         Agrega gastos por categoría para el P&L (usando monto neto sin IVA).
 
@@ -176,10 +176,16 @@ class ExpenseService:
                 }
             }
         """
-        expenses = Expense.objects.filter(
-            expense_date__range=[date_from, date_to],
-            is_active=True,
-        )
+        if queryset is None:
+            expenses = Expense.objects.filter(
+                expense_date__range=[date_from, date_to],
+                is_active=True,
+            )
+        else:
+            expenses = queryset.filter(
+                expense_date__range=[date_from, date_to],
+                is_active=True,
+            )
 
         total = expenses.aggregate(t=Sum('amount_neto'))['t'] or Decimal('0')
 

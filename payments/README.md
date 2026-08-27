@@ -38,10 +38,11 @@ Toda la gestión de tesorería y saldos se procesa de forma atómica con bloqueo
 
 ### REST API (`api/urls/payment_urls.py`)
 Base URL: `/api/v1/payments/`
-*   `GET /api/v1/payments/payments/` - Historial de cobros con filtros (`PaymentViewSet`, `ModulePermission` con `can_manage_payments`).
+*   `GET /api/v1/payments/payments/` - Historial de cobros con filtros (`PaymentViewSet`, hereda de `GenericViewSet` + `ListModelMixin` + `RetrieveModelMixin` + `CreateModelMixin` + `AuditMixin`, protegido con `ModulePermission` con `can_manage_payments`).
 *   `POST /api/v1/payments/payments/` - Registrar cobro con o sin alocaciones (`PaymentCreateSerializer`).
 *   `GET /api/v1/payments/payments/{id}/` - Detalle de cobro con alocaciones activas (`PaymentDetailSerializer`).
-*   `POST /api/v1/payments/payments/{id}/cancel/` - Anular cobro y liberar alocaciones.
+*   `POST /api/v1/payments/payments/{id}/cancel/` - Anular cobro y liberar alocaciones (`cancel` custom action vía `PaymentService.cancel_payment()`).
+*   *Nota de Seguridad:* Se deshabilitaron los endpoints `PUT`, `PATCH` y `DELETE` directos sobre `PaymentViewSet`, y los campos contables (`amount`, `status`, `customer`, `created_by`) están protegidos como `read_only_fields` en `PaymentSerializer` para garantizar la inmutabilidad del libro mayor.
 *   `GET /api/v1/payments/allocations/` - Listar imputaciones de cobros (`PaymentAllocationViewSet` de solo lectura: `ReadOnlyModelViewSet` + `AuditMixin`).
 
 ### Vistas Web (`web/urls/urls_web.py`)

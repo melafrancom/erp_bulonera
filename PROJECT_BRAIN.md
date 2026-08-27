@@ -610,6 +610,7 @@ Estructura de documentación distribuida por módulos para entender el **por qu�
 | `verification-before-completion` | Antes de declarar cualquier tarea terminada |
 | `skill-creator` | Crear una nueva skill para el proyecto |
 | `feature-rollout` | Al terminar de escribir el código de una nueva feature |
+| `cybersecurity-audit` | Auditoría de ciberseguridad: código, infra Docker, PKI AFIP, deploy pipeline |
 
 ---
 
@@ -636,7 +637,13 @@ Estructura de documentación distribuida por módulos para entender el **por qu�
 ---
 
 ## 🧪 Estado de Pruebas e Infraestructura (Agosto 2026)
-- **Suite de Tests Global:** 580+ tests ejecutados y aprobados (**100% PASSED**) en Docker.
+- **Auditoría de Seguridad API & Control de Acceso Global (Completada):** Remediación exhaustiva de 14 vectores de ataque (11 de auditoría + 3 puntos ciegos) en los 21 ViewSets del ERP:
+  1. *Inmutabilidad Contable & Fiscal (P0):* Restricción de `PaymentViewSet` e `InvoiceViewSet` a `GenericViewSet` bloqueando métodos directos `PUT`, `PATCH`, `DELETE`, y protección de campos sensibles (`amount`, `status`, `customer`, `created_by`) en `PaymentSerializer`.
+  2. *Control de Acceso Basado en Módulos (P0):* `ModulePermission` incorporado en `SyncViewSet` (`can_manage_sales`), `StockMovementViewSet`, `StockCountViewSet` y `StockCountItemViewSet` (`can_manage_inventory`) junto con `AuditMixin`.
+  3. *Aislamiento BOLA/IDOR (P1):* Restauración de `super().get_queryset()` en `ExpenseViewSet` para activar `OwnerQuerysetMixin`, scoping de `unpaid` y `summary` al creador, y parametrización de `ExpenseService.get_opex_summary(queryset=...)`.
+  4. *Trazabilidad de Autoría & Permisos (P1/P2):* Invocación de `super().perform_create()` en `CustomerViewSet` para registrar `created_by`, verificación de `can_manage_sales` en `refacturar_sale`, llamada a `check_object_permissions` en `ObtenerComprobanteView`, y guardia `DEBUG=True` en `debug_padron_xml`.
+  5. *Permisos de Objeto Robustos:* `ModulePermission.has_object_permission` adaptado para compatibilidad con `counted_by` y fallback a `required_permission`.
+- **Suite de Tests Global:** 462+ tests ejecutados y aprobados (**100% PASSED**) en Docker.
 - **Módulo `reports` (Fase 7 — Final):** Remediado al 100%. Control de acceso estricto en las 8 superficies financieras (4 API + 4 Web) exigiendo `can_view_reports` (o bypass para `admin`/`manager`/`superuser`), binding explícito de `sender=Invoice`, `sender=Payment` y `sender=Expense` en los 6 receivers de signals eliminando la sobrecarga global de `sender=None`, corrección del bug crítico `.date()` en `invalidate_pnl_on_invoice_delete`, unificación del criterio de permisos en Dashboard KPIs (`get_kpis_for_user(user)` evaluando `can_view_reports`), registro de `FinancialSnapshotAdmin` con campos de solo lectura (`has_add_permission=False`), eliminación del stub muerto `reports/views.py`, y suite completa de tests de permisos negativos (403) con 61 tests pasando.
 - **Módulo `suppliers` (Fase 6):** Remediado al 100%. Control de acceso web con `_can_view_suppliers` y `_can_manage_suppliers`, soporte oficial y validación segura de proveedores sin CUIT (`validate_cuit_checksum` en Model, Form y Serializer permitiendo `None` o `""`), protección contra hard-delete masivo en Admin Django (`delete_queryset` y `delete_model` en `SupplierAdmin` y `SupplierTagAdmin` preservando soft-delete y mangling de CUIT/slug), eliminación de `OwnerQuerysetMixin` en `SupplierViewSet` para garantizar catálogo maestro compartido para todo el equipo, randomización con UUID en upload API, limpieza garantizada con `finally` en fallback síncrono, eliminación de `suppliers/views.py` obsoleto, creación de `test_web.py` y 63 tests pasando.
 - **Módulo `expenses` (Fase 5):** Remediado al 100%. Control de acceso web con `ExpenseViewPermissionMixin` y `ModulePermissionRequiredMixin` (`can_manage_expenses`), cálculo de OPEX neto (`amount_neto`) en `get_opex_summary` para coherencia absoluta con el P&L, bloqueo pesimista `select_for_update()` en mutaciones de `ExpenseService`, protección contra borrado de gastos pagados (`is_paid=True`), inmutabilidad en Admin Django (`has_delete_permission=False` para pagados), eliminación de stubs vacíos (`views.py`, `tests.py`), 100% de cobertura en `services.py` y 71 tests pasando.
@@ -651,4 +658,4 @@ Estructura de documentación distribuida por módulos para entender el **por qu�
 
 ---
 
-*Última actualización: Agosto 2026 (Auditoría Integral y Remediación Completa de las 12 Apps del ERP: Core, Common, API, AFIP, Bills, Sales, Payments, Expenses, Suppliers, Products, Customers, Inventory y Reports)*
+*Última actualización: Agosto 2026 (Auditoría Global de Seguridad API, Hardening de Control de Acceso y Remediación Completa de las 12 Apps del ERP: Core, Common, API, AFIP, Bills, Sales, Payments, Expenses, Suppliers, Products, Customers, Inventory y Reports)*

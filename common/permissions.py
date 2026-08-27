@@ -57,8 +57,17 @@ class ModulePermission(BasePermission):
         if user.role == 'viewer':
             return request.method in SAFE_METHODS
         
-        # Si el objeto tiene created_by, verificar ownership para otros roles
-        if hasattr(obj, 'created_by'):
+        # Si el objeto tiene created_by definido, verificar ownership
+        if hasattr(obj, 'created_by') and obj.created_by is not None:
             return obj.created_by == user
-        
+
+        # Si el objeto tiene counted_by definido (ej. StockCount), verificar ownership
+        if hasattr(obj, 'counted_by') and obj.counted_by is not None:
+            return obj.counted_by == user
+
+        # Si el objeto no tiene creador explícito, permitir a usuarios con el permiso de módulo
+        required_perm = getattr(view, 'required_permission', None)
+        if required_perm and getattr(user, required_perm, False):
+            return True
+
         return False

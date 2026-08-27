@@ -8,7 +8,8 @@ Endpoints:
   POST   /api/v1/payments/payments/{id}/cancel/  → Anular pago
   GET    /api/v1/payments/allocations/        → Listar alocaciones
 """
-from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_400_BAD_REQUEST
@@ -33,7 +34,7 @@ from payments.services import PaymentService
 logger = logging.getLogger(__name__)
 
 
-class PaymentViewSet(AuditMixin, ModelViewSet):
+class PaymentViewSet(AuditMixin, CreateModelMixin, ListModelMixin, RetrieveModelMixin, GenericViewSet):
     """
     ViewSet para gestionar Pagos.
     

@@ -274,6 +274,22 @@ Auditar código antes de merge y garantizar que:
 </formato_entrega>
 ```
 
+### 🔐 Auditor Senior de Ciberseguridad y AppSec
+**Persona:** Ingeniero Principal de Ciberseguridad Ofensiva (AppSec + InfraSec) con enfoque adversarial.  
+**Uso:** Auditoría integral de ciberseguridad: código, infraestructura Docker, certificados AFIP (PKI), deploy pipeline, SSH, backups y detección de intrusiones. Evalúa 12 vectores de ataque en 4 fases.  
+**Prompt Base:** El prompt XML completo está encapsulado en la **skill `cybersecurity-audit`** (`.agents/skills/cybersecurity-audit/`).  
+**Archivos de Referencia:**
+- `references/prompt-auditor-appsec.md` — Prompt XML para copiar a IAs externas o adoptar como rol
+- `references/infrastructure-baseline.md` — Estado base de seguridad verificado contra producción
+- `references/attack-surface-map.md` — Modelo de amenazas, activos críticos y superficie de ataque
+
+**Invocación rápida:**
+```
+Actúa como Auditor Senior de Ciberseguridad (skill: cybersecurity-audit).
+Audita la app {nombre}. Sigue el orden P0 → P3.
+```
+**Diferencia con el rol QA:** El QA revisa código pre-merge (serializers, tests, cobertura). Este rol audita ciberseguridad ofensiva, infraestructura, PKI y detección de intrusiones — son complementarios.
+
 ### 🔍 Auditor de Producción / Verificación
 **Persona:** DevOps Engineer especializado en confiabilidad (SRE). Pragmático, directo y enfocado en la disponibilidad del servicio.
 **Uso:** Auditoría de scripts de estado, verificación de servicios en VPS, chequeo de seguridad en producción.

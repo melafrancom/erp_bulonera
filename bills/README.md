@@ -26,10 +26,11 @@ La interacción fiscal se centraliza en los siguientes servicios atómicos:
 
 ### REST API (`api/urls/urls.py`) - Protegida con `can_manage_bills`
 Base URL: `/api/v1/bills/`
-*   `GET /api/v1/bills/` - Listado paginado de facturas.
+*   `GET /api/v1/bills/` - Listado paginado de facturas (`InvoiceViewSet`, hereda de `GenericViewSet` + `ListModelMixin` + `RetrieveModelMixin` + `AuditMixin`).
 *   `GET /api/v1/bills/{id}/` - Detalle de factura y sus renglones.
-*   `POST /api/v1/bills/facturar/` - Emitir factura para una venta confirmada.
+*   `POST /api/v1/bills/facturar/` - Emitir factura para una venta confirmada (con validación de scoping de propiedad de la venta si el usuario no es admin/manager).
 *   `POST /api/v1/bills/{id}/send_email/` - Enviar factura por correo electrónico.
+*   *Nota de Seguridad e Inmutabilidad Fiscal:* Se bloquearon los verbos `PUT`, `PATCH` y `DELETE` directos en `InvoiceViewSet` para garantizar la inmutabilidad legal de comprobantes electrónicos autorizados por AFIP/ARCA (RG 2485/2008). Las anulaciones se procesan exclusivamente vía Nota de Crédito.
 
 ### Vistas Web (`web/urls/urls.py`) - Protegidas con `can_manage_bills`
 Todas las vistas web internas usan `ModulePermissionRequiredMixin` o `@permission_required('can_manage_bills')`:

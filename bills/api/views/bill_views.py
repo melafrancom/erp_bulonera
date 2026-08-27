@@ -3,7 +3,8 @@ ViewSets para la API de Facturación (bills).
 """
 import logging
 
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import GenericViewSet
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -24,7 +25,7 @@ from bills.api.filters import InvoiceFilter
 logger = logging.getLogger(__name__)
 
 
-class InvoiceViewSet(AuditMixin, ModelViewSet):
+class InvoiceViewSet(AuditMixin, ListModelMixin, RetrieveModelMixin, GenericViewSet):
     """
     ViewSet para gestionar Facturas.
 
@@ -97,15 +98,18 @@ class InvoiceViewSet(AuditMixin, ModelViewSet):
         tipo_comprobante = serializer.validated_data.get('tipo_comprobante')
         async_emission = serializer.validated_data.get('async_emission', True)
 
-        # Obtener la venta
+        # Obtener la venta respetando visibilidad del usuario
         from sales.models import Sale
         try:
-            sale = Sale.objects.get(pk=sale_id)
+            sales_qs = Sale.objects.all()
+            if not (request.user.is_superuser or request.user.role in ('admin', 'manager')):
+                sales_qs = sales_qs.filter(created_by=request.user)
+            sale = sales_qs.get(pk=sale_id)
         except Sale.DoesNotExist:
             return Response(
                 {
                     'success': False,
-                    'error': f'Venta con ID {sale_id} no encontrada.',
+                    'error': f'Venta con ID {sale_id} no encontrada o no autorizada.',
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )

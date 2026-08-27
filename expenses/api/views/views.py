@@ -49,7 +49,8 @@ class ExpenseCategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = ExpenseCategory.objects.all()
     serializer_class = ExpenseCategorySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ModulePermission]
+    required_permission = 'can_manage_expenses'
 
 
 class ExpenseViewSet(OwnerQuerysetMixin, viewsets.ModelViewSet):
@@ -72,6 +73,7 @@ class ExpenseViewSet(OwnerQuerysetMixin, viewsets.ModelViewSet):
       - ModulePermission: Requiere can_manage_expenses para escritura
     """
 
+    queryset = Expense.objects.all()
     permission_classes = [IsAuthenticated, ModulePermission]
     required_permission = 'can_manage_expenses'
     serializer_class = ExpenseListSerializer
@@ -83,9 +85,9 @@ class ExpenseViewSet(OwnerQuerysetMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Retornar queryset de gastos con optimizaciones (SoftDeleteManager aplica deleted_at__isnull=True).
+        Retornar queryset de gastos con optimizaciones y filtrado por rol (OwnerQuerysetMixin).
         """
-        return Expense.objects.all().select_related(
+        return super().get_queryset().select_related(
             'category', 'supplier', 'created_by', 'updated_by'
         )
 
@@ -192,18 +194,18 @@ class ExpenseViewSet(OwnerQuerysetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def unpaid(self, request):
         """
-        Obtener todos los gastos no pagados (cuentas a pagar).
+        Obtener todos los gastos no pagados (cuentas a pagar) respetando ownership.
 
         GET /api/v1/expenses/unpaid/
         """
-        unpaid = ExpenseService.get_unpaid_expenses()
+        unpaid = self.get_queryset().filter(is_paid=False)
         serializer = ExpenseListSerializer(unpaid, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'])
     def summary(self, request):
         """
-        Obtener resumen de gastos por categoría en un período.
+        Obtener resumen de gastos por categoría en un período respetando ownership.
 
         GET /api/v1/expenses/summary/?from_date=2026-01-01&to_date=2026-05-31
         """
@@ -217,7 +219,7 @@ class ExpenseViewSet(OwnerQuerysetMixin, viewsets.ModelViewSet):
             )
 
         try:
-            summary = ExpenseService.get_opex_summary(from_date, to_date)
+            summary = ExpenseService.get_opex_summary(from_date, to_date, queryset=self.get_queryset())
         except Exception as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

@@ -57,7 +57,8 @@ class CustomerViewSet(AuditMixin, OwnerQuerysetMixin, ModelViewSet):
     
     def perform_create(self, serializer):
         """Crea el cliente y sincroniza automáticamente la condición IVA con AFIP."""
-        customer = serializer.save()
+        super().perform_create(serializer)
+        customer = serializer.instance
         
         # Sincronizar condición IVA automáticamente si tiene CUIT
         if customer.cuit_cuil:
@@ -145,6 +146,9 @@ class CustomerViewSet(AuditMixin, OwnerQuerysetMixin, ModelViewSet):
     @action(detail=True, methods=['post'])
     def refacturar_sale(self, request, pk=None):
         """Refactura una venta informal a precio actualizado."""
+        if not (request.user.is_superuser or request.user.role in ('admin', 'manager') or getattr(request.user, 'can_manage_sales', False)):
+            return Response({'error': 'Se requiere permiso para gestionar ventas (can_manage_sales).'}, status=403)
+
         customer = self.get_object()
         sale_id = request.data.get('sale_id')
         if not sale_id:

@@ -35,11 +35,11 @@ El módulo `customers` centraliza el CRM (Customer Relationship Management) del 
 
 ### REST API (`api/urls/`)
 Base URL: `/api/v1/customers/`
-*   `GET /api/v1/customers/` - Listado y filtrado de clientes. Retorna campos reducidos + `effective_discount`, `allow_credit`, `account_modality`, `price_list` para auto-completado en ventas.
-*   `POST /api/v1/customers/` - Registrar nuevo cliente (ejecuta validaciones locales de CUIT y `full_clean` de modelo).
+*   `GET /api/v1/customers/` - Listado y filtrado de clientes (protegido con `OwnerQuerysetMixin` para aislamiento por usuario).
+*   `POST /api/v1/customers/` - Registrar nuevo cliente (ejecuta validaciones de CUIT, `full_clean` y registra `created_by=request.user` mediante `AuditMixin`).
 *   `POST /api/v1/customers/{id}/sync_tax/` - Forzar la sincronización impositiva contra la AFIP.
 *   `GET /api/v1/customers/{id}/credit/` - Dashboard REST de estado de cuenta corriente, deuda y aging report.
-*   `POST /api/v1/customers/{id}/refacturar_sale/` - Refacturar venta informal a precios vigentes de catálogo.
+*   `POST /api/v1/customers/{id}/refacturar_sale/` - Refacturar venta informal a precios vigentes de catálogo (requiere permiso `can_manage_sales` o rol admin/manager).
 
 ### Vistas Web (`web/urls/`)
 *   `GET /customers/` - Panel principal de administración y ABM de clientes.
