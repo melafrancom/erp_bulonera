@@ -12,7 +12,7 @@ El módulo `payments` gestiona los cobros recibidos de clientes, las cuentas cor
     *   [`reports`](../reports/README.md) (inflows en `CashFlowService` mediante `Payment.objects.filter(status='confirmed')`)
 
 ## 🛠️ Modelos Clave
-*   **`Payment`**: Registro del cobro recibido. Almacena el monto global, método (efectivo, transferencia, cheque, tarjeta), referencia y estado (pendiente, confirmado, anulado).
+*   **`Payment`**: Registro del cobro recibido. Almacena el monto global, método (efectivo, transferencia, cheque, tarjeta, nota de crédito `credit_note`), referencia y estado (pendiente, confirmado, anulado).
     *   Constraint DDL: `CheckConstraint(amount > 0, name='payment_amount_positive')`.
     *   Property `unallocated_balance`: Devuelve `0.00` si `status != 'confirmed'` o `is_active=False`; en caso contrario `amount - allocated_total`.
     *   Hereda de `BaseModel` (Soft-delete: Sí).
@@ -23,6 +23,7 @@ El módulo `payments` gestiona los cobros recibidos de clientes, las cuentas cor
 ## ⚡ Servicios Críticos (`services.py`)
 Toda la gestión de tesorería y saldos se procesa de forma atómica con bloqueos pesimistas (`select_for_update()`) en `PaymentService`:
 *   `create_payment(...)`: Crea un pago confirmado sin alocaciones (anticipo o saldo a cuenta).
+*   `registrar_credito_nc_standalone(credit_note_invoice, user)`: Registra de forma atómica un pago confirmado con método `credit_note` y saldo a favor en cuenta corriente para el cliente receptor de una Nota de Crédito standalone.
 *   `create_payment_with_allocations(...)`: Crea un pago y lo distribuye de forma atómica en una o más ventas y facturas:
     *   Ejecuta `select_for_update()` sobre `PaymentAllocation` para calcular el saldo efectivo de la venta sin inconsistencias por snapshots en InnoDB (`REPEATABLE READ`).
     *   Valida consistencia multi-cliente (todas las alocaciones deben pertenecer al mismo cliente y coincidir con `customer_id` si vino provisto).

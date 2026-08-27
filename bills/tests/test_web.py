@@ -122,6 +122,51 @@ class TestBillsWebAccessControl:
         assert response.status_code == 200
         assert response['Content-Type'] == 'application/pdf'
 
+    def test_manager_can_access_invoice_create_view(self, client, manager_user):
+        """Manager puede acceder al formulario de nueva factura directa (HTTP 200)."""
+        client.login(username='mgr_bills_user', password='password123')
+        url = reverse('bills_web:invoice_create')
+        response = client.get(url)
+        assert response.status_code == 200
+        assert 'Nueva Factura Directa' in response.content.decode('utf-8')
+
+    def test_manager_can_access_creditnote_create_view(self, client, manager_user):
+        """Manager puede acceder al formulario de nueva nota de crédito (HTTP 200)."""
+        client.login(username='mgr_bills_user', password='password123')
+        url = reverse('bills_web:creditnote_create')
+        response = client.get(url)
+        assert response.status_code == 200
+        assert 'Nueva Nota de Crédito' in response.content.decode('utf-8')
+
+    def test_customer_invoices_api(self, client, manager_user, authorized_invoice):
+        """API de facturas del cliente retorna JSON con facturas autorizadas."""
+        from customers.models import Customer
+        customer = Customer.objects.create(business_name='Cliente API', cuit_cuil='20123456789')
+        authorized_invoice.customer = customer
+        authorized_invoice.save()
+
+        client.login(username='mgr_bills_user', password='password123')
+        url = reverse('bills_web:customer_invoices_api', kwargs={'customer_id': customer.id})
+        response = client.get(url)
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data['invoices']) == 1
+        assert data['invoices'][0]['number'] == authorized_invoice.number
+
+    def test_product_search_api(self, client, manager_user):
+        """API de búsqueda rápida de productos para autocomplete."""
+        from products.models import Product
+        Product.objects.create(code='AUTO-TEST-1', name='Bulón Especial 1/2', price=100)
+
+        client.login(username='mgr_bills_user', password='password123')
+        url = reverse('bills_web:product_search_api') + '?q=AUTO-TEST'
+        response = client.get(url)
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data['products']) == 1
+        assert data['products'][0]['code'] == 'AUTO-TEST-1'
+
+
 
 @pytest.mark.django_db
 class TestBillsAdminImmutability:

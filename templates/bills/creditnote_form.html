@@ -1,0 +1,414 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Nueva Nota de Crédito | ERP Bulonera Alvear{% endblock %}
+
+{% block breadcrumb_items %}
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <a href="{% url 'bills_web:invoice_list' %}" class="hover:text-blue-600 transition-colors">Facturas</a>
+  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 dark:text-slate-500"></i>
+  <span class="text-gray-900 dark:text-slate-100 font-black tracking-tight">Nueva Nota de Crédito</span>
+{% endblock %}
+
+{% block mobile_title %}Nueva Nota de Crédito{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 pb-24" x-data="creditNoteForm()">
+
+  <!-- Header -->
+  <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-slate-100 tracking-tight flex items-center gap-3">
+        <span class="flex items-center justify-center w-10 h-10 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-xl">
+          <i data-lucide="file-minus" class="w-5 h-5"></i>
+        </span>
+        Nueva Nota de Crédito (Descuentos y Bonificaciones)
+      </h1>
+      <p class="mt-1 text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+        Emisión fiscal de crédito comercial sin impacto en inventario ni anulación de venta
+      </p>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="{% url 'bills_web:invoice_list' %}" class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-50 transition-colors">
+        Cancelar
+      </a>
+      <button type="button" @click="submitCreditNote()" :disabled="submitting || items.length === 0 || !customerId || !motivo"
+              class="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all active:scale-95">
+        <template x-if="submitting">
+          <i data-lucide="loader" class="w-4 h-4 animate-spin"></i>
+        </template>
+        <template x-if="!submitting">
+          <i data-lucide="send" class="w-4 h-4"></i>
+        </template>
+        <span x-text="submitting ? 'Procesando...' : 'Emitir Nota de Crédito en ARCA'"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Error / Alert Banner -->
+  <div x-show="errorMessage" x-cloak class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-2xl flex items-start gap-3 text-red-700 dark:text-red-400 text-sm">
+    <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0 mt-0.5"></i>
+    <div class="flex-1">
+      <p class="font-bold">No se pudo emitir la Nota de Crédito</p>
+      <p x-text="errorMessage" class="text-xs mt-0.5"></p>
+    </div>
+    <button @click="errorMessage = ''" class="text-red-400 hover:text-red-600">
+      <i data-lucide="x" class="w-4 h-4"></i>
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Left Column: Customer, Reference Invoice & Descriptive Items -->
+    <div class="lg:col-span-2 space-y-6">
+
+      <!-- Customer & Reference Section -->
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm space-y-4">
+        <h2 class="text-sm font-bold text-gray-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="user" class="w-4 h-4 text-amber-500"></i>
+          1. Cliente y Comprobante Asociado
+        </h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Selector de Cliente Obligatorio -->
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold text-gray-600 dark:text-slate-300 mb-1">Cliente *</label>
+            <select x-model="customerId" @change="onCustomerSelect()" required
+                    class="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-amber-500">
+              <option value="">-- Seleccionar cliente --</option>
+              {% for cust in customers %}
+                <option value="{{ cust.id }}" data-cuit="{{ cust.cuit_cuil|default:'' }}" data-cond="{{ cust.tax_condition }}" data-name="{{ cust.business_name }}">
+                  {{ cust.business_name }} {% if cust.cuit_cuil %}(CUIT: {{ cust.cuit_cuil }}){% endif %} - [{{ cust.get_tax_condition_display }}]
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Tipo de NC Calculado -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 dark:text-slate-300 mb-1">Tipo de Comprobante</label>
+            <div class="px-4 py-2 bg-gray-100 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-800 dark:text-slate-200">
+              <span x-text="isResponsableInscripto ? 'Nota de Crédito A (Código 3)' : 'Nota de Crédito B (Código 8)'"></span>
+            </div>
+          </div>
+
+          <!-- Factura de Referencia (CbtesAsoc) -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 dark:text-slate-300 mb-1 flex items-center justify-between">
+              <span>Factura de Referencia (CbtesAsoc)</span>
+              <span x-show="isResponsableInscripto" class="text-[10px] px-1.5 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded font-bold uppercase">
+                Obligatorio AFIP (NC A)
+              </span>
+              <span x-show="!isResponsableInscripto" class="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-slate-700 text-gray-500 rounded font-medium">
+                Opcional (NC B)
+              </span>
+            </label>
+            <select x-model="facturaReferenciaId" :required="isResponsableInscripto"
+                    class="w-full px-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-amber-500">
+              <option value="">-- Sin factura asociada (Libre) --</option>
+              <template x-for="inv in clientInvoices" :key="inv.id">
+                <option :value="inv.id" x-text="inv.tipo_display + ' ' + inv.number + ' (' + inv.fecha_emision + ') - Total: $' + inv.total"></option>
+              </template>
+            </select>
+            <p x-show="loadingInvoices" class="text-[11px] text-gray-400 mt-1">Cargando facturas del cliente...</p>
+          </div>
+
+          <!-- Motivo Comercial -->
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold text-gray-600 dark:text-slate-300 mb-1">Motivo Comercial / Concepto *</label>
+            <input type="text" x-model="motivo" placeholder="Ej: Bonificación 5% compras agosto 2026 / Descuento por pronto pago" required
+                   class="w-full px-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-amber-500">
+          </div>
+        </div>
+      </div>
+
+      <!-- Descriptive Items Section -->
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold text-gray-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
+            <i data-lucide="list" class="w-4 h-4 text-amber-500"></i>
+            2. Renglones de la Bonificación / Descuento
+          </h2>
+          <button type="button" @click="addLine()"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 hover:bg-amber-100 text-xs font-bold rounded-lg transition-colors">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            + Agregar Renglón
+          </button>
+        </div>
+
+        <div class="overflow-x-auto border border-gray-200 dark:border-slate-700 rounded-xl">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-gray-50 dark:bg-slate-900/70 text-gray-500 dark:text-slate-400 border-b border-gray-200 dark:border-slate-700">
+              <tr>
+                <th class="px-3 py-3 min-w-[240px]">Descripción Libre del Crédito *</th>
+                <th class="px-2 py-3 w-20 text-center">Cant.</th>
+                <th class="px-2 py-3 w-28 text-right">Monto Unit. *</th>
+                <th class="px-2 py-3 w-24 text-center">Alícuota IVA</th>
+                <th class="px-3 py-3 w-28 text-right">Total</th>
+                <th class="px-2 py-3 w-10 text-center"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
+              <template x-for="(item, index) in items" :key="index">
+                <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-900/30">
+                  <td class="px-3 py-2.5">
+                    <input type="text" x-model="item.descripcion" placeholder="Descripción del descuento..." required
+                           class="w-full px-2.5 py-1 text-xs border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-1 focus:ring-amber-500">
+                  </td>
+                  <td class="px-2 py-2.5">
+                    <input type="number" step="any" min="0.0001" x-model.number="item.cantidad"
+                           class="w-full px-2 py-1 text-center text-xs border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-1 focus:ring-amber-500">
+                  </td>
+                  <td class="px-2 py-2.5">
+                    <input type="number" step="0.01" min="0.01" x-model.number="item.precio_unitario" placeholder="0.00" required
+                           class="w-full px-2 py-1 text-right text-xs border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-1 focus:ring-amber-500">
+                  </td>
+                  <td class="px-2 py-2.5">
+                    <select x-model.number="item.tax_percentage"
+                            class="w-full px-1.5 py-1 text-center text-xs border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-1 focus:ring-amber-500">
+                      <option value="21.00">21.0%</option>
+                      <option value="10.50">10.5%</option>
+                      <option value="27.00">27.0%</option>
+                      <option value="0.00">0.0%</option>
+                    </select>
+                  </td>
+                  <td class="px-3 py-2.5 text-right font-bold text-gray-900 dark:text-slate-100 whitespace-nowrap"
+                      x-text="'$' + calculateLineTotal(item).toFixed(2)">
+                  </td>
+                  <td class="px-2 py-2.5 text-center">
+                    <button type="button" @click="removeLine(index)" :disabled="items.length <= 1"
+                            class="text-red-400 hover:text-red-600 disabled:opacity-30 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20">
+                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column: Summary & Accounting Impact Notice -->
+    <div class="space-y-6">
+
+      <!-- Accounting & Fiscal Impact Notice -->
+      <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 p-5 rounded-2xl space-y-3">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-blue-900 dark:text-blue-300 flex items-center gap-2">
+          <i data-lucide="info" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+          Impacto en Cuentas y AFIP
+        </h3>
+        <ul class="text-xs text-blue-800 dark:text-blue-300 space-y-1.5 list-disc list-inside">
+          <li>Se genera un <strong>saldo a favor</strong> para el cliente en su Cuenta Corriente.</li>
+          <li><strong>No se devuelve stock</strong> al depósito (crédito puramente financiero/comercial).</li>
+          <li>El comprobante se envía a <strong>ARCA/AFIP</strong> para la obtención del CAE.</li>
+        </ul>
+      </div>
+
+      <!-- Summary Card -->
+      <div class="bg-gradient-to-br from-amber-950 to-slate-900 text-white p-6 rounded-2xl shadow-xl space-y-4">
+        <h2 class="text-xs font-black uppercase tracking-widest text-amber-400 flex items-center justify-between">
+          <span>Resumen de la NC</span>
+          <span class="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded-full font-mono">Crédito Fiscal</span>
+        </h2>
+
+        <div class="space-y-2 text-sm border-b border-slate-700/60 pb-4">
+          <div class="flex justify-between text-slate-300">
+            <span>Subtotal Neto Gravado:</span>
+            <span class="font-mono font-medium" x-text="'$' + summary.neto.toFixed(2)"></span>
+          </div>
+          <div class="flex justify-between text-slate-300">
+            <span>IVA Discriminado:</span>
+            <span class="font-mono font-medium text-amber-300" x-text="'$' + summary.iva.toFixed(2)"></span>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-baseline pt-2">
+          <span class="text-sm font-bold uppercase tracking-wider text-slate-300">Total Crédito a Favor:</span>
+          <span class="text-2xl font-black text-amber-400 font-mono" x-text="'$' + summary.total.toFixed(2)"></span>
+        </div>
+
+        <button type="button" @click="submitCreditNote()" :disabled="submitting || items.length === 0 || !customerId || !motivo"
+                class="w-full mt-4 py-3.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-black text-sm uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-amber-600/30 flex items-center justify-center gap-2 active:scale-95">
+          <i data-lucide="send" class="w-4 h-4"></i>
+          <span x-text="submitting ? 'Emitiendo en ARCA...' : 'Emitir Nota de Crédito'"></span>
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+function creditNoteForm() {
+  return {
+    customerId: '',
+    customerTaxCondition: 'CF',
+    isResponsableInscripto: false,
+    facturaReferenciaId: '',
+    motivo: '',
+    observaciones: '',
+    clientInvoices: [],
+    loadingInvoices: false,
+    items: [
+      {
+        descripcion: '',
+        cantidad: 1,
+        precio_unitario: 0,
+        tax_percentage: 21.00
+      }
+    ],
+    submitting: false,
+    errorMessage: '',
+
+    init() {
+      if (window.lucide) lucide.createIcons();
+    },
+
+    async onCustomerSelect() {
+      this.facturaReferenciaId = '';
+      this.clientInvoices = [];
+
+      if (!this.customerId) {
+        this.isResponsableInscripto = false;
+        this.customerTaxCondition = 'CF';
+        return;
+      }
+
+      const select = document.querySelector('select[x-model="customerId"]');
+      const opt = select.options[select.selectedIndex];
+      if (opt) {
+        this.customerTaxCondition = opt.getAttribute('data-cond') || 'CF';
+        this.isResponsableInscripto = (this.customerTaxCondition === 'RI');
+      }
+
+      // Fetch past invoices for reference
+      this.loadingInvoices = true;
+      try {
+        const res = await fetch(`/bills/clientes/${this.customerId}/facturas/`);
+        const data = await res.json();
+        this.clientInvoices = data.invoices || [];
+      } catch (e) {
+        console.error('Error cargando facturas de cliente:', e);
+      } finally {
+        this.loadingInvoices = false;
+      }
+    },
+
+    addLine() {
+      this.items.push({
+        descripcion: '',
+        cantidad: 1,
+        precio_unitario: 0,
+        tax_percentage: 21.00
+      });
+      this.$nextTick(() => {
+        if (window.lucide) lucide.createIcons();
+      });
+    },
+
+    removeLine(index) {
+      if (this.items.length > 1) {
+        this.items.splice(index, 1);
+      }
+    },
+
+    calculateLineTotal(item) {
+      const qty = parseFloat(item.cantidad) || 0;
+      const price = parseFloat(item.precio_unitario) || 0;
+      const tax = parseFloat(item.tax_percentage) || 0;
+
+      const subtotal = qty * price;
+      const iva = subtotal * (tax / 100);
+      return subtotal + iva;
+    },
+
+    get summary() {
+      let neto = 0;
+      let iva = 0;
+
+      this.items.forEach(item => {
+        const qty = parseFloat(item.cantidad) || 0;
+        const price = parseFloat(item.precio_unitario) || 0;
+        const tax = parseFloat(item.tax_percentage) || 0;
+
+        const subtotal = qty * price;
+        const ivaMonto = subtotal * (tax / 100);
+
+        neto += subtotal;
+        iva += ivaMonto;
+      });
+
+      return {
+        neto: neto,
+        iva: iva,
+        total: neto + iva
+      };
+    },
+
+    async submitCreditNote() {
+      if (!this.customerId) {
+        this.errorMessage = 'Debe seleccionar un cliente registrado.';
+        return;
+      }
+
+      if (!this.motivo.trim()) {
+        this.errorMessage = 'Debe ingresar el motivo comercial de la Nota de Crédito.';
+        return;
+      }
+
+      if (this.isResponsableInscripto && !this.facturaReferenciaId) {
+        this.errorMessage = 'Para clientes Responsables Inscriptos (Nota de Crédito A), AFIP exige seleccionar la Factura de Referencia asociada.';
+        return;
+      }
+
+      if (this.items.length === 0 || this.items.some(it => !it.descripcion.trim() || it.precio_unitario <= 0)) {
+        this.errorMessage = 'Todos los renglones deben tener descripción y un monto mayor a 0.';
+        return;
+      }
+
+      this.submitting = true;
+      this.errorMessage = '';
+
+      const payload = {
+        customer_id: parseInt(this.customerId),
+        factura_referencia_id: this.facturaReferenciaId ? parseInt(this.facturaReferenciaId) : null,
+        motivo: this.motivo,
+        observaciones: this.observaciones,
+        emitir_arca: true,
+        async_emission: true,
+        items: this.items
+      };
+
+      try {
+        const response = await fetch(window.location.href, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          window.location.href = data.redirect_url;
+        } else {
+          this.errorMessage = data.error || 'Ocurrió un error al emitir la Nota de Crédito.';
+          this.submitting = false;
+        }
+      } catch (err) {
+        console.error(err);
+        this.errorMessage = 'Error de conexión con el servidor.';
+        this.submitting = false;
+      }
+    }
+  };
+}
+</script>
+{% endblock %}

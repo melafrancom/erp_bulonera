@@ -1237,10 +1237,37 @@ def sale_invoice(request, pk):
         sale.save(update_fields=['payment_method'])
         logger.info(f'[SALES] Payment method set to {payment_method} for sale {sale.number}')
 
+    # Parsear item_overrides si fueron enviados desde el formulario modal
+    item_overrides = []
+    for key, val in request.POST.items():
+        if key.startswith('item_name_'):
+            try:
+                sale_item_id = int(key.replace('item_name_', ''))
+                override_name = val.strip()
+                if override_name:
+                    item_overrides.append({
+                        'sale_item_id': sale_item_id,
+                        'producto_nombre': override_name
+                    })
+            except (ValueError, TypeError):
+                pass
+
+    if not item_overrides and 'item_overrides' in request.POST:
+        try:
+            import json
+            item_overrides = json.loads(request.POST['item_overrides'])
+        except Exception:
+            pass
+
     try:
         from bills.services import facturar_venta
         # facturar_venta maneja la creación de Invoice y Comprobante AFIP
-        result = facturar_venta(sale=sale, user=request.user, async_emission=True)
+        result = facturar_venta(
+            sale=sale,
+            user=request.user,
+            async_emission=True,
+            item_overrides=item_overrides
+        )
         messages.success(request, f"✅ Venta {sale.number} enviada a facturar. ID: {result.get('invoice_id')}")
         logger.info('Sale %s invoiced by user %s', sale.number, request.user.username)
     except ValueError as exc:

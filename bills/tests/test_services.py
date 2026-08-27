@@ -345,3 +345,302 @@ class TestRegistroManualTicket(TestCase):
                 numero_ticket=1234, tipo_comprobante=83
             )
         self.assertIn('ya tiene un comprobante registrado', str(cm.exception))
+
+
+class TestFacturarVentaItemOverrides(TestCase):
+    """Pruebas para facturar_venta con sobreescritura de nombres de producto (Feature 1)"""
+
+    def setUp(self):
+        from products.models import Product
+        from sales.models import SaleItem
+
+        self.user = User.objects.create_user(username='billinguser', password='password')
+        self.config = ConfiguracionARCA.objects.create(
+            empresa_cuit='20180545574',
+            punto_venta=1,
+            activo=True
+        )
+        self.product = Product.objects.create(
+            code='BUL-88',
+            name='Bulón Cabeza Hexagonal Calidad 8.8',
+            price=Decimal('150.00'),
+            tax_rate=Decimal('21.00')
+        )
+        self.sale = Sale.objects.create(
+            number='V-0099',
+            status='confirmed',
+            created_by=self.user,
+            payment_method='cash'
+        )
+        self.sale_item = SaleItem.objects.create(
+            sale=self.sale,
+            product=self.product,
+            quantity=Decimal('10'),
+            unit_price=Decimal('150.00'),
+            unit_cost=Decimal('100.00'),
+            tax_percentage=Decimal('21.00'),
+            line_order=1
+        )
+
+    def test_facturar_venta_aplica_item_overrides_manteniendo_codigo_inmutable(self):
+        from bills.services import facturar_venta
+        from bills.models import InvoiceItem
+        from afip.models import ComprobRenglon
+
+        overrides = [
+            {
+                'sale_item_id': self.sale_item.id,
+                'producto_nombre': 'Bulón Cabeza Hex. Calidad 8.8 - S/OC #9928'
+            }
+        ]
+
+        res = facturar_venta(
+            sale=self.sale,
+            user=self.user,
+            async_emission=False,
+            item_overrides=overrides
+        )
+        self.assertTrue(res['success'])
+
+        invoice_item = InvoiceItem.objects.get(invoice_id=res['invoice_id'])
+        self.assertEqual(invoice_item.producto_nombre, 'Bulón Cabeza Hex. Calidad 8.8 - S/OC #9928')
+        self.assertEqual(invoice_item.producto_codigo, 'BUL-88')
+
+        comprob_renglon = ComprobRenglon.objects.get(comprobante_id=res['comprobante_id'])
+        self.assertEqual(comprob_renglon.descripcion, 'Bulón Cabeza Hex. Calidad 8.8 - S/OC #9928')
+
+
+class TestCrearFacturaDirecta(TestCase):
+    """Pruebas para crear_factura_directa (Feature 2)"""
+
+    def setUp(self):
+        from products.models import Product
+        from customers.models import Customer
+
+        self.user = User.objects.create_user(username='directuser', password='password')
+        self.config = ConfiguracionARCA.objects.create(
+            empresa_cuit='20180545574',
+            punto_venta=1,
+            activo=True
+        )
+        self.product = Product.objects.create(
+            code='TUER-12',
+            name='Tuerca Autofrenante 1/2',
+            price=Decimal('50.00'),
+            cost=Decimal('30.00'),
+            tax_rate=Decimal('21.00')
+        )
+        self.customer_ri = Customer.objects.create(
+            business_name='Metalúrgica Centro SA',
+            cuit_cuil='30711111112',
+            tax_condition='RI',
+            billing_address='Av. Siempre Viva 123',
+            allow_credit=True,
+            credit_limit=Decimal('50000.00')
+        )
+
+    def test_crear_factura_directa_responsable_inscripto_ok(self):
+        from bills.services import crear_factura_directa
+        from bills.models import Invoice, InvoiceItem
+        from sales.models import Sale
+        from payments.models import Payment
+
+        payload = {
+            'customer_id': self.customer_ri.id,
+            'payment_method': 'cash',
+            'is_paid': True,
+            'items': [
+                {
+                    'product_code': 'TUER-12',
+                    'producto_nombre': 'Tuerca Autofrenante 1/2 Pulgada Zincada',
+                    'quantity': 100,
+                    'unit_price': '50.00',
+                    'discount_value': '0',
+                    'tax_percentage': '21.00'
+                }
+            ],
+            'observaciones': 'Entrega inmediata en mostrador'
+        }
+
+        res = crear_factura_directa(data=payload, user=self.user, emitir_arca=False)
+        self.assertTrue(res['success'])
+
+        invoice = Invoice.objects.get(id=res['invoice_id'])
+        self.assertEqual(invoice.tipo_comprobante, 1)
+        self.assertEqual(invoice.total, Decimal('6050.00'))
+
+        item = invoice.items.first()
+        self.assertEqual(item.producto_codigo, 'TUER-12')
+        self.assertEqual(item.producto_nombre, 'Tuerca Autofrenante 1/2 Pulgada Zincada')
+
+        sale = Sale.objects.get(id=res['sale_id'])
+        self.assertEqual(sale.status, 'delivered')
+        self.assertEqual(sale.customer, self.customer_ri)
+
+        payment = Payment.objects.filter(customer=self.customer_ri).first()
+        self.assertIsNotNone(payment)
+        self.assertEqual(payment.amount, Decimal('6050.00'))
+
+    def test_crear_factura_directa_codigo_inexistente_falla(self):
+        from bills.services import crear_factura_directa
+
+        payload = {
+            'customer_id': self.customer_ri.id,
+            'payment_method': 'cash',
+            'items': [
+                {
+                    'product_code': 'CODIGO_FANTASMA_999',
+                    'quantity': 1,
+                    'unit_price': '10.00'
+                }
+            ]
+        }
+
+        with self.assertRaises(ValueError) as cm:
+            crear_factura_directa(data=payload, user=self.user, emitir_arca=False)
+        self.assertIn('no existe en el catálogo activo', str(cm.exception))
+
+    def test_crear_factura_directa_cuenta_corriente_valida_credito(self):
+        from bills.services import crear_factura_directa
+        from sales.models import Sale
+
+        payload = {
+            'customer_id': self.customer_ri.id,
+            'payment_method': 'account',
+            'items': [
+                {
+                    'product_code': 'TUER-12',
+                    'quantity': 10,
+                    'unit_price': '50.00',
+                    'tax_percentage': '21.00'
+                }
+            ]
+        }
+
+        res = crear_factura_directa(data=payload, user=self.user, emitir_arca=False)
+        self.assertTrue(res['success'])
+
+        sale = Sale.objects.get(id=res['sale_id'])
+        self.assertTrue(sale.is_credit_sale)
+        self.assertEqual(sale.payment_status, 'unpaid')
+
+
+class TestEmitirNotaCreditoStandalone(TestCase):
+    """Pruebas para emitir_nota_credito_standalone (Feature 3)"""
+
+    def setUp(self):
+        from customers.models import Customer
+
+        self.user = User.objects.create_user(username='ncuser', password='password')
+        self.config = ConfiguracionARCA.objects.create(
+            empresa_cuit='20180545574',
+            punto_venta=1,
+            activo=True
+        )
+        self.customer_mono = Customer.objects.create(
+            business_name='Taller Don Carlos',
+            cuit_cuil='20202020202',
+            tax_condition='MONO',
+            billing_address='Calle 10 N° 550'
+        )
+        self.customer_ri = Customer.objects.create(
+            business_name='Industrias Metal SA',
+            cuit_cuil='30711111112',
+            tax_condition='RI',
+            billing_address='Ruta 9 Km 200'
+        )
+        self.factura_ri = Invoice.objects.create(
+            customer=self.customer_ri,
+            tipo_comprobante=1,
+            punto_venta=1,
+            numero_secuencial=100,
+            number='0001-00000100',
+            estado_fiscal='autorizada',
+            total=Decimal('50000.00')
+        )
+
+    def test_emitir_nc_standalone_tipo_b_sin_referencia_ok(self):
+        from bills.services import emitir_nota_credito_standalone
+        from bills.models import Invoice
+        from payments.models import Payment
+
+        payload = {
+            'customer_id': self.customer_mono.id,
+            'motivo': 'Descuento por volumen agosto 2026',
+            'items': [
+                {
+                    'descripcion': 'Bonificación 5% sobre compras mensuales',
+                    'cantidad': 1,
+                    'precio_unitario': '2000.00',
+                    'tax_percentage': '21.00'
+                }
+            ]
+        }
+
+        res = emitir_nota_credito_standalone(data=payload, user=self.user, emitir_arca=False)
+        self.assertTrue(res['success'])
+
+        nc_invoice = Invoice.objects.get(id=res['invoice_id'])
+        self.assertEqual(nc_invoice.tipo_comprobante, 8) # NC B
+        self.assertIsNone(nc_invoice.sale)
+        self.assertEqual(nc_invoice.total, Decimal('2420.00')) # 2000 * 1.21
+        self.assertEqual(nc_invoice.motivo, 'Descuento por volumen agosto 2026')
+
+        # Verificar renglón descriptivo
+        item = nc_invoice.items.first()
+        self.assertEqual(item.producto_nombre, 'Bonificación 5% sobre compras mensuales')
+        self.assertEqual(item.producto_codigo, '')
+
+        # Verificar Payment de crédito en cuenta
+        payment = Payment.objects.filter(customer=self.customer_mono, method='credit_note').first()
+        self.assertIsNotNone(payment)
+        self.assertEqual(payment.amount, Decimal('2420.00'))
+        self.assertEqual(payment.unallocated_balance, Decimal('2420.00'))
+
+    def test_emitir_nc_standalone_tipo_a_exige_factura_referencia(self):
+        from bills.services import emitir_nota_credito_standalone
+
+        payload = {
+            'customer_id': self.customer_ri.id,
+            'motivo': 'Descuento sin referencia a RI',
+            'items': [
+                {
+                    'descripcion': 'Bonificación',
+                    'cantidad': 1,
+                    'precio_unitario': '1000.00',
+                    'tax_percentage': '21.00'
+                }
+            ]
+        }
+
+        with self.assertRaises(ValueError) as cm:
+            emitir_nota_credito_standalone(data=payload, user=self.user, emitir_arca=False)
+        self.assertIn('exige indicar una factura de referencia asociada', str(cm.exception))
+
+    def test_emitir_nc_standalone_tipo_a_con_referencia_popula_cbtes_asoc(self):
+        from bills.services import emitir_nota_credito_standalone
+        from afip.models import Comprobante
+
+        payload = {
+            'customer_id': self.customer_ri.id,
+            'factura_referencia_id': self.factura_ri.id,
+            'motivo': 'Descuento pronto pago factura 100',
+            'items': [
+                {
+                    'descripcion': 'Descuento pronto pago 5%',
+                    'cantidad': 1,
+                    'precio_unitario': '1000.00',
+                    'tax_percentage': '21.00'
+                }
+            ]
+        }
+
+        res = emitir_nota_credito_standalone(data=payload, user=self.user, emitir_arca=False)
+        self.assertTrue(res['success'])
+
+        comprobante = Comprobante.objects.get(id=res['comprobante_id'])
+        self.assertEqual(comprobante.tipo_compr, 3) # NC A
+        self.assertEqual(comprobante.cbte_asoc_tipo, 1) # Factura A
+        self.assertEqual(comprobante.cbte_asoc_pto_vta, 1)
+        self.assertEqual(comprobante.cbte_asoc_numero, 100)
+

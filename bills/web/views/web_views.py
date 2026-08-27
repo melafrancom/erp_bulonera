@@ -1,23 +1,35 @@
 """
 Vistas web para el módulo de facturación (Bills).
-Listado y detalle de facturas emitidas.
+Listado, detalle, emisión de facturas directas y notas de crédito.
 """
+import json
 import logging
 from datetime import date
+from decimal import Decimal
 
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, TemplateView
 from django.db.models import Q
 from django.http import JsonResponse, HttpResponse, Http404
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 
 from core.decorators import ModulePermissionRequiredMixin, permission_required
 from bills.models import Invoice
 from bills.pdf import generate_invoice_pdf
-from bills.services import reintentar_factura, anular_factura_y_venta
+from bills.services import (
+    reintentar_factura,
+    anular_factura_y_venta,
+    crear_factura_directa,
+    emitir_nota_credito_standalone,
+)
+from customers.models import Customer
+from products.models import Product
+from sales.models import Sale
 
 logger = logging.getLogger(__name__)
+
 
 class InvoiceListView(ModulePermissionRequiredMixin, ListView):
     model = Invoice
@@ -53,6 +65,7 @@ class InvoiceListView(ModulePermissionRequiredMixin, ListView):
         context['status_choices'] = Invoice.ESTADO_FISCAL_CHOICES
         return context
 
+
 class InvoiceDetailView(ModulePermissionRequiredMixin, DetailView):
     model = Invoice
     template_name = 'bills/invoice_detail.html'
@@ -63,6 +76,200 @@ class InvoiceDetailView(ModulePermissionRequiredMixin, DetailView):
         return super().get_queryset().select_related(
             'customer', 'comprobante_arca', 'sale'
         ).prefetch_related('items')
+
+
+class InvoiceCreateView(ModulePermissionRequiredMixin, TemplateView):
+    """
+    Vista para crear una factura directa de 0.
+    """
+    template_name = 'bills/invoice_form.html'
+    required_permission = 'can_manage_bills'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['customers'] = Customer.objects.filter(is_active=True).order_by('business_name')
+        context['payment_methods'] = Sale.payment_method.field.choices
+        context['tax_rates'] = [
+            {'value': '21.00', 'label': '21.0% (General)'},
+            {'value': '10.50', 'label': '10.5% (Reducido)'},
+            {'value': '27.00', 'label': '27.0% (Incrementado)'},
+            {'value': '0.00', 'label': '0.0% (Exento)'},
+        ]
+        return context
+
+    def post(self, request, *args, **kwargs):
+        is_ajax = (
+            request.headers.get('x-requested-with') == 'XMLHttpRequest' or
+            request.content_type == 'application/json' or
+            'application/json' in request.META.get('HTTP_ACCEPT', '')
+        )
+
+        try:
+            if request.content_type == 'application/json':
+                payload = json.loads(request.body.decode('utf-8'))
+            else:
+                raw_payload = request.POST.get('payload')
+                if raw_payload:
+                    payload = json.loads(raw_payload)
+                else:
+                    payload = request.POST.dict()
+
+            res = crear_factura_directa(
+                data=payload,
+                user=request.user,
+                emitir_arca=True,
+                async_emission=True
+            )
+
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'invoice_id': res['invoice_id'],
+                    'redirect_url': reverse('bills_web:invoice_detail', kwargs={'pk': res['invoice_id']}),
+                    'message': res['message']
+                })
+
+            messages.success(request, res['message'])
+            return redirect('bills_web:invoice_detail', pk=res['invoice_id'])
+
+        except ValueError as exc:
+            logger.warning(f"Error de validación en InvoiceCreateView: {exc}")
+            if is_ajax:
+                return JsonResponse({'success': False, 'error': str(exc)}, status=400)
+            messages.error(request, f"Error: {exc}")
+            return self.get(request, *args, **kwargs)
+        except Exception as exc:
+            logger.exception(f"Error inesperado en InvoiceCreateView: {exc}")
+            if is_ajax:
+                return JsonResponse({'success': False, 'error': f"Error interno: {str(exc)}"}, status=500)
+            messages.error(request, f"Error interno al generar la factura: {exc}")
+            return self.get(request, *args, **kwargs)
+
+
+class CreditNoteCreateView(ModulePermissionRequiredMixin, TemplateView):
+    """
+    Vista para crear una Nota de Crédito standalone (descuentos, bonificaciones).
+    """
+    template_name = 'bills/creditnote_form.html'
+    required_permission = 'can_manage_bills'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['customers'] = Customer.objects.filter(is_active=True).order_by('business_name')
+        context['tax_rates'] = [
+            {'value': '21.00', 'label': '21.0% (General)'},
+            {'value': '10.50', 'label': '10.5% (Reducido)'},
+            {'value': '27.00', 'label': '27.0% (Incrementado)'},
+            {'value': '0.00', 'label': '0.0% (Exento)'},
+        ]
+        return context
+
+    def post(self, request, *args, **kwargs):
+        is_ajax = (
+            request.headers.get('x-requested-with') == 'XMLHttpRequest' or
+            request.content_type == 'application/json' or
+            'application/json' in request.META.get('HTTP_ACCEPT', '')
+        )
+
+        try:
+            if request.content_type == 'application/json':
+                payload = json.loads(request.body.decode('utf-8'))
+            else:
+                raw_payload = request.POST.get('payload')
+                if raw_payload:
+                    payload = json.loads(raw_payload)
+                else:
+                    payload = request.POST.dict()
+
+            res = emitir_nota_credito_standalone(
+                data=payload,
+                user=request.user,
+                emitir_arca=True,
+                async_emission=True
+            )
+
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'invoice_id': res['invoice_id'],
+                    'redirect_url': reverse('bills_web:invoice_detail', kwargs={'pk': res['invoice_id']}),
+                    'message': res['message']
+                })
+
+            messages.success(request, res['message'])
+            return redirect('bills_web:invoice_detail', pk=res['invoice_id'])
+
+        except ValueError as exc:
+            logger.warning(f"Error de validación en CreditNoteCreateView: {exc}")
+            if is_ajax:
+                return JsonResponse({'success': False, 'error': str(exc)}, status=400)
+            messages.error(request, f"Error: {exc}")
+            return self.get(request, *args, **kwargs)
+        except Exception as exc:
+            logger.exception(f"Error inesperado en CreditNoteCreateView: {exc}")
+            if is_ajax:
+                return JsonResponse({'success': False, 'error': f"Error interno: {str(exc)}"}, status=500)
+            messages.error(request, f"Error interno al generar la Nota de Crédito: {exc}")
+            return self.get(request, *args, **kwargs)
+
+
+@permission_required('can_manage_bills')
+def customer_invoices_api(request, customer_id):
+    """
+    Retorna JSON con las facturas autorizadas del cliente para selección como CbtesAsoc.
+    GET /bills/clientes/<customer_id>/facturas/
+    """
+    customer = get_object_or_404(Customer, pk=customer_id)
+    invoices = Invoice.objects.filter(
+        customer=customer,
+        tipo_comprobante__in=[1, 6, 81, 82, 83],
+        estado_fiscal='autorizada'
+    ).order_by('-fecha_emision', '-id')[:50]
+
+    data = [
+        {
+            'id': inv.id,
+            'number': inv.number,
+            'tipo_display': inv.get_tipo_comprobante_display(),
+            'fecha_emision': inv.fecha_emision.strftime('%d/%m/%Y'),
+            'total': f"{inv.total:.2f}",
+        }
+        for inv in invoices
+    ]
+    return JsonResponse({'invoices': data})
+
+
+@permission_required('can_manage_bills')
+def product_search_api(request):
+    """
+    Búsqueda rápida de productos para autocomplete en Facturación Directa.
+    GET /bills/productos/buscar/?q=...
+    """
+    q = request.GET.get('q', '').strip()
+    if len(q) < 2:
+        return JsonResponse({'products': []})
+
+    products = Product.objects.filter(
+        is_active=True
+    ).filter(
+        Q(code__icontains=q) |
+        Q(name__icontains=q) |
+        Q(sku__icontains=q)
+    )[:20]
+
+    data = [
+        {
+            'id': p.id,
+            'code': p.code,
+            'name': p.name,
+            'price': str(p.price),
+            'tax_rate': str(getattr(p, 'tax_rate', 21.00) or '21.00'),
+            'stock': str(getattr(p, 'stock_quantity', 0)),
+        }
+        for p in products
+    ]
+    return JsonResponse({'products': data})
+
 
 def invoice_public_pdf(request, uuid):
     """Vista pública para descargar PDF de la factura mediante UUID."""
@@ -77,6 +284,7 @@ def invoice_public_pdf(request, uuid):
     response = HttpResponse(buffer.read(), content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="{prefix}_{invoice.number}.pdf"'
     return response
+
 
 @permission_required('can_manage_bills')
 @require_POST
@@ -102,6 +310,7 @@ def invoice_send_email(request, pk):
         return redirect('sales_web:sale_detail', pk=invoice.sale.pk)
     return redirect('bills_web:invoice_detail', pk=pk)
 
+
 @permission_required('can_manage_bills')
 def download_invoice_pdf(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
@@ -117,6 +326,7 @@ def download_invoice_pdf(request, pk):
     response['Content-Disposition'] = f'attachment; filename="{prefix}_{invoice.number}.pdf"'
     
     return response
+
 
 @permission_required('can_manage_bills')
 @require_POST
@@ -137,6 +347,7 @@ def invoice_retry(request, pk):
     if invoice.sale:
         return redirect('sales_web:sale_detail', pk=invoice.sale.id)
     return redirect('bills_web:invoice_detail', pk=invoice.id)
+
 
 @permission_required('can_manage_bills')
 @require_POST
@@ -168,13 +379,6 @@ def invoice_status_api(request, pk):
     API endpoint para polling del estado de una factura.
     
     GET /bills/invoices/<pk>/status/
-    
-    Retorna JSON con:
-    {
-        "status": "autorizada|pendiente|rechazada|borrador",
-        "cae": "12345678901234",
-        "vencimiento_cae": "2026-06-01"
-    }
     """
     invoice = get_object_or_404(Invoice, pk=pk)
     

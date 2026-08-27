@@ -1,6 +1,6 @@
 # PWA Implementation - ERP Bulonera Alvear
-**Fecha de implementación:** 2026-03-18  
-**Versión SW:** v2.0.0
+**Fecha de implementación:** 2026-03-18 (Actualizado: Agosto 2026 - Fase 8 Remediación)  
+**Versión SW:** v2.0.2
 
 ---
 
@@ -10,7 +10,7 @@
 
 | Archivo | Tipo | Cambio |
 |---------|------|--------|
-| `static/service-worker.js` | Modificado | Reescrito completamente |
+| `static/service-worker.js` | Modificado | Versión `v2.0.2` + Exclusión de endpoints sensibles (`SENSITIVE_API_PATTERNS`) |
 | `static/pwa/js/sw-register.js` | Modificado | **Bug fix crítico** + update banner |
 | `static/pwa/manifest.json` | Modificado | Campo `id`, shortcuts extra |
 
@@ -18,7 +18,7 @@
 
 | Archivo | Descripción |
 |---------|-------------|
-| `static/js/offline-db.js` | Clase `OfflineDB` con IndexedDB completo |
+| `static/js/offline-db.js` | Clase `OfflineDB` con IndexedDB, sync a `/api/v1/sales/sync/upload/`, soporte `EnvelopeRenderer` y UUID v4 |
 | `static/js/connection-status.js` | Clase `ConnectionStatus` con barra visual |
 
 ### 🖼️ Templates
@@ -26,6 +26,7 @@
 | Archivo | Cambio |
 |---------|--------|
 | `templates/base/base.html` | +connection-status bar, +offline-db.js, +connection-status.js |
+| `templates/core/auth/logout_confirm.html` | +Purga de `bulonera-erp-offline` (IndexedDB) en confirmación de logout |
 | `templates/includes/pwa.html` | Simplificado, JS centralizado en sw-register.js |
 | `templates/pwa/offline.html` | Rediseñado con Tailwind + links a páginas offline |
 | `templates/sales/sale_list.html` | +Mobile cards pattern (duplica template para móvil) |
@@ -49,12 +50,13 @@
 + navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
 ```
 
-### 2. Estrategias de Caché Avanzadas
-El nuevo `service-worker.js` implementa:
-- **3 cachés separados**: `bulonera-static-v2.0.0`, `bulonera-dynamic-v2.0.0`, `bulonera-api-v2.0.0`
+### 2. Estrategias de Caché Avanzadas y Aislamiento de Rutas Sensibles
+El `service-worker.js` (v2.0.2) implementa:
+- **3 cachés separados**: `bulonera-static-v2.0.2`, `bulonera-dynamic-v2.0.2`, `bulonera-api-v2.0.2`
 - **Cache First** para `/static/` y `/media/` (máxima velocidad)
 - **Network First con timeout 4s** para páginas HTML (siempre fresca + offline fallback)
-- **Stale-While-Revalidate** para `/api/` (respuesta inmediata + actualización en background)
+- **Exclusión de Rutas Sensibles**: `/api/v1/bills/`, `/api/v1/afip/`, `/api/v1/payments/`, `/api/v1/reports/`, `/api/v1/expenses/`, `/api/v1/auth/` operan exclusivamente bajo política **Network Only** para evitar filtración de datos fiscales/financieros en browser.
+- **Stale-While-Revalidate** para APIs públicas/catálogo (`/api/v1/products/`, `/api/v1/customers/`, `/api/v1/sales/`)
 - **Auto-cleanup** de cachés viejas en `activate`
 - **skipWaiting()** en `install` → activación inmediata
 

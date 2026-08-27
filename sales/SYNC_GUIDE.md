@@ -6,9 +6,9 @@ El `SaleSyncViewSet` implementa la sincronización offline-first para la aplicac
 
 **Características:**
 - ✅ **Throttling**: 50 syncs/hora (1 cada ~1.2 minutos)
-- ✅ **Validaciones**: 7-point checks exhaustivos (UUID, customer, product, quantity, etc.)
+- ✅ **Validaciones**: 8-point checks exhaustivos (UUID, customer, product, quantity, unit_price cross-check)
 - ✅ **Logging**: Errores con traceback completo + contexto (user_id, local_id)
-- ✅ **Conflictos**: Detección por versión, 3 estrategias de resolución
+- ✅ **Conflictos**: Detección por versión y desvío de precio (>5%), 3 estrategias de resolución
 - ✅ **Atomicidad**: Transacciones per-sale, rollback automático
 
 ---
@@ -67,7 +67,7 @@ curl -X POST http://localhost:8000/api/v1/sales/sync/upload/ \
       "status": "success",
       "sale_id": 42,
       "sale_number": "VTA-2026-00042",
-      "message": null
+      "warnings": null
     }
   ],
   "summary": {
@@ -79,30 +79,41 @@ curl -X POST http://localhost:8000/api/v1/sales/sync/upload/ \
 }
 ```
 
-**Response - Missing Customer (400):**
+**Response - Price Mismatch / Conflict (200):**
 
 ```json
 {
   "results": [
     {
       "local_id": "550e8400-e29b-41d4-a716-446655440000",
-      "status": "error",
-      "error": "Customer con id=999 no existe en base de datos"
+      "status": "conflict",
+      "sale_id": 42,
+      "sale_number": "VTA-2026-00042",
+      "warnings": [
+        {
+          "item": 0,
+          "product_id": 10,
+          "product_code": "PROD-000010",
+          "client_price": "25.50",
+          "catalog_price": "35.00",
+          "diff_pct": "27.1%"
+        }
+      ]
     }
   ],
   "summary": {
     "total": 1,
     "successful": 0,
-    "conflicts": 0,
-    "errors": 1
+    "conflicts": 1,
+    "errors": 0
   }
 }
 ```
 
-**Validaciones (7-Point):**
+**Validaciones (8-Point):**
 
-| # | Validación | Error si Falla | Fase |
-|---|-----------|----------------|------|
+| # | Validación | Error / Comportamiento si Falla | Fase |
+|---|-----------|---------------------------------|------|
 | 1 | local_id no vacío | "local_id requerido y no puede estar vacío" | Entrada |
 | 2 | local_id es UUID válido | "local_id debe ser UUID válido (RFC 4122)" | Entrada |
 | 3 | customer existe | "Customer con id=X no existe" | DB |
@@ -110,6 +121,7 @@ curl -X POST http://localhost:8000/api/v1/sales/sync/upload/ \
 | 5 | items list no vacío | "Sale debe tener al menos 1 item" | Contenido |
 | 6 | product_id existe (per item) | "Item #0: Producto con id=X no existe" | DB |
 | 7 | quantity > 0 y Decimal válido | "Item #0: quantity debe ser mayor a 0" | Contenido |
+| 8 | price cross-check vs catálogo (5%) | Marca `status: conflict` + nota en `internal_notes` sin rechazar venta | DB / Consistencia |
 
 **Logging:**
 

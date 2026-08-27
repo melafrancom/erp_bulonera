@@ -244,7 +244,7 @@ Variables:
                 <div class="absolute inset-0 bg-black/50" @click="open = false"></div>
 
                 <!-- Dialog -->
-                <div class="relative bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md p-6" @click.stop>
+                <div class="relative bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-2xl p-6" @click.stop>
 
                     <!-- Ícono + título -->
                     <div class="flex items-start gap-3 mb-5">
@@ -255,13 +255,13 @@ Variables:
                             <h3 class="font-semibold text-gray-900 dark:text-slate-100">Emitir Factura Electrónica</h3>
                             <p class="text-sm text-gray-500 dark:text-slate-400 mt-1">
                                 El comprobante se enviará a ARCA/AFIP y se obtendrá el CAE de forma inmediata.
-                                <strong>Esta acción no se puede deshacer</strong> sin emitir una Nota de Crédito.
+                                Podés personalizar la descripción del producto que saldrá en la factura (el código se mantiene inmutable).
                             </p>
                         </div>
                     </div>
 
                     <!-- Resumen de la venta -->
-                    <div class="bg-gray-50 dark:bg-slate-900/50 rounded-lg p-4 mb-5 space-y-2 text-sm">
+                    <div class="bg-gray-50 dark:bg-slate-900/50 rounded-lg p-4 mb-4 space-y-2 text-sm">
                         <div class="flex justify-between">
                             <span class="text-gray-500 dark:text-slate-400">Venta</span>
                             <span class="font-semibold text-gray-900 dark:text-slate-100">{{ sale.number }}</span>
@@ -280,6 +280,49 @@ Variables:
                     <form method="post" action="{% url 'sales_web:sale_invoice' sale.pk %}">
                         {% csrf_token %}
                         
+                        <!-- Tabla de renglones con edición de descripción -->
+                        <div class="mb-4">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">
+                                Renglones de la Factura (Edición de Nombres / Código Inmutable)
+                            </label>
+                            <div class="max-h-52 overflow-y-auto border border-gray-200 dark:border-slate-700 rounded-lg">
+                                <table class="w-full text-left text-xs">
+                                    <thead class="bg-gray-50 dark:bg-slate-900/70 text-gray-500 dark:text-slate-400 border-b border-gray-200 dark:border-slate-700 sticky top-0">
+                                        <tr>
+                                            <th class="px-3 py-2">Código</th>
+                                            <th class="px-3 py-2">Descripción en Factura</th>
+                                            <th class="px-2 py-2 text-right">Cant.</th>
+                                            <th class="px-3 py-2 text-right">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
+                                        {% for item in sale.items.all %}
+                                        <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-900/30">
+                                            <td class="px-3 py-2 whitespace-nowrap">
+                                                <span class="font-mono px-2 py-0.5 rounded bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-300">
+                                                    {{ item.product.code|default:"S/C" }}
+                                                </span>
+                                            </td>
+                                            <td class="px-3 py-2">
+                                                <input type="text"
+                                                       name="item_name_{{ item.id }}"
+                                                       value="{{ item.product.name }}"
+                                                       class="w-full px-2.5 py-1 text-xs border border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                                       required>
+                                            </td>
+                                            <td class="px-2 py-2 text-right text-gray-600 dark:text-slate-300 font-medium whitespace-nowrap">
+                                                {{ item.quantity_display }}
+                                            </td>
+                                            <td class="px-3 py-2 text-right font-semibold text-gray-900 dark:text-slate-100 whitespace-nowrap">
+                                                ${{ item.total|floatformat:2 }}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
                         <!-- Seleccionar medio de pago -->
                         <div class="mb-5">
                             <label class="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-2">Medio de Pago *</label>

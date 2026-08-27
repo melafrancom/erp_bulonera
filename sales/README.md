@@ -34,7 +34,7 @@ Toda la lógica de negocio se procesa de forma atómica en los siguientes servic
 *   `assign_sale_number`: Asigna número correlativo secuencial `VTA-YYYYMMDD-XXXXX` en `pre_save`, omitiendo queries innecesarias si la venta ya posee identificador.
 
 ## 🛡️ Reglas de Seguridad y Control de Acceso
-*   **Seguridad en Sincronización PWA (`sync/`)**: `SyncViewSet` implementa `IsAuthenticated` + `ModulePermission(required_permission='can_manage_sales')` para impedir que roles no autorizados (como `viewer`) sincronicen ventas offline. Se aplica restricción estricta de pertenencia (`created_by=request.user`) para evitar vulnerabilidades IDOR. `_sync_single_sale` asigna automáticamente `unit_cost=product.current_cost` si no viene provisto. Los datos fusionados mediante `client_wins` excluyen el campo `status` para evitar transiciones no permitidas en la máquina de estados.
+*   **Seguridad y Validación en Sincronización PWA (`sync/`)**: `SyncViewSet` implementa `IsAuthenticated` + `ModulePermission(required_permission='can_manage_sales')` para impedir que roles no autorizados (como `viewer`) sincronicen ventas offline. Se aplica restricción estricta de pertenencia (`created_by=request.user`) para evitar vulnerabilidades IDOR. `_sync_single_sale` asigna automáticamente `unit_cost=product.current_cost` si no viene provisto. Incorpora validación cruzada de precios con el catálogo activo (`PRICE_TOLERANCE = 0.05` / 5%): si el precio offline difiere en más de un 5%, la venta **no se rechaza** en mostrador sino que se marca como `conflict`, anotando el detalle en `internal_notes` y retornando advertencias (`warnings`) para revisión administrativa posterior. Los datos fusionados mediante `client_wins` excluyen el campo `status` para evitar transiciones no permitidas en la máquina de estados.
 *   **Serializers (`sales/api/serializers.py`)**: `SaleItemSerializer` marca `unit_cost` como `read_only_fields` para impedir manipulaciones externas de costos históricos vía API. `QuoteSerializer` está unificado y desduplicado.
 *   **Control de Versiones (`Sale.save`)**: El contador `version` solo se incrementa cuando se modifican campos de negocio. Se omiten recálculos de totales cacheados (`_cached_*`) o actualizaciones de metadatos de sincronización (`sync_*`) para prevenir falsos conflictos en PWA offline.
 *   **Permisos en Vistas Web (`sale_create`)**: La creación directa de ventas en salón valida explícitamente `_can_manage_sales` y redirige a `sale_list` en caso de denegación.
@@ -60,7 +60,7 @@ Base URL: `/api/v1/sales/`
 *   `GET /api/v1/sales/sales/stats/` - Métricas generales con caché de 5 min
 
 #### 🔄 Sincronización PWA (`/sync/`)
-*   `POST /api/v1/sales/sync/upload/` - Subir ventas creadas offline (asigna `unit_cost` de reposición y valida payload)
+*   `POST /api/v1/sales/sync/upload/` - Subir ventas creadas offline (valida payload, asigna `unit_cost` y valida tolerancia de precios del 5% marcando `conflict` con `warnings` si hay desvíos)
 *   `POST /api/v1/sales/sync/resolve/` - Resolver conflictos de versión (protección IDOR)
 *   `GET /api/v1/sales/sync/pending/` - Listar ventas pendientes
 *   `GET /api/v1/sales/sync/status/{sale_id}/` - Consultar estado de sincronización

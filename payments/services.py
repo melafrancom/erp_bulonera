@@ -401,3 +401,49 @@ class PaymentService:
             f"en {len(affected_sales)} ventas"
         )
 
+    @staticmethod
+    @transaction.atomic
+    def registrar_credito_nc_standalone(customer, nc_invoice, user, motivo=''):
+        """
+        Registra el crédito generado por una Nota de Crédito standalone
+        como saldo a favor (Payment confirmado con método credit_note y unallocated_balance)
+        para el cliente.
+        
+        Args:
+            customer (Customer): Cliente receptor del crédito
+            nc_invoice (Invoice): Nota de Crédito emitida
+            user (User): Usuario del sistema
+            motivo (str): Razón o concepto de la bonificación/descuento
+            
+        Returns:
+            Payment: Instancia del Payment creado
+        """
+        if not customer:
+            raise ValueError("Se requiere un cliente registrado para acreditar una Nota de Crédito.")
+        
+        monto = abs(nc_invoice.total)
+        if monto <= 0:
+            raise ValueError("El monto de la Nota de Crédito debe ser mayor a 0.")
+            
+        ref_text = f"NC {nc_invoice.number}" if nc_invoice.number else f"NC #{nc_invoice.id}"
+        notes_text = f"Crédito a favor por {ref_text}"
+        if motivo:
+            notes_text += f" - Motivo: {motivo}"
+            
+        payment = Payment.objects.create(
+            amount=monto,
+            method='credit_note',
+            customer=customer,
+            reference=ref_text,
+            date=nc_invoice.fecha_emision or timezone.now().date(),
+            notes=notes_text,
+            status='confirmed',
+            created_by=user
+        )
+        
+        logger.info(
+            f"Crédito por NC registrado: Payment #{payment.id} de ${payment.amount} "
+            f"para cliente {customer.business_name} (NC {ref_text})"
+        )
+        return payment
+

@@ -36,6 +36,7 @@ class Payment(BaseModel):
         ('credit_card', 'Tarjeta de Crédito'),
         ('transfer', 'Transferencia Bancaria'),
         ('check', 'Cheque'),
+        ('credit_note', 'Nota de Crédito'),
         ('other', 'Otro'),
     ]
 

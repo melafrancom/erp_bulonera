@@ -19,6 +19,8 @@ from bills.api.serializers import (
     InvoiceListSerializer,
     InvoiceDetailSerializer,
     FacturarVentaSerializer,
+    DirectInvoiceCreateSerializer,
+    CreditNoteCreateSerializer,
 )
 from bills.api.filters import InvoiceFilter
 
@@ -29,9 +31,11 @@ class InvoiceViewSet(AuditMixin, ListModelMixin, RetrieveModelMixin, GenericView
     """
     ViewSet para gestionar Facturas.
 
-    list:   GET    /api/v1/bills/
-    detail: GET    /api/v1/bills/{id}/
-    facturar: POST /api/v1/bills/facturar/  (acción custom)
+    list:         GET    /api/v1/bills/
+    detail:       GET    /api/v1/bills/{id}/
+    facturar:     POST   /api/v1/bills/facturar/      (facturar venta existente)
+    directa:      POST   /api/v1/bills/directa/       (factura directa de 0)
+    nota_credito: POST   /api/v1/bills/nota-credito/  (NC standalone)
     """
     queryset = Invoice.objects.all().select_related(
         'sale', 'customer', 'emitida_por', 'comprobante_arca'
@@ -54,6 +58,10 @@ class InvoiceViewSet(AuditMixin, ListModelMixin, RetrieveModelMixin, GenericView
             return InvoiceListSerializer
         if self.action == 'facturar':
             return FacturarVentaSerializer
+        if self.action == 'directa':
+            return DirectInvoiceCreateSerializer
+        if self.action == 'nota_credito':
+            return CreditNoteCreateSerializer
         return InvoiceDetailSerializer
 
     @action(detail=True, methods=['post'], url_path='send_email')
@@ -88,7 +96,8 @@ class InvoiceViewSet(AuditMixin, ListModelMixin, RetrieveModelMixin, GenericView
         {
             "sale_id": 123,
             "tipo_comprobante": null,    // auto-detectar
-            "async_emission": true       // via Celery
+            "async_emission": true,      // via Celery
+            "item_overrides": [{"sale_item_id": 1, "producto_nombre": "..."}]
         }
         """
         serializer = FacturarVentaSerializer(data=request.data)
@@ -97,6 +106,7 @@ class InvoiceViewSet(AuditMixin, ListModelMixin, RetrieveModelMixin, GenericView
         sale_id = serializer.validated_data['sale_id']
         tipo_comprobante = serializer.validated_data.get('tipo_comprobante')
         async_emission = serializer.validated_data.get('async_emission', True)
+        item_overrides = serializer.validated_data.get('item_overrides', [])
 
         # Obtener la venta respetando visibilidad del usuario
         from sales.models import Sale
@@ -122,6 +132,7 @@ class InvoiceViewSet(AuditMixin, ListModelMixin, RetrieveModelMixin, GenericView
                 user=request.user,
                 tipo_comprobante=tipo_comprobante,
                 async_emission=async_emission,
+                item_overrides=item_overrides,
             )
             return Response(
                 {
@@ -147,3 +158,60 @@ class InvoiceViewSet(AuditMixin, ListModelMixin, RetrieveModelMixin, GenericView
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+    # ── Acción: Facturación Directa de 0 ────────────────────────
+    @action(detail=False, methods=['post'], url_path='directa')
+    def directa(self, request):
+        """
+        POST /api/v1/bills/directa/
+        Crea una factura directa (desde 0).
+        """
+        serializer = DirectInvoiceCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        from bills.services import crear_factura_directa
+        try:
+            resultado = crear_factura_directa(
+                data=serializer.validated_data,
+                user=request.user,
+                emitir_arca=serializer.validated_data.get('emitir_arca', True),
+                async_emission=serializer.validated_data.get('async_emission', True),
+            )
+            return Response(resultado, status=status.HTTP_201_CREATED)
+        except ValueError as e:
+            return Response({'success': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.error(f'Error creando factura directa: {e}', exc_info=True)
+            return Response(
+                {'success': False, 'error': f'Error interno al crear factura directa: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    # ── Acción: Nota de Crédito Standalone ──────────────────────
+    @action(detail=False, methods=['post'], url_path='nota-credito')
+    def nota_credito(self, request):
+        """
+        POST /api/v1/bills/nota-credito/
+        Emite una Nota de Crédito standalone (descuentos comerciales, bonificaciones).
+        """
+        serializer = CreditNoteCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        from bills.services import emitir_nota_credito_standalone
+        try:
+            resultado = emitir_nota_credito_standalone(
+                data=serializer.validated_data,
+                user=request.user,
+                emitir_arca=serializer.validated_data.get('emitir_arca', True),
+                async_emission=serializer.validated_data.get('async_emission', True),
+            )
+            return Response(resultado, status=status.HTTP_201_CREATED)
+        except ValueError as e:
+            return Response({'success': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.error(f'Error emitiendo Nota de Crédito standalone: {e}', exc_info=True)
+            return Response(
+                {'success': False, 'error': f'Error interno al emitir Nota de Crédito: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
