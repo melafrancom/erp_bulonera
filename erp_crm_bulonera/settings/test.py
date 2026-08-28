@@ -28,6 +28,14 @@ MEDIA_ROOT = BASE_DIR / 'media_test'
 # Debug
 DEBUG = True
 
+# Desactivar redirección SSL y cookies seguras para el test client
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+SECURE_HSTS_SECONDS = 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_HSTS_PRELOAD = False
+
 # REST Framework: Desactivar throttling y usar renderers estándar para tests
 REST_FRAMEWORK.update({
     'DEFAULT_THROTTLE_CLASSES': [],
