@@ -148,3 +148,33 @@ class TestSaleModel:
         allocation.save()
         
         assert sale.total_paid == Decimal('0.00')
+
+    def test_sale_item_display_name_falls_back_to_product_name(self, sale, product):
+        """SaleItem.display_name retorna el nombre del producto si no hay override."""
+        # Arrange
+        item = SaleItem.objects.create(
+            sale=sale,
+            product=product,
+            quantity=Decimal('2'),
+            unit_price=Decimal('50.00'),
+            producto_nombre_override=''
+        )
+
+        # Act & Assert
+        assert item.display_name == product.name
+
+    def test_sale_item_display_name_returns_custom_override(self, sale, product):
+        """SaleItem.display_name retorna producto_nombre_override si fue provisto."""
+        # Arrange
+        custom_name = "Tornillo Especial de Muestra Mostrador"
+        item = SaleItem.objects.create(
+            sale=sale,
+            product=product,
+            quantity=Decimal('2'),
+            unit_price=Decimal('50.00'),
+            producto_nombre_override=custom_name
+        )
+
+        # Act & Assert
+        assert item.display_name == custom_name
+        assert item.product.code in str(item.product.code)  # Código de catálogo inalterado

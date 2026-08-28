@@ -160,7 +160,7 @@ def facturar_venta(sale, user, tipo_comprobante=None, async_emission=True, item_
         iva_monto = item.tax_amount
         alicuota = item.tax_percentage
 
-        original_nombre = item.product.name if hasattr(item.product, 'name') else str(item.product)
+        original_nombre = getattr(item, 'display_name', None) or (item.product.name if hasattr(item.product, 'name') else str(item.product))
         nombre_final = overrides_dict.get(item.id) or original_nombre
 
         lineas.append({
@@ -810,6 +810,12 @@ def crear_factura_directa(data: dict, user, emitir_arca: bool = True, async_emis
         # Nombre editable: toma el provisto por el usuario o el del catálogo
         prod_nombre = (item.get('producto_nombre') or '').strip() or product.name
 
+        raw_cost = item.get('unit_cost')
+        if raw_cost is not None and str(raw_cost).strip() != '':
+            unit_cost = Decimal(str(raw_cost))
+        else:
+            unit_cost = product.current_cost or Decimal('0.00')
+
         subtotal_base = (cantidad * unit_price).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         subtotal_con_desc = max(Decimal('0.00'), subtotal_base - desc_val)
         iva_monto = (subtotal_con_desc * (tax_pct / Decimal('100'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
@@ -822,7 +828,7 @@ def crear_factura_directa(data: dict, user, emitir_arca: bool = True, async_emis
             'producto_nombre': prod_nombre,  # Editable
             'quantity': cantidad,
             'unit_price': unit_price,
-            'unit_cost': product.current_cost or Decimal('0.00'),
+            'unit_cost': unit_cost,
             'discount_value': desc_val,
             'subtotal': subtotal_con_desc,
             'alicuota_iva': tax_pct,
@@ -872,6 +878,7 @@ def crear_factura_directa(data: dict, user, emitir_arca: bool = True, async_emis
             SaleItem.objects.create(
                 sale=sale,
                 product=linea['product'],
+                producto_nombre_override=linea['producto_nombre'],
                 quantity=linea['quantity'],
                 unit_price=linea['unit_price'],
                 unit_cost=linea['unit_cost'],

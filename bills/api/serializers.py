@@ -172,6 +172,7 @@ class DirectInvoiceItemInputSerializer(serializers.Serializer):
     producto_nombre = serializers.CharField(max_length=255, required=False, allow_blank=True, default='', help_text='Descripción personalizada')
     quantity = serializers.DecimalField(max_digits=12, decimal_places=4, min_value=Decimal('0.0001'))
     unit_price = serializers.DecimalField(max_digits=16, decimal_places=6, required=False, allow_null=True, min_value=Decimal('0.00'))
+    unit_cost = serializers.DecimalField(max_digits=16, decimal_places=6, required=False, allow_null=True, min_value=Decimal('0.00'), help_text='Costo unitario real de compra')
     discount_value = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, default=Decimal('0.00'), min_value=Decimal('0.00'))
     tax_percentage = serializers.DecimalField(max_digits=5, decimal_places=2, required=False, default=Decimal('21.00'))
 

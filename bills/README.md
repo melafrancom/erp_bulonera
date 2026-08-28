@@ -18,8 +18,8 @@ El módulo `bills` gestiona la facturación legal y fiscal de **Bulonera Alvear*
 
 ## ⚡ Servicios Críticos (`services.py`)
 La interacción fiscal se centraliza en los siguientes servicios atómicos protegidos con bloqueos pesimistas (`select_for_update()`):
-*   `facturar_venta(sale, user, tipo_comprobante=None, async_emission=True, item_overrides=None)`: Ejecuta `@transaction.atomic` con lock pesimista sobre `Sale` (`select_for_update()`), previene carreras de doble emisión fiscal, aplica sobreescrituras de nombres de producto si vienen provistas (manteniendo el código inmutable), genera la factura borrador y encola la autorización ante la AFIP mediante Celery.
-*   `crear_factura_directa(data, user, emitir_arca=True, async_emission=True)`: Orquesta la venta comercial directa desde 0 (crea `Sale` en estado `delivered` y `SaleItem`s), descuenta stock en inventario, valida crédito con lock pesimista sobre `Customer`, genera `Invoice`/`InvoiceItem`s con descripciones personalizadas, registra cobro automático en `Payment` (o valida crédito en cuenta corriente) y encola la emisión en ARCA.
+*   `facturar_venta(sale, user, tipo_comprobante=None, async_emission=True, item_overrides=None)`: Ejecuta `@transaction.atomic` con lock pesimista sobre `Sale` (`select_for_update()`), previene carreras de doble emisión fiscal, aplica sobreescrituras de nombres de producto (usando `item.display_name` por defecto si no hay override puntual, manteniendo el código inmutable), genera la factura borrador y encola la autorización ante la AFIP mediante Celery.
+*   `crear_factura_directa(data, user, emitir_arca=True, async_emission=True)`: Orquesta la venta comercial directa desde 0 (crea `Sale` en estado `delivered` y `SaleItem`s con `producto_nombre_override` y snapshot de `unit_cost`), descuenta stock en inventario, valida crédito con lock pesimista sobre `Customer`, genera `Invoice`/`InvoiceItem`s con descripciones personalizadas, registra cobro automático en `Payment` (o valida crédito en cuenta corriente) y encola la emisión en ARCA.
 *   `emitir_nota_credito_standalone(data, user, emitir_arca=True, async_emission=True)`: Emite Notas de Crédito desvinculadas por descuentos o bonificaciones comerciales de fin de mes. Aplica la regla fiscal de ARCA (`CbtesAsoc` obligatorio para NC A y opcional para NC B), utiliza renglones descriptivos libres, no altera el stock físico y acredita automáticamente el saldo en la cuenta corriente del cliente vía `PaymentService.registrar_credito_nc_standalone()`.
 *   `reintentar_factura(invoice_id)`: Reintenta la emisión ante la AFIP de facturas que quedaron en estado de error o borrador.
 *   `anular_factura_y_venta(invoice_id, user)`: Ejecuta `@transaction.atomic` con lock pesimista sobre `Invoice` (`select_for_update()`) para evitar dobles Notas de Crédito en ARCA, cancela la venta (devolviendo stock) y libera los pagos asignados.
@@ -32,7 +32,7 @@ Base URL: `/api/v1/bills/`
 *   `GET /api/v1/bills/invoices/` - Listado paginado de facturas (`InvoiceViewSet`, hereda de `GenericViewSet` + `ListModelMixin` + `RetrieveModelMixin` + `AuditMixin`).
 *   `GET /api/v1/bills/invoices/{id}/` - Detalle de factura y sus renglones.
 *   `POST /api/v1/bills/invoices/facturar/` - Emitir factura para una venta confirmada (soporta `item_overrides`).
-*   `POST /api/v1/bills/invoices/directa/` - Emitir factura directa de 0 con actualización integral de stock, pagos y ARCA.
+*   `POST /api/v1/bills/invoices/directa/` - Emitir factura directa de 0 con actualización integral de stock, pagos, soporte de `unit_cost` y ARCA.
 *   `POST /api/v1/bills/invoices/nota-credito/` - Emitir Nota de Crédito standalone por descuentos/bonificaciones.
 *   `POST /api/v1/bills/invoices/{id}/send_email/` - Enviar factura por correo electrónico.
 *   *Nota de Seguridad e Inmutabilidad Fiscal:* Se bloquearon los verbos `PUT`, `PATCH` y `DELETE` directos en `InvoiceViewSet` para garantizar la inmutabilidad legal de comprobantes electrónicos autorizados por AFIP/ARCA (RG 2485/2008). Las anulaciones se procesan exclusivamente vía Nota de Crédito.
@@ -40,7 +40,7 @@ Base URL: `/api/v1/bills/`
 ### Vistas Web (`web/urls/urls_web.py`) - Protegidas con `can_manage_bills`
 Todas las vistas web internas usan `ModulePermissionRequiredMixin` o `@permission_required('can_manage_bills')`:
 *   `GET /bills/facturas/` - Listado de facturas emitidas y filtros (`InvoiceListView`).
-*   `GET /bills/facturas/nueva/` - Formulario interactivo con Alpine.js para Facturación Directa de 0 (`InvoiceCreateView`).
+*   `GET /bills/facturas/nueva/` - Formulario interactivo con Alpine.js para Facturación Directa de 0 (`InvoiceCreateView`), integrando selector DRY `_customer_selector.html`, live search de productos y captura de costo unitario.
 *   `GET /bills/nota-credito/nueva/` - Formulario interactivo con Alpine.js para Notas de Crédito Standalone (`CreditNoteCreateView`).
 *   `GET /bills/facturas/<pk>/` - Detalle completo de la factura (`InvoiceDetailView`).
 *   `GET /bills/facturas/<pk>/pdf/` - Descarga privada de PDF (`download_invoice_pdf`).
@@ -49,7 +49,7 @@ Todas las vistas web internas usan `ModulePermissionRequiredMixin` o `@permissio
 *   `POST /bills/facturas/<pk>/enviar-email/` - Encolar envío por email (`invoice_send_email`).
 *   `GET /bills/facturas/publico/<uuid>/pdf/` - **Vista pública** de descarga de PDF por UUID sin requerir autenticación (`invoice_public_pdf`).
 *   `GET /bills/clientes/<int:customer_id>/facturas/` - Helper JSON para obtener facturas autorizadas de un cliente (`customer_invoices_api`).
-*   `GET /bills/productos/buscar/` - Helper JSON para búsqueda rápida de productos de catálogo (`product_search_api`).
+*   `GET /bills/productos/buscar/` - Helper JSON para búsqueda multi-término de productos con retorno de costo y stock (`product_search_api`). Accesible para usuarios con permisos en `bills` o `sales`.
 
 ## 📝 Documentación de Detalle
 *   [Integración Fiscal y Notas de Crédito](docs/afip_integration.md): Flujo asíncrono con Celery, mapeo de impuestos de la AFIP y lógica de reversión de saldos por anulación.

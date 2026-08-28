@@ -9,10 +9,11 @@ Flujos cubiertos:
 4. E2E Imputación de Saldo a Favor de NC Standalone en una Venta Posterior.
 """
 
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from unittest.mock import patch
 
+from django.utils import timezone
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
@@ -118,7 +119,7 @@ class BillingE2EFlowTests(TestCase):
         quote = Quote.objects.create(
             customer=self.customer_ri,
             created_by=self.user,
-            valid_until=date.today(),
+            valid_until=timezone.now().date() + timedelta(days=7),
             status='draft'
         )
         quote_item = QuoteItem.objects.create(

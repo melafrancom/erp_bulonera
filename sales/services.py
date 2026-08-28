@@ -80,6 +80,7 @@ def convert_quote_to_sale(quote, user, modifications=None):
             SaleItem.objects.create(
                 sale=sale,
                 product=quote_item.product,
+                producto_nombre_override=quote_item.producto_nombre_override,
                 quantity=quote_item.quantity,
                 unit_price=unit_price,
                 unit_cost=quote_item.product.current_cost,  # Snapshot del costo

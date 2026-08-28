@@ -87,7 +87,6 @@ class InvoiceCreateView(ModulePermissionRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['customers'] = Customer.objects.filter(is_active=True).order_by('business_name')
         context['payment_methods'] = Sale.payment_method.field.choices
         context['tax_rates'] = [
             {'value': '21.00', 'label': '21.0% (General)'},
@@ -155,7 +154,6 @@ class CreditNoteCreateView(ModulePermissionRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['customers'] = Customer.objects.filter(is_active=True).order_by('business_name')
         context['tax_rates'] = [
             {'value': '21.00', 'label': '21.0% (General)'},
             {'value': '10.50', 'label': '10.5% (Reducido)'},
@@ -239,23 +237,40 @@ def customer_invoices_api(request, customer_id):
     return JsonResponse({'invoices': data})
 
 
-@permission_required('can_manage_bills')
 def product_search_api(request):
     """
-    Búsqueda rápida de productos para autocomplete en Facturación Directa.
+    Búsqueda rápida de productos para autocomplete en Facturación Directa y Ventas.
     GET /bills/productos/buscar/?q=...
     """
+    if not request.user.is_authenticated:
+        return JsonResponse({'products': [], 'error': 'Unauthorized'}, status=401)
+
+    has_perm = (
+        request.user.is_superuser or
+        getattr(request.user, 'role', '') in ('admin', 'manager') or
+        getattr(request.user, 'can_manage_bills', False) or
+        getattr(request.user, 'can_manage_sales', False)
+    )
+    if not has_perm:
+        return JsonResponse({'products': [], 'error': 'Forbidden'}, status=403)
+
     q = request.GET.get('q', '').strip()
     if len(q) < 2:
         return JsonResponse({'products': []})
 
+    words = q.split()
+    query = Q()
+    for word in words:
+        query &= (
+            Q(code__icontains=word) |
+            Q(name__icontains=word) |
+            Q(sku__icontains=word) |
+            Q(other_codes__icontains=word)
+        )
+
     products = Product.objects.filter(
         is_active=True
-    ).filter(
-        Q(code__icontains=q) |
-        Q(name__icontains=q) |
-        Q(sku__icontains=q)
-    )[:20]
+    ).filter(query)[:20]
 
     data = [
         {
@@ -263,6 +278,7 @@ def product_search_api(request):
             'code': p.code,
             'name': p.name,
             'price': str(p.price),
+            'cost': str(p.cost),
             'tax_rate': str(getattr(p, 'tax_rate', 21.00) or '21.00'),
             'stock': str(getattr(p, 'stock_quantity', 0)),
         }

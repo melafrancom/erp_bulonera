@@ -231,8 +231,8 @@
               {% for item in sale.items.all %}
               <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-700/30">
                 <td class="px-4 py-4">
-                  <div class="text-sm font-medium text-gray-900 dark:text-slate-100">{{ item.product.name }}</div>
-                  <div class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">SKU: {{ item.product.sku }}</div>
+                  <div class="text-sm font-medium text-gray-900 dark:text-slate-100">{{ item.display_name }}</div>
+                  <div class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">Cód: {{ item.product.code }} | SKU: {{ item.product.sku }}</div>
                   {% if item.discount_reason %}
                   <div class="text-xs text-orange-600 mt-0.5">{{ item.discount_reason }}</div>
                   {% endif %}

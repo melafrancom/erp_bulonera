@@ -20,6 +20,8 @@ class QuoteItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
     product_sku = serializers.CharField(source='product.sku', read_only=True)
     
+    display_name = serializers.CharField(read_only=True)
+    
     # Propiedades calculadas (read-only)
     line_subtotal = serializers.SerializerMethodField()
     discount_amount = serializers.SerializerMethodField()
@@ -32,6 +34,7 @@ class QuoteItemSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'product', 'product_name', 'product_sku',
+            'producto_nombre_override', 'display_name',
             'quantity', 'unit_price',
             'discount_type', 'discount_value', 'discount_reason',
             'tax_percentage',
@@ -42,7 +45,7 @@ class QuoteItemSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
         read_only_fields = [
-            'id', 'created_at', 'updated_at',
+            'id', 'display_name', 'created_at', 'updated_at',
             'line_subtotal', 'discount_amount', 'subtotal_with_discount',
             'tax_amount', 'total'
         ]
@@ -289,6 +292,8 @@ class SaleItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
     product_sku = serializers.CharField(source='product.sku', read_only=True)
     
+    display_name = serializers.CharField(read_only=True)
+    
     # Propiedades calculadas
     line_subtotal = serializers.SerializerMethodField()
     discount_amount = serializers.SerializerMethodField()
@@ -303,6 +308,7 @@ class SaleItemSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'product', 'product_name', 'product_sku',
+            'producto_nombre_override', 'display_name',
             'quantity', 'unit_price', 'unit_cost',
             'discount_type', 'discount_value', 'discount_reason',
             'tax_percentage',
@@ -312,7 +318,7 @@ class SaleItemSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
         read_only_fields = [
-            'id', 'created_at', 'updated_at',
+            'id', 'display_name', 'created_at', 'updated_at',
             'unit_cost',
             'line_subtotal', 'discount_amount', 'subtotal_with_discount',
             'tax_amount', 'total', 'profit', 'margin_percentage'

@@ -59,31 +59,19 @@
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-    <!-- Left Column: Customer & Invoice Parameters & Items -->
+    <!-- Left Column: Customer & Items -->
     <div class="lg:col-span-2 space-y-6">
 
-      <!-- Customer Card -->
+      <!-- Customer Selector Section -->
+      {% include 'includes/partials/_customer_selector.html' with section_title="1. Información del Cliente" %}
+
+      <!-- Fiscal Parameters Summary -->
       <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm space-y-4">
-        <h2 class="text-sm font-bold text-gray-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
-          <i data-lucide="user" class="w-4 h-4 text-blue-500"></i>
-          1. Datos del Cliente
+        <h2 class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="file-text" class="w-4 h-4 text-blue-500"></i>
+          Datos Fiscales del Comprobante
         </h2>
-
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Selector de Cliente Registrado -->
-          <div class="sm:col-span-2">
-            <label class="block text-xs font-semibold text-gray-600 dark:text-slate-300 mb-1">Cliente Registrado (Opcional si es Mostrador / CF)</label>
-            <select x-model="customerId" @change="onCustomerChange()"
-                    class="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500">
-              <option value="">-- Cliente de Mostrador (Walk-in / Consumidor Final) --</option>
-              {% for cust in customers %}
-                <option value="{{ cust.id }}" data-cuit="{{ cust.cuit_cuil|default:'' }}" data-name="{{ cust.business_name }}" data-cond="{{ cust.tax_condition }}" data-addr="{{ cust.billing_address|default:'' }}">
-                  {{ cust.business_name }} {% if cust.cuit_cuil %}(CUIT: {{ cust.cuit_cuil }}){% endif %} - [{{ cust.get_tax_condition_display }}]
-                </option>
-              {% endfor %}
-            </select>
-          </div>
-
           <!-- Razón Social / Nombre -->
           <div>
             <label class="block text-xs font-semibold text-gray-600 dark:text-slate-300 mb-1">Razón Social / Nombre *</label>
@@ -136,8 +124,9 @@
         <div class="relative" @click.outside="productSearchResults = []">
           <div class="relative">
             <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            <input type="text" x-model="productSearchQuery" @input.debounce.250ms="searchProducts()"
-                   placeholder="Buscar producto en catálogo por código, nombre o SKU..."
+            <input type="text" x-model="productSearchQuery" @input.debounce.200ms="searchProducts()"
+                   @keydown.escape="productSearchResults = []"
+                   placeholder="Buscar producto en catálogo por código, nombre, SKU o palabras clave..."
                    class="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500">
           </div>
 
@@ -145,15 +134,20 @@
           <div x-show="productSearchResults.length > 0" x-cloak
                class="absolute z-20 left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl max-h-60 overflow-y-auto divide-y divide-gray-100 dark:divide-slate-700">
             <template x-for="p in productSearchResults" :key="p.id">
-              <div @click="addProductToInvoice(p)"
-                   class="p-3 hover:bg-blue-50 dark:hover:bg-slate-700/50 cursor-pointer flex items-center justify-between gap-3 text-xs">
-                <div>
-                  <span class="font-mono font-bold px-2 py-0.5 bg-gray-100 dark:bg-slate-700 rounded text-gray-800 dark:text-slate-200" x-text="p.code"></span>
-                  <span class="ml-2 font-medium text-gray-900 dark:text-slate-100" x-text="p.name"></span>
+              <div @mousedown.prevent="addProductToInvoice(p)"
+                   class="p-3 hover:bg-blue-50 dark:hover:bg-slate-700/50 cursor-pointer flex items-center justify-between gap-3 text-xs transition-colors">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="font-mono font-bold px-2 py-0.5 bg-gray-100 dark:bg-slate-700 rounded text-gray-800 dark:text-slate-200 flex-shrink-0" x-text="p.code"></span>
+                  <span class="font-medium text-gray-900 dark:text-slate-100 truncate" x-text="p.name"></span>
                 </div>
-                <div class="text-right">
-                  <span class="font-bold text-gray-900 dark:text-slate-100" x-text="'$' + parseFloat(p.price).toFixed(2)"></span>
-                  <span class="text-gray-400 block text-[10px]" x-text="'Stock: ' + p.stock"></span>
+                <div class="text-right flex-shrink-0 flex items-center gap-3">
+                  <div>
+                    <span class="font-bold text-gray-900 dark:text-slate-100" x-text="'$' + parseFloat(p.price).toFixed(2)"></span>
+                    <span class="text-gray-400 block text-[10px]" x-text="'Stock: ' + p.stock"></span>
+                  </div>
+                  <button type="button" class="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg font-bold hover:bg-blue-100 transition-colors">
+                    + Añadir
+                  </button>
                 </div>
               </div>
             </template>
@@ -165,20 +159,21 @@
           <table class="w-full text-left text-xs">
             <thead class="bg-gray-50 dark:bg-slate-900/70 text-gray-500 dark:text-slate-400 border-b border-gray-200 dark:border-slate-700">
               <tr>
-                <th class="px-3 py-3 w-28">Código</th>
-                <th class="px-3 py-3 min-w-[200px]">Descripción en Factura (Editable)</th>
-                <th class="px-2 py-3 w-20 text-center">Cant.</th>
+                <th class="px-3 py-3 w-24">Código</th>
+                <th class="px-3 py-3 min-w-[180px]">Descripción en Factura (Editable)</th>
+                <th class="px-2 py-3 w-16 text-center">Cant.</th>
                 <th class="px-2 py-3 w-24 text-right">Precio Unit.</th>
-                <th class="px-2 py-3 w-20 text-right">Desc. ($)</th>
-                <th class="px-2 py-3 w-24 text-center">IVA %</th>
+                <th class="px-2 py-3 w-20 text-right">Costo Unit.</th>
+                <th class="px-2 py-3 w-16 text-right">Desc. ($)</th>
+                <th class="px-2 py-3 w-20 text-center">IVA %</th>
                 <th class="px-3 py-3 w-24 text-right">Total</th>
-                <th class="px-2 py-3 w-10 text-center"></th>
+                <th class="px-2 py-3 w-8 text-center"></th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
               <template x-if="items.length === 0">
                 <tr>
-                  <td colspan="8" class="p-8 text-center text-gray-400 dark:text-slate-500 italic">
+                  <td colspan="9" class="p-8 text-center text-gray-400 dark:text-slate-500 italic">
                     No hay productos agregados. Utilizá el buscador de arriba para añadir renglones a la factura.
                   </td>
                 </tr>
@@ -204,6 +199,12 @@
                   <td class="px-2 py-2.5">
                     <input type="number" step="0.01" min="0" x-model.number="item.unit_price"
                            class="w-full px-2 py-1 text-right text-xs border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-1 focus:ring-blue-500">
+                  </td>
+                  <!-- Costo Unitario -->
+                  <td class="px-2 py-2.5">
+                    <input type="number" step="0.01" min="0" x-model.number="item.unit_cost" placeholder="Auto"
+                           class="w-full px-2 py-1 text-right text-xs border border-dashed border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-1 focus:ring-blue-500"
+                           title="Costo de compra unitario (opcional)">
                   </td>
                   <!-- Descuento -->
                   <td class="px-2 py-2.5">
@@ -298,37 +299,46 @@
       </div>
 
       <!-- Totals & Summary Card -->
-      <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-6 rounded-2xl shadow-xl space-y-4">
-        <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center justify-between">
-          <span>Resumen de Liquidación</span>
-          <span class="text-[10px] px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full font-mono">ARCA/AFIP</span>
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm space-y-4">
+        <h2 class="text-sm font-bold text-gray-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="calculator" class="w-4 h-4 text-blue-500"></i>
+          4. Resumen y Liquidación
         </h2>
 
-        <div class="space-y-2 text-sm border-b border-slate-700/60 pb-4">
-          <div class="flex justify-between text-slate-300">
-            <span>Subtotal Neto:</span>
-            <span class="font-mono font-medium" x-text="'$' + summary.neto.toFixed(2)"></span>
+        <div class="space-y-2.5 text-xs">
+          <div class="flex justify-between text-gray-500 dark:text-slate-400">
+            <span>Subtotal Neto Gravado</span>
+            <span class="font-bold text-gray-900 dark:text-slate-100" x-text="'$' + summary.neto.toFixed(2)"></span>
           </div>
-          <div class="flex justify-between text-slate-300" x-show="summary.descuento > 0">
-            <span>Descuentos:</span>
-            <span class="font-mono font-medium text-amber-400" x-text="'-$' + summary.descuento.toFixed(2)"></span>
+
+          <div class="flex justify-between text-emerald-600 dark:text-emerald-400" x-show="summary.descuento > 0">
+            <span>Descuentos Aplicados</span>
+            <span class="font-bold" x-text="'-$' + summary.descuento.toFixed(2)"></span>
           </div>
-          <div class="flex justify-between text-slate-300">
-            <span>IVA Discriminado:</span>
-            <span class="font-mono font-medium text-emerald-400" x-text="'$' + summary.iva.toFixed(2)"></span>
+
+          <div class="flex justify-between text-gray-500 dark:text-slate-400">
+            <span>IVA Liquidado Total</span>
+            <span class="font-bold text-gray-900 dark:text-slate-100" x-text="'$' + summary.iva.toFixed(2)"></span>
+          </div>
+
+          <div class="pt-3 border-t border-gray-100 dark:border-slate-700 flex justify-between items-center">
+            <span class="text-sm font-black text-gray-900 dark:text-slate-100 uppercase">Total Final</span>
+            <span class="text-xl font-black text-blue-600 dark:text-blue-400" x-text="'$' + summary.total.toFixed(2)"></span>
           </div>
         </div>
 
-        <div class="flex justify-between items-baseline pt-2">
-          <span class="text-sm font-bold uppercase tracking-wider text-slate-300">Total a Facturar:</span>
-          <span class="text-2xl font-black text-white font-mono" x-text="'$' + summary.total.toFixed(2)"></span>
+        <div class="pt-4 space-y-2">
+          <button type="button" @click="submitInvoice(true)" :disabled="submitting || items.length === 0"
+                  class="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 text-sm">
+            <template x-if="submitting">
+              <i data-lucide="loader" class="w-4 h-4 animate-spin"></i>
+            </template>
+            <template x-if="!submitting">
+              <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            </template>
+            <span x-text="submitting ? 'Emitiendo comprobante...' : 'Confirmar y Emitir Factura'"></span>
+          </button>
         </div>
-
-        <button type="button" @click="submitInvoice(true)" :disabled="submitting || items.length === 0"
-                class="w-full mt-4 py-3.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-black text-sm uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 active:scale-95">
-          <i data-lucide="send" class="w-4 h-4"></i>
-          <span x-text="submitting ? 'Emitiendo en ARCA...' : 'Emitir Factura Electrónica'"></span>
-        </button>
       </div>
 
     </div>
@@ -336,12 +346,16 @@
   </div>
 
 </div>
+{% endblock %}
 
+{% block extra_js %}
+<script src="{% static 'js/components/customer_selector.js' %}"></script>
 <script>
 function directInvoiceForm() {
   return {
+    ...customerSelectorComponent(),
     customerId: '',
-    customerName: '',
+    customerName: 'Consumidor Final',
     customerCuit: '',
     customerTaxCondition: 'CF',
     customerAddress: '',
@@ -360,27 +374,46 @@ function directInvoiceForm() {
       this.$watch('items', () => {
         if (window.lucide) lucide.createIcons();
       });
-    },
 
-    onCustomerChange() {
-      if (!this.customerId) {
-        this.customerName = 'Consumidor Final';
-        this.customerCuit = '';
-        this.customerTaxCondition = 'CF';
-        this.customerAddress = '';
-        this.tipoComprobante = 6;
-        return;
-      }
+      this.$watch('selectedCustomer', (cust) => {
+        if (cust) {
+          this.customerId = cust.id;
+          this.customerName = cust.business_name || '';
+          this.customerCuit = cust.cuit_cuil || '';
+          this.customerTaxCondition = cust.tax_condition || 'CF';
+          this.customerAddress = cust.billing_address || '';
+          this.autoSelectTipoComprobante();
+        }
+      });
 
-      const select = document.querySelector('select[x-model="customerId"]');
-      const opt = select.options[select.selectedIndex];
-      if (opt) {
-        this.customerName = opt.getAttribute('data-name') || '';
-        this.customerCuit = opt.getAttribute('data-cuit') || '';
-        this.customerTaxCondition = opt.getAttribute('data-cond') || 'CF';
-        this.customerAddress = opt.getAttribute('data-addr') || '';
-        this.autoSelectTipoComprobante();
-      }
+      this.$watch('customerMode', (mode) => {
+        if (mode === 'anonymous') {
+          this.customerId = '';
+          this.customerName = 'Consumidor Final';
+          this.customerCuit = '';
+          this.customerTaxCondition = 'CF';
+          this.customerAddress = '';
+          this.tipoComprobante = 6;
+        } else if (mode === 'new') {
+          this.customerId = '';
+        }
+      });
+
+      this.$watch('newCustomer.name', (val) => {
+        if (this.customerMode === 'new') this.customerName = val;
+      });
+      this.$watch('newCustomer.cuit', (val) => {
+        if (this.customerMode === 'new') this.customerCuit = val;
+      });
+      this.$watch('newCustomer.tax_condition', (val) => {
+        if (this.customerMode === 'new') {
+          this.customerTaxCondition = val || 'CF';
+          this.autoSelectTipoComprobante();
+        }
+      });
+      this.$watch('newCustomer.billing_address', (val) => {
+        if (this.customerMode === 'new') this.customerAddress = val;
+      });
     },
 
     autoSelectTipoComprobante() {
@@ -412,6 +445,7 @@ function directInvoiceForm() {
         producto_nombre: product.name,
         quantity: 1,
         unit_price: parseFloat(product.price) || 0,
+        unit_cost: product.cost ? parseFloat(product.cost) : null,
         discount_value: 0,
         tax_percentage: parseFloat(product.tax_rate) || 21.00
       });

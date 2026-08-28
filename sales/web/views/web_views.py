@@ -725,6 +725,8 @@ def sale_create(request):
                 for item in quote_obj.items.select_related('product').all():
                     prefilled_items.append({
                         'product_id': item.product.id,
+                        'product_code': item.product.code,
+                        'producto_nombre': item.display_name,
                         'quantity': float(item.quantity),
                         'unit_price': float(item.product.price),
                         'discount_type': item.discount_type,
@@ -743,6 +745,8 @@ def sale_create(request):
                 for item in sale_obj.items.select_related('product').all():
                     prefilled_items.append({
                         'product_id': item.product.id,
+                        'product_code': item.product.code,
+                        'producto_nombre': item.display_name,
                         'quantity': float(item.quantity),
                         'unit_price': float(item.product.price),
                         'discount_type': item.discount_type,
@@ -755,7 +759,7 @@ def sale_create(request):
             pass
 
     context = {
-        'products':      _get_products_queryset(),
+        'products':      [],  # Se utiliza product_search_api en vivo para evitar sobrecargar el DOM
         'pricelists':    _get_pricelists_queryset(),
         'categories':    _get_categories_queryset(),
         'subcategories': _get_subcategories_queryset(),

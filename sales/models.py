@@ -193,6 +193,13 @@ class QuoteItem(BaseModel):
     
     quote = models.ForeignKey(Quote, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    producto_nombre_override = models.CharField(
+        "Descripción personalizada",
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="Descripción personalizada para mostrador/impresión. Vacío = usa product.name"
+    )
     
     quantity = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(Decimal('0.001'))])
     unit_price = models.DecimalField(max_digits=16, decimal_places=6)
@@ -257,6 +264,10 @@ class QuoteItem(BaseModel):
     @property
     def total(self):
         return self.subtotal_with_discount + self.tax_amount
+
+    @property
+    def display_name(self):
+        return self.producto_nombre_override or (self.product.name if self.product else "")
 
     @property
     def quantity_display(self):
@@ -656,6 +667,13 @@ class SaleItem(BaseModel):
         on_delete=models.PROTECT,
         related_name='sale_items'
     )
+    producto_nombre_override = models.CharField(
+        "Descripción personalizada",
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="Descripción personalizada para mostrador/impresión. Vacío = usa product.name"
+    )
     
     quantity = models.DecimalField(
         max_digits=10,
@@ -696,6 +714,10 @@ class SaleItem(BaseModel):
         ordering = ['line_order', 'id']
     
     # Propiedades idénticas a QuoteItem
+    @property
+    def display_name(self):
+        return self.producto_nombre_override or (self.product.name if self.product else "")
+
     @property
     def line_subtotal(self):
         if self.unit_price is None or self.quantity is None:

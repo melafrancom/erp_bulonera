@@ -132,8 +132,7 @@ class TestBillsWebAccessControl:
         response = client.get(url)
         assert response.status_code == 200
         assert 'Nueva Factura Directa' in response.content.decode('utf-8')
-        assert 'Cliente Con Direccion' in response.content.decode('utf-8')
-        assert 'Cliente Sin Direccion' in response.content.decode('utf-8')
+        assert 'Información del Cliente' in response.content.decode('utf-8')
 
     def test_manager_can_access_creditnote_create_view(self, client, manager_user):
         """Manager puede acceder al formulario de nueva nota de crédito (HTTP 200)."""
