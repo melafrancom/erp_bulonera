@@ -71,6 +71,7 @@
     {% include 'includes/partials/_customer_selector.html' with section_title="Información del Cliente" %}
 
     {% include 'products/partials/_advanced_search_panel.html' %}
+
     <!-- ===== SECCIÓN: Items del Presupuesto ===== -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden mb-6">
       <div class="px-6 py-4 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-gray-50 to-white dark:from-slate-800 dark:to-slate-800">
@@ -90,12 +91,49 @@
         </div>
       </div>
 
+      <!-- Live Search Bar -->
+      <div class="p-4 border-b border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/30">
+        <div class="relative" @click.outside="productSearchResults = []">
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input type="text" x-model="productSearchQuery" @input.debounce.200ms="searchProducts()"
+                   @keydown.escape="productSearchResults = []"
+                   placeholder="Buscar producto por código, nombre, SKU o palabras clave para añadir renglón..."
+                   class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-[#4A6FA5]">
+          </div>
+
+          <!-- Dropdown search results -->
+          <div x-show="productSearchResults.length > 0" x-cloak
+               class="absolute z-30 left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl max-h-60 overflow-y-auto divide-y divide-gray-100 dark:divide-slate-700">
+            <template x-for="p in productSearchResults" :key="p.id">
+              <div @mousedown.prevent="addProductToQuoteFromSearch(p)"
+                   class="p-3 hover:bg-purple-50 dark:hover:bg-slate-700/50 cursor-pointer flex items-center justify-between gap-3 text-xs transition-colors">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="font-mono font-bold px-2 py-0.5 bg-gray-100 dark:bg-slate-700 rounded text-gray-800 dark:text-slate-200 flex-shrink-0" x-text="p.code"></span>
+                  <span class="font-medium text-gray-900 dark:text-slate-100 truncate" x-text="p.name"></span>
+                </div>
+                <div class="text-right flex-shrink-0 flex items-center gap-3">
+                  <div>
+                    <span class="font-bold text-gray-900 dark:text-slate-100" x-text="'$' + parseFloat(p.price).toFixed(2)"></span>
+                    <span class="text-gray-400 block text-[10px]" x-text="'Stock: ' + p.stock"></span>
+                  </div>
+                  <button type="button" class="px-2.5 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg font-bold hover:bg-purple-100 transition-colors">
+                    + Añadir
+                  </button>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+
       <!-- Tabla de Items (Desktop) -->
       <div class="hidden md:block overflow-x-auto">
         <table class="min-w-full">
           <thead class="bg-gray-50 dark:bg-slate-800/50 border-b border-gray-200 dark:border-slate-700">
             <tr>
-              <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[14rem]">Producto</th>
+              <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider w-28">Código</th>
+              <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[14rem]">Producto (Descripción Editable)</th>
               <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider w-20">Cant.</th>
               <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider w-28">Precio Unit.</th>
               <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider w-36">Lista Precios</th>
@@ -103,55 +141,50 @@
               <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider w-24">Descuento</th>
               <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider w-24">IVA %</th>
               <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider w-28">Total</th>
-              <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider w-12"></th>
+              <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider w-16"></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
             <template x-for="(item, index) in items" :key="item._id">
               <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-700/20 group transition">
-                <!-- Producto -->
+                <!-- Código Inmutable -->
                 <td class="px-3 py-2.5">
-                  <select x-model="item.product"
-                          @change="onProductChange(index)"
-                          class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-2 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition"
-                          :class="{'border-red-400 bg-red-50 dark:bg-red-900/10': item._errors.product}">
-                    <option value="">Seleccionar producto...</option>
-                    {% for product in products %}
-                    <option value="{{ product.id }}" data-price="{{ product.price }}" data-code="{{ product.code }}">
-                      [{{ product.code }}] {{ product.name }}
-                    </option>
-                    {% endfor %}
-                  </select>
-                  <p x-show="item._errors.product" class="mt-1 text-xs text-red-500 dark:text-red-400" x-text="item._errors.product"></p>
+                  <span class="font-mono px-2 py-1 rounded bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 font-bold block truncate max-w-[100px]"
+                        x-text="item.product_code || '---'"></span>
+                </td>
+                <!-- Descripción Editable -->
+                <td class="px-3 py-2.5">
+                  <input type="text" x-model="item.producto_nombre" required
+                         class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-[#4A6FA5] transition"
+                         :class="{'border-red-400 bg-red-50 dark:bg-red-900/10': item._errors.product}"
+                         placeholder="Descripción del producto...">
+                  <!-- Toggle notas de renglón -->
+                  <div x-show="item.showNotes" class="mt-2">
+                    <input type="text" x-model="item.notes" placeholder="Notas/observaciones del renglón..."
+                           class="w-full text-xs border border-gray-200 dark:border-slate-700 rounded px-2 py-1 bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-slate-300">
+                  </div>
                 </td>
                 <!-- Cantidad -->
                 <td class="px-3 py-2.5">
-                  <input type="number"
-                        x-model.number="item.quantity"
-                        @input="calculateLine(index)"
-                        min="0.01" step="0.01"
-                        class="w-full text-sm text-right border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-2 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition"
-                        :class="{'border-red-400 bg-red-50 dark:bg-red-900/10': item._errors.quantity}"
-                        placeholder="1">
+                  <input type="number" x-model.number="item.quantity" @input="calculateLine(index)"
+                         class="w-full text-sm text-right border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent transition"
+                         :class="{'border-red-400 bg-red-50 dark:bg-red-900/10': item._errors.quantity}"
+                         min="0.01" step="0.01" placeholder="1">
                 </td>
-                <!-- Precio -->
+                <!-- Precio Unitario -->
                 <td class="px-3 py-2.5">
                   <div class="relative">
                     <span class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 text-sm">$</span>
-                    <input type="number"
-                          x-model.number="item.unit_price"
-                          @input="calculateLine(index)"
-                          min="0" step="0.01"
-                          class="w-full text-sm text-right pl-6 pr-2 py-2 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition"
-                          :class="{'border-red-400 bg-red-50 dark:bg-red-900/10': item._errors.unit_price}"
-                          placeholder="0.00">
+                    <input type="number" x-model.number="item.unit_price" @input="calculateLine(index)"
+                           class="w-full text-sm text-right pl-6 pr-2 py-1.5 border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent transition"
+                           min="0" step="0.01" placeholder="0.00">
                   </div>
                 </td>
                 <!-- Lista de Precios -->
                 <td class="px-3 py-2.5">
                   <select x-model="item.price_list"
                           @change="onPriceListChange(index)"
-                          class="w-full text-xs border border-gray-200 dark:border-slate-700 rounded-lg px-1.5 py-2 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition">
+                          class="w-full text-xs border border-gray-200 dark:border-slate-700 rounded-lg px-1.5 py-1.5 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 transition">
                     <option value="">Sin lista</option>
                     {% for pl in pricelists %}
                     <option value="{{ pl.id }}" data-type="{{ pl.list_type }}" data-percentage="{{ pl.percentage }}">
@@ -162,9 +195,8 @@
                 </td>
                 <!-- Tipo Descuento -->
                 <td class="px-3 py-2.5">
-                  <select x-model="item.discount_type"
-                          @change="calculateLine(index)"
-                          class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-1.5 py-2 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition">
+                  <select x-model="item.discount_type" @change="calculateLine(index)"
+                          class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-1.5 py-1.5 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 transition">
                     <option value="none">Sin desc.</option>
                     <option value="percentage">%</option>
                     <option value="fixed">Fijo $</option>
@@ -172,23 +204,17 @@
                 </td>
                 <!-- Valor Descuento -->
                 <td class="px-3 py-2.5">
-                  <input type="number"
-                        x-model.number="item.discount_value"
-                        @input="calculateLine(index)"
-                        min="0" step="0.01"
-                        :disabled="item.discount_type === 'none'"
-                        class="w-full text-sm text-right border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-2 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:text-gray-400 dark:disabled:text-slate-500"
-                        placeholder="0">
+                  <input type="number" x-model.number="item.discount_value" @input="calculateLine(index)"
+                         :disabled="item.discount_type === 'none'"
+                         class="w-full text-sm text-right border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 transition disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:text-gray-400 dark:disabled:text-slate-500"
+                         min="0" step="0.01" placeholder="0">
                 </td>
-                <!-- IVA -->
+                <!-- IVA % -->
                 <td class="px-3 py-2.5">
                   <div class="relative">
-                    <input type="number"
-                          x-model.number="item.tax_percentage"
-                          @input="calculateLine(index)"
-                          min="0" max="100" step="0.01"
-                          class="w-full text-sm text-right border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-2 pr-6 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition"
-                          placeholder="21">
+                    <input type="number" x-model.number="item.tax_percentage" @input="calculateLine(index)"
+                           class="w-full text-sm text-right border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-1.5 pr-6 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 transition"
+                           min="0" max="100" step="0.01" placeholder="21">
                     <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 text-xs">%</span>
                   </div>
                 </td>
@@ -197,27 +223,33 @@
                   <div class="text-sm font-semibold text-gray-900 dark:text-slate-100" x-text="'$' + formatNumber(item._total)"></div>
                   <div x-show="item.discount_type !== 'none' && item._discount > 0" class="text-xs text-red-500 dark:text-red-400 mt-0.5" x-text="'-$' + formatNumber(item._discount)"></div>
                 </td>
-                <!-- Eliminar -->
+                <!-- Acciones (Notas + Eliminar) -->
                 <td class="px-3 py-2.5 text-center">
-                  <button type="button" @click="removeItem(index)"
-                          class="text-gray-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 transition p-1 rounded opacity-0 group-hover:opacity-100"
-                          title="Eliminar item">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                  </button>
+                  <div class="flex items-center justify-center gap-1">
+                    <button type="button" @click="item.showNotes = !item.showNotes"
+                            class="text-gray-400 hover:text-blue-500 p-1 rounded" :title="item.showNotes ? 'Ocultar notas' : 'Agregar notas'">
+                      <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <button type="button" @click="removeItem(index)"
+                            class="text-gray-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 transition p-1 rounded opacity-0 group-hover:opacity-100"
+                            title="Eliminar item">
+                      <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                  </div>
                 </td>
               </tr>
             </template>
 
             <!-- Estado vacío -->
             <tr x-show="items.length === 0">
-              <td colspan="9" class="px-4 py-12 text-center">
+              <td colspan="10" class="px-4 py-12 text-center">
                 <div class="flex flex-col items-center gap-3 text-gray-400 dark:text-slate-600">
                   <div class="w-12 h-12 bg-gray-100 dark:bg-slate-700/50 rounded-xl flex items-center justify-center">
                     <i data-lucide="package" class="w-6 h-6"></i>
                   </div>
                   <div>
                     <p class="text-sm font-medium text-gray-500 dark:text-slate-400">Sin items</p>
-                    <p class="text-xs text-gray-400 dark:text-slate-500">Hacé click en "Agregar Item" para comenzar</p>
+                    <p class="text-xs text-gray-400 dark:text-slate-500">Usá el buscador de arriba o hacé click en "Agregar Item"</p>
                   </div>
                 </div>
               </td>
@@ -231,21 +263,19 @@
         <template x-for="(item, index) in items" :key="item._id">
           <div class="border border-gray-200 dark:border-slate-700 rounded-xl p-4 space-y-3 bg-gray-50/50 dark:bg-slate-900/30 transition">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Item <span x-text="index + 1"></span></span>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Item <span x-text="index + 1"></span></span>
+                <span class="font-mono text-xs font-bold px-2 py-0.5 bg-gray-100 dark:bg-slate-700 rounded text-gray-700 dark:text-slate-300" x-text="item.product_code || '---'"></span>
+              </div>
               <button type="button" @click="removeItem(index)" class="text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
               </button>
             </div>
-            <select x-model="item.product"
-                    @change="onProductChange(index)"
-                    class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 dark:text-slate-100 transition">
-              <option value="">Seleccionar producto...</option>
-              {% for product in products %}
-              <option value="{{ product.id }}" data-price="{{ product.price }}">
-                [{{ product.code }}] {{ product.name }}
-              </option>
-              {% endfor %}
-            </select>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Descripción</label>
+              <input type="text" x-model="item.producto_nombre" required
+                     class="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100">
+            </div>
             <!-- Lista de Precios mobile -->
             <div>
               <label class="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Lista de Precios</label>
@@ -304,7 +334,7 @@
         </template>
         <!-- Botón agregar mobile -->
         <button type="button" @click="addItem()"
-                class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl text-sm font-medium text-gray-500 dark:text-slate-400 hover:text-blue-700 dark:hover:text-blue-300 transition">
+                class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 dark:border-slate-700 hover:border-purple-400 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-xl text-sm font-medium text-gray-500 dark:text-slate-400 hover:text-purple-700 dark:hover:text-purple-300 transition">
           <i data-lucide="plus" class="w-4 h-4"></i>
           Agregar Item
         </button>
@@ -459,28 +489,53 @@ function quoteForm() {
     _nextId: 0,
     valid_until: '',
 
+    // Live search
+    productSearchQuery: '',
+    productSearchResults: [],
 
+    async searchProducts() {
+      const q = this.productSearchQuery.trim();
+      if (q.length < 2) {
+        this.productSearchResults = [];
+        return;
+      }
+      try {
+        const res = await fetch(`{% url 'bills_web:product_search_api' %}?q=${encodeURIComponent(q)}`);
+        if (res.ok) {
+          const data = await res.json();
+          this.productSearchResults = data.products || [];
+        }
+      } catch (e) {
+        console.error('Error buscando productos:', e);
+      }
+    },
 
-
-    addProductToSale(prod) {
-      let emptyIdx = this.items.findIndex(it => !it.product);
-      if (emptyIdx === -1) {
+    addProductToQuoteFromSearch(prod) {
+      // Reutilizar primer renglón vacío si existe
+      let targetIdx = this.items.findIndex(it => !it.product && !it.producto_nombre);
+      if (targetIdx === -1) {
         this.addItem();
-        emptyIdx = this.items.length - 1;
+        targetIdx = this.items.length - 1;
       }
       
-      const it = this.items[emptyIdx];
+      const it = this.items[targetIdx];
       it.product = prod.id;
-      
+      it.product_code = prod.code;
+      it.producto_nombre = prod.name;
       it._basePrice = parseFloat(prod.price) || 0;
       it.unit_price = it._basePrice;
       it.tax_percentage = parseFloat(prod.tax_rate) || 21;
       
-      this.calculateLine(emptyIdx);
-      alert(`Agregaste: ${prod.name}`);
+      this.calculateLine(targetIdx);
+      this.productSearchResults = [];
+      this.productSearchQuery = '';
+      this.$nextTick(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); });
     },
 
-
+    // Bridge for legacy advanced search panel if used
+    addProductToSale(prod) {
+      this.addProductToQuoteFromSearch(prod);
+    },
 
     init() {
       {% if is_update and quote %}
@@ -514,6 +569,8 @@ function quoteForm() {
         {
           _id: {{ forloop.counter }},
           product: {{ item.product.id }},
+          product_code: "{{ item.product.code|escapejs }}",
+          producto_nombre: "{{ item.display_name|escapejs }}",
           quantity: {{ item.quantity }},
           unit_price: {{ item.unit_price }},
           discount_type: "{{ item.discount_type }}",
@@ -533,7 +590,7 @@ function quoteForm() {
       this._nextId = existingItems.length + 1;
       this.items = existingItems;
       {% elif copy_source %}
-      // Copiar presupuesto
+      // Copiar presupuesto o venta
       {% if copy_source.customer %}
         this.customerMode = 'existing';
         this.selectedCustomer = {
@@ -565,6 +622,8 @@ function quoteForm() {
         {
           _id: {{ forloop.counter }},
           product: {{ item.product_id }},
+          product_code: "{{ item.product_code|escapejs }}",
+          producto_nombre: "{{ item.producto_nombre|escapejs }}",
           quantity: {{ item.quantity }},
           unit_price: {{ item.unit_price }},
           discount_type: "{{ item.discount_type }}",
@@ -598,15 +657,17 @@ function quoteForm() {
             this.items.push({
               _id: ++this._nextId,
               product: cartItem.id,
-              quantity: cartItem.quantity,
-              unit_price: cartItem.price,
+              product_code: cartItem.code || '---',
+              producto_nombre: cartItem.name || '',
+              quantity: cartItem.quantity || 1,
+              unit_price: cartItem.price || 0,
               discount_type: 'none',
               discount_value: 0,
               tax_percentage: cartItem.tax_rate || 21,
               notes: '',
               showNotes: false,
               price_list: '',
-              _basePrice: cartItem.price,
+              _basePrice: cartItem.price || 0,
               _total: 0,
               _discount: 0,
               _errors: {}
@@ -624,14 +685,12 @@ function quoteForm() {
       this.calculateTotal();
     },
 
-    // ─── Lógica de Cliente ───────────────────────────────────────
-
-
-    // ─── Lógica de Items ─────────────────────────────────────────
     addItem() {
       this.items.push({
         _id: ++this._nextId,
         product: '',
+        product_code: '',
+        producto_nombre: '',
         quantity: 1,
         unit_price: 0,
         discount_type: 'none',
@@ -650,27 +709,12 @@ function quoteForm() {
 
     removeItem(index) {
       if (this.items.length === 1) {
-        this.items[0] = { ...this.items[0], product: '', quantity: 1, unit_price: 0, _total: 0, _basePrice: 0, price_list: '' };
+        this.items[0] = { ...this.items[0], product: '', product_code: '', producto_nombre: '', quantity: 1, unit_price: 0, _total: 0, _basePrice: 0, price_list: '' };
         this.calculateLine(0);
         return;
       }
       this.items.splice(index, 1);
       this.calculateTotal();
-    },
-
-    onProductChange(index) {
-      const selectedOption = event.target.selectedOptions[0];
-      if (selectedOption && selectedOption.dataset.price) {
-        const basePrice = parseFloat(selectedOption.dataset.price) || 0;
-        this.items[index]._basePrice = basePrice;
-        this.items[index].unit_price = basePrice;
-        // Re-apply price list if one is selected
-        if (this.items[index].price_list) {
-          this.onPriceListChange(index);
-          return;
-        }
-      }
-      this.calculateLine(index);
     },
 
     onPriceListChange(index) {
@@ -680,7 +724,6 @@ function quoteForm() {
       const opt = selectEl.selectedOptions[0];
 
       if (!opt || !opt.dataset.type) {
-        // "Sin lista" → restaurar precio base
         if (item._basePrice > 0) {
           item.unit_price = item._basePrice;
         }
@@ -737,10 +780,9 @@ function quoteForm() {
       this.totals = { subtotal, discount, net, tax, total: net + tax };
     },
 
-    // ─── Validación y Envío ──────────────────────────────────────
     validate() {
       let valid = true;
-      if (this.items.length === 0 || (this.items.length === 1 && !this.items[0].product)) {
+      if (this.items.length === 0 || (this.items.length === 1 && !this.items[0].product && !this.items[0].producto_nombre)) {
         this.showItemsError = true; valid = false;
       } else {
         this.showItemsError = false;
@@ -770,14 +812,15 @@ function quoteForm() {
         notes: document.querySelector('[name="notes"]')?.value || '',
         internal_notes: document.querySelector('[name="internal_notes"]')?.value || '',
         valid_until: this.valid_until,
-        items: this.items.map(i => ({
+        items: this.items.filter(i => i.product).map(i => ({
           product: i.product,
+          producto_nombre_override: i.producto_nombre || '',
           quantity: i.quantity,
           unit_price: i.unit_price,
           discount_type: i.discount_type,
           discount_value: i.discount_value,
           tax_percentage: i.tax_percentage,
-          notes: i.notes
+          notes: i.notes || ''
         }))
       };
 
@@ -818,7 +861,6 @@ function quoteForm() {
 
         const body = await res.json();
         if (res.ok) {
-          // API envelope: { success: true, data: { id: ... } }
           const quoteId = body?.data?.id ?? body?.id;
           if (action === 'save_and_send' && quoteId) {
             await fetch(`/api/v1/sales/quotes/${quoteId}/send/`, { 
@@ -850,6 +892,4 @@ function quoteForm() {
   };
 }
 </script>
-
-
 {% endblock %}

@@ -434,8 +434,10 @@ def quote_create(request):
                 for item in quote_obj.items.select_related('product').all():
                     prefilled_items.append({
                         'product_id': item.product.id,
+                        'product_code': item.product.code,
+                        'producto_nombre': item.display_name,
                         'quantity': float(item.quantity),
-                        'unit_price': float(item.product.price),
+                        'unit_price': float(item.unit_price if item.unit_price else item.product.price),
                         'discount_type': item.discount_type,
                         'discount_value': float(item.discount_value),
                         'tax_percentage': float(item.tax_percentage),
@@ -451,8 +453,10 @@ def quote_create(request):
                 for item in sale_obj.items.select_related('product').all():
                     prefilled_items.append({
                         'product_id': item.product.id,
+                        'product_code': item.product.code,
+                        'producto_nombre': item.display_name,
                         'quantity': float(item.quantity),
-                        'unit_price': float(item.product.price),
+                        'unit_price': float(item.unit_price if item.unit_price else item.product.price),
                         'discount_type': item.discount_type,
                         'discount_value': float(item.discount_value),
                         'tax_percentage': float(item.tax_percentage),
@@ -462,7 +466,7 @@ def quote_create(request):
             pass
 
     context = {
-        'products':      _get_products_queryset(),
+        'products':      [],  # Carga diferida via Live Search API
         'pricelists':    _get_pricelists_queryset(),
         'categories':    _get_categories_queryset(),
         'subcategories': _get_subcategories_queryset(),
@@ -501,14 +505,11 @@ def quote_update(request, pk):
         messages.error(request, 'No tenés permisos para editar presupuestos.')
         return redirect('sales_web:quote_detail', pk=quote.pk)
 
-    customers = _get_customers_queryset()
-    products  = _get_products_queryset()
-
     context = {
-        'quote':      quote,
-        'items':      quote.items.select_related('product').order_by('line_order'),
-        'customers':  customers,
-        'products':      products,
+        'quote':         quote,
+        'items':         quote.items.select_related('product').order_by('line_order'),
+        'customers':     [],  # Manejado por _customer_selector.html via async API
+        'products':      [],  # Carga diferida via Live Search API
         'pricelists':    _get_pricelists_queryset(),
         'categories':    _get_categories_queryset(),
         'subcategories': _get_subcategories_queryset(),

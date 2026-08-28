@@ -214,6 +214,7 @@ class TestSaleWebActions:
         QuoteItem.objects.create(
             quote=quote,
             product=product,
+            producto_nombre_override="Item Presupuestado Especial",
             quantity=2,
             unit_price=product.price,
             tax_percentage=21
@@ -224,6 +225,23 @@ class TestSaleWebActions:
         assert response.context['copy_source'] == quote
         assert len(response.context['prefilled_items']) == 1
         assert response.context['prefilled_items'][0]['product_id'] == product.id
+        assert response.context['prefilled_items'][0]['product_code'] == product.code
+        assert response.context['prefilled_items'][0]['producto_nombre'] == "Item Presupuestado Especial"
+
+    def test_quote_create_renders_lightweight_context(self, web_client):
+        """Verificar que quote_create no inyecte el catálogo masivo de productos en el contexto."""
+        url = reverse('sales_web:quote_create')
+        response = web_client.get(url)
+        assert response.status_code == 200
+        assert response.context['products'] == []
+
+    def test_quote_update_renders_lightweight_context(self, web_client, quote):
+        """Verificar que quote_update no inyecte clientes o productos masivos en el contexto."""
+        url = reverse('sales_web:quote_update', kwargs={'pk': quote.pk})
+        response = web_client.get(url)
+        assert response.status_code == 200
+        assert response.context['products'] == []
+        assert response.context['customers'] == []
 
     def test_sale_create_copy_sale(self, web_client, sale_with_items, product):
         url = reverse('sales_web:sale_create') + f'?copy_sale={sale_with_items.pk}'

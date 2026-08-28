@@ -139,3 +139,55 @@ class TestSaleAPI:
         response = authenticated_client.post(url, data, format='json')
         
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.django_db
+class TestQuoteAPI:
+    """Tests para la API de Presupuestos (QuoteViewSet)."""
+
+    def test_create_quote_with_custom_item_name(self, authenticated_client, product, customer):
+        """Crear presupuesto con producto_nombre_override y verificar persistencia."""
+        from django.utils import timezone
+        from datetime import timedelta
+        url = reverse('sales_api:quote-list')
+        data = {
+            'customer': customer.id,
+            'valid_until': (timezone.now().date() + timedelta(days=7)).isoformat(),
+            'items': [
+                {
+                    'product': product.id,
+                    'producto_nombre_override': 'Tornillo Presupuestado Especial',
+                    'quantity': 10,
+                    'unit_price': 80.00,
+                    'tax_percentage': 21
+                }
+            ]
+        }
+        response = authenticated_client.post(url, data, format='json')
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert Quote.objects.filter(customer=customer).exists()
+        quote = Quote.objects.get(customer=customer)
+        item = quote.items.first()
+        assert item.producto_nombre_override == 'Tornillo Presupuestado Especial'
+        assert item.display_name == 'Tornillo Presupuestado Especial'
+
+    def test_retrieve_quote_detail_includes_display_name(self, authenticated_client, quote, product):
+        """Obtener detalle de presupuesto incluye display_name en los renglones."""
+        from sales.models import QuoteItem
+        QuoteItem.objects.create(
+            quote=quote,
+            product=product,
+            producto_nombre_override='Arandela Especial Cotizada',
+            quantity=5,
+            unit_price=Decimal('20.00'),
+            tax_percentage=Decimal('21.00')
+        )
+        url = reverse('sales_api:quote-detail', kwargs={'pk': quote.pk})
+        response = authenticated_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data['items']) >= 1
+        item_data = response.data['items'][0]
+        assert item_data['producto_nombre_override'] == 'Arandela Especial Cotizada'
+        assert item_data['display_name'] == 'Arandela Especial Cotizada'
