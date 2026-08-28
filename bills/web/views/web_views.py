@@ -270,7 +270,9 @@ def product_search_api(request):
 
     products = Product.objects.filter(
         is_active=True
-    ).filter(query)[:20]
+    ).filter(query).only(
+        'id', 'code', 'name', 'price', 'tax_rate', 'stock_quantity'
+    )[:25]
 
     data = [
         {
@@ -278,7 +280,6 @@ def product_search_api(request):
             'code': p.code,
             'name': p.name,
             'price': str(p.price),
-            'cost': str(p.cost),
             'tax_rate': str(getattr(p, 'tax_rate', 21.00) or '21.00'),
             'stock': str(getattr(p, 'stock_quantity', 0)),
         }

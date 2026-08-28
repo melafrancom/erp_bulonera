@@ -27,8 +27,9 @@ services:
       --appendonly yes
       --maxmemory 256mb
       --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD}
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "redis-cli --no-auth-warning -a ${REDIS_PASSWORD} ping | grep PONG || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -40,7 +41,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.production
-    image: erp_bulonera:latest
+    image: erp_bulonera:${ERP_IMAGE_TAG:-latest}
     container_name: erp_web
     restart: always
     ports:
@@ -80,7 +81,7 @@ services:
   # Celery Worker
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   celery_worker:
-    image: erp_bulonera:latest
+    image: erp_bulonera:${ERP_IMAGE_TAG:-latest}
     container_name: erp_celery_worker
     restart: always
     networks:
@@ -112,7 +113,7 @@ services:
   # Celery Beat (tareas programadas)
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   celery_beat:
-    image: erp_bulonera:latest
+    image: erp_bulonera:${ERP_IMAGE_TAG:-latest}
     container_name: erp_celery_beat
     restart: always
     networks:
@@ -138,7 +139,7 @@ services:
   # Accesible SOLO por SSH tunnel o a través de OLS con autenticación
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   flower:
-    image: erp_bulonera:latest
+    image: erp_bulonera:${ERP_IMAGE_TAG:-latest}
     container_name: erp_flower
     restart: always
     ports:

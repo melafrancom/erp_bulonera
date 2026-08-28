@@ -62,3 +62,25 @@ tmp/
 .agents/
 .obsidian/
 .kiro/
+
+# ======================================
+# Secrets & PKI (NUNCA empaquetar en imagen Docker)
+# ======================================
+.env.*
+*.env
+
+# Certificados y claves AFIP/ARCA
+afip/certs/
+afip/keys/
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+
+# Backups y scripts con credenciales
+*.sh
+*.sql
+*.sql.gz
+
