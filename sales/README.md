@@ -68,12 +68,16 @@ Base URL: `/api/v1/sales/`
 
 ### Vistas Web (`web/urls/urls_web.py`)
 *   `GET /sales/` - Panel principal de ventas con KPIs interactivos y filtros semánticos.
-*   `GET /sales/quotes/` - Gestor de presupuestos y cotizaciones de salón con filtros de estado y búsqueda.
-*   `GET /sales/presupuestos/<pk>/` - Detalle completo interno del presupuesto con opciones para compartir.
-*   `GET /sales/presupuestos/<pk>/imprimir/` - Vista formal de impresión HTML estructurada como comprobante 'X'.
-*   `GET /sales/presupuestos/publico/<uuid>/` - **Vista pública responsive** para clientes externos, adaptada a la paleta corporativa (`#1B3A5C`, `#4A6FA5`, `#D42B1E`) y tipografías *Barlow* e *Inter*.
-*   `GET /sales/presupuestos/publico/<uuid>/pdf/` - Descarga de PDF oficial generado con ReportLab bajo normativa AFIP de comprobante Clase 'X' ("DOCUMENTO NO VÁLIDO COMO FACTURA").
-*   `GET /sales/sales/create/` - Venta directa en mostrador con live search reactivo y soporte de descripciones editables.
+*   `GET /sales/presupuestos/` - Gestor de presupuestos y cotizaciones de salón con filtros de estado y búsqueda (`quote_list`).
+*   `GET /sales/presupuestos/nuevo/` - Formulario interactivo con Alpine.js (`quote_create`) con buscador predictivo en vivo (`/bills/productos/buscar/`), selector de cliente (`_customer_selector.html`), renglones con descripciones editables (`producto_nombre_override`) y contexto liviano sin cuellos de botella de DOM (`products: []`).
+*   `GET /sales/presupuestos/<pk>/editar/` - Edición reactiva de presupuestos borradores (`quote_update`).
+*   `GET /sales/presupuestos/<pk>/` - Detalle completo interno del presupuesto con opciones para compartir (`quote_detail`).
+*   `GET /sales/presupuestos/<pk>/imprimir/` - Vista formal de impresión HTML estructurada como comprobante 'X' (`quote_print`).
+*   `GET /sales/presupuestos/publico/<uuid>/` - **Vista pública responsive** para clientes externos, adaptada a la paleta corporativa (`#1B3A5C`, `#4A6FA5`, `#D42B1E`) y tipografías *Barlow* e *Inter* (`quote_public`).
+*   `GET /sales/presupuestos/publico/<uuid>/pdf/` - Descarga de PDF oficial generado con ReportLab bajo normativa AFIP de comprobante Clase 'X' ("DOCUMENTO NO VÁLIDO COMO FACTURA") (`quote_public_pdf`).
+*   `GET /sales/ventas/` - Listado y seguimiento de ventas (`sale_list`).
+*   `GET /sales/ventas/nueva/` - Venta directa en mostrador (`sale_create`) con live search reactivo, renglones con descripción editable (`producto_nombre_override`), códigos inmutables y soporte de costo unitario snapshot (`unit_cost`).
+*   `GET /sales/ventas/<pk>/` - Detalle completo de la venta (`sale_detail`).
 
 ## 💸 Gestión de Costos y Margen de Rentabilidad (P&L)
 El sistema utiliza un snapshot histórico de costos en `SaleItem.unit_cost` para calcular de manera precisa el costo de mercadería vendida (COGS) en los reportes de pérdidas y ganancias (P&L).

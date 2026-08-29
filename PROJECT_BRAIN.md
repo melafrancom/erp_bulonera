@@ -173,7 +173,7 @@ tail -n 40 /var/www/erp/logs/celery_worker.log
 docker compose -f /var/www/erp/src/docker-compose.production.yml logs --tail=40 redis
 
 # Pings de conectividad interna
-docker exec erp_redis redis-cli ping
+docker exec erp_redis redis-cli --no-auth-warning -a $REDIS_PASSWORD ping
 docker exec erp_web curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8000/
 
 # Chequeo de Django

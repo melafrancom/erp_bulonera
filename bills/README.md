@@ -49,7 +49,7 @@ Todas las vistas web internas usan `ModulePermissionRequiredMixin` o `@permissio
 *   `POST /bills/facturas/<pk>/enviar-email/` - Encolar envío por email (`invoice_send_email`).
 *   `GET /bills/facturas/publico/<uuid>/pdf/` - **Vista pública** de descarga de PDF por UUID sin requerir autenticación (`invoice_public_pdf`).
 *   `GET /bills/clientes/<int:customer_id>/facturas/` - Helper JSON para obtener facturas autorizadas de un cliente (`customer_invoices_api`).
-*   `GET /bills/productos/buscar/` - Helper JSON para búsqueda multi-término de productos con retorno de costo y stock (`product_search_api`). Accesible para usuarios con permisos en `bills` o `sales`.
+*   `GET /bills/productos/buscar/` - Helper JSON optimizado (`only()`, límite a 25 resultados) para búsqueda multi-término de productos con retorno de precio, IVA y stock (`product_search_api`; el costo comercial queda protegido y no se expone). Accesible para usuarios con permisos en `bills` o `sales`.
 
 ## 📝 Documentación de Detalle
 *   [Integración Fiscal y Notas de Crédito](docs/afip_integration.md): Flujo asíncrono con Celery, mapeo de impuestos de la AFIP y lógica de reversión de saldos por anulación.

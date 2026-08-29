@@ -413,6 +413,8 @@ class CuentaCorrienteService:
 
         raw_movements = []
 
+        from django.urls import reverse
+
         for sale in sales_qs:
             s_date = sale.date.date() if hasattr(sale.date, 'date') else sale.date
             raw_movements.append({
@@ -426,7 +428,7 @@ class CuentaCorrienteService:
                 'comprobante': f"Venta #{sale.number}",
                 'debe': sale.total,
                 'haber': Decimal('0.00'),
-                'url': f"/sales/{sale.id}/"
+                'url': reverse('sales_web:sale_detail', args=[sale.id])
             })
 
         for alloc in allocations_qs:
@@ -442,7 +444,7 @@ class CuentaCorrienteService:
                 'comprobante': f"Pago #{alloc.payment.id} (Imputado a Venta #{alloc.sale.number})",
                 'debe': Decimal('0.00'),
                 'haber': alloc.allocated_amount,
-                'url': f"/payments/{alloc.payment.id}/"
+                'url': reverse('payments_web:payment_detail', args=[alloc.payment.id])
             })
 
         initial_balance = Decimal('0.00')

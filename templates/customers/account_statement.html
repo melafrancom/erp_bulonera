@@ -206,8 +206,9 @@
                             {% endif %}
                         </td>
                         <td class="px-6 py-3.5 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-slate-100">
-                            <a href="{{ m.url }}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">
+                            <a href="{{ m.url }}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline inline-flex items-center gap-1" title="Ver detalle de {{ m.comprobante }}">
                                 {{ m.comprobante }}
+                                <i data-lucide="external-link" class="w-3.5 h-3.5 opacity-60"></i>
                             </a>
                         </td>
                         <td class="px-6 py-3.5 whitespace-nowrap text-sm text-right font-mono font-medium text-red-600 dark:text-red-400">

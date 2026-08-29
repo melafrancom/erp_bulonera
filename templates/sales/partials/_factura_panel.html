@@ -108,45 +108,8 @@ Variables:
             </form>
         </div>
         {% elif invoice.estado_fiscal == 'borrador' %}
-        <!-- Factura en borrador — Polling para refresco automático -->
-        <div x-data="{ 
-            isPolling: true, 
-            pollingCount: 0,
-            maxPollingAttempts: 120  
-        }"
-             x-init="
-                 if (isPolling) {
-                     let pollInterval = setInterval(async () => {
-                         pollingCount++;
-                         try {
-                             const resp = await fetch('{% url 'bills_web:invoice_status_api' invoice.pk %}');
-                             const data = await resp.json();
-                             if (data.status !== 'borrador') {
-                                 isPolling = false;
-                                 clearInterval(pollInterval);
-                                 location.reload();
-                             }
-                             if (pollingCount >= maxPollingAttempts) {
-                                 isPolling = false;
-                                 clearInterval(pollInterval);
-                             }
-                         } catch(e) {
-                             console.error('Polling error:', e);
-                         }
-                     }, 3000);
-                 }
-             "
-             class="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/50 rounded-lg p-4">
-            <div class="flex items-center gap-3">
-                <div class="animate-spin">
-                    <i data-lucide="loader" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-blue-700 dark:text-blue-400">Esperando respuesta de ARCA...</p>
-                    <p class="text-xs text-blue-600 dark:text-blue-400/80 mt-0.5">La página se actualizará automáticamente cuando se reciba la respuesta (máximo 2 minutos)</p>
-                </div>
-            </div>
-        </div>
+        <!-- Factura en borrador — Polling para refresco automático (DRY) -->
+        {% include 'bills/partials/_invoice_polling.html' with invoice=invoice %}
         {% elif invoice.estado_fiscal == 'anulada' %}
             <p class="text-sm text-orange-700 dark:text-orange-400 font-medium mb-3">
                 <i data-lucide="alert-triangle" class="w-4 h-4 inline mr-1"></i>

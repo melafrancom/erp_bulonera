@@ -13,10 +13,10 @@
 {% block mobile_title %}Factura {{ invoice.number }}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 pb-24">
+<div class="w-full max-w-full px-2 sm:px-4 md:px-6 pb-24">
 
   <!-- Header -->
-  <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
     <div>
       <div class="flex items-center gap-4 mb-2">
           <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight flex items-center transition-colors">
@@ -29,6 +29,10 @@
           {% elif invoice.estado_fiscal == 'rechazada' %}
               <span class="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 uppercase tracking-widest ring-1 ring-red-500/30 shadow-sm">
                   <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i> Rechazada
+              </span>
+          {% elif invoice.estado_fiscal == 'borrador' %}
+              <span class="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 uppercase tracking-widest ring-1 ring-amber-500/30 shadow-sm">
+                  <i data-lucide="clock" class="w-4 h-4 mr-2"></i> Borrador / En Proceso AFIP
               </span>
           {% else %}
               <span class="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 uppercase tracking-widest ring-1 ring-gray-600/20 shadow-sm">
@@ -52,6 +56,10 @@
       </a>
     </div>
   </div>
+
+  {% if invoice.estado_fiscal == 'borrador' %}
+    {% include 'bills/partials/_invoice_polling.html' with invoice=invoice %}
+  {% endif %}
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
     <!-- Main Content -->

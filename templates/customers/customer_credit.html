@@ -156,7 +156,14 @@
                 <tbody class="divide-y divide-gray-200 dark:divide-slate-700">
                     {% for sale in estado.sales_pendientes %}
                     <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50">
-                        <td class="px-6 py-4 font-bold text-gray-900 dark:text-slate-100">#{{ sale.number }}</td>
+                        <td class="px-6 py-4">
+                            <a href="{% url 'sales_web:sale_detail' sale.id %}"
+                               class="font-bold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline inline-flex items-center gap-1"
+                               title="Ver detalle de venta #{{ sale.number }}">
+                                #{{ sale.number }}
+                                <i data-lucide="external-link" class="w-3.5 h-3.5 opacity-60"></i>
+                            </a>
+                        </td>
                         <td class="px-6 py-4">{{ sale.date|date:"d/m/Y H:i" }}</td>
                         <td class="px-6 py-4">
                             <span class="px-2 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-300">
@@ -174,14 +181,20 @@
                             </span>
                             {% endif %}
                         </td>
-                        <td class="px-6 py-4 font-semibold text-gray-900 dark:text-slate-100">${{ sale.total|floatformat:2 }}</td>
-                        <td class="px-6 py-4 text-emerald-600 dark:text-emerald-400">${{ sale.total_paid|floatformat:2 }}</td>
-                        <td class="px-6 py-4 font-bold text-red-600 dark:text-red-400">${{ sale.balance_due|floatformat:2 }}</td>
-                        <td class="px-6 py-4 text-right space-x-2">
+                        <td class="px-6 py-4 font-semibold text-gray-900 dark:text-slate-100 tabular-nums">${{ sale.total|floatformat:2 }}</td>
+                        <td class="px-6 py-4 text-emerald-600 dark:text-emerald-400 tabular-nums">${{ sale.total_paid|floatformat:2 }}</td>
+                        <td class="px-6 py-4 font-bold text-red-600 dark:text-red-400 tabular-nums">${{ sale.balance_due|floatformat:2 }}</td>
+                        <td class="px-6 py-4 text-right space-x-2 whitespace-nowrap">
+                            <a href="{% url 'sales_web:sale_detail' sale.id %}"
+                               class="inline-flex items-center px-2.5 py-1.5 border border-blue-200 dark:border-blue-800 text-xs font-semibold rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 transition-colors shadow-sm"
+                               title="Ver detalle de venta #{{ sale.number }}">
+                                <i data-lucide="eye" class="h-3.5 w-3.5 mr-1"></i>
+                                Ver
+                            </a>
                             {% if customer.account_modality == 'informal' and sale.fiscal_status == 'not_required' %}
                             <form method="POST" action="{% url 'customers:customer_refacturar_sale' customer.pk sale.id %}" class="inline">
                                 {% csrf_token %}
-                                <button type="submit" onclick="return confirm('¿Actualizar renglones a precios vigentes de catálogo?')" class="inline-flex items-center px-2.5 py-1.5 border border-amber-300 text-xs font-medium rounded text-amber-800 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700">
+                                <button type="submit" onclick="return confirm('¿Actualizar renglones a precios vigentes de catálogo?')" class="inline-flex items-center px-2.5 py-1.5 border border-amber-300 text-xs font-medium rounded-lg text-amber-800 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700">
                                     <i data-lucide="refresh-cw" class="h-3.5 w-3.5 mr-1"></i>
                                     Actualizar Precios
                                 </button>

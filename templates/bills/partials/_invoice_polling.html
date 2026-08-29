@@ -1,0 +1,47 @@
+{% comment %}
+Partial: Polling reactivo para facturas en estado 'borrador' esperando autorización de ARCA/AFIP.
+Uso: {% include 'bills/partials/_invoice_polling.html' with invoice=invoice %}
+{% endcomment %}
+
+<div x-data="{ 
+    isPolling: true, 
+    pollingCount: 0,
+    maxPollingAttempts: 120  
+}"
+     x-init="
+         if (isPolling) {
+             let pollInterval = setInterval(async () => {
+                 pollingCount++;
+                 try {
+                     const resp = await fetch('{% url 'bills_web:invoice_status_api' invoice.pk %}');
+                     const data = await resp.json();
+                     if (data.status && data.status !== 'borrador') {
+                         isPolling = false;
+                         clearInterval(pollInterval);
+                         location.reload();
+                     }
+                     if (pollingCount >= maxPollingAttempts) {
+                         isPolling = false;
+                         clearInterval(pollInterval);
+                     }
+                 } catch(e) {
+                     console.error('Polling error:', e);
+                 }
+             }, 2500);
+         }
+     "
+     class="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/50 rounded-2xl p-5 shadow-sm my-4">
+    <div class="flex items-center gap-4">
+        <div class="animate-spin text-blue-600 dark:text-blue-400 flex-shrink-0">
+            <i data-lucide="loader" class="w-6 h-6"></i>
+        </div>
+        <div class="flex-1">
+            <p class="text-sm font-bold text-blue-800 dark:text-blue-300">
+                Esperando autorización de ARCA / AFIP...
+            </p>
+            <p class="text-xs text-blue-600 dark:text-blue-400/90 mt-1">
+                La página se actualizará automáticamente apenas AFIP responda (generalmente toma entre 2 y 5 segundos).
+            </p>
+        </div>
+    </div>
+</div>
