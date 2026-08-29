@@ -74,7 +74,7 @@
         <div class="relative" @click.outside="productSearchResults = []">
           <div class="relative">
             <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            <input type="text" x-model="productSearchQuery" @input.debounce.200ms="searchProducts()"
+            <input type="text" x-model="productSearchQuery" @input.debounce.200ms="quickSearchProducts()"
                    @keydown.escape="productSearchResults = []"
                    placeholder="Buscar producto por código, nombre, SKU o palabras clave para añadir renglón..."
                    class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-[#4A6FA5]">
@@ -113,45 +113,45 @@
 
       <!-- Tabla de Items (Desktop) -->
       <div class="hidden md:block overflow-x-auto">
-        <table class="min-w-full">
+        <table class="w-full text-left">
           <thead class="bg-gray-50 dark:bg-slate-800/50 border-b border-gray-200 dark:border-slate-700">
             <tr>
-              <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[90px]">Código</th>
-              <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[200px]">Producto (Descripción Editable)</th>
-              <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[70px]">Cant.</th>
-              <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[95px]">Precio Unit.</th>
-              <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[90px]">Costo Unit.</th>
-              <th class="px-3 py-3 text-center text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[130px]">Lista Precios</th>
-              <th class="px-3 py-3 text-center text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[95px]">Tipo Desc.</th>
-              <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[80px]">Descuento</th>
-              <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[75px]">IVA %</th>
-              <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[95px]">Total</th>
-              <th class="px-3 py-3 text-center text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider w-10"></th>
+              <th class="px-2 py-3 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[85px] max-w-[110px]">Código</th>
+              <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[280px] w-full">Producto (Descripción Editable)</th>
+              <th class="px-2 py-3 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[65px]">Cant.</th>
+              <th class="px-2 py-3 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[90px]">Precio Unit.</th>
+              <th class="px-2 py-3 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[85px]">Costo Unit.</th>
+              <th class="px-2 py-3 text-center text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[115px]">Lista Precios</th>
+              <th class="px-2 py-3 text-center text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[85px]">Tipo Desc.</th>
+              <th class="px-2 py-3 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[70px]">Descuento</th>
+              <th class="px-2 py-3 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[65px]">IVA %</th>
+              <th class="px-3 py-3 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider min-w-[90px]">Total</th>
+              <th class="px-2 py-3 text-center text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider w-10"></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
             <template x-for="(item, index) in items" :key="item._id">
               <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-700/20 group transition">
                 <!-- Código Inmutable -->
-                <td class="px-3 py-2.5">
-                  <span class="font-mono px-2 py-1 rounded bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 font-bold block truncate max-w-[120px]"
+                <td class="px-2 py-2.5">
+                  <span class="font-mono px-2 py-1 rounded bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 font-bold block truncate max-w-[110px]"
                         x-text="item.product_code" :title="item.product_code"></span>
                 </td>
-                <!-- Descripción Editable -->
-                <td class="px-3 py-2.5">
+                <!-- Descripción Editable (Espacio elástico principal) -->
+                <td class="px-3 py-2.5 min-w-[280px]">
                   <input type="text" x-model="item.producto_nombre" required :title="item.producto_nombre"
-                         class="w-full text-xs sm:text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-2.5 py-1.5 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-[#4A6FA5] transition"
+                         class="w-full text-xs sm:text-sm border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-1.5 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-[#4A6FA5] transition"
                          :class="{'border-red-400 bg-red-50 dark:bg-red-900/10': item._errors && item._errors.product}">
                 </td>
                 <!-- Cantidad -->
-                <td class="px-3 py-2.5">
+                <td class="px-2 py-2.5">
                   <input type="number" x-model.number="item.quantity" @input="calculateLine(index)" :title="'Cantidad: ' + item.quantity"
                          class="w-full text-xs sm:text-sm font-semibold tabular-nums text-right border border-gray-300 dark:border-slate-600 rounded-lg px-2 py-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent transition"
                          :class="{'border-red-400 bg-red-50 dark:bg-red-900/10': item._errors && item._errors.quantity}"
                          min="0.01" step="0.01" placeholder="1">
                 </td>
                 <!-- Precio -->
-                <td class="px-3 py-2.5">
+                <td class="px-2 py-2.5">
                   <div class="relative">
                     <span class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 text-xs">$</span>
                     <input type="number" x-model.number="item.unit_price" @input="calculateLine(index)" :title="'Precio: $' + item.unit_price"
@@ -160,7 +160,7 @@
                   </div>
                 </td>
                 <!-- Costo Unitario -->
-                <td class="px-3 py-2.5">
+                <td class="px-2 py-2.5">
                   <div class="relative">
                     <span class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 text-xs">$</span>
                     <input type="number" x-model.number="item.unit_cost" :title="'Costo: ' + (item.unit_cost ? '$' + item.unit_cost : 'Automático')"
@@ -169,7 +169,7 @@
                   </div>
                 </td>
                 <!-- Lista de Precios -->
-                <td class="px-3 py-2.5">
+                <td class="px-2 py-2.5">
                   <select x-model="item.price_list"
                           @change="onPriceListChange(index)" :title="'Lista de precios'"
                           class="w-full text-xs border border-gray-300 dark:border-slate-600 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 transition">
@@ -182,28 +182,28 @@
                   </select>
                 </td>
                 <!-- Tipo Descuento -->
-                <td class="px-3 py-2.5">
+                <td class="px-2 py-2.5">
                   <select x-model="item.discount_type" @change="calculateLine(index)" :title="'Tipo de descuento'"
-                          class="w-full text-xs border border-gray-300 dark:border-slate-600 rounded-lg px-2 py-1.5 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent transition">
+                          class="w-full text-xs border border-gray-300 dark:border-slate-600 rounded-lg px-1.5 py-1.5 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent transition">
                     <option value="none">Sin desc.</option>
                     <option value="percentage">%</option>
                     <option value="fixed">Fijo $</option>
                   </select>
                 </td>
                 <!-- Valor Descuento -->
-                <td class="px-3 py-2.5">
+                <td class="px-2 py-2.5">
                   <input type="number" x-model.number="item.discount_value" @input="calculateLine(index)" :title="'Descuento: ' + item.discount_value"
                          :disabled="item.discount_type === 'none'"
                          class="w-full text-xs sm:text-sm tabular-nums text-right border border-gray-300 dark:border-slate-600 rounded-lg px-2 py-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent transition disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:text-gray-400"
                          min="0" step="0.01" placeholder="0">
                 </td>
                 <!-- IVA -->
-                <td class="px-3 py-2.5">
+                <td class="px-2 py-2.5">
                   <div class="relative">
                     <input type="number" x-model.number="item.tax_percentage" @input="calculateLine(index)" :title="'IVA: ' + item.tax_percentage + '%'"
-                           class="w-full text-xs sm:text-sm tabular-nums text-right pr-5 border border-gray-300 dark:border-slate-600 rounded-lg px-2 py-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent transition"
+                           class="w-full text-xs sm:text-sm tabular-nums text-right pr-4 border border-gray-300 dark:border-slate-600 rounded-lg px-1.5 py-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-[#4A6FA5] focus:border-transparent transition"
                            min="0" max="100" step="0.01" placeholder="21">
-                    <span class="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 text-xs">%</span>
+                    <span class="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 text-xs">%</span>
                   </div>
                 </td>
                 <!-- Total -->
@@ -212,7 +212,7 @@
                     :title="'Total: $' + formatNumber(item._total)">
                 </td>
                 <!-- Eliminar -->
-                <td class="px-3 py-2.5 text-center">
+                <td class="px-2 py-2.5 text-center">
                   <button type="button" @click="removeItem(index)" class="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Eliminar renglón">
                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                   </button>
@@ -446,7 +446,7 @@ function saleForm() {
     payment_method: '',
     delivery: { address: '', date: '' },
 
-    async searchProducts() {
+    async quickSearchProducts() {
       const q = this.productSearchQuery.trim();
       if (q.length < 2) {
         this.productSearchResults = [];

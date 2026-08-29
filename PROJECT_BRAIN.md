@@ -628,6 +628,7 @@ Estructura de documentación distribuida por módulos para entender el **por qu�
 | [VALIDATION_CHECKLIST.md](VALIDATION_CHECKLIST.md) | Checklist de QA antes de mergear |
 | [PWA-IMPLEMENTATION.md](PWA-IMPLEMENTATION.md) | Implementación PWA offline-first |
 | [docs/infra/script_creados.md](docs/infra/script_creados.md) | Historial de scripts de infraestructura creados |
+| [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) | Sistema de diseño Tailwind + Alpine.js, Dark Mode y formularios fluidos |
 | [PRODUCTION_DEPLOY_STEPS.md](PRODUCTION_DEPLOY_STEPS.md) | Pasos de sincronización y despliegue en producción |
 | [.agents/workflows/feature-rollout.md](.agents/workflows/feature-rollout.md) | Protocolo de E2E y Monitoreo post-lanzamiento |
 | [expenses/README.md](expenses/README.md) | Documentación y arquitectura del módulo Gastos Operativos (OPEX) |
@@ -639,6 +640,11 @@ Estructura de documentación distribuida por módulos para entender el **por qu�
 ---
 
 ## 🧪 Estado de Pruebas e Infraestructura (Agosto 2026)
+- **Experiencia de Usuario en Mostrador & Layout Fluido (Completada):**
+  1. *Barra Lateral Colapsable en Desktop:* Botón hamburguesa en header (`navbar.html`) y control Alpine.js (`sidebarCollapsed`) con persistencia en `localStorage`, liberando +260px horizontales al colapsar para que las tablas transaccionales se expandan.
+  2. *Rebalanceo Elástico de Tablas Transaccionales:* En Presupuestos, Ventas y Facturación Directa se otorgó prioridad elástica a `Producto (Descripción Editable)` (`min-w-[280px] w-full`) compactando las columnas numéricas auxiliares.
+  3. *Desacoplamiento de Buscadores de Producto:* Se renombró la búsqueda predictiva rápida a `quickSearchProducts()`, evitando solapamientos con el método `searchProducts()` del modal de búsqueda avanzada por filtros (`productSearchComponent`).
+  4. *Costo Unitario en Presupuestos:* Incorporación de columna y campo editable `unit_cost` en `quote_form.html` (desktop y mobile), replicando el comportamiento de ventas para cotizaciones de mostrador.
 - **Hardening Transaccional y Serializers V9/V10 (Completada):**
   1. *Blindaje de Race Conditions en ARCA (P0):* `facturar_venta` y `anular_factura_y_venta` envueltas bajo `@transaction.atomic` con bloqueo de fila `select_for_update()` sobre `Sale` e `Invoice` previo a validaciones de estado, eliminando dobles facturas y dobles NCs autorizadas en AFIP.
   2. *Protección contra Mass Assignment (P1):* Inclusión de guardias `if not instance.is_editable()` en `SaleCreateSerializer.update()` y `QuoteCreateSerializer.update()` impidiendo alterar ventas entregadas/confirmadas o cotizaciones convertidas vía API REST.
@@ -671,4 +677,4 @@ Estructura de documentación distribuida por módulos para entender el **por qu�
 
 ---
 
-*Última actualización: Agosto 2026 (Hardening Transaccional V9/V10, Facturación Directa de 0, Sobreescritura de Nombres con Código Inmutable, Notas de Crédito Standalone y Remediación Integral)*
+*Última actualización: Agosto 2026 (Experiencia Mostrador & Sidebar Colapsable, Hardening Transaccional V9/V10, Facturación Directa, Sobreescritura de Nombres y Remediación Integral)*

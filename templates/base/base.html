@@ -172,6 +172,11 @@
   <body class="flex flex-col bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 font-sans transition-colors duration-200"
         x-data="{ 
            sidebarOpen: false,
+           sidebarCollapsed: localStorage.getItem('sidebar_collapsed') === 'true',
+           toggleSidebarCollapse() {
+               this.sidebarCollapsed = !this.sidebarCollapsed;
+               localStorage.setItem('sidebar_collapsed', this.sidebarCollapsed);
+           },
            darkMode: localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches),
            toggleDarkMode() {
                this.darkMode = !this.darkMode;

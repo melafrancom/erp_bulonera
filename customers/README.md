@@ -25,6 +25,7 @@ El módulo `customers` centraliza el CRM (Customer Relationship Management) del 
     *   `validar_credito_para_venta(customer, monto)`: Pre-check de factibilidad de crédito.
     *   `refacturar_venta_a_precio_actual(sale, user)`: Modalidad informal — actualiza renglones de ventas entregadas a precios vigentes de catálogo antes de emitir la factura.
     *   `get_estado_cuenta(customer)`: Métricas consolidadas y reporte de antigüedad/aging (0-30d, 31-60d, 61-90d, +90d).
+    *   `get_account_statement(customer, date_from, date_to)`: Construye el cronograma del Mayor de Movimientos utilizando resolución canónica `reverse()` de URLs (`sales_web:sale_detail` y `payments_web:payment_detail`), garantizando trazabilidad sin 404 al navegar hacia las operaciones.
 
 ## 🛡️ Reglas de Seguridad y Control de Acceso
 *   **Permisos de Gestión Canónicos (`@permission_required('can_manage_customers')`)**: Las vistas web mutantes (`customer_create`, `customer_edit`, `customer_delete`, `customer_import`, `customer_export`, `customer_refacturar_sale`) retornan HTTP 403 `PermissionDenied` ante usuarios sin permisos asignados (ej: rol `viewer`).
@@ -44,8 +45,8 @@ Base URL: `/api/v1/customers/`
 ### Vistas Web (`web/urls/`)
 *   `GET /customers/` - Panel principal de administración y ABM de clientes.
 *   `GET /customers/{id}/` - Detalle completo del cliente (Ficha General), con notas, historial y barra de solapas de navegación directa.
-*   `GET /customers/{id}/credit/` - Dashboard visual de estado de cuenta corriente, deuda y aging report.
-*   `GET /customers/{id}/statement/` - Mayor de Cuentas Corrientes con cronograma de Debe/Haber, saldo acumulado y exportación en Excel/PDF.
+*   `GET /customers/{id}/credit/` - Dashboard visual de estado de cuenta corriente, deuda y aging report, con enlaces clicables a ventas pendientes (`sales_web:sale_detail`) y botón de acceso directo "Ver".
+*   `GET /customers/{id}/statement/` - Mayor de Cuentas Corrientes con cronograma interactivo de Debe/Haber, enlaces directos a comprobantes con tooltips (`title`), saldo acumulado y exportación en Excel/PDF.
 *   `GET/POST /customers/{id}/credit/refacturar/{sale_id}/` - Vista de confirmación y ejecución para refacturar venta informal a precios actualizados (`customer_refacturar_confirm.html`).
 *   `POST /customers/import/` - Importación masiva desde plantilla Excel (requiere permiso `can_manage_customers` y ejecuta validaciones del modelo por fila).
 *   `GET /customers/export/` - Exportación de padrón a Excel (requiere permiso `can_manage_customers`; rol `viewer` restringido).

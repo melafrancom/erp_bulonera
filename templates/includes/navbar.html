@@ -32,6 +32,14 @@
 
     <!-- Desktop Layout -->
     <div class="hidden lg:flex items-center gap-4">
+      <!-- Toggle Sidebar Desktop Button -->
+      <button @click="toggleSidebarCollapse()"
+              class="p-2 -ml-2 text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition cursor-pointer"
+              :title="sidebarCollapsed ? 'Expandir barra lateral' : 'Colapsar barra lateral'"
+              aria-label="Alternar barra lateral">
+        <i data-lucide="menu" class="w-5 h-5"></i>
+      </button>
+
       <!-- Breadcrumb -->
       <div class="flex-1">
         {% include 'includes/breadcrumb.html' %}

@@ -69,19 +69,19 @@ Base URL: `/api/v1/sales/`
 ### Vistas Web (`web/urls/urls_web.py`)
 *   `GET /sales/` - Panel principal de ventas con KPIs interactivos y filtros semánticos.
 *   `GET /sales/presupuestos/` - Gestor de presupuestos y cotizaciones de salón con filtros de estado y búsqueda (`quote_list`).
-*   `GET /sales/presupuestos/nuevo/` - Formulario interactivo con Alpine.js (`quote_create`) con buscador predictivo en vivo (`/bills/productos/buscar/`), selector de cliente (`_customer_selector.html`), renglones con descripciones editables (`producto_nombre_override`) y contexto liviano sin cuellos de botella de DOM (`products: []`).
+*   `GET /sales/presupuestos/nuevo/` - Formulario interactivo con Alpine.js (`quote_create`) con layout fluido relativo (`max-w-full`), buscador predictivo en vivo (`quickSearchProducts()`) con jerarquía de 2 niveles (nombre + marca/descripción), tooltips de lectura completa en hover, columna elástica de descripción editable `producto_nombre_override` (`min-w-[280px] w-full`), columna de costo unitario snapshot (`unit_cost`), inputs con espaciado tabular (`tabular-nums`), selector de cliente (`_customer_selector.html`) y compatibilidad total con el modal de búsqueda avanzada (`productSearchComponent`).
 *   `GET /sales/presupuestos/<pk>/editar/` - Edición reactiva de presupuestos borradores (`quote_update`).
 *   `GET /sales/presupuestos/<pk>/` - Detalle completo interno del presupuesto con opciones para compartir (`quote_detail`).
 *   `GET /sales/presupuestos/<pk>/imprimir/` - Vista formal de impresión HTML estructurada como comprobante 'X' (`quote_print`).
 *   `GET /sales/presupuestos/publico/<uuid>/` - **Vista pública responsive** para clientes externos, adaptada a la paleta corporativa (`#1B3A5C`, `#4A6FA5`, `#D42B1E`) y tipografías *Barlow* e *Inter* (`quote_public`).
 *   `GET /sales/presupuestos/publico/<uuid>/pdf/` - Descarga de PDF oficial generado con ReportLab bajo normativa AFIP de comprobante Clase 'X' ("DOCUMENTO NO VÁLIDO COMO FACTURA") (`quote_public_pdf`).
 *   `GET /sales/ventas/` - Listado y seguimiento de ventas (`sale_list`).
-*   `GET /sales/ventas/nueva/` - Venta directa en mostrador (`sale_create`) con live search reactivo, renglones con descripción editable (`producto_nombre_override`), códigos inmutables y soporte de costo unitario snapshot (`unit_cost`).
-*   `GET /sales/ventas/<pk>/` - Detalle completo de la venta (`sale_detail`).
+*   `GET /sales/ventas/nueva/` - Venta directa en mostrador (`sale_create`) con layout fluido relativo (`max-w-full`), live search reactivo (`quickSearchProducts()`) con marca/descripción secundaria, renglones con columna elástica de descripción editable `producto_nombre_override` (`min-w-[280px] w-full`), códigos inmutables con tooltips `:title`, inputs numéricos compactos y soporte de costo unitario snapshot (`unit_cost`).
+*   `GET /sales/ventas/<pk>/` - Detalle completo de la venta (`sale_detail`). Integra el panel de facturación electrónica `_factura_panel.html` con polling reactivo DRY (`_invoice_polling.html`) para actualizar el estado automáticamente cuando ARCA emite el CAE.
 
 ## 💸 Gestión de Costos y Margen de Rentabilidad (P&L)
-El sistema utiliza un snapshot histórico de costos en `SaleItem.unit_cost` para calcular de manera precisa el costo de mercadería vendida (COGS) en los reportes de pérdidas y ganancias (P&L).
-*   **Ajuste manual de costos:** En artículos que se compran al proveedor por kilogramo pero se comercializan por unidad en salón (ej: arandelas, tornillos sueltos), el costo del producto principal en base de datos (`Product.cost`) refleja el valor por kg. El formulario de ventas expone un input para el **Costo Unitario** con el placeholder `"Auto"`.
+El sistema utiliza un snapshot histórico de costos en `SaleItem.unit_cost` y presupuestos para calcular de manera precisa el costo de mercadería vendida (COGS) en los reportes de pérdidas y ganancias (P&L).
+*   **Ajuste manual de costos:** En artículos que se compran al proveedor por kilogramo pero se comercializan por unidad en salón (ej: arandelas, tornillos sueltos), el costo del producto principal en base de datos (`Product.cost`) refleja el valor por kg. Los formularios de ventas y presupuestos exponen un input para el **Costo Unitario** con el placeholder `"Auto"`.
 *   **Fallback Automático:** Si el vendedor deja el campo vacío o la venta proviene de sincronización PWA, el backend asigna automáticamente `Product.current_cost` en la base de datos al guardar la venta.
 *   **Copias y conversiones:** Al duplicar o convertir presupuestos o ventas, las vistas web arrastran el costo unitario snapshot original para evitar distorsiones en el margen histórico de rentabilidad.
 

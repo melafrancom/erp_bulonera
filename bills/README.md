@@ -40,16 +40,17 @@ Base URL: `/api/v1/bills/`
 ### Vistas Web (`web/urls/urls_web.py`) - Protegidas con `can_manage_bills`
 Todas las vistas web internas usan `ModulePermissionRequiredMixin` o `@permission_required('can_manage_bills')`:
 *   `GET /bills/facturas/` - Listado de facturas emitidas y filtros (`InvoiceListView`).
-*   `GET /bills/facturas/nueva/` - Formulario interactivo con Alpine.js para Facturación Directa de 0 (`InvoiceCreateView`), integrando selector DRY `_customer_selector.html`, live search de productos y captura de costo unitario.
-*   `GET /bills/nota-credito/nueva/` - Formulario interactivo con Alpine.js para Notas de Crédito Standalone (`CreditNoteCreateView`).
-*   `GET /bills/facturas/<pk>/` - Detalle completo de la factura (`InvoiceDetailView`).
+*   `GET /bills/facturas/nueva/` - Formulario interactivo con Alpine.js para Facturación Directa de 0 (`InvoiceCreateView`), con layout fluido relativo (`max-w-full`), live search de productos (`quickSearchProducts()`) con 2 niveles jerárquicos (nombre + marca/descripción), tooltips de lectura completa en hover, columna elástica de descripción editable (`min-w-[280px] w-full`), inputs numéricos compactos y captura de costo unitario.
+*   `GET /bills/nota-credito/nueva/` - Formulario interactivo con Alpine.js para Notas de Crédito Standalone (`CreditNoteCreateView`) con layout fluido.
+*   `GET /bills/facturas/<pk>/` - Detalle completo de la factura (`InvoiceDetailView`). Si la factura está en estado `borrador`, integra el partial `_invoice_polling.html` que consulta `invoice_status_api` cada 2.5s y recarga la vista automáticamente al autorizarse en ARCA.
 *   `GET /bills/facturas/<pk>/pdf/` - Descarga privada de PDF (`download_invoice_pdf`).
 *   `POST /bills/facturas/<pk>/reintentar/` - Reintento manual de emisión fiscal (`invoice_retry`).
 *   `POST /bills/facturas/<pk>/anular/` - Anulación segura de factura y emisión de Nota de Crédito (`invoice_cancel`).
 *   `POST /bills/facturas/<pk>/enviar-email/` - Encolar envío por email (`invoice_send_email`).
 *   `GET /bills/facturas/publico/<uuid>/pdf/` - **Vista pública** de descarga de PDF por UUID sin requerir autenticación (`invoice_public_pdf`).
 *   `GET /bills/clientes/<int:customer_id>/facturas/` - Helper JSON para obtener facturas autorizadas de un cliente (`customer_invoices_api`).
-*   `GET /bills/productos/buscar/` - Helper JSON optimizado (`only()`, límite a 25 resultados) para búsqueda multi-término de productos con retorno de precio, IVA y stock (`product_search_api`; el costo comercial queda protegido y no se expone). Accesible para usuarios con permisos en `bills` o `sales`.
+*   `GET /bills/productos/buscar/` - Helper JSON optimizado (`only()`, límite a 25 resultados) para búsqueda multi-término de productos con retorno de `id`, `code`, `name`, `brand`, `description` (truncada a 80 chars), `price`, `cost`, `tax_rate` y `stock` (`product_search_api`). Accesible para usuarios con permisos en `bills` o `sales`.
+*   `GET /bills/facturas/<pk>/status/` - Endpoint JSON de polling reactivo (`invoice_status_api`) que devuelve el estado fiscal en tiempo real para recarga automática.
 
 ## 📝 Documentación de Detalle
 *   [Integración Fiscal y Notas de Crédito](docs/afip_integration.md): Flujo asíncrono con Celery, mapeo de impuestos de la AFIP y lógica de reversión de saldos por anulación.
