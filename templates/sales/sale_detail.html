@@ -1,5 +1,6 @@
 {% extends 'base/base.html' %}
 {% load static %}
+{% load l10n %}
 
 {% block title %}Venta {{ sale.number }} - ERP Bulonera Alvear{% endblock %}
 
@@ -13,6 +14,133 @@
 {% block mobile_title %}{{ sale.number }}{% endblock %}
 
 {% block content %}
+<script>
+function saleDetailComponent() {
+  return {
+    shareInvoiceModalOpen: false,
+    invoiceTab: 'email',
+    costModalOpen: false,
+    savingCosts: false,
+    modalError: '',
+    costReason: '',
+    itemsMap: {
+      {% localize off %}
+      {% for item in sale.items.all %}
+      {{ item.id }}: {
+        id: {{ item.id }},
+        productCode: '{{ item.product.code|escapejs }}',
+        name: '{{ item.display_name|escapejs }}',
+        quantity: {{ item.quantity|default:0 }},
+        unitPrice: {{ item.unit_price|default:0 }},
+        unitCost: {{ item.unit_cost|default:0 }},
+        subtotalWithDiscount: {{ item.subtotal_with_discount|default:0 }},
+        profit: {{ item.profit|default:0 }}
+      }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+      {% endlocalize %}
+    },
+    editableItems: [],
+
+    openCostModal() {
+      this.modalError = '';
+      this.costReason = '';
+      this.editableItems = Object.values(this.itemsMap).map(it => ({
+        id: it.id,
+        productCode: it.productCode,
+        name: it.name,
+        quantity: it.quantity,
+        unitPrice: it.unitPrice,
+        unitCost: it.unitCost,
+        subtotalWithDiscount: it.subtotalWithDiscount
+      }));
+      this.costModalOpen = true;
+      this.$nextTick(() => {
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      });
+    },
+
+    calculateTotalRevenue() {
+      return this.editableItems.reduce((acc, it) => acc + (parseFloat(it.subtotalWithDiscount) || 0), 0);
+    },
+
+    calculateTotalCost() {
+      return this.editableItems.reduce((acc, it) => acc + ((parseFloat(it.unitCost) || 0) * (parseFloat(it.quantity) || 0)), 0);
+    },
+
+    calculateTotalProfit() {
+      return this.calculateTotalRevenue() - this.calculateTotalCost();
+    },
+
+    getItemCostDisplay(itemId, defaultStr) {
+      if (this.itemsMap[itemId] && this.itemsMap[itemId].unitCost !== undefined) {
+        return parseFloat(this.itemsMap[itemId].unitCost).toFixed(2);
+      }
+      return defaultStr;
+    },
+
+    getItemProfit(itemId, defaultVal) {
+      if (this.itemsMap[itemId] && this.itemsMap[itemId].profit !== undefined) {
+        return parseFloat(this.itemsMap[itemId].profit);
+      }
+      return parseFloat(defaultVal);
+    },
+
+    async submitCosts() {
+      this.modalError = '';
+      this.savingCosts = true;
+
+      const payload = {
+        items: this.editableItems.map(it => ({
+          item_id: it.id,
+          unit_cost: parseFloat(it.unitCost) || 0
+        })),
+        reason: this.costReason
+      };
+
+      try {
+        const response = await fetch('{% url "sales_web:sale_update_costs" sale.id %}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          if (data.updated_items) {
+            data.updated_items.forEach(up => {
+              if (this.itemsMap[up.id]) {
+                this.itemsMap[up.id].unitCost = up.unit_cost;
+                this.itemsMap[up.id].profit = up.profit;
+              }
+            });
+          }
+          this.costModalOpen = false;
+          window.location.reload();
+        } else {
+          this.modalError = data.error || 'Ocurrió un error al guardar los costos.';
+        }
+      } catch (err) {
+        this.modalError = 'Error de red al comunicarse con el servidor.';
+      } finally {
+        this.savingCosts = false;
+      }
+    }
+  };
+}
+window.saleDetailComponent = saleDetailComponent;
+document.addEventListener('alpine:init', () => {
+  Alpine.data('saleDetailComponent', saleDetailComponent);
+});
+if (window.Alpine) {
+  Alpine.data('saleDetailComponent', saleDetailComponent);
+}
+</script>
+
 <div class="max-w-7xl mx-auto" x-data="saleDetailComponent()">
 
   <!-- ===== Header ===== -->
@@ -842,123 +970,4 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-function saleDetailComponent() {
-  return {
-    shareInvoiceModalOpen: false,
-    invoiceTab: 'email',
-    costModalOpen: false,
-    savingCosts: false,
-    modalError: '',
-    costReason: '',
-    itemsMap: {
-      {% for item in sale.items.all %}
-      {{ item.id }}: {
-        id: {{ item.id }},
-        productCode: '{{ item.product.code|escapejs }}',
-        name: '{{ item.display_name|escapejs }}',
-        quantity: {{ item.quantity }},
-        unitPrice: {{ item.unit_price }},
-        unitCost: {{ item.unit_cost|default:0 }},
-        subtotalWithDiscount: {{ item.subtotal_with_discount }},
-        profit: {{ item.profit|default:0 }}
-      }{% if not forloop.last %},{% endif %}
-      {% endfor %}
-    },
-    editableItems: [],
-
-    openCostModal() {
-      this.modalError = '';
-      this.costReason = '';
-      this.editableItems = Object.values(this.itemsMap).map(it => ({
-        id: it.id,
-        productCode: it.productCode,
-        name: it.name,
-        quantity: it.quantity,
-        unitPrice: it.unitPrice,
-        unitCost: it.unitCost,
-        subtotalWithDiscount: it.subtotalWithDiscount
-      }));
-      this.costModalOpen = true;
-      this.$nextTick(() => {
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-      });
-    },
-
-    calculateTotalRevenue() {
-      return this.editableItems.reduce((acc, it) => acc + (parseFloat(it.subtotalWithDiscount) || 0), 0);
-    },
-
-    calculateTotalCost() {
-      return this.editableItems.reduce((acc, it) => acc + ((parseFloat(it.unitCost) || 0) * (parseFloat(it.quantity) || 0)), 0);
-    },
-
-    calculateTotalProfit() {
-      return this.calculateTotalRevenue() - this.calculateTotalCost();
-    },
-
-    getItemCostDisplay(itemId, defaultStr) {
-      if (this.itemsMap[itemId] && this.itemsMap[itemId].unitCost !== undefined) {
-        return parseFloat(this.itemsMap[itemId].unitCost).toFixed(2);
-      }
-      return defaultStr;
-    },
-
-    getItemProfit(itemId, defaultVal) {
-      if (this.itemsMap[itemId] && this.itemsMap[itemId].profit !== undefined) {
-        return parseFloat(this.itemsMap[itemId].profit);
-      }
-      return parseFloat(defaultVal);
-    },
-
-    async submitCosts() {
-      this.modalError = '';
-      this.savingCosts = true;
-
-      const payload = {
-        items: this.editableItems.map(it => ({
-          item_id: it.id,
-          unit_cost: parseFloat(it.unitCost) || 0
-        })),
-        reason: this.costReason
-      };
-
-      try {
-        const response = await fetch('{% url "sales_web:sale_update_costs" sale.id %}', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}',
-            'X-Requested-With': 'XMLHttpRequest'
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.success) {
-          // Actualizar mapa local
-          if (data.updated_items) {
-            data.updated_items.forEach(up => {
-              if (this.itemsMap[up.id]) {
-                this.itemsMap[up.id].unitCost = up.unit_cost;
-                this.itemsMap[up.id].profit = up.profit;
-              }
-            });
-          }
-          this.costModalOpen = false;
-          // Mostrar notificación o recargar para consistencia completa
-          window.location.reload();
-        } else {
-          this.modalError = data.error || 'Ocurrió un error al guardar los costos.';
-        }
-      } catch (err) {
-        this.modalError = 'Error de red al comunicarse con el servidor.';
-      } finally {
-        this.savingCosts = false;
-      }
-    }
-  };
-}
-</script>
 {% endblock %}

@@ -319,7 +319,6 @@ class SaleItemSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             'id', 'display_name', 'created_at', 'updated_at',
-            'unit_cost',
             'line_subtotal', 'discount_amount', 'subtotal_with_discount',
             'tax_amount', 'total', 'profit', 'margin_percentage'
         ]
@@ -561,9 +560,10 @@ class SaleCreateSerializer(serializers.ModelSerializer):
         with transaction.atomic():
             sale = Sale.objects.create(**validated_data)
             for item_data in items_data:
-                # El costo se toma del producto en el momento de creación
-                if 'unit_cost' not in item_data:
-                    item_data['unit_cost'] = item_data['product'].current_cost if hasattr(item_data['product'], 'current_cost') else 0
+                product = item_data.get('product')
+                # El costo se toma del payload o del producto en el momento de creación
+                if 'unit_cost' not in item_data or item_data['unit_cost'] is None:
+                    item_data['unit_cost'] = getattr(product, 'cost', None) or getattr(product, 'current_cost', None) or Decimal('0.00')
                 SaleItem.objects.create(sale=sale, **item_data)
             return sale
 
@@ -589,10 +589,9 @@ class SaleCreateSerializer(serializers.ModelSerializer):
             with transaction.atomic():
                 instance.items.all().delete()
                 for item_data in items_data:
-                    # No recalculamos costo en edición, mantenemos el original si es posible
-                    # Pero si es un ítem nuevo (o si reimplementamos borrando), usamos el costo actual
-                    if 'unit_cost' not in item_data:
-                        item_data['unit_cost'] = item_data['product'].current_cost if hasattr(item_data['product'], 'current_cost') else 0
+                    product = item_data.get('product')
+                    if 'unit_cost' not in item_data or item_data['unit_cost'] is None:
+                        item_data['unit_cost'] = getattr(product, 'cost', None) or getattr(product, 'current_cost', None) or Decimal('0.00')
                     SaleItem.objects.create(sale=instance, **item_data)
         
         return instance

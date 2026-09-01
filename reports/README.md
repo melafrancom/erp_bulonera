@@ -28,15 +28,20 @@ El procesamiento analítico se distribuye en servicios especializados:
 *   `DashboardService` (`dashboard_service.py`): Consolida KPIs en tiempo real para el panel directivo y operativo, resolviendo visibilidad mediante `get_kpis_for_user(user)` que combina roles y el permiso `can_view_reports`.
 *   `ExportService` (`export_service.py`): Genera planillas Excel (`.xlsx`) estructuradas con formato financiero para el P&L y el CashFlow.
 
-## 🛡️ Seguridad y Control de Acceso (Fase 7)
+## 🛡️ Seguridad, Control de Acceso y Gestión de Caché
 *   **API REST:**
     *   `ReportsPermission`: Control de acceso que exige `is_superuser`, rol `admin`/`manager`, o el flag `can_view_reports=True`.
     *   Protege `pnl_statement_view`, `cashflow_statement_view`, `pnl_export_view` y `cashflow_export_view`.
 *   **Vistas Web:**
     *   Decorador `@permission_required('can_view_reports')` aplicado en `pnl_statement_view`, `cashflow_statement_view`, `pnl_export_view` y `cashflow_export_view` (redirect 302 para anónimos, 403 Forbidden para usuarios sin permisos).
 *   **Invalidación Eficiente por Signals (`signals.py`):**
-    *   Bindeo explícito de `sender=Invoice`, `sender=Payment` y `sender=Expense`, eliminando la sobrecarga global de `sender=None`.
-    *   Corrección de manejo de `DateField` en `fecha_emision` eliminando llamadas erróneas a `.date()`.
+    *   Bindeo explícito de `sender=Invoice`, `sender=Payment`, `sender=Expense`, `sender=Sale` y `sender=SaleItem`, eliminando la sobrecarga global de `sender=None`.
+    *   Al crearse, confirmarse o modificarse costos en ventas o ítems de venta, el snapshot contable del mes correspondiente pasa automáticamente a `is_stale=True`.
+    *   Manejo estructurado de excepciones con `logger.warning(...)` para garantizar que la emisión de ventas nunca se bloquee por tareas analíticas.
+*   **Cálculo Dinámico y Frescura en Vistas Financieras (`financial_views.py`):**
+    *   Parser flexible de períodos `_parse_period_from_request` con soporte para `?period=YYYY-MM` y `?year=Y&month=M`.
+    *   Si la consulta corresponde al **mes en curso** o se envía `?refresh=1`, las vistas ejecutan el cálculo en vivo mediante `ProfitAndLossService` y `CashFlowService`, actualizando el snapshot en base de datos.
+    *   Las funciones de evolución anual (`_add_monthly_evolution` y `_add_monthly_evolution_cashflow`) incluyen siempre el mes actual dentro de las curvas de 12 meses.
 *   **Django Admin (`admin.py`):**
     *   `FinancialSnapshotAdmin` registrado con campos de solo lectura (`type`, `period_year`, `period_month`, `data`, `generated_at`, `is_stale`) y `has_add_permission = False` para monitoreo de caché sin mutaciones directas.
 
@@ -45,7 +50,7 @@ El procesamiento analítico se distribuye en servicios especializados:
 ### REST API (`api/urls/`)
 Base URL: `/api/v1/reports/`
 *   `GET /api/v1/reports/dashboard/` - KPIs configurados para el usuario (ventas, presupuestos, stock, y KPIs financieros si tiene permiso).
-*   `GET /api/v1/reports/pnl/` - Estado de Resultados (P&L) mensual devengado (sirve desde snapshot si está fresco).
+*   `GET /api/v1/reports/pnl/` - Estado de Resultados (P&L) mensual devengado (sirve desde snapshot si está fresco o recalcula dinámicamente).
 *   `GET /api/v1/reports/cashflow/` - Flujo de Caja mensual percibido.
 *   `GET /api/v1/reports/pnl/export/` - Descarga de P&L en formato Excel (`.xlsx`).
 *   `GET /api/v1/reports/cashflow/export/` - Descarga de CashFlow en formato Excel (`.xlsx`).
@@ -53,8 +58,8 @@ Base URL: `/api/v1/reports/`
 ### Vistas Web (`web/urls/`)
 Base URL: `/reports/` (namespace `reports_web`)
 *   `GET /reports/dashboard/` - Redirección al Dashboard Unificado de `core`.
-*   `GET /reports/pnl/` - Interfaz interactiva de Estado de Resultados con gráficos de evolución anual.
-*   `GET /reports/cashflow/` - Interfaz interactiva de Flujo de Caja mensual.
+*   `GET /reports/pnl/` - Interfaz interactiva de Estado de Resultados con selector reactivo `onchange="this.form.submit()"`, botón "🔄 Recalcular" en tiempo real y gráficos de evolución de 12 meses.
+*   `GET /reports/cashflow/` - Interfaz interactiva de Flujo de Caja mensual con selector y botón de recálculo directo.
 *   `GET /reports/pnl/export/` - Descarga directa del P&L en Excel.
 *   `GET /reports/cashflow/export/` - Descarga directa del CashFlow en Excel.
 

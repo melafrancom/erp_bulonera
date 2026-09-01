@@ -144,3 +144,62 @@ class TestSaleCostEditingWebView:
         assert response.status_code == 403
         data = response.json()
         assert data['success'] is False
+
+
+@pytest.mark.django_db
+class TestSaleCreateSerializerCostPersistence:
+    """Tests para validar que SaleCreateSerializer persiste el unit_cost enviado."""
+
+    def test_sale_create_serializer_persists_custom_unit_cost(self, customer, product, admin_user):
+        """El unit_cost enviado en el payload de items se guarda en SaleItem."""
+        from sales.api.serializers import SaleCreateSerializer
+        
+        payload = {
+            'customer': customer.id,
+            'payment_method': 'cash',
+            'items': [
+                {
+                    'product': product.id,
+                    'quantity': '2',
+                    'unit_price': '500.00',
+                    'unit_cost': '320.50',
+                    'tax_percentage': '21.00'
+                }
+            ]
+        }
+        
+        serializer = SaleCreateSerializer(data=payload, context={'request': type('Req', (), {'user': admin_user})()})
+        assert serializer.is_valid(), serializer.errors
+        created_sale = serializer.save()
+        
+        item = created_sale.items.first()
+        assert item is not None
+        assert item.unit_cost == Decimal('320.500000')
+        assert item.profit == Decimal('359.000000')  # (500*2) - (320.50*2) = 1000 - 641 = 359
+
+    def test_sale_create_serializer_fallback_to_product_cost(self, customer, product, admin_user):
+        """Si no se envía unit_cost, hace fallback a product.cost."""
+        from sales.api.serializers import SaleCreateSerializer
+        product.cost = Decimal('150.00')
+        product.save()
+        
+        payload = {
+            'customer': customer.id,
+            'payment_method': 'cash',
+            'items': [
+                {
+                    'product': product.id,
+                    'quantity': '1',
+                    'unit_price': '300.00',
+                    'tax_percentage': '21.00'
+                }
+            ]
+        }
+        
+        serializer = SaleCreateSerializer(data=payload, context={'request': type('Req', (), {'user': admin_user})()})
+        assert serializer.is_valid(), serializer.errors
+        created_sale = serializer.save()
+        
+        item = created_sale.items.first()
+        assert item.unit_cost == Decimal('150.000000')
+

@@ -135,7 +135,10 @@ class ProfitAndLossService(CachedKPIService):
                 sale__is_active=True,
             ).aggregate(
                 total=Coalesce(
-                    Sum(F('unit_cost') * F('quantity'), output_field=DecimalField()),
+                    Sum(
+                        Coalesce(F('unit_cost'), Value(Decimal('0'))) * F('quantity'),
+                        output_field=DecimalField()
+                    ),
                     Value(Decimal('0')),
                 )
             )['total']
