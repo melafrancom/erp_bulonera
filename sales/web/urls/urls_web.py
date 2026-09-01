@@ -49,6 +49,7 @@ from sales.web.views.web_views import (
     sale_move_status,
     sale_invoice,
     sale_register_ticket,
+    sale_update_costs,
 )
 
 app_name = 'sales_web'
@@ -92,6 +93,7 @@ urlpatterns = [
     path('ventas/<int:pk>/confirmar/',      sale_confirm,     name='sale_confirm'),
     path('ventas/<int:pk>/cancelar/',       sale_cancel,      name='sale_cancel'),
     path('ventas/<int:pk>/mover-estado/',   sale_move_status, name='sale_move_status'),
+    path('ventas/<int:pk>/editar-costos/',  sale_update_costs, name='sale_update_costs'),
     path('ventas/<int:pk>/facturar/',       sale_invoice,     name='sale_invoice'),
     path('ventas/<int:pk>/registrar-ticket/', sale_register_ticket, name='sale_register_ticket'),
 ]

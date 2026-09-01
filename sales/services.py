@@ -255,3 +255,125 @@ def move_sale_status(sale, user, new_status, delivery_notes=None):
         sale.internal_notes = locked_sale.internal_notes
     
     return sale
+
+
+def update_sale_item_costs(sale, items_cost_data, user, reason=""):
+    """
+    Actualiza los costos unitarios (unit_cost) de los renglones de una venta generada.
+    
+    Permite a administradores o encargados (Managers) registrar o corregir retroactivamente
+    los costos de los productos vendidos para el cálculo fidedigno de rentabilidad y P&L.
+    
+    Args:
+        sale: Instancia o PK de Sale
+        items_cost_data: Lista de dicts [{'item_id': int, 'unit_cost': Decimal|float|str}]
+        user: Usuario que realiza la modificación (debe ser admin/manager/superuser)
+        reason: Motivo o justificación de la corrección (opcional)
+        
+    Returns:
+        dict con {'success': True, 'updated_items': int, 'changes': list[str]}
+        
+    Raises:
+        PermissionError: Si el usuario no tiene permisos suficientes
+        ValueError: Si los datos de entrada o costos son inválidos
+    """
+    from decimal import Decimal, InvalidOperation
+
+    # 1. Validación de permisos
+    is_privileged = (
+        user.is_superuser
+        or getattr(user, 'role', '') in ('admin', 'manager')
+        or getattr(user, 'is_admin', False)
+        or getattr(user, 'is_manager', False)
+    )
+    if not is_privileged:
+        raise PermissionError('Solo los administradores y encargados pueden modificar los costos de ventas generadas.')
+
+    if not items_cost_data:
+        raise ValueError('No se proporcionaron costos para actualizar.')
+
+    sale_id = sale.pk if hasattr(sale, 'pk') else sale
+
+    with transaction.atomic():
+        locked_sale = Sale.objects.select_for_update().get(pk=sale_id)
+        
+        # Mapear ítems existentes para acceso rápido
+        sale_items = {item.id: item for item in locked_sale.items.select_for_update().all()}
+        
+        changes = []
+        
+        for entry in items_cost_data:
+            item_id = entry.get('item_id') or entry.get('id')
+            if not item_id:
+                continue
+            
+            try:
+                item_id = int(item_id)
+            except (ValueError, TypeError):
+                continue
+                
+            item = sale_items.get(item_id)
+            if not item:
+                raise ValueError(f'El renglón con ID {item_id} no pertenece a la venta {locked_sale.number}.')
+                
+            raw_cost = entry.get('unit_cost')
+            if raw_cost is None:
+                continue
+                
+            try:
+                new_cost = Decimal(str(raw_cost)).quantize(Decimal('0.000001'))
+            except (InvalidOperation, TypeError):
+                raise ValueError(f'Costo unitario inválido para {item.display_name}: "{raw_cost}".')
+                
+            if new_cost < Decimal('0'):
+                raise ValueError(f'El costo unitario no puede ser negativo para {item.display_name}.')
+                
+            old_cost = item.unit_cost or Decimal('0')
+            
+            # Solo si hubo cambio real
+            if new_cost != old_cost:
+                item.unit_cost = new_cost
+                item.save(update_fields=['unit_cost'])
+                changes.append(
+                    f"{item.display_name} (Cód: {item.product.code}): ${old_cost:.2f} → ${new_cost:.2f}"
+                )
+
+        if changes:
+            ts = timezone.now().strftime('%d/%m/%Y %H:%M')
+            author = user.get_full_name() or user.username
+            clean_reason = ''.join(ch for ch in str(reason or '').strip() if ch.isprintable() or ch in '\n\r\t')[:255]
+            audit_msg = f"[{ts}] Costos unitarios corregidos por {author}:\n- " + "\n- ".join(changes)
+            if clean_reason:
+                audit_msg += f"\nMotivo: {clean_reason}"
+                
+            if locked_sale.internal_notes:
+                locked_sale.internal_notes = f"{locked_sale.internal_notes}\n\n{audit_msg}".strip()
+            else:
+                locked_sale.internal_notes = audit_msg
+                
+            locked_sale.save(update_fields=['internal_notes'])
+            
+            # Sincronizar en memoria si nos pasaron la instancia
+            if hasattr(sale, 'internal_notes'):
+                sale.internal_notes = locked_sale.internal_notes
+            
+            # Invalidar snapshot financiero (P&L) para el mes de la venta
+            try:
+                from reports.models import FinancialSnapshot
+                sale_date = locked_sale.date
+                if sale_date:
+                    FinancialSnapshot.objects.filter(
+                        type='pnl_monthly',
+                        period_year=sale_date.year,
+                        period_month=sale_date.month,
+                    ).update(is_stale=True)
+            except Exception:
+                pass
+
+        return {
+            'success': True,
+            'sale_id': locked_sale.id,
+            'sale_number': locked_sale.number,
+            'updated_items': len(changes),
+            'changes': changes,
+        }

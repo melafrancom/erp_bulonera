@@ -30,6 +30,7 @@ Vistas disponibles:
         sale_convert_from_quote → Convierte presupuesto en venta
 """
 
+import json
 import logging
 
 from django.contrib import messages
@@ -44,7 +45,7 @@ from django.conf import settings
 
 from common.company import get_company_info
 from sales.models import Quote, QuoteItem, Sale, SaleItem
-from sales.services import cancel_sale, confirm_sale, convert_quote_to_sale, move_sale_status
+from sales.services import cancel_sale, confirm_sale, convert_quote_to_sale, move_sale_status, update_sale_item_costs
 
 logger = logging.getLogger(__name__)
 
@@ -1417,3 +1418,113 @@ def quote_public_pdf_view(request, uuid):
     response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="Presupuesto_{quote.number}.pdf"'
     return response
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# VENTAS — EDICIÓN DE COSTOS (POST only)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+@require_POST
+def sale_update_costs(request, pk):
+    """
+    Permite a administradores/managers actualizar los costos unitarios de los renglones
+    de una venta generada.
+    
+    Acepta JSON payload o formulario con:
+      - items: [{'item_id': X, 'unit_cost': Y}, ...]
+      - reason: texto opcional
+    """
+    if not _is_privileged(request.user):
+        if (
+            request.headers.get('x-requested-with') == 'XMLHttpRequest'
+            or request.content_type == 'application/json'
+            or 'application/json' in request.META.get('HTTP_ACCEPT', '')
+        ):
+            return JsonResponse({
+                'success': False,
+                'error': 'No tienes permisos para modificar costos de ventas generadas.'
+            }, status=403)
+        messages.error(request, 'No tienes permisos para modificar costos de ventas generadas.')
+        return redirect('sales_web:sale_detail', pk=pk)
+
+    sale = get_object_or_404(Sale, pk=pk)
+
+    try:
+        if request.content_type == 'application/json':
+            data = json.loads(request.body.decode('utf-8'))
+        else:
+            raw_items = request.POST.get('items')
+            if raw_items:
+                data = {
+                    'items': json.loads(raw_items),
+                    'reason': request.POST.get('reason', '')
+                }
+            else:
+                items_data = []
+                for key, val in request.POST.items():
+                    if key.startswith('item_cost_'):
+                        item_id = key.replace('item_cost_', '')
+                        items_data.append({
+                            'item_id': item_id,
+                            'unit_cost': val
+                        })
+                data = {
+                    'items': items_data,
+                    'reason': request.POST.get('reason', '')
+                }
+
+        items_cost_data = data.get('items', [])
+        raw_reason = str(data.get('reason', '') or '').strip()
+        # Sanitizar caracteres de control y limitar longitud a 255 chars
+        reason = ''.join(ch for ch in raw_reason if ch.isprintable() or ch in '\n\r\t')[:255]
+
+        res = update_sale_item_costs(
+            sale=sale,
+            items_cost_data=items_cost_data,
+            user=request.user,
+            reason=reason
+        )
+
+        # Preparar respuesta enriquecida
+        sale.refresh_from_db()
+        updated_items_summary = []
+        for item in sale.items.all():
+            updated_items_summary.append({
+                'id': item.id,
+                'unit_cost': float(item.unit_cost or 0),
+                'profit': float(item.profit or 0),
+            })
+
+        if (
+            request.headers.get('x-requested-with') == 'XMLHttpRequest'
+            or request.content_type == 'application/json'
+            or 'application/json' in request.META.get('HTTP_ACCEPT', '')
+        ):
+            return JsonResponse({
+                'success': True,
+                'message': f'Se actualizaron los costos de {res["updated_items"]} producto(s) correctamente.',
+                'updated_items': updated_items_summary,
+            })
+
+        messages.success(request, f'Costos actualizados correctamente ({res["updated_items"]} modificados).')
+        return redirect('sales_web:sale_detail', pk=sale.pk)
+
+    except (ValueError, PermissionError) as exc:
+        logger.warning(f'Error al actualizar costos en venta {sale.number}: {exc}')
+        if (
+            request.headers.get('x-requested-with') == 'XMLHttpRequest'
+            or request.content_type == 'application/json'
+        ):
+            return JsonResponse({'success': False, 'error': str(exc)}, status=400)
+        messages.error(request, str(exc))
+        return redirect('sales_web:sale_detail', pk=sale.pk)
+    except Exception as exc:
+        logger.error(f'Error inesperado al actualizar costos en venta {sale.number}: {exc}')
+        if (
+            request.headers.get('x-requested-with') == 'XMLHttpRequest'
+            or request.content_type == 'application/json'
+        ):
+            return JsonResponse({'success': False, 'error': 'Error interno del servidor.'}, status=500)
+        messages.error(request, 'Ocurrió un error inesperado al actualizar los costos.')
+        return redirect('sales_web:sale_detail', pk=sale.pk)

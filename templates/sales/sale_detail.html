@@ -13,7 +13,7 @@
 {% block mobile_title %}{{ sale.number }}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto" x-data="{ shareInvoiceModalOpen: false, invoiceTab: 'email' }">
+<div class="max-w-7xl mx-auto" x-data="saleDetailComponent()">
 
   <!-- ===== Header ===== -->
   <div class="mb-6">
@@ -191,13 +191,20 @@
 
       <!-- Tabla de Items -->
       <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-gray-50 to-white dark:from-slate-800/50 dark:to-slate-800">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-gray-50 to-white dark:from-slate-800/50 dark:to-slate-800 flex items-center justify-between">
           <h3 class="text-base font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
             <span class="inline-flex items-center justify-center w-7 h-7 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
               <i data-lucide="package" class="w-4 h-4 text-purple-600 dark:text-purple-400"></i>
             </span>
             Items de la Venta
           </h3>
+          {% if user.is_manager or user.is_admin or user.is_superuser %}
+          <button type="button" @click="openCostModal()"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-800/40 rounded-lg border border-blue-200 dark:border-blue-700/50 transition shadow-sm">
+            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+            Editar Costos
+          </button>
+          {% endif %}
         </div>
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-100 dark:divide-slate-700">
@@ -243,7 +250,9 @@
                 <td class="px-4 py-4 text-right text-sm font-semibold text-gray-900 dark:text-slate-100 tabular-nums">{{ item.quantity_display }}</td>
                 <td class="px-4 py-4 text-right text-sm text-gray-900 dark:text-slate-100 hidden sm:table-cell">${{ item.unit_price|floatformat:2 }}</td>
                 {% if user.is_manager or user.is_admin or user.is_superuser %}
-                <td class="px-4 py-4 text-right text-sm text-gray-500 dark:text-slate-400 hidden lg:table-cell">${{ item.unit_cost|floatformat:2 }}</td>
+                <td class="px-4 py-4 text-right text-sm text-gray-500 dark:text-slate-400 hidden lg:table-cell font-mono tabular-nums">
+                  $<span x-text="getItemCostDisplay({{ item.id }}, '{{ item.unit_cost|floatformat:2 }}')"></span>
+                </td>
                 {% endif %}
                 <td class="px-4 py-4 text-right text-sm hidden md:table-cell">
                   {% if item.discount_type != 'none' %}
@@ -262,9 +271,9 @@
                 </td>
                 <td class="px-4 py-4 text-right text-sm font-semibold text-gray-900 dark:text-slate-100">${{ item.total|floatformat:2 }}</td>
                 {% if user.is_manager or user.is_admin or user.is_superuser %}
-                <td class="px-4 py-4 text-right hidden lg:table-cell">
-                  <span class="text-sm font-medium {% if item.profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
-                    {% if item.profit >= 0 %}+{% endif %}${{ item.profit|floatformat:2 }}
+                <td class="px-4 py-4 text-right hidden lg:table-cell font-mono tabular-nums">
+                  <span :class="getItemProfit({{ item.id }}, {{ item.profit|default:0 }}) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'" class="text-sm font-medium">
+                    <span x-text="(getItemProfit({{ item.id }}, {{ item.profit|default:0 }}) >= 0 ? '+$' : '-$') + Math.abs(getItemProfit({{ item.id }}, {{ item.profit|default:0 }})).toFixed(2)"></span>
                   </span>
                 </td>
                 {% endif %}
@@ -678,5 +687,278 @@
   {% include 'sales/partials/_share_document_modal.html' with modal_title="Compartir Factura" alpine_open_var="shareInvoiceModalOpen" alpine_tab_var="invoiceTab" email_action_url=email_action public_doc_url=public_url default_email=sale.customer.email|default:sale.customer_email|default:"" default_phone=sale.customer.phone|default:sale.customer_phone|default:"" whatsapp_msg="Hola, te adjunto la factura correspondiente a tu compra. Podés descargarla en el siguiente enlace:" %}
   {% endif %}
 
+  <!-- Modal: Editar Costos de la Venta -->
+  {% if user.is_manager or user.is_admin or user.is_superuser %}
+  <div x-show="costModalOpen" x-cloak
+       class="fixed inset-0 z-50 overflow-y-auto"
+       aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+      
+      <!-- Backdrop -->
+      <div x-show="costModalOpen" 
+           x-transition:enter="ease-out duration-300"
+           x-transition:enter-start="opacity-0"
+           x-transition:enter-end="opacity-100"
+           x-transition:leave="ease-in duration-200"
+           x-transition:leave-start="opacity-100"
+           x-transition:leave-end="opacity-0"
+           class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" 
+           @click="costModalOpen = false"></div>
+
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+      <!-- Modal Panel -->
+      <div x-show="costModalOpen"
+           x-transition:enter="ease-out duration-300"
+           x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+           x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+           x-transition:leave="ease-in duration-200"
+           x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+           x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+           class="inline-block align-bottom bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full border border-gray-200 dark:border-slate-700">
+        
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-800/80 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="inline-flex items-center justify-center w-10 h-10 bg-blue-600 text-white rounded-xl shadow-md shadow-blue-500/20">
+              <i data-lucide="calculator" class="w-5 h-5"></i>
+            </span>
+            <div>
+              <h3 class="text-lg font-bold text-gray-900 dark:text-slate-100">
+                Editar Costos de la Venta
+              </h3>
+              <p class="text-xs text-gray-500 dark:text-slate-400">
+                Venta {{ sale.number }} — Los cambios actualizarán la rentabilidad y el Estado de Resultados (P&L).
+              </p>
+            </div>
+          </div>
+          <button type="button" @click="costModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 transition">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Body -->
+        <form @submit.prevent="submitCosts()" class="p-6 space-y-6">
+          
+          <div x-show="modalError" x-cloak class="p-3.5 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
+            <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0"></i>
+            <span x-text="modalError"></span>
+          </div>
+
+          <div class="overflow-x-auto border border-gray-200 dark:border-slate-700 rounded-xl max-h-[380px] overflow-y-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700 text-xs">
+              <thead class="bg-gray-50 dark:bg-slate-900/80 text-gray-500 dark:text-slate-400 sticky top-0 z-10 backdrop-blur">
+                <tr>
+                  <th class="px-3 py-3 text-left font-semibold uppercase">Producto</th>
+                  <th class="px-2 py-3 text-right font-semibold uppercase">Cant.</th>
+                  <th class="px-2 py-3 text-right font-semibold uppercase">Precio Unit.</th>
+                  <th class="px-3 py-3 text-right font-semibold uppercase text-blue-600 dark:text-blue-400 w-36">Costo Unit. ($) *</th>
+                  <th class="px-3 py-3 text-right font-semibold uppercase">Costo Total ($)</th>
+                  <th class="px-3 py-3 text-right font-semibold uppercase">Ganancia Est.</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
+                <template x-for="(item, index) in editableItems" :key="item.id">
+                  <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-700/20">
+                    <td class="px-3 py-3">
+                      <p class="font-semibold text-gray-900 dark:text-slate-100 text-xs sm:text-sm" x-text="item.name"></p>
+                      <p class="font-mono text-[11px] text-gray-400 dark:text-slate-500" x-text="'Cód: ' + item.productCode"></p>
+                    </td>
+                    <td class="px-2 py-3 text-right font-medium text-gray-700 dark:text-slate-300 tabular-nums" x-text="item.quantity"></td>
+                    <td class="px-2 py-3 text-right font-medium text-gray-700 dark:text-slate-300 tabular-nums" x-text="'$' + parseFloat(item.unitPrice).toFixed(2)"></td>
+                    <td class="px-3 py-2 text-right">
+                      <div class="relative">
+                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 font-medium">$</span>
+                        <input type="number" step="0.01" min="0" x-model.number="item.unitCost" required
+                               class="w-full pl-6 pr-2 py-1.5 text-right font-mono font-semibold text-xs border border-blue-300 dark:border-blue-700 focus:ring-2 focus:ring-blue-500 rounded-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100">
+                      </div>
+                    </td>
+                    <td class="px-3 py-3 text-right font-mono font-medium text-gray-900 dark:text-slate-100 tabular-nums"
+                        x-text="'$' + (item.unitCost * item.quantity).toFixed(2)">
+                    </td>
+                    <td class="px-3 py-3 text-right font-mono font-bold tabular-nums">
+                      <span :class="(item.subtotalWithDiscount - (item.unitCost * item.quantity)) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
+                        <span x-text="((item.subtotalWithDiscount - (item.unitCost * item.quantity)) >= 0 ? '+$' : '-$') + Math.abs(item.subtotalWithDiscount - (item.unitCost * item.quantity)).toFixed(2)"></span>
+                      </span>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Resumen de Costos y Ganancias -->
+          <div class="p-4 bg-gray-50 dark:bg-slate-900/60 rounded-xl border border-gray-200 dark:border-slate-700 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+            <div>
+              <p class="text-gray-500 dark:text-slate-400">Total Venta (Neto c/desc):</p>
+              <p class="text-sm font-bold text-gray-900 dark:text-slate-100 mt-0.5" x-text="'$' + calculateTotalRevenue().toFixed(2)"></p>
+            </div>
+            <div>
+              <p class="text-gray-500 dark:text-slate-400">Nuevo Costo Total:</p>
+              <p class="text-sm font-bold text-blue-600 dark:text-blue-400 mt-0.5" x-text="'$' + calculateTotalCost().toFixed(2)"></p>
+            </div>
+            <div>
+              <p class="text-gray-500 dark:text-slate-400">Nueva Ganancia Bruta Total:</p>
+              <p class="text-sm font-black mt-0.5" :class="calculateTotalProfit() >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'"
+                 x-text="(calculateTotalProfit() >= 0 ? '+$' : '-$') + Math.abs(calculateTotalProfit()).toFixed(2)"></p>
+            </div>
+          </div>
+
+          <!-- Motivo opcional -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
+              Motivo o Justificación del Cambio (Opcional)
+            </label>
+            <textarea x-model="costReason" rows="2" placeholder="Ej: Corrección de costo cargado inicialmente en 0 o desactualizado..."
+                      class="w-full px-3 py-2 text-xs border border-gray-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500"></textarea>
+          </div>
+
+          <!-- Footer Buttons -->
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-slate-700">
+            <button type="button" @click="costModalOpen = false" :disabled="savingCosts"
+                    class="px-4 py-2 text-xs font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 transition">
+              Cancelar
+            </button>
+            <button type="submit" :disabled="savingCosts"
+                    class="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-lg shadow-blue-500/20 transition disabled:opacity-50">
+              <template x-if="savingCosts">
+                <i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i>
+              </template>
+              <template x-if="!savingCosts">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+              </template>
+              <span x-text="savingCosts ? 'Guardando...' : 'Guardar Cambios de Costos'"></span>
+            </button>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function saleDetailComponent() {
+  return {
+    shareInvoiceModalOpen: false,
+    invoiceTab: 'email',
+    costModalOpen: false,
+    savingCosts: false,
+    modalError: '',
+    costReason: '',
+    itemsMap: {
+      {% for item in sale.items.all %}
+      {{ item.id }}: {
+        id: {{ item.id }},
+        productCode: '{{ item.product.code|escapejs }}',
+        name: '{{ item.display_name|escapejs }}',
+        quantity: {{ item.quantity }},
+        unitPrice: {{ item.unit_price }},
+        unitCost: {{ item.unit_cost|default:0 }},
+        subtotalWithDiscount: {{ item.subtotal_with_discount }},
+        profit: {{ item.profit|default:0 }}
+      }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    },
+    editableItems: [],
+
+    openCostModal() {
+      this.modalError = '';
+      this.costReason = '';
+      this.editableItems = Object.values(this.itemsMap).map(it => ({
+        id: it.id,
+        productCode: it.productCode,
+        name: it.name,
+        quantity: it.quantity,
+        unitPrice: it.unitPrice,
+        unitCost: it.unitCost,
+        subtotalWithDiscount: it.subtotalWithDiscount
+      }));
+      this.costModalOpen = true;
+      this.$nextTick(() => {
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      });
+    },
+
+    calculateTotalRevenue() {
+      return this.editableItems.reduce((acc, it) => acc + (parseFloat(it.subtotalWithDiscount) || 0), 0);
+    },
+
+    calculateTotalCost() {
+      return this.editableItems.reduce((acc, it) => acc + ((parseFloat(it.unitCost) || 0) * (parseFloat(it.quantity) || 0)), 0);
+    },
+
+    calculateTotalProfit() {
+      return this.calculateTotalRevenue() - this.calculateTotalCost();
+    },
+
+    getItemCostDisplay(itemId, defaultStr) {
+      if (this.itemsMap[itemId] && this.itemsMap[itemId].unitCost !== undefined) {
+        return parseFloat(this.itemsMap[itemId].unitCost).toFixed(2);
+      }
+      return defaultStr;
+    },
+
+    getItemProfit(itemId, defaultVal) {
+      if (this.itemsMap[itemId] && this.itemsMap[itemId].profit !== undefined) {
+        return parseFloat(this.itemsMap[itemId].profit);
+      }
+      return parseFloat(defaultVal);
+    },
+
+    async submitCosts() {
+      this.modalError = '';
+      this.savingCosts = true;
+
+      const payload = {
+        items: this.editableItems.map(it => ({
+          item_id: it.id,
+          unit_cost: parseFloat(it.unitCost) || 0
+        })),
+        reason: this.costReason
+      };
+
+      try {
+        const response = await fetch('{% url "sales_web:sale_update_costs" sale.id %}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          // Actualizar mapa local
+          if (data.updated_items) {
+            data.updated_items.forEach(up => {
+              if (this.itemsMap[up.id]) {
+                this.itemsMap[up.id].unitCost = up.unit_cost;
+                this.itemsMap[up.id].profit = up.profit;
+              }
+            });
+          }
+          this.costModalOpen = false;
+          // Mostrar notificación o recargar para consistencia completa
+          window.location.reload();
+        } else {
+          this.modalError = data.error || 'Ocurrió un error al guardar los costos.';
+        }
+      } catch (err) {
+        this.modalError = 'Error de red al comunicarse con el servidor.';
+      } finally {
+        this.savingCosts = false;
+      }
+    }
+  };
+}
+</script>
 {% endblock %}

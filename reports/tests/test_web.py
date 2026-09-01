@@ -82,3 +82,18 @@ class TestFinancialWebPermissions:
         response = client.get(reverse('reports_web:pnl_statement'))
         assert response.status_code == 200
 
+    def test_pnl_web_period_query_param(self, client, admin_user):
+        """P&L web soporta ?period=YYYY-MM y ?refresh=1."""
+        client.force_login(admin_user)
+        response = client.get(reverse('reports_web:pnl_statement') + '?period=2026-05&refresh=1')
+        assert response.status_code == 200
+        assert response.context['selected_period'] == '2026-05'
+
+    def test_cashflow_web_period_query_param(self, client, admin_user):
+        """CashFlow web soporta ?period=YYYY-MM y ?refresh=1."""
+        client.force_login(admin_user)
+        response = client.get(reverse('reports_web:cashflow_statement') + '?period=2026-05&refresh=1')
+        assert response.status_code == 200
+        assert response.context['selected_period'] == '2026-05'
+
+

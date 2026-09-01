@@ -17,30 +17,42 @@
       </p>
     </div>
 
-    <!-- Selector de Período -->
+    <!-- Selector de Período y Acciones -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
-      <form method="GET" class="flex flex-col sm:flex-row gap-4 items-end">
-        <div class="flex-1">
+      <form method="GET" class="flex flex-col sm:flex-row gap-4 items-end justify-between">
+        <div class="flex-1 sm:max-w-xs">
           <label for="period" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Período
           </label>
           <select id="period" name="period" 
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            x-data
-            @change="
-              const [year, month] = $el.value.split('-');
-              window.location.href = `?year=${year}&month=${month}`;
-            ">
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+            onchange="this.form.submit()">
             {% for y, m, display in available_periods %}
-              <option value="{{ y }}-{{ m }}" {% if selected_period == display %}selected{% endif %}>
+              <option value="{{ display }}" {% if selected_period == display %}selected{% endif %}>
                 {{ display }}
               </option>
             {% endfor %}
           </select>
         </div>
-        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition">
-          Cargar
-        </button>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium text-sm transition">
+            <i data-lucide="search" class="w-4 h-4"></i>
+            Consultar
+          </button>
+          <a href="?period={{ selected_period }}&refresh=1" 
+             class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md font-medium text-sm transition shadow-sm"
+             title="Recalcular indicadores en tiempo real">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            Recalcular
+          </a>
+          {% if pnl %}
+          <a href="{% url 'reports_web:pnl_export' %}?from={{ pnl.period.from }}&to={{ pnl.period.to }}" 
+             class="inline-flex items-center gap-1.5 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 rounded-md font-medium text-sm transition">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            Excel
+          </a>
+          {% endif %}
+        </div>
       </form>
     </div>
 

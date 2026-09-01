@@ -4,6 +4,7 @@ Señales Django para invalidar FinancialSnapshot cuando cambian facturas, pagos 
 Estrategia: Cuando cualquier fuente de datos cambia (Invoice, Payment, Expense),
 marcamos is_stale=True para los snapshots relevantes del período.
 """
+import logging
 from datetime import date
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
@@ -11,7 +12,10 @@ from django.dispatch import receiver
 from bills.models import Invoice
 from payments.models import Payment
 from expenses.models import Expense
+from sales.models import Sale, SaleItem
 from .models import FinancialSnapshot
+
+logger = logging.getLogger('django')
 
 
 @receiver(post_save, sender=Invoice, dispatch_uid='invalidate_pnl_on_invoice')
@@ -146,4 +150,78 @@ def invalidate_pnl_on_expense_delete(sender, instance, **kwargs):
             period_year=year,
             period_month=month,
         ).update(is_stale=True)
+
+
+@receiver(post_save, sender=Sale, dispatch_uid='invalidate_pnl_on_sale')
+def invalidate_pnl_on_sale(sender, instance, created, **kwargs):
+    """Cuando se crea o actualiza una Venta (ej. confirmada, entregada), marcar P&L stale."""
+    sale_date = instance.date if isinstance(instance.date, date) else (instance.date.date() if instance.date else None)
+    if not sale_date:
+        return
+
+    FinancialSnapshot.objects.filter(
+        type='pnl_monthly',
+        period_year=sale_date.year,
+        period_month=sale_date.month,
+    ).update(is_stale=True)
+
+
+@receiver(post_delete, sender=Sale, dispatch_uid='invalidate_pnl_on_sale_delete')
+def invalidate_pnl_on_sale_delete(sender, instance, **kwargs):
+    """Cuando se borra una Venta, marcar P&L stale."""
+    sale_date = instance.date if isinstance(instance.date, date) else (instance.date.date() if instance.date else None)
+    if not sale_date:
+        return
+
+    FinancialSnapshot.objects.filter(
+        type='pnl_monthly',
+        period_year=sale_date.year,
+        period_month=sale_date.month,
+    ).update(is_stale=True)
+
+
+@receiver(post_save, sender=SaleItem, dispatch_uid='invalidate_pnl_on_sale_item')
+def invalidate_pnl_on_sale_item(sender, instance, created, **kwargs):
+    """Cuando se modifica un ítem de venta o su costo, marcar P&L stale."""
+    if not instance.sale_id:
+        return
+    try:
+        sale_date = instance.sale.date
+        period_date = sale_date if isinstance(sale_date, date) else (sale_date.date() if sale_date else None)
+        if period_date:
+            FinancialSnapshot.objects.filter(
+                type='pnl_monthly',
+                period_year=period_date.year,
+                period_month=period_date.month,
+            ).update(is_stale=True)
+    except Exception as exc:
+        logger.warning(
+            "Error al invalidar snapshot en signal de SaleItem %s: %s",
+            getattr(instance, "id", None),
+            exc,
+        )
+
+
+@receiver(post_delete, sender=SaleItem, dispatch_uid='invalidate_pnl_on_sale_item_delete')
+def invalidate_pnl_on_sale_item_delete(sender, instance, **kwargs):
+    """Cuando se borra un ítem de venta, marcar P&L stale."""
+    if not instance.sale_id:
+        return
+    try:
+        sale_date = instance.sale.date
+        period_date = sale_date if isinstance(sale_date, date) else (sale_date.date() if sale_date else None)
+        if period_date:
+            FinancialSnapshot.objects.filter(
+                type='pnl_monthly',
+                period_year=period_date.year,
+                period_month=period_date.month,
+            ).update(is_stale=True)
+    except Exception as exc:
+        logger.warning(
+            "Error al invalidar snapshot en signal de SaleItem delete %s: %s",
+            getattr(instance, "id", None),
+            exc,
+        )
+
+
 

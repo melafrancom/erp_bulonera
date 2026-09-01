@@ -19,6 +19,40 @@ from reports.models import FinancialSnapshot
 logger = logging.getLogger('django')
 
 
+def _parse_period_from_request(request):
+    """
+    Extrae year y month desde request.GET soportando ?period=YYYY-MM, ?year=Y&month=M
+    o defaulting al mes actual.
+    """
+    period = request.GET.get('period', '').strip()
+    year = request.GET.get('year')
+    month = request.GET.get('month')
+    
+    now = date.today()
+
+    if period and '-' in period:
+        try:
+            parts = period.split('-')
+            y = int(parts[0])
+            m = int(parts[1])
+            if 1 <= m <= 12 and 2000 <= y <= 2100:
+                return y, m, None
+        except (ValueError, IndexError):
+            pass
+
+    if year and month:
+        try:
+            y = int(year)
+            m = int(month)
+            if 1 <= m <= 12 and 2000 <= y <= 2100:
+                return y, m, None
+            return None, None, 'Mes debe estar entre 1 y 12 y año válido.'
+        except (ValueError, TypeError):
+            return None, None, 'Parámetros de año y mes inválidos.'
+
+    return now.year, now.month, None
+
+
 @permission_required('can_view_reports')
 def pnl_statement_view(request):
     """
@@ -38,83 +72,77 @@ def pnl_statement_view(request):
         'active': 'pnl',
     }
     
-    # Si viene con parámetros ?year=X&month=Y, calcular para ese período
-    year = request.GET.get('year')
-    month = request.GET.get('month')
+    year, month, error_msg = _parse_period_from_request(request)
     
-    if year and month:
-        try:
-            year = int(year)
-            month = int(month)
-            
-            if not (1 <= month <= 12):
-                context['error'] = 'Mes debe estar entre 1 y 12'
-            else:
-                # Calcular rango del período
-                date_from = date(year, month, 1)
-                if month == 12:
-                    next_month_first = date(year + 1, 1, 1)
-                else:
-                    next_month_first = date(year, month + 1, 1)
-                date_to = next_month_first - timedelta(days=1)
-                
-                # Obtener del caché o recalcular
-                try:
-                    snapshot = FinancialSnapshot.objects.get(
-                        type='pnl_monthly',
-                        period_year=year,
-                        period_month=month,
-                    )
-                    pnl_data = snapshot.data
-                    context['cached'] = True
-                except FinancialSnapshot.DoesNotExist:
-                    pnl_service = ProfitAndLossService()
-                    pnl_data = pnl_service.get_pnl(date_from, date_to)
-                    context['cached'] = False
-                
-                context['pnl'] = pnl_data
-                context['selected_period'] = f"{year}-{month:02d}"
-                
-                # Calcular evolución mensual para el año
-                _add_monthly_evolution(context, year)
-                
-        except (ValueError, FinancialSnapshot.DoesNotExist) as e:
-            context['error'] = f'Error: {str(e)}'
-            logger.error(f"P&L view error: {str(e)}")
-    else:
-        # Mostrar el mes actual por defecto
+    if error_msg:
+        context['error'] = error_msg
         now = date.today()
-        date_from = date(now.year, now.month, 1)
-        if now.month == 12:
-            next_month_first = date(now.year + 1, 1, 1)
-        else:
-            next_month_first = date(now.year, now.month + 1, 1)
-        date_to = next_month_first - timedelta(days=1)
+        year, month = now.year, now.month
+    
+    now = date.today()
+    is_current_month = (year == now.year and month == now.month)
+    force_refresh = request.GET.get('refresh') == '1'
+    
+    try:
+        # Calcular rango del período
+        date_from = date(year, month, 1)
+        last_day = calendar.monthrange(year, month)[1]
+        date_to = date(year, month, last_day)
         
-        try:
-            snapshot = FinancialSnapshot.objects.get(
-                type='pnl_monthly',
-                period_year=now.year,
-                period_month=now.month,
-            )
+        snapshot = None
+        if not force_refresh:
+            try:
+                snapshot = FinancialSnapshot.objects.get(
+                    type='pnl_monthly',
+                    period_year=year,
+                    period_month=month,
+                )
+            except FinancialSnapshot.DoesNotExist:
+                snapshot = None
+
+        if snapshot and snapshot.is_fresh() and not is_current_month:
             pnl_data = snapshot.data
             context['cached'] = True
-        except FinancialSnapshot.DoesNotExist:
+        else:
             pnl_service = ProfitAndLossService()
             pnl_data = pnl_service.get_pnl(date_from, date_to)
             context['cached'] = False
+            
+            # Guardar o actualizar snapshot
+            try:
+                FinancialSnapshot.objects.update_or_create(
+                    type='pnl_monthly',
+                    period_year=year,
+                    period_month=month,
+                    defaults={
+                        'data': pnl_data,
+                        'is_stale': False
+                    }
+                )
+            except Exception as snap_err:
+                logger.warning(f"No se pudo persistir FinancialSnapshot PnL: {snap_err}")
         
         context['pnl'] = pnl_data
-        context['selected_period'] = f"{now.year}-{now.month:02d}"
+        context['selected_period'] = f"{year}-{month:02d}"
+        context['selected_year'] = year
+        context['selected_month'] = month
         
-        # Evolución anual
-        _add_monthly_evolution(context, now.year)
+        # Calcular evolución mensual para el año seleccionado
+        _add_monthly_evolution(context, year)
+        
+    except Exception as e:
+        context['error'] = f'Error al calcular P&L: {str(e)}'
+        logger.error(f"P&L view error: {str(e)}")
     
-    # Generar lista de años/meses disponibles (últimos 12 meses)
+    # Generar lista de años/meses disponibles (últimos 18 meses)
     periods = []
-    for i in range(12):
-        d = date.today() - timedelta(days=30 * i)
-        periods.append((d.year, d.month, f"{d.year}-{d.month:02d}"))
+    for i in range(18):
+        d = date(now.year, now.month, 1) - timedelta(days=28 * i)
+        d_first = date(d.year, d.month, 1)
+        period_str = f"{d_first.year}-{d_first.month:02d}"
+        if not any(p[2] == period_str for p in periods):
+            periods.append((d_first.year, d_first.month, period_str))
+            
     context['available_periods'] = periods
     
     return render(request, 'reports/pnl_statement.html', context)
@@ -133,84 +161,79 @@ def cashflow_statement_view(request):
     context = {
         'page_title': 'Flujo de Caja',
         'current_date': date.today(),
+        'active': 'cashflow',
     }
     
-    # Si viene con parámetros ?year=X&month=Y
-    year = request.GET.get('year')
-    month = request.GET.get('month')
+    year, month, error_msg = _parse_period_from_request(request)
     
-    if year and month:
-        try:
-            year = int(year)
-            month = int(month)
-            
-            if not (1 <= month <= 12):
-                context['error'] = 'Mes debe estar entre 1 y 12'
-            else:
-                date_from = date(year, month, 1)
-                if month == 12:
-                    next_month_first = date(year + 1, 1, 1)
-                else:
-                    next_month_first = date(year, month + 1, 1)
-                date_to = next_month_first - timedelta(days=1)
-                
-                try:
-                    snapshot = FinancialSnapshot.objects.get(
-                        type='cashflow_monthly',
-                        period_year=year,
-                        period_month=month,
-                    )
-                    cf_data = snapshot.data
-                    context['cached'] = True
-                except FinancialSnapshot.DoesNotExist:
-                    cf_service = CashFlowService()
-                    cf_data = cf_service.get_cashflow(date_from, date_to)
-                    context['cached'] = False
-                
-                context['cashflow'] = cf_data
-                context['selected_period'] = f"{year}-{month:02d}"
-                
-        except (ValueError, FinancialSnapshot.DoesNotExist) as e:
-            context['error'] = f'Error: {str(e)}'
-            logger.error(f"CashFlow view error: {str(e)}")
-    else:
-        # Mostrar el mes actual por defecto
+    if error_msg:
+        context['error'] = error_msg
         now = date.today()
-        date_from = date(now.year, now.month, 1)
-        if now.month == 12:
-            next_month_first = date(now.year + 1, 1, 1)
-        else:
-            next_month_first = date(now.year, now.month + 1, 1)
-        date_to = next_month_first - timedelta(days=1)
+        year, month = now.year, now.month
         
-        try:
-            snapshot = FinancialSnapshot.objects.get(
-                type='cashflow_monthly',
-                period_year=now.year,
-                period_month=now.month,
-            )
+    now = date.today()
+    is_current_month = (year == now.year and month == now.month)
+    force_refresh = request.GET.get('refresh') == '1'
+    
+    try:
+        date_from = date(year, month, 1)
+        last_day = calendar.monthrange(year, month)[1]
+        date_to = date(year, month, last_day)
+        
+        snapshot = None
+        if not force_refresh:
+            try:
+                snapshot = FinancialSnapshot.objects.get(
+                    type='cashflow_monthly',
+                    period_year=year,
+                    period_month=month,
+                )
+            except FinancialSnapshot.DoesNotExist:
+                snapshot = None
+        
+        if snapshot and snapshot.is_fresh() and not is_current_month:
             cf_data = snapshot.data
             context['cached'] = True
-        except FinancialSnapshot.DoesNotExist:
+        else:
             cf_service = CashFlowService()
             cf_data = cf_service.get_cashflow(date_from, date_to)
             context['cached'] = False
+            
+            try:
+                FinancialSnapshot.objects.update_or_create(
+                    type='cashflow_monthly',
+                    period_year=year,
+                    period_month=month,
+                    defaults={
+                        'data': cf_data,
+                        'is_stale': False
+                    }
+                )
+            except Exception as snap_err:
+                logger.warning(f"No se pudo persistir FinancialSnapshot Cashflow: {snap_err}")
         
         context['cashflow'] = cf_data
-        context['selected_period'] = f"{now.year}-{now.month:02d}"
+        context['selected_period'] = f"{year}-{month:02d}"
+        context['selected_year'] = year
+        context['selected_month'] = month
         
         # Evolución anual
-        _add_monthly_evolution_cashflow(context, now.year)
+        _add_monthly_evolution_cashflow(context, year)
+        
+    except Exception as e:
+        context['error'] = f'Error al calcular Flujo de Caja: {str(e)}'
+        logger.error(f"CashFlow view error: {str(e)}")
     
     # Generar lista de años/meses disponibles
     periods = []
-    for i in range(12):
-        d = date.today() - timedelta(days=30 * i)
-        periods.append((d.year, d.month, f"{d.year}-{d.month:02d}"))
+    for i in range(18):
+        d = date(now.year, now.month, 1) - timedelta(days=28 * i)
+        d_first = date(d.year, d.month, 1)
+        period_str = f"{d_first.year}-{d_first.month:02d}"
+        if not any(p[2] == period_str for p in periods):
+            periods.append((d_first.year, d_first.month, period_str))
+            
     context['available_periods'] = periods
-    
-    # Agregar navegación activa
-    context['active'] = 'cashflow'
     
     return render(request, 'reports/cashflow_statement.html', context)
 
@@ -218,8 +241,10 @@ def cashflow_statement_view(request):
 def _add_monthly_evolution(context: dict, year: int) -> None:
     """
     Calcula la evolución mensual del P&L para generar datos del gráfico.
+    Incluye todos los meses transcurridos hasta el mes actual inclusive.
     """
     pnl_service = ProfitAndLossService()
+    now = date.today()
     
     labels = []
     revenue_data = []
@@ -227,30 +252,42 @@ def _add_monthly_evolution(context: dict, year: int) -> None:
     ebitda_data = []
     
     for month in range(1, 13):
-        # Crear rango del mes
+        # Si es un mes futuro del año en curso o año futuro, omitir
+        if year > now.year or (year == now.year and month > now.month):
+            continue
+
         date_from = date(year, month, 1)
         last_day = calendar.monthrange(year, month)[1]
         date_to = date(year, month, last_day)
         
-        try:
-            # Intentar obtener snapshot
-            snapshot = FinancialSnapshot.objects.get(
-                type='pnl_monthly',
-                period_year=year,
-                period_month=month,
-            )
-            pnl_data = snapshot.data
-        except FinancialSnapshot.DoesNotExist:
-            # Calcular on-demand (solo para meses pasados, no futuros)
-            if date_to <= date.today():
+        pnl_data = None
+        if not (year == now.year and month == now.month):
+            try:
+                snapshot = FinancialSnapshot.objects.get(
+                    type='pnl_monthly',
+                    period_year=year,
+                    period_month=month,
+                )
+                if snapshot.is_fresh():
+                    pnl_data = snapshot.data
+            except FinancialSnapshot.DoesNotExist:
+                pass
+        
+        if pnl_data is None:
+            try:
                 pnl_data = pnl_service.get_pnl(date_from, date_to)
-            else:
-                continue  # Saltar meses futuros
+            except Exception as exc:
+                logger.warning(f"Error al calcular PnL mensual ({year}-{month}): {exc}")
+                pnl_data = {
+                    'revenue': {'net_revenue': 0},
+                    'cogs': 0,
+                    'ebitda': 0
+                }
         
         labels.append(date_from.strftime('%b'))
-        revenue_data.append(float(pnl_data['revenue']['net_revenue']))
-        cogs_data.append(float(pnl_data['cogs']))
-        ebitda_data.append(float(pnl_data['ebitda']))
+        revenue_data.append(float(pnl_data.get('revenue', {}).get('net_revenue', 0)))
+        cogs_data.append(float(pnl_data.get('cogs', 0)))
+        ebitda_data.append(float(pnl_data.get('ebitda', 0)))
     
     # Convertir a JSON para Chart.js
     context['monthly_labels'] = json.dumps(labels)
@@ -262,8 +299,10 @@ def _add_monthly_evolution(context: dict, year: int) -> None:
 def _add_monthly_evolution_cashflow(context: dict, year: int) -> None:
     """
     Calcula la evolución mensual del CashFlow para generar datos del gráfico.
+    Incluye todos los meses transcurridos hasta el mes actual inclusive.
     """
     cf_service = CashFlowService()
+    now = date.today()
     
     labels = []
     inflows_data = []
@@ -271,30 +310,41 @@ def _add_monthly_evolution_cashflow(context: dict, year: int) -> None:
     net_data = []
     
     for month in range(1, 13):
-        # Crear rango del mes
+        if year > now.year or (year == now.year and month > now.month):
+            continue
+
         date_from = date(year, month, 1)
         last_day = calendar.monthrange(year, month)[1]
         date_to = date(year, month, last_day)
         
-        try:
-            # Intentar obtener snapshot
-            snapshot = FinancialSnapshot.objects.get(
-                type='cashflow_monthly',
-                period_year=year,
-                period_month=month,
-            )
-            cf_data = snapshot.data
-        except FinancialSnapshot.DoesNotExist:
-            # Calcular on-demand (solo para meses pasados)
-            if date_to <= date.today():
+        cf_data = None
+        if not (year == now.year and month == now.month):
+            try:
+                snapshot = FinancialSnapshot.objects.get(
+                    type='cashflow_monthly',
+                    period_year=year,
+                    period_month=month,
+                )
+                if snapshot.is_fresh():
+                    cf_data = snapshot.data
+            except FinancialSnapshot.DoesNotExist:
+                pass
+        
+        if cf_data is None:
+            try:
                 cf_data = cf_service.get_cashflow(date_from, date_to)
-            else:
-                continue
+            except Exception as exc:
+                logger.warning(f"Error al calcular CashFlow mensual ({year}-{month}): {exc}")
+                cf_data = {
+                    'inflows': {'total': 0},
+                    'outflows': {'total': 0},
+                    'net_cash_flow': 0
+                }
         
         labels.append(date_from.strftime('%b'))
-        inflows_data.append(float(cf_data['inflows']['total']))
-        outflows_data.append(float(cf_data['outflows']['total']))
-        net_data.append(float(cf_data['net_cash_flow']))
+        inflows_data.append(float(cf_data.get('inflows', {}).get('total', 0)))
+        outflows_data.append(float(cf_data.get('outflows', {}).get('total', 0)))
+        net_data.append(float(cf_data.get('net_cash_flow', 0)))
     
     # Convertir a JSON
     context['monthly_labels'] = json.dumps(labels)
