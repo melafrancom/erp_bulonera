@@ -164,3 +164,65 @@ class TestProfitAndLossService:
         opex_data = pnl._compute_opex(today, today)
         assert opex_data['total'] == Decimal('1000.00')
         assert opex_data['by_category']['rent'] == 1000.00
+
+    def test_compute_cogs_matches_invoice_emission_date(self, admin_user, product, customer):
+        """Principio de Apareamiento: COGS se reconoce en la fecha_emision de la factura autorizada."""
+        from datetime import date, timedelta
+        from reports.services.pnl_service import ProfitAndLossService
+        from bills.models import Invoice
+        from sales.models import Sale, SaleItem
+
+        today = date.today()
+        past_date = today - timedelta(days=35)
+        pnl = ProfitAndLossService()
+
+        # 1. Venta creada en fecha pasada
+        sale = Sale.objects.create(
+            number='VTA-CROSS-01',
+            status='delivered',
+            customer=customer,
+            created_by=admin_user,
+            is_active=True
+        )
+        Sale.objects.filter(pk=sale.pk).update(date=past_date)
+
+        SaleItem.objects.create(
+            sale=sale,
+            product=product,
+            quantity=Decimal('4.000'),
+            unit_price=Decimal('250.00'),
+            unit_cost=Decimal('120.00')
+        )
+
+        # 2. Factura autorizada emitida hoy
+        Invoice.objects.create(
+            sale=sale,
+            customer=customer,
+            emitida_por=admin_user,
+            tipo_comprobante=1,  # Factura A
+            punto_venta=5,
+            numero_secuencial=99,
+            number='0005-00000099',
+            subtotal=Decimal('1000.00'),
+            neto_gravado=Decimal('1000.00'),
+            monto_iva=Decimal('210.00'),
+            total=Decimal('1210.00'),
+            estado_fiscal='autorizada',
+            fecha_emision=today,
+            is_active=True
+        )
+
+        # En el período pasado (cuando se creó la venta), NO debe computar COGS (apareamiento)
+        past_cogs = pnl._compute_cogs(past_date - timedelta(days=5), past_date + timedelta(days=5))
+        assert past_cogs == Decimal('0.00')
+
+        # En el período actual (cuando se emitió la factura), SÍ debe computar COGS
+        today_cogs = pnl._compute_cogs(today, today)
+        # 4 unidades * $120 = $480
+        assert today_cogs == Decimal('480.00')
+
+        # Verificar propiedades en el modelo Sale
+        assert sale.total_cost == Decimal('480.00')
+        # Subtotal: 4 * 250 = 1000. Ganancia: 1000 - 480 = 520
+        assert sale.gross_profit == Decimal('520.00')
+

@@ -641,6 +641,19 @@ class Sale(BaseModel):
     def balance_due(self):
         """Saldo pendiente"""
         return self.total - self.total_paid
+
+    @property
+    def total_cost(self):
+        """Costo total de la mercadería vendida (COGS de la venta)."""
+        return sum(
+            (item.unit_cost or Decimal('0.00')) * item.quantity
+            for item in self.items.all()
+        )
+
+    @property
+    def gross_profit(self):
+        """Ganancia bruta total de la venta (Subtotal con descuento - Costo total)."""
+        return sum(item.profit for item in self.items.all())
     
     def is_editable(self):
         """Solo borradores son editables"""

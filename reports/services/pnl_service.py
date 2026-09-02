@@ -123,16 +123,56 @@ class ProfitAndLossService(CachedKPIService):
         """
         Calcula COGS = Σ (SaleItem.unit_cost × SaleItem.quantity).
 
-        Solo considera SaleItems de ventas confirmadas, en preparación, listas o entregadas en el período.
-        Usa F() expressions para cálculo en BD (performance).
+        Apareamiento Contable (Matching Principle):
+        1. Ventas facturadas: Se toma la fecha_emision de la Factura autorizada asociada
+           (mismo criterio que _compute_revenue).
+        2. Ventas no facturadas pero confirmadas/entregadas en el período: Se toma la fecha
+           de la venta (usando rango datetime consciente de zona horaria para evitar
+           dependencias de timezone tables en MySQL/MariaDB).
         """
-        from sales.models import SaleItem
+        from datetime import datetime, time
+        from django.utils import timezone
+        from bills.models import Invoice
+        from sales.models import Sale, SaleItem
+
+        # 1. Ventas con facturas autorizadas emitidas en el período
+        billed_sale_ids = list(
+            Invoice.objects.filter(
+                estado_fiscal='autorizada',
+                fecha_emision__range=[date_from, date_to],
+                tipo_comprobante__in=self.FACTURA_TYPES,
+                is_active=True,
+                sale__isnull=False,
+            ).values_list('sale_id', flat=True).distinct()
+        )
+
+        # 2. Ventas NO facturadas pero confirmadas/entregadas en el período
+        tz = timezone.get_current_timezone()
+        dt_from = timezone.make_aware(datetime.combine(date_from, time.min), tz)
+        dt_to = timezone.make_aware(datetime.combine(date_to, time.max), tz)
+
+        unbilled_sale_ids = list(
+            Sale.objects.filter(
+                status__in=['confirmed', 'in_preparation', 'ready', 'delivered'],
+                date__range=[dt_from, dt_to],
+                is_active=True,
+            ).exclude(
+                # Excluir ventas que ya tienen factura autorizada (su costo se computa por fecha de factura)
+                facturas__estado_fiscal='autorizada',
+                facturas__tipo_comprobante__in=self.FACTURA_TYPES,
+                facturas__is_active=True,
+            ).values_list('id', flat=True).distinct()
+        )
+
+        target_sale_ids = set(billed_sale_ids) | set(unbilled_sale_ids)
+
+        if not target_sale_ids:
+            return Decimal('0')
 
         cogs = (
             SaleItem.objects.filter(
-                sale__status__in=['confirmed', 'in_preparation', 'ready', 'delivered'],
-                sale__date__date__range=[date_from, date_to],
-                sale__is_active=True,
+                sale_id__in=target_sale_ids,
+                is_active=True,
             ).aggregate(
                 total=Coalesce(
                     Sum(
