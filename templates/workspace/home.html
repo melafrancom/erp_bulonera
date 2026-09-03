@@ -651,18 +651,31 @@ function workspaceApp() {
         const rawUrgTasks = document.getElementById('initial-urgent-tasks-data')?.textContent;
         const rawUrgEvents = document.getElementById('initial-urgent-events-data')?.textContent;
 
-        this.notes = rawNotes ? JSON.parse(rawNotes) : [];
-        this.tasks = rawTasks ? JSON.parse(rawTasks) : [];
-        this.monthEvents = rawEvents ? JSON.parse(rawEvents) : [];
-        this.upcomingEvents = rawUpcoming ? JSON.parse(rawUpcoming) : [];
-        this.urgentTasks = rawUrgTasks ? JSON.parse(rawUrgTasks) : [];
-        this.urgentEvents = rawUrgEvents ? JSON.parse(rawUrgEvents) : [];
+        this.notes = this.unwrap(rawNotes ? JSON.parse(rawNotes) : []);
+        this.tasks = this.unwrap(rawTasks ? JSON.parse(rawTasks) : []);
+        this.monthEvents = this.unwrap(rawEvents ? JSON.parse(rawEvents) : []);
+        this.upcomingEvents = this.unwrap(rawUpcoming ? JSON.parse(rawUpcoming) : []);
+        this.urgentTasks = this.unwrap(rawUrgTasks ? JSON.parse(rawUrgTasks) : []);
+        this.urgentEvents = this.unwrap(rawUrgEvents ? JSON.parse(rawUrgEvents) : []);
       } catch (e) {
         console.error('Error parseando datos iniciales del workspace:', e);
       }
 
       this.computeCalendarGrid();
       this.rehydrateIcons();
+    },
+
+    // ─── UNWRAP API ENVELOPE (PRODUCCIÓN: EnvelopeRenderer {success: true, data: ...}) ───
+    unwrap(payload) {
+      if (payload && typeof payload === 'object') {
+        if (payload.success === true && 'data' in payload) {
+          return payload.data;
+        }
+        if ('results' in payload && Array.isArray(payload.results)) {
+          return payload.results;
+        }
+      }
+      return payload;
     },
 
     rehydrateIcons() {
@@ -816,8 +829,9 @@ function workspaceApp() {
       try {
         const res = await fetch(`/api/v1/workspace/events/?year=${this.calYear}&month=${this.calMonth}`);
         if (res.ok) {
-          const data = await res.json();
-          this.monthEvents = data.results || data;
+          const raw = await res.json();
+          const items = this.unwrap(raw);
+          this.monthEvents = Array.isArray(items) ? items : (items.results || []);
           this.rehydrateIcons();
         }
       } catch (e) {
@@ -871,7 +885,8 @@ function workspaceApp() {
           body: JSON.stringify(this.noteForm),
         });
         if (res.ok) {
-          const newNote = await res.json();
+          const raw = await res.json();
+          const newNote = this.unwrap(raw);
           this.notes.unshift(newNote);
           this.showNoteModal = false;
           this.rehydrateIcons();
@@ -895,10 +910,16 @@ function workspaceApp() {
       this.rehydrateIcons();
 
       try {
-        await fetch(`/api/v1/workspace/notes/${noteId}/toggle-pin/`, {
+        const res = await fetch(`/api/v1/workspace/notes/${noteId}/toggle-pin/`, {
           method: 'PATCH',
           headers: { 'X-CSRFToken': this.getCSRFToken() },
         });
+        if (res.ok) {
+          const updated = this.unwrap(await res.json());
+          Object.assign(note, updated);
+          this.notes.sort((a, b) => (b.is_pinned - a.is_pinned) || (a.position - b.position));
+          this.rehydrateIcons();
+        }
       } catch (e) {
         console.error('Error toggling pin:', e);
       }
@@ -941,7 +962,8 @@ function workspaceApp() {
           body: JSON.stringify(payload),
         });
         if (res.ok) {
-          const newTask = await res.json();
+          const raw = await res.json();
+          const newTask = this.unwrap(raw);
           this.tasks.unshift(newTask);
           this.showTaskModal = false;
           this.rehydrateIcons();
@@ -963,10 +985,15 @@ function workspaceApp() {
       this.rehydrateIcons();
 
       try {
-        await fetch(`/api/v1/workspace/tasks/${taskId}/toggle-completed/`, {
+        const res = await fetch(`/api/v1/workspace/tasks/${taskId}/toggle-completed/`, {
           method: 'PATCH',
           headers: { 'X-CSRFToken': this.getCSRFToken() },
         });
+        if (res.ok) {
+          const updated = this.unwrap(await res.json());
+          Object.assign(task, updated);
+          this.rehydrateIcons();
+        }
       } catch (e) {
         console.error('Error toggling task:', e);
       }
@@ -1025,9 +1052,19 @@ function workspaceApp() {
           body: JSON.stringify(payload),
         });
         if (res.ok) {
-          const newEvent = await res.json();
+          const raw = await res.json();
+          const newEvent = this.unwrap(raw);
           this.monthEvents.push(newEvent);
-          this.upcomingEvents.push(newEvent);
+
+          // Verificar si cae en la ventana de próximos 7 días
+          const eventDate = new Date(newEvent.start_date);
+          const now = new Date();
+          const diffDays = (eventDate - now) / (1000 * 60 * 60 * 24);
+          if (diffDays >= -0.5 && diffDays <= 7.5) {
+            this.upcomingEvents.push(newEvent);
+            this.upcomingEvents.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+          }
+
           this.showEventModal = false;
           this.computeCalendarGrid();
           this.rehydrateIcons();
