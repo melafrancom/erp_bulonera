@@ -224,6 +224,24 @@ class Invoice(BaseModel):
         return f"{self.punto_venta:04d}-{self.numero_secuencial:08d}"
 
     @property
+    def letra(self):
+        """Letra fiscal del comprobante según AFIP ('A', 'B', 'C')."""
+        return {
+            1: 'A', 2: 'A', 3: 'A',
+            6: 'B', 7: 'B', 8: 'B',
+            11: 'C', 12: 'C', 13: 'C',
+        }.get(self.tipo_comprobante, '?')
+
+    @property
+    def discrimina_iva(self):
+        """
+        Indica si el comprobante discrimina IVA conforme a la ley tributaria argentina.
+        Factura A discrimina IVA (emisor RI a receptor RI).
+        Factura B y C no discriminan IVA (precios con IVA incluido al consumidor final).
+        """
+        return self.letra == 'A'
+
+    @property
     def total_paid(self):
         """
         Total cobrado contra esta factura.
@@ -333,3 +351,14 @@ class InvoiceItem(BaseModel):
     @property
     def cantidad_display(self):
         return format_quantity(self.cantidad)
+
+    @property
+    def precio_unitario_con_iva(self):
+        """Precio unitario con IVA incluido (para Factura B / C)."""
+        ali = (self.alicuota_iva or Decimal('21.00')) / Decimal('100')
+        return (self.precio_unitario * (Decimal('1') + ali)).quantize(Decimal('0.01'))
+
+    @property
+    def subtotal_con_iva(self):
+        """Subtotal neto con IVA incluido (total de línea)."""
+        return self.total or (self.subtotal + (self.monto_iva or Decimal('0.00')))

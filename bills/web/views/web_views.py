@@ -25,7 +25,7 @@ from bills.services import (
     emitir_nota_credito_standalone,
 )
 from customers.models import Customer
-from products.models import Product
+from products.models import Product, PriceList
 from sales.models import Sale
 
 logger = logging.getLogger(__name__)
@@ -88,6 +88,7 @@ class InvoiceCreateView(ModulePermissionRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['payment_methods'] = Sale.payment_method.field.choices
+        context['pricelists'] = PriceList.objects.filter(is_active=True).order_by('priority', 'name')
         context['tax_rates'] = [
             {'value': '21.00', 'label': '21.0% (General)'},
             {'value': '10.50', 'label': '10.5% (Reducido)'},

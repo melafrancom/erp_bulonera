@@ -198,3 +198,204 @@ class TestBillsAdminImmutability:
         normal_user = User.objects.create_user('normal_user', 'pass', role='operator')
         mock_request_normal = type('Request', (), {'user': normal_user})()
         assert invoice_admin.has_delete_permission(mock_request_normal, obj=draft_invoice) is False
+
+
+@pytest.mark.django_db
+class TestFacturaPricingAndDifferentiation:
+
+    def test_invoice_create_view_provides_pricelists(self, client, manager_user):
+        """InvoiceCreateView inyecta las listas de precios activas en el contexto."""
+        from products.models import PriceList
+        PriceList.objects.create(name='Mayorista', list_type='DISCOUNT', percentage=Decimal('15.00'), is_active=True)
+        PriceList.objects.create(name='Inactiva', list_type='DISCOUNT', percentage=Decimal('10.00'), is_active=False)
+
+        client.login(username='mgr_bills_user', password='password123')
+        url = reverse('bills_web:invoice_create')
+        response = client.get(url)
+        assert response.status_code == 200
+        assert 'pricelists' in response.context
+        pricelists = response.context['pricelists']
+        assert any(pl.name == 'Mayorista' for pl in pricelists)
+        assert not any(pl.name == 'Inactiva' for pl in pricelists)
+
+    def test_model_properties_factura_a_vs_b(self, db):
+        """Invoice.discrimina_iva y InvoiceItem.precio_unitario_con_iva funcionan según la normativa."""
+        from bills.models import InvoiceItem
+
+        # Factura A (tipo 1)
+        inv_a = Invoice.objects.create(
+            number='0001-00000010',
+            tipo_comprobante=1,
+            punto_venta=1,
+            numero_secuencial=10,
+            cliente_cuit='30712345678',
+            cliente_razon_social='Empresa RI SA',
+            subtotal=Decimal('100.00'),
+            neto_gravado=Decimal('100.00'),
+            monto_iva=Decimal('21.00'),
+            total=Decimal('121.00'),
+            estado_fiscal='autorizada',
+            cae='12345678901234',
+        )
+        assert inv_a.letra == 'A'
+        assert inv_a.discrimina_iva is True
+
+        # Factura B (tipo 6)
+        inv_b = Invoice.objects.create(
+            number='0001-00000011',
+            tipo_comprobante=6,
+            punto_venta=1,
+            numero_secuencial=11,
+            cliente_cuit='',
+            cliente_razon_social='Consumidor Final',
+            subtotal=Decimal('100.00'),
+            neto_gravado=Decimal('100.00'),
+            monto_iva=Decimal('21.00'),
+            total=Decimal('121.00'),
+            estado_fiscal='autorizada',
+            cae='12345678901235',
+        )
+        assert inv_b.letra == 'B'
+        assert inv_b.discrimina_iva is False
+
+        # Item con IVA 21%
+        item = InvoiceItem.objects.create(
+            invoice=inv_b,
+            numero_linea=1,
+            producto_nombre='Tornillo Fix',
+            cantidad=Decimal('10'),
+            precio_unitario=Decimal('100.00'),
+            alicuota_iva=Decimal('21.00'),
+            subtotal=Decimal('1000.00'),
+            monto_iva=Decimal('210.00'),
+            total=Decimal('1210.00')
+        )
+        assert item.precio_unitario_con_iva == Decimal('121.00')
+        assert item.subtotal_con_iva == Decimal('1210.00')
+
+    def test_pdf_differentiation_factura_a_vs_b(self, db):
+        """El generador de PDF no discrimina IVA en Factura B e incluye la leyenda de Transparencia Fiscal."""
+        from bills.models import InvoiceItem
+        from bills.pdf import generate_invoice_pdf
+
+        inv_a = Invoice.objects.create(
+            number='0001-00000020',
+            tipo_comprobante=1,
+            punto_venta=1,
+            numero_secuencial=20,
+            cliente_cuit='30712345678',
+            cliente_razon_social='Empresa RI SA',
+            subtotal=Decimal('1000.00'),
+            neto_gravado=Decimal('1000.00'),
+            monto_iva=Decimal('210.00'),
+            total=Decimal('1210.00'),
+            estado_fiscal='autorizada',
+            cae='12345678901234',
+        )
+        InvoiceItem.objects.create(
+            invoice=inv_a,
+            numero_linea=1,
+            producto_nombre='Item A',
+            cantidad=Decimal('1'),
+            precio_unitario=Decimal('1000.00'),
+            alicuota_iva=Decimal('21.00'),
+            subtotal=Decimal('1000.00'),
+            monto_iva=Decimal('210.00'),
+            total=Decimal('1210.00')
+        )
+        pdf_a_bytes = generate_invoice_pdf(inv_a)
+        assert pdf_a_bytes.getvalue().startswith(b'%PDF')
+
+        inv_b = Invoice.objects.create(
+            number='0001-00000021',
+            tipo_comprobante=6,
+            punto_venta=1,
+            numero_secuencial=21,
+            cliente_cuit='',
+            cliente_razon_social='Consumidor Final',
+            subtotal=Decimal('1000.00'),
+            neto_gravado=Decimal('1000.00'),
+            monto_iva=Decimal('210.00'),
+            total=Decimal('1210.00'),
+            estado_fiscal='autorizada',
+            cae='12345678901235',
+        )
+        InvoiceItem.objects.create(
+            invoice=inv_b,
+            numero_linea=1,
+            producto_nombre='Item B',
+            cantidad=Decimal('1'),
+            precio_unitario=Decimal('1000.00'),
+            alicuota_iva=Decimal('21.00'),
+            subtotal=Decimal('1000.00'),
+            monto_iva=Decimal('210.00'),
+            total=Decimal('1210.00')
+        )
+        pdf_b_bytes = generate_invoice_pdf(inv_b)
+        assert pdf_b_bytes.getvalue().startswith(b'%PDF')
+
+    def test_invoice_detail_view_badges(self, client, manager_user):
+        """InvoiceDetailView muestra badges diferenciados de Factura A vs Factura B."""
+        from bills.models import InvoiceItem
+        inv_a = Invoice.objects.create(
+            number='0001-00000030',
+            tipo_comprobante=1,
+            punto_venta=1,
+            numero_secuencial=30,
+            cliente_cuit='30712345678',
+            cliente_razon_social='Empresa RI SA',
+            subtotal=Decimal('100.00'),
+            neto_gravado=Decimal('100.00'),
+            monto_iva=Decimal('21.00'),
+            total=Decimal('121.00'),
+            estado_fiscal='autorizada',
+            cae='12345678901234',
+        )
+        InvoiceItem.objects.create(
+            invoice=inv_a,
+            numero_linea=1,
+            producto_nombre='Item RI',
+            cantidad=Decimal('1'),
+            precio_unitario=Decimal('100.00'),
+            alicuota_iva=Decimal('21.00'),
+            subtotal=Decimal('100.00'),
+            monto_iva=Decimal('21.00'),
+            total=Decimal('121.00')
+        )
+
+        client.login(username='mgr_bills_user', password='password123')
+        url_a = reverse('bills_web:invoice_detail', kwargs={'pk': inv_a.id})
+        res_a = client.get(url_a)
+        assert res_a.status_code == 200
+        assert 'Factura A (Discrimina IVA)' in res_a.content.decode()
+
+        inv_b = Invoice.objects.create(
+            number='0001-00000031',
+            tipo_comprobante=6,
+            punto_venta=1,
+            numero_secuencial=31,
+            cliente_cuit='',
+            cliente_razon_social='Consumidor Final',
+            subtotal=Decimal('100.00'),
+            neto_gravado=Decimal('100.00'),
+            monto_iva=Decimal('21.00'),
+            total=Decimal('121.00'),
+            estado_fiscal='autorizada',
+            cae='12345678901235',
+        )
+        InvoiceItem.objects.create(
+            invoice=inv_b,
+            numero_linea=1,
+            producto_nombre='Item CF',
+            cantidad=Decimal('1'),
+            precio_unitario=Decimal('100.00'),
+            alicuota_iva=Decimal('21.00'),
+            subtotal=Decimal('100.00'),
+            monto_iva=Decimal('21.00'),
+            total=Decimal('121.00')
+        )
+        url_b = reverse('bills_web:invoice_detail', kwargs={'pk': inv_b.id})
+        res_b = client.get(url_b)
+        assert res_b.status_code == 200
+        assert 'Factura B (IVA Incluido)' in res_b.content.decode()
+        assert 'Art. 39 de la Ley de IVA' in res_b.content.decode()

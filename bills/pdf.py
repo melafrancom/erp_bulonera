@@ -200,6 +200,9 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
     style_item_desc = ParagraphStyle(
         'ItemDesc', parent=style_normal, fontName='Helvetica', fontSize=7, leading=8.5
     )
+    style_transparencia = ParagraphStyle(
+        'TransparenciaText', parent=style_normal, fontName='Helvetica', fontSize=6.5, leading=8.5, textColor=colors.HexColor('#374151')
+    )
 
     COPIAS = ['ORIGINAL', 'DUPLICADO', 'TRIPLICADO']
 
@@ -372,38 +375,68 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
         y = REC_Y - 2 * mm
 
         # ── 3. TABLA DE ÍTEMS ─────────────────────────────────────────────────────
+        from decimal import Decimal
         items = list(invoice.items.all().order_by('numero_linea'))
+        discrimina = getattr(invoice, 'discrimina_iva', (letra == 'A'))
 
-        # Columnas: Codigo, Descripcion, Cantidad, Unidad de Medida, Precio Unitario, Bonificación, Subtotal (s/iva), alicuota, SUBTOTAL C/IVA
-        COL_W = [18 * mm, CONTENT_W - 146 * mm, 14 * mm, 16 * mm, 20 * mm, 20 * mm, 22 * mm, 14 * mm, 22 * mm]
+        if discrimina:
+            # Factura A: 9 columnas (desglose neto, alícuota y subtotal con IVA)
+            COL_W = [18 * mm, CONTENT_W - 146 * mm, 14 * mm, 16 * mm, 20 * mm, 20 * mm, 22 * mm, 14 * mm, 22 * mm]
+            rows = [['Código', 'Descripción', 'Cant.', 'U. Medida', 'P. Unit.', '% Bonif', 'Subt. s/IVA', 'Alic.', 'Subt. c/IVA']]
+            for item in items:
+                alicuota_val = getattr(item, 'alicuota_iva', 21) or 21
+                subt_neto = getattr(item, 'subtotal', 0)
+                alicuota_str = f"{alicuota_val}%"
+                subt_c_iva = getattr(item, 'total', None)
+                if subt_c_iva is None:
+                    subt_c_iva = subt_neto + getattr(item, 'monto_iva', 0)
 
-        rows = [['Código', 'Descripción', 'Cant.', 'U. Medida', 'P. Unit.', '% Bonif', 'Subt. s/IVA', 'Alic.', 'Subt. c/IVA']]
-        for item in items:
-            # Calcular subtotal sin iva
-            alicuota_val = getattr(item, 'alicuota_iva', 21) or 21
-            subt_neto = getattr(item, 'subtotal', 0)
-            alicuota_str = f"{alicuota_val}%"
-            subt_c_iva = subt_neto + getattr(item, 'monto_iva', 0)
-            if hasattr(item, 'total'):
-                subt_c_iva = item.total
+                bonif = _fmt(item.descuento) if item.descuento else '-'
+                codigo = getattr(item, 'producto_codigo', '') or getattr(item, 'producto_sku', '')
+                if not codigo and hasattr(item, 'product') and hasattr(item.product, 'sku'):
+                    codigo = item.product.sku
 
-            bonif = _fmt(item.descuento) if item.descuento else '-'
-            
-            codigo = getattr(item, 'producto_codigo', '') or getattr(item, 'producto_sku', '')
-            if not codigo and hasattr(item, 'product') and hasattr(item.product, 'sku'):
-                codigo = item.product.sku
+                rows.append([
+                    codigo[:15],
+                    Paragraph(item.producto_nombre, style_item_desc),
+                    format_quantity(item.cantidad),
+                    'unidades',
+                    _fmt(item.precio_unitario),
+                    bonif,
+                    _fmt(subt_neto),
+                    alicuota_str,
+                    _fmt(subt_c_iva),
+                ])
+            align_prices = ('ALIGN', (4, 1), (8, -1), 'RIGHT')
+        else:
+            # Factura B / C: 7 columnas limpias con IVA incluido (Art. 39 Ley de IVA)
+            COL_W = [22 * mm, CONTENT_W - 138 * mm, 14 * mm, 16 * mm, 28 * mm, 24 * mm, 34 * mm]
+            rows = [['Código', 'Descripción', 'Cant.', 'U. Medida', 'Precio Unit.', '% Bonif', 'Subtotal']]
+            for item in items:
+                p_unit_iva = getattr(item, 'precio_unitario_con_iva', None)
+                if p_unit_iva is None:
+                    ali = (getattr(item, 'alicuota_iva', Decimal('21.00')) or Decimal('21.00')) / Decimal('100')
+                    p_unit_iva = item.precio_unitario * (Decimal('1') + ali)
 
-            rows.append([
-                codigo[:15],
-                Paragraph(item.producto_nombre, style_item_desc),
-                format_quantity(item.cantidad),
-                'unidades',
-                _fmt(item.precio_unitario),
-                bonif,
-                _fmt(subt_neto),
-                alicuota_str,
-                _fmt(subt_c_iva),
-            ])
+                subt_c_iva = getattr(item, 'total', None)
+                if subt_c_iva is None:
+                    subt_c_iva = getattr(item, 'subtotal', Decimal('0.00')) + getattr(item, 'monto_iva', Decimal('0.00'))
+
+                bonif = _fmt(item.descuento) if item.descuento else '-'
+                codigo = getattr(item, 'producto_codigo', '') or getattr(item, 'producto_sku', '')
+                if not codigo and hasattr(item, 'product') and hasattr(item.product, 'sku'):
+                    codigo = item.product.sku
+
+                rows.append([
+                    codigo[:15],
+                    Paragraph(item.producto_nombre, style_item_desc),
+                    format_quantity(item.cantidad),
+                    'unidades',
+                    _fmt(p_unit_iva),
+                    bonif,
+                    _fmt(subt_c_iva),
+                ])
+            align_prices = ('ALIGN', (4, 1), (6, -1), 'RIGHT')
 
         HEADER_BG = colors.HexColor('#E5E7EB')
         ALT_BG = colors.HexColor('#F8FAFC')
@@ -418,7 +451,7 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
             ('FONTSIZE',      (0, 1), (-1, -1), 7),
             ('ALIGN',         (0, 0), (-1, -1), 'CENTER'),
             ('ALIGN',         (1, 1), (1, -1), 'LEFT'), # Descripcion
-            ('ALIGN',         (4, 1), (8, -1), 'RIGHT'), # Precios
+            align_prices,
             ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
             ('ROWBACKGROUNDS',(0, 1), (-1, -1), [colors.white, ALT_BG]),
             ('GRID',          (0, 0), (-1, -1), 0.25, colors.HexColor('#D1D5DB')),
@@ -435,50 +468,92 @@ def generate_invoice_pdf(invoice) -> io.BytesIO:
         t.drawOn(c, MARGIN, y - table_h)
         y = y - table_h - 3 * mm
 
-        # ── 4. TRIBUTOS ────────────────────────────────────────────────────────────
+        # ── 4. TRIBUTOS Y TOTALES ─────────────────────────────────────────────────
         TRIB_H = 35 * mm
         TRIB_Y = MARGIN + 40 * mm # Dejamos espacio para el footer fiscal
         c.setLineWidth(0.6)
         c.rect(MARGIN, TRIB_Y, CONTENT_W, TRIB_H)
 
-        c.setFont('Helvetica-Bold', 8)
-        c.drawString(MARGIN + 3 * mm, TRIB_Y + TRIB_H - 5 * mm, "Importe Neto Gravado:")
-        c.setFont('Helvetica', 8)
-        c.drawRightString(MARGIN + 70 * mm, TRIB_Y + TRIB_H - 5 * mm, _fmt(invoice.neto_gravado))
+        otros_tributos = getattr(invoice, 'monto_tributos', 0) or Decimal('0.00')
 
-        # IVA desglose
-        # Agrupamos por alicuotas o mostramos fijas como pidió el usuario
-        # IVA 27, 21, 10.5, 5, 2.5, 0
-        ivas = {27: 0, 21: 0, 10.5: 0, 5: 0, 2.5: 0, 0: 0}
-        
-        # Intentamos obtener desglose real si lo guardamos (en invoice o renglones)
-        for it in items:
-            ali = getattr(it, 'alicuota_iva', 21) or 0
-            m_iva = getattr(it, 'monto_iva', 0)
-            if ali in ivas:
-                ivas[ali] += m_iva
-            else:
-                ivas[ali] = m_iva
-                
-        ly = TRIB_Y + TRIB_H - 10 * mm
-        lx = MARGIN + 3 * mm
-        for pct in [27, 21, 10.5, 5, 2.5, 0]:
-            val = ivas.get(pct, 0)
-            c.setFont('Helvetica-Bold', 7)
-            c.drawString(lx, ly, f"IVA {pct}%:")
-            c.setFont('Helvetica', 7)
-            c.drawRightString(lx + 67 * mm, ly, _fmt(val))
-            ly -= 4 * mm
-            
-        c.setFont('Helvetica-Bold', 8)
-        c.drawString(MARGIN + CONTENT_W / 2 + 10 * mm, TRIB_Y + TRIB_H - 5 * mm, "Importe Otros Tributos:")
-        c.setFont('Helvetica', 8)
-        otros_tributos = getattr(invoice, 'monto_tributos', 0)
-        c.drawRightString(MARGIN + CONTENT_W - 5 * mm, TRIB_Y + TRIB_H - 5 * mm, _fmt(otros_tributos))
+        if discrimina:
+            # Factura A: Desglose explícito de IVA y Neto Gravado
+            c.setFont('Helvetica-Bold', 8)
+            c.drawString(MARGIN + 3 * mm, TRIB_Y + TRIB_H - 5 * mm, "Importe Neto Gravado:")
+            c.setFont('Helvetica', 8)
+            c.drawRightString(MARGIN + 70 * mm, TRIB_Y + TRIB_H - 5 * mm, _fmt(invoice.neto_gravado))
 
-        c.setFont('Helvetica-Bold', 12)
-        c.drawString(MARGIN + CONTENT_W / 2 + 10 * mm, TRIB_Y + 10 * mm, "IMPORTE TOTAL:")
-        c.drawRightString(MARGIN + CONTENT_W - 5 * mm, TRIB_Y + 10 * mm, _fmt(invoice.total))
+            ivas = {27: 0, 21: 0, 10.5: 0, 5: 0, 2.5: 0, 0: 0}
+            for it in items:
+                ali = getattr(it, 'alicuota_iva', 21) or 0
+                m_iva = getattr(it, 'monto_iva', 0)
+                if ali in ivas:
+                    ivas[ali] += m_iva
+                else:
+                    ivas[ali] = m_iva
+
+            ly = TRIB_Y + TRIB_H - 10 * mm
+            lx = MARGIN + 3 * mm
+            for pct in [27, 21, 10.5, 5, 2.5, 0]:
+                val = ivas.get(pct, 0)
+                c.setFont('Helvetica-Bold', 7)
+                c.drawString(lx, ly, f"IVA {pct}%:")
+                c.setFont('Helvetica', 7)
+                c.drawRightString(lx + 67 * mm, ly, _fmt(val))
+                ly -= 4 * mm
+
+            c.setFont('Helvetica-Bold', 8)
+            c.drawString(MARGIN + CONTENT_W / 2 + 10 * mm, TRIB_Y + TRIB_H - 5 * mm, "Importe Otros Tributos:")
+            c.setFont('Helvetica', 8)
+            c.drawRightString(MARGIN + CONTENT_W - 5 * mm, TRIB_Y + TRIB_H - 5 * mm, _fmt(otros_tributos))
+
+            c.setFont('Helvetica-Bold', 12)
+            c.drawString(MARGIN + CONTENT_W / 2 + 10 * mm, TRIB_Y + 10 * mm, "IMPORTE TOTAL:")
+            c.drawRightString(MARGIN + CONTENT_W - 5 * mm, TRIB_Y + 10 * mm, _fmt(invoice.total))
+        else:
+            # Factura B / C: Sin discriminación de IVA al consumidor final (Art. 39 Ley de IVA)
+            c.setFont('Helvetica-Bold', 7.5)
+            c.setFillColor(colors.HexColor('#1E3A8A'))
+            c.drawString(MARGIN + 3 * mm, TRIB_Y + TRIB_H - 6 * mm, "RÉGIMEN DE TRANSPARENCIA FISCAL AL CONSUMIDOR")
+            c.setFillColor(colors.black)
+
+            transp_text = (
+                "El Impuesto al Valor Agregado (I.V.A.) se encuentra incluido en el precio final facturado, "
+                "de conformidad con el Art. 39 de la Ley de IVA y normativas vigentes de ARCA / AFIP."
+            )
+            if getattr(invoice, 'monto_iva', 0):
+                transp_text += f"<br/><br/><b>I.V.A. Contenido Estimado (Informativo):</b> {_fmt(invoice.monto_iva)}"
+
+            transp_p = Paragraph(transp_text, style_transparencia)
+            transp_w = 80 * mm
+            transp_p.wrapOn(c, transp_w, TRIB_H - 12 * mm)
+            transp_p.drawOn(c, MARGIN + 3 * mm, TRIB_Y + 4 * mm)
+
+            # Columna Derecha: Subtotal, Descuentos, Otros Tributos, Total
+            ry = TRIB_Y + TRIB_H - 6 * mm
+            c.setFont('Helvetica-Bold', 8)
+            c.drawString(MARGIN + CONTENT_W / 2 + 10 * mm, ry, "Subtotal (c/IVA):")
+            c.setFont('Helvetica', 8)
+            subt_con_iva = invoice.total + (getattr(invoice, 'descuento_total', 0) or Decimal('0.00'))
+            c.drawRightString(MARGIN + CONTENT_W - 5 * mm, ry, _fmt(subt_con_iva))
+
+            if getattr(invoice, 'descuento_total', 0):
+                ry -= 5 * mm
+                c.setFont('Helvetica-Bold', 8)
+                c.drawString(MARGIN + CONTENT_W / 2 + 10 * mm, ry, "Descuentos:")
+                c.setFont('Helvetica', 8)
+                c.drawRightString(MARGIN + CONTENT_W - 5 * mm, ry, f"- {_fmt(invoice.descuento_total)}")
+
+            if otros_tributos:
+                ry -= 5 * mm
+                c.setFont('Helvetica-Bold', 8)
+                c.drawString(MARGIN + CONTENT_W / 2 + 10 * mm, ry, "Otros Tributos:")
+                c.setFont('Helvetica', 8)
+                c.drawRightString(MARGIN + CONTENT_W - 5 * mm, ry, _fmt(otros_tributos))
+
+            c.setFont('Helvetica-Bold', 12)
+            c.drawString(MARGIN + CONTENT_W / 2 + 10 * mm, TRIB_Y + 8 * mm, "IMPORTE TOTAL:")
+            c.drawRightString(MARGIN + CONTENT_W - 5 * mm, TRIB_Y + 8 * mm, _fmt(invoice.total))
 
 
         # ── 5. FOOTER FISCAL Y CONTACTO ──────────────────────────────────────────

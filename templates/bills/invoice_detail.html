@@ -18,10 +18,19 @@
   <!-- Header -->
   <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
     <div>
-      <div class="flex items-center gap-4 mb-2">
+      <div class="flex items-center flex-wrap gap-4 mb-2">
           <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight flex items-center transition-colors">
               {{ invoice.get_tipo_comprobante_display }} {{ invoice.number }}
           </h1>
+          {% if invoice.discrimina_iva %}
+              <span class="inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-black bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 uppercase tracking-widest ring-1 ring-blue-500/30 shadow-sm">
+                  <i data-lucide="file-check-2" class="w-4 h-4 mr-1.5"></i> Factura A (Discrimina IVA)
+              </span>
+          {% else %}
+              <span class="inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-black bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 uppercase tracking-widest ring-1 ring-emerald-500/30 shadow-sm">
+                  <i data-lucide="shield-check" class="w-4 h-4 mr-1.5"></i> Factura {{ invoice.letra }} (IVA Incluido)
+              </span>
+          {% endif %}
           {% if invoice.estado_fiscal == 'autorizada' %}
               <span class="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 uppercase tracking-widest ring-1 ring-emerald-500/30 shadow-sm">
                   <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> Autorizada
@@ -79,9 +88,14 @@
               <tr>
                 <th scope="col" class="px-8 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Descripción</th>
                 <th scope="col" class="px-8 py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Cant.</th>
+                {% if invoice.discrimina_iva %}
                 <th scope="col" class="px-8 py-5 text-right text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">P. Unitario</th>
                 <th scope="col" class="px-8 py-5 text-right text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">IVA</th>
                 <th scope="col" class="px-8 py-5 text-right text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Subtotal</th>
+                {% else %}
+                <th scope="col" class="px-8 py-5 text-right text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">P. Unitario (c/IVA)</th>
+                <th scope="col" class="px-8 py-5 text-right text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Subtotal (c/IVA)</th>
+                {% endif %}
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-slate-700/50">
@@ -91,15 +105,20 @@
                     <span class="text-sm font-black text-gray-900 dark:text-slate-100">{{ item.descripcion|default:item.producto_nombre }}</span>
                 </td>
                 <td class="px-8 py-6 text-center text-sm font-bold text-gray-600 dark:text-slate-400 tabular-nums">{{ item.cantidad|floatformat:0 }}</td>
+                {% if invoice.discrimina_iva %}
                 <td class="px-8 py-6 text-right text-sm font-bold text-gray-600 dark:text-slate-400 tabular-nums">${{ item.precio_unitario|floatformat:2 }}</td>
                 <td class="px-8 py-6 text-right">
                     <span class="inline-flex items-center justify-center px-2 py-1 rounded-md bg-gray-100 dark:bg-slate-700 text-[10px] font-black text-gray-600 dark:text-slate-300 tabular-nums">{{ item.alicuota_iva|floatformat:0 }}%</span>
                 </td>
                 <td class="px-8 py-6 text-right text-lg font-black text-gray-900 dark:text-slate-100 tabular-nums">${{ item.total|floatformat:2 }}</td>
+                {% else %}
+                <td class="px-8 py-6 text-right text-sm font-bold text-gray-600 dark:text-slate-400 tabular-nums">${{ item.precio_unitario_con_iva|floatformat:2 }}</td>
+                <td class="px-8 py-6 text-right text-lg font-black text-gray-900 dark:text-slate-100 tabular-nums">${{ item.total|floatformat:2 }}</td>
+                {% endif %}
               </tr>
               {% empty %}
               <tr>
-                 <td colspan="5" class="px-8 py-16 text-center text-gray-500 dark:text-slate-500 font-medium">No hay items registrados.</td>
+                 <td colspan="{% if invoice.discrimina_iva %}5{% else %}4{% endif %}" class="px-8 py-16 text-center text-gray-500 dark:text-slate-500 font-medium">No hay items registrados.</td>
               </tr>
               {% endfor %}
             </tbody>
@@ -149,6 +168,7 @@
             Resumen de Importes
         </h2>
         <div class="space-y-6 relative z-10">
+          {% if invoice.discrimina_iva %}
           <div class="flex justify-between items-center text-sm">
             <span class="text-gray-400 font-bold uppercase tracking-widest text-[11px]">Neto Gravado</span>
             <span class="text-gray-200 font-black tabular-nums">${{ invoice.neto_gravado|floatformat:2 }}</span>
@@ -157,6 +177,23 @@
             <span class="text-gray-400 font-bold uppercase tracking-widest text-[11px]">IVA Total</span>
             <span class="text-gray-200 font-black tabular-nums">${{ invoice.monto_iva|floatformat:2 }}</span>
           </div>
+          {% else %}
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-400 font-bold uppercase tracking-widest text-[11px]">Subtotal (c/IVA)</span>
+            <span class="text-gray-200 font-black tabular-nums">${{ invoice.total|floatformat:2 }}</span>
+          </div>
+          {% if invoice.descuento_total %}
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-400 font-bold uppercase tracking-widest text-[11px]">Descuento Total</span>
+            <span class="text-emerald-400 font-black tabular-nums">-${{ invoice.descuento_total|floatformat:2 }}</span>
+          </div>
+          {% endif %}
+          <div class="p-3 bg-white/5 rounded-xl border border-white/10">
+            <p class="text-[10px] text-gray-300 italic leading-relaxed">
+              El IVA se encuentra incluido en los importes conforme al Art. 39 de la Ley de IVA.
+            </p>
+          </div>
+          {% endif %}
           <div class="pt-6 border-t border-gray-700/50">
             <div class="flex flex-col gap-2">
               <span class="text-[11px] font-bold text-indigo-400 uppercase tracking-[0.2em]">Total Comprobante</span>

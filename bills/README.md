@@ -14,7 +14,12 @@ El módulo `bills` gestiona la facturación legal y fiscal de **Bulonera Alvear*
 
 ## 🛠️ Modelos Clave
 *   **`Invoice`**: Documento legal emitido (Factura A/B, Nota de Débito, Nota de Crédito, Tique). Contiene snapshots de datos del cliente, montos, `cae`, `cae_vencimiento`, y campo `motivo` (para justificación comercial de Notas de Crédito standalone). Inmutable en Admin Django si está `autorizada` (RG 2485/2008). Hereda de `BaseModel` (Soft-delete: Sí).
-*   **`InvoiceItem`**: Renglón facturado. Representa un snapshot del producto/concepto facturado con sus alícuotas de IVA (21%, 10.5%, etc.) aplicadas. El campo `producto_codigo` es inmutable para garantizar trazabilidad de inventario, mientras que `producto_nombre` es editable para descripciones personalizadas. Incluye la propiedad `cantidad_display` para formateo numérico estándar argentino. Hereda de `BaseModel` (Soft-delete: Sí).
+    *   `letra`: Propiedad que extrae la letra del comprobante ('A', 'B', 'C') según su `tipo_comprobante`.
+    *   `discrimina_iva`: Retorna `True` únicamente para comprobantes letra 'A' (Responsables Inscriptos). Para letra 'B' y 'C' retorna `False` conforme al Art. 39 de la Ley de IVA.
+*   **`InvoiceItem`**: Renglón facturado. Representa un snapshot del producto/concepto facturado con sus alícuotas de IVA (21%, 10.5%, etc.) aplicadas. El campo `producto_codigo` es inmutable para garantizar trazabilidad de inventario, mientras que `producto_nombre` es editable para descripciones personalizadas.
+    *   `precio_unitario_con_iva`: Propiedad que calcula el precio unitario final con IVA incluido (`precio_unitario * (1 + alicuota_iva / 100)`).
+    *   `subtotal_con_iva`: Retorna el subtotal de línea con IVA incluido.
+    *   `cantidad_display`: Formateo numérico estándar argentino. Hereda de `BaseModel` (Soft-delete: Sí).
 
 ## ⚡ Servicios Críticos (`services.py`)
 La interacción fiscal se centraliza en los siguientes servicios atómicos protegidos con bloqueos pesimistas (`select_for_update()`):
@@ -24,6 +29,16 @@ La interacción fiscal se centraliza en los siguientes servicios atómicos prote
 *   `reintentar_factura(invoice_id)`: Reintenta la emisión ante la AFIP de facturas que quedaron en estado de error o borrador.
 *   `anular_factura_y_venta(invoice_id, user)`: Ejecuta `@transaction.atomic` con lock pesimista sobre `Invoice` (`select_for_update()`) para evitar dobles Notas de Crédito en ARCA, cancela la venta (devolviendo stock) y libera los pagos asignados.
 *   `register_manual_ticket(sale, user, punto_venta, numero_ticket, tipo_comprobante)`: Registra comprobantes emitidos por hardware controlador fiscal físico (omitiendo la comunicación digital con AFIP).
+
+## 📜 Normativa y Diferenciación Factura A vs Factura B (ARCA / AFIP)
+De acuerdo a la **Ley de Impuesto al Valor Agregado (Art. 39)** y las **Resoluciones Generales AFIP 1415 y 5003**:
+1. **Factura A (Responsables Inscriptos)**:
+   - Se discrimina el IVA renglón por renglón (Precio Unitario Neto, Alícuota y Subtotal s/IVA).
+   - En el cuadro de totales y en el PDF, se desglosa el Neto Gravado y el IVA liquidado por cada tasa (21%, 10.5%, etc.).
+2. **Factura B (Consumidor Final / Exentos / Monotributistas)**:
+   - **Prohibición de discriminación**: Los comprobantes entregados al cliente final expresan importes finales con IVA incluido.
+   - En la tabla de ítems del PDF se emplean 7 columnas limpias (`Código`, `Descripción`, `Cant.`, `U. Medida`, `Precio Unit.`, `% Bonif`, `Subtotal`) con valores con IVA incluido.
+   - En el cuadro de totales del PDF se suprime el Neto Gravado y el desglose de tasas, incorporando la leyenda legal obligatoria: *"Régimen de Transparencia Fiscal al Consumidor (Ley 27.743 / Art. 39 Ley de IVA). El Impuesto al Valor Agregado (I.V.A.) se encuentra incluido en los precios finales exhibidos y facturados"*.
 
 ## 🌐 Vistas y APIs
 
@@ -40,9 +55,14 @@ Base URL: `/api/v1/bills/`
 ### Vistas Web (`web/urls/urls_web.py`) - Protegidas con `can_manage_bills`
 Todas las vistas web internas usan `ModulePermissionRequiredMixin` o `@permission_required('can_manage_bills')`:
 *   `GET /bills/facturas/` - Listado de facturas emitidas y filtros (`InvoiceListView`).
-*   `GET /bills/facturas/nueva/` - Formulario interactivo con Alpine.js para Facturación Directa de 0 (`InvoiceCreateView`), con layout fluido relativo (`max-w-full`), live search de productos (`quickSearchProducts()`) con 2 niveles jerárquicos (nombre + marca/descripción), tooltips de lectura completa en hover, columna elástica de descripción editable (`min-w-[280px] w-full`), inputs numéricos compactos y captura de costo unitario.
+*   `GET /bills/facturas/nueva/` - Formulario interactivo con Alpine.js para Facturación Directa de 0 (`InvoiceCreateView`):
+    *   Layout fluido relativo (`max-w-full`) con sección de renglones apilada horizontalmente.
+    *   **Selector de Lista de Precios predeterminada** y selector renglón por renglón con recálculo automático idéntico a ventas.
+    *   Badge dinámico del régimen fiscal (Factura A vs Factura B).
+    *   Live search de productos con 2 niveles jerárquicos y tooltips.
+    *   Captura de costo unitario por renglón.
 *   `GET /bills/nota-credito/nueva/` - Formulario interactivo con Alpine.js para Notas de Crédito Standalone (`CreditNoteCreateView`) con layout fluido.
-*   `GET /bills/facturas/<pk>/` - Detalle completo de la factura (`InvoiceDetailView`). Si la factura está en estado `borrador`, integra el partial `_invoice_polling.html` que consulta `invoice_status_api` cada 2.5s y recarga la vista automáticamente al autorizarse en ARCA.
+*   `GET /bills/facturas/<pk>/` - Detalle completo de la factura (`InvoiceDetailView`). Diferencia con badges visuales Factura A (Discrimina IVA) vs Factura B (IVA Incluido), adapta la tabla de renglones y el cuadro de totales según el régimen fiscal. Si la factura está en estado `borrador`, integra `_invoice_polling.html` que consulta `invoice_status_api` cada 2.5s y recarga la vista automáticamente al autorizarse en ARCA.
 *   `GET /bills/facturas/<pk>/pdf/` - Descarga privada de PDF (`download_invoice_pdf`).
 *   `POST /bills/facturas/<pk>/reintentar/` - Reintento manual de emisión fiscal (`invoice_retry`).
 *   `POST /bills/facturas/<pk>/anular/` - Anulación segura de factura y emisión de Nota de Crédito (`invoice_cancel`).

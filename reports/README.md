@@ -19,8 +19,11 @@ El módulo `reports` es el motor de inteligencia de negocios e informes financie
 ## ⚡ Servicios Críticos (`services/`)
 El procesamiento analítico se distribuye en servicios especializados:
 *   `PnLService` (`pnl_service.py`):
-    *   `_compute_revenue`: Suma ingresos netos de ventas confirmadas (`confirmed`, `in_preparation`, `ready`, `delivered`).
-    *   `_compute_cogs`: Computa el Costo de Mercadería Vendida (COGS) considerando todas las ventas en preparación, listas y entregadas (`in_preparation`, `ready`, `delivered`), calculando `quantity * unit_cost`.
+    *   `_compute_revenue`: Suma ingresos netos de Facturas autorizadas (`Invoice.fecha_emision` en `[date_from, date_to]`), deduciendo Notas de Crédito autorizadas.
+    *   `_compute_cogs`: Computa el Costo de Mercadería Vendida (COGS) bajo el **Principio de Apareamiento Contable (Matching Principle)** y resiliencia de motor de base de datos:
+        1. *Ventas facturadas:* Imputa el costo de los ítems de las ventas asociadas a Facturas fiscales autorizadas emitidas en el período (`Invoice.fecha_emision`), garantizando que ingresos y costos se reconozcan en el mismo ejercicio contable sin importar cuándo se creó el borrador de la venta.
+        2. *Ventas no facturadas:* Para ventas entregadas o confirmadas sin comprobante fiscal, computa por fecha de venta utilizando rangos `datetime` conscientes de zona horaria (`date__range=[dt_from, dt_to]`), eliminando funciones SQL `CONVERT_TZ` y previniendo que tablas de zona horaria vacías en MariaDB devuelvan `NULL` y anulen el cómputo de costos.
+        3. *Protección matemática:* Envolvimiento con `Coalesce(F('unit_cost'), Value(Decimal('0')))` para prevenir anulaciones por nulos.
     *   `_compute_opex`: Suma los gastos operativos devengados utilizando `amount_neto` (excluyendo el IVA crédito fiscal para mantener congruencia con el ingreso neto).
 *   `CashFlowService` (`cashflow_service.py`):
     *   `_compute_inflows`: Suma cobros reales confirmados (`Payment.status='confirmed'`, por `date`).

@@ -62,10 +62,27 @@
 
   <!-- Fiscal Parameters Summary (Full Width Card) -->
   <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm space-y-4 mb-6">
-    <h2 class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
-      <i data-lucide="file-text" class="w-4 h-4 text-blue-500"></i>
-      Datos Fiscales del Comprobante
-    </h2>
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 dark:border-slate-700/60 pb-3">
+      <h2 class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
+        <i data-lucide="file-text" class="w-4 h-4 text-blue-500"></i>
+        Datos Fiscales y Comerciales del Comprobante
+      </h2>
+      <!-- Badge de Régimen Fiscal -->
+      <div>
+        <template x-if="tipoComprobante == 1">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50">
+            <i data-lucide="file-check-2" class="w-3.5 h-3.5 text-blue-500"></i>
+            Factura A: Discrimina IVA (Resp. Inscripto)
+          </span>
+        </template>
+        <template x-if="tipoComprobante == 6">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-500"></i>
+            Factura B: IVA Incluido (Consumidor Final / Exento)
+          </span>
+        </template>
+      </div>
+    </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- Razón Social / Nombre -->
       <div>
@@ -99,6 +116,28 @@
         <label class="block text-xs font-semibold text-gray-600 dark:text-slate-300 mb-1">Domicilio Comercial</label>
         <input type="text" x-model="customerAddress" placeholder="Dirección fiscal..."
                class="w-full px-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500">
+      </div>
+    </div>
+
+    <!-- Selector de Lista de Precios Predeterminada -->
+    <div class="pt-3 border-t border-gray-100 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+        <label class="text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap">
+          <i data-lucide="tag" class="w-3.5 h-3.5 text-blue-500"></i>
+          Lista de Precios:
+        </label>
+        <select x-model="defaultPriceList" @change="applyDefaultPriceList()"
+                class="px-3 py-1.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 min-w-[220px]">
+          <option value="">Precio Base (Catálogo Estándar)</option>
+          {% for pl in pricelists %}
+          <option value="{{ pl.id }}" data-type="{{ pl.list_type }}" data-percentage="{{ pl.percentage }}">
+            {{ pl.name }} ({% if pl.list_type == 'SURCHARGE' %}+{% else %}-{% endif %}{{ pl.percentage }}%)
+          </option>
+          {% endfor %}
+        </select>
+        <span class="text-[11px] text-gray-400 dark:text-slate-500">
+          * Aplica a nuevos productos agregados o podés ajustar cada renglón en la tabla inferior.
+        </span>
       </div>
     </div>
   </div>
@@ -165,6 +204,7 @@
             <th class="px-2 py-3.5 min-w-[80px] text-right font-semibold uppercase tracking-wider whitespace-nowrap">Cant.</th>
             <th class="px-2 py-3.5 min-w-[125px] text-right font-semibold uppercase tracking-wider whitespace-nowrap">Precio Unit.</th>
             <th class="px-2 py-3.5 min-w-[115px] text-right font-semibold uppercase tracking-wider whitespace-nowrap">Costo Unit.</th>
+            <th class="px-2 py-3.5 min-w-[145px] font-semibold uppercase tracking-wider whitespace-nowrap">Lista Precios</th>
             <th class="px-2 py-3.5 min-w-[90px] text-right font-semibold uppercase tracking-wider whitespace-nowrap">Desc. ($)</th>
             <th class="px-2 py-3.5 min-w-[90px] text-center font-semibold uppercase tracking-wider whitespace-nowrap">IVA %</th>
             <th class="px-3 py-3.5 min-w-[115px] text-right font-semibold uppercase tracking-wider whitespace-nowrap">Total</th>
@@ -174,7 +214,7 @@
         <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
           <template x-if="items.length === 0">
             <tr>
-              <td colspan="9" class="p-8 text-center text-gray-400 dark:text-slate-500 italic">
+              <td colspan="10" class="p-8 text-center text-gray-400 dark:text-slate-500 italic">
                 No hay productos agregados. Utilizá el buscador de arriba para añadir renglones a la factura.
               </td>
             </tr>
@@ -208,10 +248,23 @@
               <td class="px-2 py-2.5 min-w-[115px]">
                 <div class="relative">
                   <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 text-xs font-medium">$</span>
-                  <input type="number" step="0.01" min="0" x-model.number="item.unit_cost" placeholder="Auto"
+                  <input type="number" step="any" min="0" x-model.number="item.unit_cost" placeholder="Auto"
                          class="w-full pl-6 pr-2.5 py-1.5 text-right text-xs sm:text-sm tabular-nums border border-dashed border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500"
                          :title="'Costo unitario: ' + (item.unit_cost !== null ? '$' + item.unit_cost : 'Automático del catálogo')">
                 </div>
+              </td>
+              <!-- Lista de Precios -->
+              <td class="px-2 py-2.5 min-w-[145px]">
+                <select x-model="item.price_list"
+                        @change="onPriceListChange(index)" :title="'Lista de precios para ' + item.producto_nombre"
+                        class="w-full text-xs border border-gray-300 dark:border-slate-600 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 transition">
+                  <option value="">Sin lista</option>
+                  {% for pl in pricelists %}
+                  <option value="{{ pl.id }}" data-type="{{ pl.list_type }}" data-percentage="{{ pl.percentage }}">
+                    {{ pl.name }} ({% if pl.list_type == 'SURCHARGE' %}+{% else %}-{% endif %}{{ pl.percentage }}%)
+                  </option>
+                  {% endfor %}
+                </select>
               </td>
               <!-- Descuento -->
               <td class="px-2 py-2.5 min-w-[90px]">
@@ -307,30 +360,45 @@
     <!-- Totals & Summary Card -->
     <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm space-y-4">
       <h2 class="text-sm font-bold text-gray-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
-        <i data-lucide="calculator" class="w-4 h-4 text-blue-500"></i>
-        4. Resumen y Liquidación
-      </h2>
+        <i data-lucide="calculator" cla      </h2>
 
       <div class="space-y-2.5 text-xs">
-        <div class="flex justify-between text-gray-500 dark:text-slate-400">
-          <span>Subtotal Neto Gravado</span>
-          <span class="font-bold text-gray-900 dark:text-slate-100" x-text="'$' + summary.neto.toFixed(2)"></span>
-        </div>
+        <template x-if="tipoComprobante == 1">
+          <div class="flex justify-between text-gray-500 dark:text-slate-400">
+            <span>Subtotal Neto Gravado</span>
+            <span class="font-bold text-gray-900 dark:text-slate-100" x-text="'$' + summary.neto.toFixed(2)"></span>
+          </div>
+        </template>
 
         <div class="flex justify-between text-emerald-600 dark:text-emerald-400" x-show="summary.descuento > 0">
           <span>Descuentos Aplicados</span>
           <span class="font-bold" x-text="'-$' + summary.descuento.toFixed(2)"></span>
         </div>
 
-        <div class="flex justify-between text-gray-500 dark:text-slate-400">
-          <span>IVA Liquidado Total</span>
-          <span class="font-bold text-gray-900 dark:text-slate-100" x-text="'$' + summary.iva.toFixed(2)"></span>
-        </div>
+        <template x-if="tipoComprobante == 1">
+          <div class="flex justify-between text-gray-500 dark:text-slate-400">
+            <span>IVA Liquidado Total</span>
+            <span class="font-bold text-gray-900 dark:text-slate-100" x-text="'$' + summary.iva.toFixed(2)"></span>
+          </div>
+        </template>
+
+        <template x-if="tipoComprobante == 6">
+          <div class="flex justify-between text-gray-500 dark:text-slate-400">
+            <span>Subtotal Bruto (c/IVA)</span>
+            <span class="font-bold text-gray-900 dark:text-slate-100" x-text="'$' + summary.total.toFixed(2)"></span>
+          </div>
+        </template>
 
         <div class="pt-3 border-t border-gray-100 dark:border-slate-700 flex justify-between items-center">
           <span class="text-sm font-black text-gray-900 dark:text-slate-100 uppercase">Total Final</span>
           <span class="text-xl font-black text-blue-600 dark:text-blue-400" x-text="'$' + summary.total.toFixed(2)"></span>
         </div>
+
+        <template x-if="tipoComprobante == 6">
+          <p class="text-[11px] text-gray-400 dark:text-slate-500 italic mt-1 text-right">
+            * Comprobante B: el IVA no se discrimina en el comprobante entregado al cliente (Art. 39 Ley de IVA).
+          </p>
+        </template>
       </div>
 
       <div class="pt-4 space-y-2">
@@ -346,9 +414,7 @@
         </button>
       </div>
     </div>
-
   </div>
-
 </div>
 {% endblock %}
 
@@ -364,6 +430,7 @@ function directInvoiceForm() {
     customerTaxCondition: 'CF',
     customerAddress: '',
     tipoComprobante: 6,
+    defaultPriceList: '',
     paymentMethod: 'cash',
     paymentReference: '',
     isPaid: true,
@@ -387,6 +454,10 @@ function directInvoiceForm() {
           this.customerTaxCondition = cust.tax_condition || 'CF';
           this.customerAddress = cust.billing_address || '';
           this.autoSelectTipoComprobante();
+          if (cust.price_list) {
+            this.defaultPriceList = String(cust.price_list);
+            this.applyDefaultPriceList();
+          }
         }
       });
 
@@ -428,6 +499,40 @@ function directInvoiceForm() {
       }
     },
 
+    applyDefaultPriceList() {
+      this.items.forEach((item, index) => {
+        item.price_list = this.defaultPriceList || '';
+        this.$nextTick(() => {
+          this.onPriceListChange(index);
+        });
+      });
+    },
+
+    onPriceListChange(index) {
+      const item = this.items[index];
+      if (!item) return;
+      const selectEl = document.querySelectorAll('[x-model="item.price_list"]')[index];
+      if (!selectEl) return;
+      const opt = selectEl.selectedOptions[0];
+
+      if (!opt || !opt.dataset.type) {
+        if (item._basePrice > 0) {
+          item.unit_price = item._basePrice;
+        }
+        return;
+      }
+
+      const type = opt.dataset.type; // DISCOUNT or SURCHARGE
+      const pct = parseFloat(opt.dataset.percentage) || 0;
+      const base = item._basePrice || item.unit_price;
+
+      if (type === 'DISCOUNT') {
+        item.unit_price = Math.round((base * (1 - pct / 100)) * 100) / 100;
+      } else {
+        item.unit_price = Math.round((base * (1 + pct / 100)) * 100) / 100;
+      }
+    },
+
     async quickSearchProducts() {
       const q = this.productSearchQuery.trim();
       if (q.length < 2) {
@@ -444,17 +549,27 @@ function directInvoiceForm() {
     },
 
     addProductToInvoice(product) {
-      this.items.push({
+      const basePrice = parseFloat(product.price) || 0;
+      const newItem = {
         product_code: product.code,
         producto_nombre: product.name,
         quantity: 1,
-        unit_price: parseFloat(product.price) || 0,
+        unit_price: basePrice,
+        _basePrice: basePrice,
+        price_list: this.defaultPriceList || '',
         unit_cost: product.cost ? parseFloat(product.cost) : null,
         discount_value: 0,
         tax_percentage: parseFloat(product.tax_rate) || 21.00
-      });
+      };
+      this.items.push(newItem);
       this.productSearchQuery = '';
       this.productSearchResults = [];
+
+      if (this.defaultPriceList) {
+        this.$nextTick(() => {
+          this.onPriceListChange(this.items.length - 1);
+        });
+      }
     },
 
     removeItem(index) {

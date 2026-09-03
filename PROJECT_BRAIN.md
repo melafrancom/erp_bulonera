@@ -526,6 +526,7 @@ GET /afip/            → afip/web/views/
 - **Lógica SOLO en `services.py`** — las vistas sólo rutean y validan el request
 - **Política de Costeo:** Se rige por *Último Precio de Compra / Costo de Reposición* (`Product.cost`). El costo histórico se preserva solo a modo informativo en `StockMovement.unit_cost` y `SaleItem.unit_cost`.
 - **Jerarquía de Costos:** Carga masiva por Excel (`ProductImportService`) como vía primaria; snapshot manual en mostrador (`SaleItem.unit_cost`) como secundaria; recepción de compra (`increase_stock`) como operativa.
+- **Apareamiento Contable (P&L):** El Costo de Mercadería Vendida (COGS) en `reports` se reconoce en el mismo período fiscal de la factura autorizada (`Invoice.fecha_emision`), garantizando paridad temporal 1:1 con los ingresos netos. Para ventas no facturadas, se utilizan rangos `datetime` conscientes de zona horaria sobre `Sale.date` sin invocar `CONVERT_TZ` de base de datos para garantizar inmunidad frente a tablas timezone vacías en MariaDB.
 - **Venta Ininterrumpida:** El mostrador nunca se bloquea por falta de stock; se admite stock cero o negativo. El control estricto y alertas aplican solo cuando `stock_control_enabled=True`.
 - **Concurrencia en Inventario:** Descuentos de stock en ventas ordenan ítems por `product_id` para garantizar locking determinístico libre de deadlocks en MariaDB/InnoDB.
 - **Tests separados por capa** — nunca un `tests.py` monolítico
@@ -668,8 +669,16 @@ Estructura de documentación distribuida por módulos para entender el **por qu�
   2. *Facturación Directa de 0:* Emisión de facturas directas desde el ERP (`crear_factura_directa`) orquestando venta `delivered`, descuento de inventario, cobro automático / cuenta corriente y envío a ARCA/AFIP. Interfaz web en `/bills/facturas/nueva/` y API en `POST /api/v1/bills/invoices/directa/`.
   3. *Notas de Crédito Standalone:* Emisión de créditos fiscales por bonificaciones/descuentos de fin de mes (`emitir_nota_credito_standalone`) con acreditación automática en Cuenta Corriente (`Payment` con método `credit_note`), sin alterar inventario ni anular ventas. Cumplimiento fiscal ARCA: `CbtesAsoc` obligatorio para NC A y opcional para NC B. Interfaz web en `/bills/nota-credito/nueva/` y API en `POST /api/v1/bills/invoices/nota-credito/`.
   4. *Suite de Tests bills:* 40 tests unitarios, de servicio, API y vistas web pasando al 100%.
-- **Suite de Tests Global:** 485+ tests ejecutados y aprobados (**100% PASSED**) en Docker.
+- **Selector de Listas de Precios y Diferenciación Normativa Factura A vs Factura B (`bills`):**
+  1. *Listas de Precios en Facturación Directa:* Incorporación de selector de lista predeterminada en cabecera y selector individual por renglón con recálculo dinámico en el navegador vía Alpine.js (`DISCOUNT` / `SURCHARGE`) sobre el precio base de catálogo, replicando la experiencia de ventas y presupuestos.
+  2. *Diferenciación Normativa Factura A vs Factura B (Ley de IVA Art. 39 y RG AFIP 1415 / 5003):*
+     - En **Factura B** (Consumidores Finales, Exentos): Prohibición de discriminación de IVA al cliente. El PDF ReportLab genera 7 columnas con precios y subtotales con IVA incluido, sin columnas de Neto Gravado ni alícuotas; en el cuadro de totales se suprime el desglose de débito fiscal e incorpora la leyenda legal del *Régimen de Transparencia Fiscal al Consumidor*.
+     - En **Factura A** (Responsables Inscriptos): Mantiene la discriminación renglón a renglón (9 columnas) y el desglose de bases imponibles e IVA liquidado por cada tasa (21%, 10.5%, etc.) en el cuadro de totales.
+  3. *Propiedades en Modelos:* `Invoice.letra`, `Invoice.discrimina_iva`, `InvoiceItem.precio_unitario_con_iva` y `InvoiceItem.subtotal_con_iva`.
+  4. *Detalle Web:* `invoice_detail.html` adapta la tabla y los totales dinámicamente con badges visuales distintivos (`Factura A (Discrimina IVA)` vs `Factura B (IVA Incluido)`).
+  5. *Suite de Tests bills:* 48 tests ejecutados y aprobados (**100% PASSED**) en Docker (`TestFacturaPricingAndDifferentiation`).
+- **Suite de Tests Global:** 490+ tests ejecutados y aprobados (**100% PASSED**) en Docker.
 
 ---
 
-*Última actualización: Septiembre 2026 (Edición de Costos en Ventas, Corrección de Reportes PnL/CashFlow, Layout Apilado de Facturación y Remediación Integral)*
+*Última actualización: Septiembre 2026 (Selector de Listas de Precios en Facturación, Diferenciación Normativa Factura A vs B y Suite de Facturación 100% Green)*
