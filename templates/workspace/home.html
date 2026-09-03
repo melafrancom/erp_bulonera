@@ -1,0 +1,1065 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Mi Escritorio | ERP Bulonera Alvear{% endblock %}
+
+{% block content %}
+{# Datos serializados desde Django para hidratación reactiva en Alpine.js #}
+{{ notes_data|json_script:"initial-notes-data" }}
+{{ tasks_data|json_script:"initial-tasks-data" }}
+{{ events_data|json_script:"initial-events-data" }}
+{{ upcoming_data|json_script:"initial-upcoming-data" }}
+{{ urgent_tasks_data|json_script:"initial-urgent-tasks-data" }}
+{{ urgent_events_data|json_script:"initial-urgent-events-data" }}
+
+<div x-data="workspaceApp()" x-init="initWorkspace()" class="space-y-6 pb-12">
+
+  {# ═══════ BANNER DE ALERTAS EN VIVO (PRÓXIMAS 48H) ═══════ #}
+  <template x-if="urgentCount > 0">
+    <div class="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl p-4 shadow-sm transition-all">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-start gap-3">
+          <div class="p-2 bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 rounded-lg flex-shrink-0 mt-0.5">
+            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-amber-900 dark:text-amber-100 flex items-center gap-2">
+              <span>Atención: <span x-text="urgentCount"></span> vencimientos en las próximas 48 horas</span>
+            </h3>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <template x-for="task in urgentTasks" :key="'urg-t-' + task.id">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700/60 text-amber-800 dark:text-amber-200 shadow-2xs">
+                  <i data-lucide="check-square" class="w-3.5 h-3.5 text-amber-600"></i>
+                  <span x-text="task.title"></span>
+                  <span class="text-amber-600 font-normal" x-text="'(Vto: ' + formatDate(task.due_date) + ')'"></span>
+                </span>
+              </template>
+              <template x-for="ev in urgentEvents" :key="'urg-e-' + ev.id">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700/60 text-amber-800 dark:text-amber-200 shadow-2xs">
+                  <i data-lucide="calendar" class="w-3.5 h-3.5 text-amber-600"></i>
+                  <span x-text="ev.title"></span>
+                  <span class="text-amber-600 font-normal" x-text="'(' + formatDateTime(ev.start_date) + ')'"></span>
+                </span>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  {# ═══════ HEADER DEL ESCRITORIO ═══════ #}
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+    <div>
+      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-50 tracking-tight">
+        {{ greeting }}, {{ request.user.first_name|default:request.user.username }} 👋
+      </h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+        <i data-lucide="calendar" class="w-4 h-4 text-blue-500"></i>
+        <span>{{ today|date:"l j \d\e F, Y"|capfirst }}</span>
+        <span class="text-slate-300 dark:text-slate-700">•</span>
+        <span class="font-medium text-slate-700 dark:text-slate-300">Bulonera Alvear</span>
+      </p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <button @click="openNoteModal()"
+        class="inline-flex items-center gap-2 px-3.5 py-2 bg-amber-400 hover:bg-amber-500 text-amber-950 rounded-xl font-semibold text-xs sm:text-sm transition shadow-sm active:scale-95">
+        <i data-lucide="sticky-note" class="w-4 h-4"></i>
+        <span>Nueva Nota</span>
+      </button>
+      <button @click="openTaskModal()"
+        class="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-xs sm:text-sm transition shadow-sm active:scale-95">
+        <i data-lucide="list-checks" class="w-4 h-4"></i>
+        <span>Nueva Tarea</span>
+      </button>
+      <button @click="openEventModal()"
+        class="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-xs sm:text-sm transition shadow-sm active:scale-95">
+        <i data-lucide="calendar-plus" class="w-4 h-4"></i>
+        <span>Nuevo Evento</span>
+      </button>
+    </div>
+  </div>
+
+  {# ═══════ GRID DE 3 COLUMNAS DEL ESCRITORIO ═══════ #}
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    {# ────────────────── COLUMNA 1: NOTAS RÁPIDAS ────────────────── #}
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 bg-amber-100 dark:bg-amber-900/40 text-amber-600 rounded-lg">
+            <i data-lucide="sticky-note" class="w-4 h-4"></i>
+          </div>
+          <h2 class="text-base font-bold text-slate-900 dark:text-slate-100">Notas Rápidas</h2>
+        </div>
+        <span class="text-xs px-2 py-0.5 rounded-full font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+          x-text="notes.length"></span>
+      </div>
+
+      {# Lista de Notas #}
+      <div class="space-y-3">
+        <template x-for="(note, index) in notes" :key="note.id">
+          <div class="rounded-xl p-4 shadow-2xs border transition-all hover:shadow-md relative group"
+            :class="getNoteColorClasses(note.color)">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex-1 min-w-0">
+                <template x-if="note.is_pinned">
+                  <span class="inline-flex items-center gap-1 text-2xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-1">
+                    <i data-lucide="pin" class="w-3 h-3"></i> Fijada
+                  </span>
+                </template>
+                <h3 class="font-bold text-slate-900 dark:text-slate-50 text-sm truncate" x-text="note.title"></h3>
+                <p class="text-xs text-slate-700 dark:text-slate-300 mt-1 whitespace-pre-line line-clamp-4 leading-relaxed"
+                  x-text="note.content"></p>
+              </div>
+
+              <div class="flex items-center gap-1 flex-shrink-0 opacity-80 group-hover:opacity-100 transition">
+                <button @click="togglePinNote(note.id)"
+                  class="p-1 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition"
+                  :title="note.is_pinned ? 'Desfijar' : 'Fijar al tope'">
+                  <i data-lucide="pin" class="w-3.5 h-3.5" :class="note.is_pinned ? 'text-amber-600 dark:text-amber-400 fill-amber-500' : 'text-slate-400'"></i>
+                </button>
+                <button @click="deleteNote(note.id)"
+                  class="p-1 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 text-slate-400 hover:text-red-600 transition"
+                  title="Eliminar">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="mt-3 flex items-center justify-between text-2xs text-slate-500 dark:text-slate-400 border-t border-black/5 dark:border-white/5 pt-2">
+              <span x-text="formatDate(note.created_at)"></span>
+            </div>
+          </div>
+        </template>
+
+        {# Empty State Notas #}
+        <template x-if="notes.length === 0">
+          <div class="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 p-6">
+            <div class="w-12 h-12 bg-amber-50 dark:bg-amber-950/40 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <i data-lucide="sticky-note" class="w-6 h-6"></i>
+            </div>
+            <p class="text-sm font-medium text-slate-700 dark:text-slate-300">No hay notas guardadas</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Anota números de teléfono, cotizaciones rápidas o recordatorios.</p>
+            <button @click="openNoteModal()"
+              class="mt-3 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline">
+              + Crear primera nota
+            </button>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    {# ────────────────── COLUMNA 2: PENDIENTES (TO-DO) ────────────────── #}
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 bg-blue-100 dark:bg-blue-900/40 text-blue-600 rounded-lg">
+            <i data-lucide="list-checks" class="w-4 h-4"></i>
+          </div>
+          <h2 class="text-base font-bold text-slate-900 dark:text-slate-100">Lista de Pendientes</h2>
+        </div>
+        <span class="text-xs px-2 py-0.5 rounded-full font-semibold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300"
+          x-text="pendingTasks.length + ' pendientes'"></span>
+      </div>
+
+      {# Contenedor de Tareas Pendientes #}
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs overflow-hidden">
+        <template x-if="pendingTasks.length > 0">
+          <ul class="divide-y divide-slate-100 dark:divide-slate-800/80">
+            <template x-for="task in pendingTasks" :key="task.id">
+              <li class="flex items-start gap-3 p-3.5 hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition group">
+                {# Checkbox Interactivo #}
+                <button @click="toggleTask(task.id)"
+                  class="mt-0.5 flex-shrink-0 w-5 h-5 rounded-md border-2 border-slate-300 dark:border-slate-600 hover:border-blue-600 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition flex items-center justify-center cursor-pointer">
+                </button>
+
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-slate-900 dark:text-slate-100 leading-snug" x-text="task.title"></p>
+                  <template x-if="task.description">
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2" x-text="task.description"></p>
+                  </template>
+                  <div class="flex items-center gap-2 mt-1.5">
+                    <span class="inline-flex items-center text-2xs px-2 py-0.5 rounded-md font-semibold"
+                      :class="getPriorityBadgeClass(task.priority)"
+                      x-text="task.priority_display || task.priority"></span>
+                    <template x-if="task.due_date">
+                      <span class="inline-flex items-center gap-1 text-2xs text-slate-500 dark:text-slate-400 font-medium">
+                        <i data-lucide="clock" class="w-3 h-3 text-slate-400"></i>
+                        <span x-text="formatDate(task.due_date)"></span>
+                      </span>
+                    </template>
+                  </div>
+                </div>
+
+                <button @click="deleteTask(task.id)"
+                  class="p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-950/40 text-slate-400 hover:text-red-600 transition"
+                  title="Eliminar tarea">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </li>
+            </template>
+          </ul>
+        </template>
+
+        {# Empty State Tareas #}
+        <template x-if="pendingTasks.length === 0">
+          <div class="text-center py-10 px-4">
+            <div class="w-12 h-12 bg-blue-50 dark:bg-blue-950/40 text-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <i data-lucide="check-circle" class="w-6 h-6"></i>
+            </div>
+            <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">¡Todo al día!</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">No tenés pendientes activos. Creá uno nuevo con el botón superior.</p>
+          </div>
+        </template>
+      </div>
+
+      {# Sección Colapsable: Tareas Completadas #}
+      <template x-if="completedTasks.length > 0">
+        <div class="space-y-2 pt-1" x-data="{ showCompleted: false }">
+          <button @click="showCompleted = !showCompleted"
+            class="flex items-center justify-between w-full text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 px-2 py-1 transition cursor-pointer">
+            <span class="flex items-center gap-1.5">
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5 transition-transform" :class="showCompleted ? 'rotate-90' : ''"></i>
+              <span>Completadas (<span x-text="completedTasks.length"></span>)</span>
+            </span>
+            <span class="text-2xs text-slate-400">Ver historial</span>
+          </button>
+
+          <div x-show="showCompleted" x-collapse class="bg-white/60 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <ul class="divide-y divide-slate-100 dark:divide-slate-800/60">
+              <template x-for="task in completedTasks" :key="task.id">
+                <li class="flex items-center gap-3 p-3 opacity-60 hover:opacity-100 transition group">
+                  <button @click="toggleTask(task.id)"
+                    class="flex-shrink-0 w-4.5 h-4.5 rounded-md bg-emerald-500 text-white flex items-center justify-center cursor-pointer">
+                    <i data-lucide="check" class="w-3 h-3"></i>
+                  </button>
+                  <span class="text-xs text-slate-500 dark:text-slate-400 line-through flex-1 truncate" x-text="task.title"></span>
+                  <button @click="deleteTask(task.id)" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </li>
+              </template>
+            </ul>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    {# ────────────────── COLUMNA 3: CALENDARIO Y VENCIMIENTOS ────────────────── #}
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 rounded-lg">
+            <i data-lucide="calendar" class="w-4 h-4"></i>
+          </div>
+          <h2 class="text-base font-bold text-slate-900 dark:text-slate-100">Calendario & Vencimientos</h2>
+        </div>
+      </div>
+
+      {# Mini Calendario 100% Client-Side #}
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs p-4">
+        {# Header del Mes con Botones #}
+        <div class="flex items-center justify-between mb-3">
+          <button @click="changeMonth(-1)"
+            class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition"
+            title="Mes anterior">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+          </button>
+          <span class="text-sm font-bold text-slate-800 dark:text-slate-100"
+            x-text="monthNames[calMonth - 1] + ' ' + calYear"></span>
+          <button @click="changeMonth(1)"
+            class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition"
+            title="Mes siguiente">
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        {# Días de la Semana #}
+        <div class="grid grid-cols-7 gap-1 text-center mb-1.5">
+          <template x-for="dayName in ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do']">
+            <span class="text-2xs font-bold uppercase text-slate-400 dark:text-slate-500 py-1" x-text="dayName"></span>
+          </template>
+        </div>
+
+        {# Grilla de Días #}
+        <div class="space-y-1">
+          <template x-for="(week, wIdx) in calendarGrid" :key="'week-' + wIdx">
+            <div class="grid grid-cols-7 gap-1">
+              <template x-for="(day, dIdx) in week" :key="'day-' + wIdx + '-' + dIdx">
+                <div>
+                  <template x-if="day === 0">
+                    <div class="h-8.5"></div>
+                  </template>
+                  <template x-if="day > 0">
+                    <button @click="selectCalendarDay(day)"
+                      class="h-8.5 w-full rounded-xl text-xs font-medium flex flex-col items-center justify-center relative transition cursor-pointer"
+                      :class="getDayClasses(day)">
+                      <span x-text="day"></span>
+                      <template x-if="hasEventOnDay(day)">
+                        <span class="absolute bottom-1 w-1.5 h-1.5 rounded-full"
+                          :class="isToday(day) ? 'bg-white' : 'bg-blue-500 dark:bg-blue-400'"></span>
+                      </template>
+                    </button>
+                  </template>
+                </div>
+              </template>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      {# Panel de Eventos del Día Seleccionado #}
+      <template x-if="selectedDay !== null">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-blue-200 dark:border-blue-900/60 p-4 shadow-2xs space-y-2">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+            <h3 class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+              <i data-lucide="clock" class="w-3.5 h-3.5 text-blue-500"></i>
+              <span>Eventos del <span x-text="selectedDay + ' de ' + monthNames[calMonth - 1]"></span></span>
+            </h3>
+            <button @click="selectedDay = null" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <template x-if="selectedDayEvents.length > 0">
+            <ul class="space-y-2 pt-1">
+              <template x-for="ev in selectedDayEvents" :key="'sel-ev-' + ev.id">
+                <li class="flex items-start justify-between gap-2 p-2 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-xs font-bold text-slate-800 dark:text-slate-200" x-text="ev.title"></p>
+                    <span class="inline-block text-2xs font-medium text-slate-500 dark:text-slate-400 mt-0.5"
+                      x-text="ev.event_type_display"></span>
+                  </div>
+                  <button @click="deleteEvent(ev.id)" class="text-slate-400 hover:text-red-500 p-1">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </li>
+              </template>
+            </ul>
+          </template>
+          <template x-if="selectedDayEvents.length === 0">
+            <p class="text-xs text-slate-500 dark:text-slate-400 py-2">No hay actividades registradas en este día.</p>
+          </template>
+        </div>
+      </template>
+
+      {# Próximos 7 días (Vencimientos & Actividades) #}
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+          <h3 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="calendar-clock" class="w-3.5 h-3.5 text-emerald-500"></i>
+            <span>Próximos 7 días</span>
+          </h3>
+          <span class="text-2xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
+            x-text="upcomingEvents.length"></span>
+        </div>
+
+        <template x-if="upcomingEvents.length > 0">
+          <ul class="divide-y divide-slate-100 dark:divide-slate-800/80">
+            <template x-for="ev in upcomingEvents" :key="'upc-' + ev.id">
+              <li class="p-3.5 hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition flex items-center justify-between gap-3 group">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center flex-shrink-0 text-slate-800 dark:text-slate-200 font-bold leading-none">
+                    <span class="text-xs" x-text="new Date(ev.start_date).getDate()"></span>
+                    <span class="text-3xs uppercase font-medium text-slate-400" x-text="formatShortMonth(ev.start_date)"></span>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate" x-text="ev.title"></p>
+                    <span class="inline-flex items-center text-3xs font-semibold px-1.5 py-0.5 rounded mt-0.5"
+                      :class="getEventTypeBadgeClass(ev.event_type)"
+                      x-text="ev.event_type_display"></span>
+                  </div>
+                </div>
+                <button @click="deleteEvent(ev.id)"
+                  class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 p-1 transition"
+                  title="Eliminar evento">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </li>
+            </template>
+          </ul>
+        </template>
+
+        <template x-if="upcomingEvents.length === 0">
+          <div class="text-center py-6 px-4">
+            <p class="text-xs text-slate-400 dark:text-slate-500">Sin vencimientos para la semana próxima.</p>
+          </div>
+        </template>
+      </div>
+    </div>
+
+  </div>
+
+  {# ═══════════════════════════════════════════════ #}
+  {# ═══════ MODALES CON DISEÑO CONSISTENTE ═══════ #}
+  {# ═══════════════════════════════════════════════ #}
+
+  {# ─── MODAL: NUEVA NOTA ─── #}
+  <div x-show="showNoteModal" x-cloak
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+    x-transition:enter="transition ease-out duration-200"
+    x-transition:enter-start="opacity-0 scale-95"
+    x-transition:enter-end="opacity-100 scale-100"
+    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100 scale-100"
+    x-transition:leave-end="opacity-0 scale-95">
+    <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md p-6 border border-slate-200 dark:border-slate-800"
+      @click.stop>
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <h2 class="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <i data-lucide="sticky-note" class="w-4 h-4 text-amber-500"></i>
+          <span>Nueva Nota Rápida</span>
+        </h2>
+        <button @click="showNoteModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form @submit.prevent="createNote()" class="mt-4 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Título</label>
+          <input type="text" x-model="noteForm.title" required
+            class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none"
+            placeholder="Ej: Teléfono distribuidor bulones">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Contenido</label>
+          <textarea x-model="noteForm.content" rows="3"
+            class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none"
+            placeholder="Anotá acá los detalles..."></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Color</label>
+          <div class="flex gap-2">
+            <template x-for="c in ['yellow', 'blue', 'green', 'pink', 'purple']">
+              <button type="button" @click="noteForm.color = c"
+                class="w-8 h-8 rounded-full border-2 transition cursor-pointer"
+                :class="[
+                  getNoteColorSwatch(c),
+                  noteForm.color === c ? 'ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-slate-900 scale-110' : 'opacity-70 hover:opacity-100'
+                ]"></button>
+            </template>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" @click="showNoteModal = false"
+            class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition">
+            Cancelar
+          </button>
+          <button type="submit" :disabled="saving"
+            class="px-4 py-2 text-xs font-bold bg-amber-400 hover:bg-amber-500 text-amber-950 rounded-xl transition shadow-sm disabled:opacity-50">
+            <span x-text="saving ? 'Guardando...' : 'Guardar Nota'"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# ─── MODAL: NUEVA TAREA ─── #}
+  <div x-show="showTaskModal" x-cloak
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+    x-transition:enter="transition ease-out duration-200"
+    x-transition:enter-start="opacity-0 scale-95"
+    x-transition:enter-end="opacity-100 scale-100"
+    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100 scale-100"
+    x-transition:leave-end="opacity-0 scale-95">
+    <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md p-6 border border-slate-200 dark:border-slate-800"
+      @click.stop>
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <h2 class="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <i data-lucide="check-square" class="w-4 h-4 text-blue-500"></i>
+          <span>Nuevo Pendiente</span>
+        </h2>
+        <button @click="showTaskModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form @submit.prevent="createTask()" class="mt-4 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Título del pendiente</label>
+          <input type="text" x-model="taskForm.title" required
+            class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            placeholder="¿Qué tenés que hacer?">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Detalle (opcional)</label>
+          <textarea x-model="taskForm.description" rows="2"
+            class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            placeholder="Detalles adicionales..."></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Prioridad</label>
+            <select x-model="taskForm.priority"
+              class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <option value="low">Baja</option>
+              <option value="medium">Media</option>
+              <option value="high">Alta</option>
+              <option value="urgent">Urgente</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Vencimiento</label>
+            <input type="date" x-model="taskForm.due_date"
+              class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" @click="showTaskModal = false"
+            class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition">
+            Cancelar
+          </button>
+          <button type="submit" :disabled="saving"
+            class="px-4 py-2 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition shadow-sm disabled:opacity-50">
+            <span x-text="saving ? 'Guardando...' : 'Guardar Tarea'"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# ─── MODAL: NUEVO EVENTO ─── #}
+  <div x-show="showEventModal" x-cloak
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+    x-transition:enter="transition ease-out duration-200"
+    x-transition:enter-start="opacity-0 scale-95"
+    x-transition:enter-end="opacity-100 scale-100"
+    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100 scale-100"
+    x-transition:leave-end="opacity-0 scale-95">
+    <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md p-6 border border-slate-200 dark:border-slate-800"
+      @click.stop>
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <h2 class="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <i data-lucide="calendar" class="w-4 h-4 text-emerald-500"></i>
+          <span>Nuevo Evento / Vencimiento</span>
+        </h2>
+        <button @click="showEventModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form @submit.prevent="createEvent()" class="mt-4 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Título</label>
+          <input type="text" x-model="eventForm.title" required
+            class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+            placeholder="Ej: Presentación IVA Mensual ARCA">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tipo de Evento</label>
+          <select x-model="eventForm.event_type"
+            class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <option value="tax_arca">🏛️ Vencimiento ARCA/AFIP</option>
+            <option value="tax_atp">🏢 Vencimiento ATP Chaco</option>
+            <option value="supplier_payment">🚚 Pago a Proveedor</option>
+            <option value="customer_due">👥 Vencimiento de Cliente (CC)</option>
+            <option value="check_maturity">💵 Vencimiento de Cheque</option>
+            <option value="deadline">⚠️ Vencimiento General</option>
+            <option value="reminder">🔔 Recordatorio</option>
+            <option value="meeting">🤝 Reunión</option>
+            <option value="other">📅 Otro</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Detalle (opcional)</label>
+          <textarea x-model="eventForm.description" rows="2"
+            class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+            placeholder="Notas sobre el evento..."></textarea>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input type="checkbox" x-model="eventForm.all_day" id="workspace_all_day"
+            class="rounded border-slate-300 dark:border-slate-700 text-emerald-600 focus:ring-emerald-500">
+          <label for="workspace_all_day" class="text-xs font-semibold text-slate-700 dark:text-slate-300">Todo el día</label>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Inicio</label>
+            <input :type="eventForm.all_day ? 'date' : 'datetime-local'" x-model="eventForm.start_date" required
+              class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Fin (opcional)</label>
+            <input :type="eventForm.all_day ? 'date' : 'datetime-local'" x-model="eventForm.end_date"
+              class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" @click="showEventModal = false"
+            class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition">
+            Cancelar
+          </button>
+          <button type="submit" :disabled="saving"
+            class="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition shadow-sm disabled:opacity-50">
+            <span x-text="saving ? 'Guardando...' : 'Guardar Evento'"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+{# ═══════════════════════════════════════════════ #}
+{# ═══════ APLICACIÓN REACTIVA ALPINE.JS ════════ #}
+{# ═══════════════════════════════════════════════ #}
+<script>
+function workspaceApp() {
+  return {
+    // Estado principal hidratado desde json_script
+    notes: [],
+    tasks: [],
+    monthEvents: [],
+    upcomingEvents: [],
+    urgentTasks: [],
+    urgentEvents: [],
+
+    // Modales y flags
+    showNoteModal: false,
+    showTaskModal: false,
+    showEventModal: false,
+    saving: false,
+
+    // Formularios
+    noteForm: { title: '', content: '', color: 'yellow' },
+    taskForm: { title: '', description: '', priority: 'medium', due_date: '' },
+    eventForm: { title: '', description: '', event_type: 'reminder', start_date: '', end_date: '', all_day: false },
+
+    // Calendario client-side
+    calYear: {{ cal_year }},
+    calMonth: {{ cal_month }},
+    calendarGrid: [],
+    selectedDay: null,
+    monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+
+    // ─── INIT ───
+    initWorkspace() {
+      try {
+        const rawNotes = document.getElementById('initial-notes-data')?.textContent;
+        const rawTasks = document.getElementById('initial-tasks-data')?.textContent;
+        const rawEvents = document.getElementById('initial-events-data')?.textContent;
+        const rawUpcoming = document.getElementById('initial-upcoming-data')?.textContent;
+        const rawUrgTasks = document.getElementById('initial-urgent-tasks-data')?.textContent;
+        const rawUrgEvents = document.getElementById('initial-urgent-events-data')?.textContent;
+
+        this.notes = rawNotes ? JSON.parse(rawNotes) : [];
+        this.tasks = rawTasks ? JSON.parse(rawTasks) : [];
+        this.monthEvents = rawEvents ? JSON.parse(rawEvents) : [];
+        this.upcomingEvents = rawUpcoming ? JSON.parse(rawUpcoming) : [];
+        this.urgentTasks = rawUrgTasks ? JSON.parse(rawUrgTasks) : [];
+        this.urgentEvents = rawUrgEvents ? JSON.parse(rawUrgEvents) : [];
+      } catch (e) {
+        console.error('Error parseando datos iniciales del workspace:', e);
+      }
+
+      this.computeCalendarGrid();
+      this.rehydrateIcons();
+    },
+
+    rehydrateIcons() {
+      this.$nextTick(() => {
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+          window.lucide.createIcons();
+        }
+      });
+    },
+
+    // ─── COMPUTED PROPERTIES ───
+    get pendingTasks() {
+      return this.tasks.filter(t => !t.completed);
+    },
+
+    get completedTasks() {
+      return this.tasks.filter(t => t.completed);
+    },
+
+    get urgentCount() {
+      return this.urgentTasks.length + this.urgentEvents.length;
+    },
+
+    get selectedDayEvents() {
+      if (!this.selectedDay) return [];
+      const dStr = String(this.selectedDay).padStart(2, '0');
+      const mStr = String(this.calMonth).padStart(2, '0');
+      const prefix = `${this.calYear}-${mStr}-${dStr}`;
+      return this.monthEvents.filter(ev => ev.start_date && ev.start_date.startsWith(prefix));
+    },
+
+    // ─── CSRF HELPER ───
+    getCSRFToken() {
+      const cookie = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
+      if (cookie) return cookie.split('=')[1];
+      const el = document.querySelector('[name=csrfmiddlewaretoken]');
+      return el ? el.value : '{{ csrf_token }}';
+    },
+
+    // ─── FORMATTERS ───
+    formatDate(dateStr) {
+      if (!dateStr) return '';
+      const parts = dateStr.split('T')[0].split('-');
+      if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      return dateStr;
+    },
+
+    formatDateTime(dtStr) {
+      if (!dtStr) return '';
+      const d = new Date(dtStr);
+      if (isNaN(d.getTime())) return dtStr;
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const hours = String(d.getHours()).padStart(2, '0');
+      const mins = String(d.getMinutes()).padStart(2, '0');
+      return `${day}/${month} ${hours}:${mins}`;
+    },
+
+    formatShortMonth(dtStr) {
+      if (!dtStr) return '';
+      const d = new Date(dtStr);
+      const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      return months[d.getMonth()] || '';
+    },
+
+    // ─── COLOR & BADGE HELPERS ───
+    getNoteColorClasses(color) {
+      const map = {
+        yellow: 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/50',
+        blue: 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800/50',
+        green: 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/50',
+        pink: 'bg-pink-50 dark:bg-pink-950/20 border-pink-200 dark:border-pink-800/50',
+        purple: 'bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800/50',
+      };
+      return map[color] || 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800';
+    },
+
+    getNoteColorSwatch(color) {
+      const map = {
+        yellow: 'bg-amber-300 border-amber-400',
+        blue: 'bg-blue-400 border-blue-500',
+        green: 'bg-emerald-400 border-emerald-500',
+        pink: 'bg-pink-400 border-pink-500',
+        purple: 'bg-purple-400 border-purple-500',
+      };
+      return map[color] || 'bg-slate-200 border-slate-300';
+    },
+
+    getPriorityBadgeClass(priority) {
+      const map = {
+        urgent: 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/50',
+        high: 'bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800/50',
+        medium: 'bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50',
+        low: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700',
+      };
+      return map[priority] || map.medium;
+    },
+
+    getEventTypeBadgeClass(type) {
+      const map = {
+        tax_arca: 'bg-indigo-100 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300',
+        tax_atp: 'bg-cyan-100 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300',
+        supplier_payment: 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300',
+        customer_due: 'bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300',
+        check_maturity: 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300',
+        deadline: 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300',
+        reminder: 'bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300',
+        meeting: 'bg-teal-100 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300',
+      };
+      return map[type] || 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300';
+    },
+
+    // ─── CALENDARIO CLIENT-SIDE ───
+    computeCalendarGrid() {
+      const firstDay = new Date(this.calYear, this.calMonth - 1, 1);
+      const lastDay = new Date(this.calYear, this.calMonth, 0).getDate();
+      const startWeekday = (firstDay.getDay() + 6) % 7; // Lunes = 0
+
+      const weeks = [];
+      let currentWeek = Array(startWeekday).fill(0);
+
+      for (let day = 1; day <= lastDay; day++) {
+        currentWeek.push(day);
+        if (currentWeek.length === 7) {
+          weeks.push(currentWeek);
+          currentWeek = [];
+        }
+      }
+
+      if (currentWeek.length > 0) {
+        while (currentWeek.length < 7) currentWeek.push(0);
+        weeks.push(currentWeek);
+      }
+
+      this.calendarGrid = weeks;
+    },
+
+    async changeMonth(delta) {
+      this.calMonth += delta;
+      if (this.calMonth < 1) {
+        this.calMonth = 12;
+        this.calYear--;
+      } else if (this.calMonth > 12) {
+        this.calMonth = 1;
+        this.calYear++;
+      }
+      this.selectedDay = null;
+      this.computeCalendarGrid();
+
+      // Cargar eventos del nuevo mes sin refrescar página
+      try {
+        const res = await fetch(`/api/v1/workspace/events/?year=${this.calYear}&month=${this.calMonth}`);
+        if (res.ok) {
+          const data = await res.json();
+          this.monthEvents = data.results || data;
+          this.rehydrateIcons();
+        }
+      } catch (e) {
+        console.error('Error cargando eventos del mes:', e);
+      }
+    },
+
+    isToday(day) {
+      const now = new Date();
+      return day === now.getDate() && this.calMonth === (now.getMonth() + 1) && this.calYear === now.getFullYear();
+    },
+
+    hasEventOnDay(day) {
+      const dStr = String(day).padStart(2, '0');
+      const mStr = String(this.calMonth).padStart(2, '0');
+      const prefix = `${this.calYear}-${mStr}-${dStr}`;
+      return this.monthEvents.some(ev => ev.start_date && ev.start_date.startsWith(prefix));
+    },
+
+    getDayClasses(day) {
+      if (this.isToday(day)) {
+        return 'bg-blue-600 text-white font-bold shadow-xs';
+      }
+      if (this.selectedDay === day) {
+        return 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-200 font-bold';
+      }
+      return 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800';
+    },
+
+    selectCalendarDay(day) {
+      this.selectedDay = this.selectedDay === day ? null : day;
+      this.rehydrateIcons();
+    },
+
+    // ─── NOTAS ACTIONS ───
+    openNoteModal() {
+      this.noteForm = { title: '', content: '', color: 'yellow' };
+      this.showNoteModal = true;
+      this.rehydrateIcons();
+    },
+
+    async createNote() {
+      this.saving = true;
+      try {
+        const res = await fetch('/api/v1/workspace/notes/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': this.getCSRFToken(),
+          },
+          body: JSON.stringify(this.noteForm),
+        });
+        if (res.ok) {
+          const newNote = await res.json();
+          this.notes.unshift(newNote);
+          this.showNoteModal = false;
+          this.rehydrateIcons();
+        } else {
+          const err = await res.json();
+          alert('Error creando nota: ' + JSON.stringify(err));
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        this.saving = false;
+      }
+    },
+
+    async togglePinNote(noteId) {
+      const note = this.notes.find(n => n.id === noteId);
+      if (!note) return;
+      note.is_pinned = !note.is_pinned;
+      // Reordenar localmente
+      this.notes.sort((a, b) => (b.is_pinned - a.is_pinned) || (a.position - b.position));
+      this.rehydrateIcons();
+
+      try {
+        await fetch(`/api/v1/workspace/notes/${noteId}/toggle-pin/`, {
+          method: 'PATCH',
+          headers: { 'X-CSRFToken': this.getCSRFToken() },
+        });
+      } catch (e) {
+        console.error('Error toggling pin:', e);
+      }
+    },
+
+    async deleteNote(noteId) {
+      if (!confirm('¿Eliminar esta nota?')) return;
+      this.notes = this.notes.filter(n => n.id !== noteId);
+      this.rehydrateIcons();
+
+      try {
+        await fetch(`/api/v1/workspace/notes/${noteId}/`, {
+          method: 'DELETE',
+          headers: { 'X-CSRFToken': this.getCSRFToken() },
+        });
+      } catch (e) {
+        console.error('Error eliminando nota:', e);
+      }
+    },
+
+    // ─── TAREAS ACTIONS ───
+    openTaskModal() {
+      this.taskForm = { title: '', description: '', priority: 'medium', due_date: '' };
+      this.showTaskModal = true;
+      this.rehydrateIcons();
+    },
+
+    async createTask() {
+      this.saving = true;
+      try {
+        const payload = { ...this.taskForm };
+        if (!payload.due_date) delete payload.due_date;
+
+        const res = await fetch('/api/v1/workspace/tasks/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': this.getCSRFToken(),
+          },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          const newTask = await res.json();
+          this.tasks.unshift(newTask);
+          this.showTaskModal = false;
+          this.rehydrateIcons();
+        } else {
+          const err = await res.json();
+          alert('Error creando tarea: ' + JSON.stringify(err));
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        this.saving = false;
+      }
+    },
+
+    async toggleTask(taskId) {
+      const task = this.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      task.completed = !task.completed;
+      this.rehydrateIcons();
+
+      try {
+        await fetch(`/api/v1/workspace/tasks/${taskId}/toggle-completed/`, {
+          method: 'PATCH',
+          headers: { 'X-CSRFToken': this.getCSRFToken() },
+        });
+      } catch (e) {
+        console.error('Error toggling task:', e);
+      }
+    },
+
+    async deleteTask(taskId) {
+      if (!confirm('¿Eliminar este pendiente?')) return;
+      this.tasks = this.tasks.filter(t => t.id !== taskId);
+      this.urgentTasks = this.urgentTasks.filter(t => t.id !== taskId);
+      this.rehydrateIcons();
+
+      try {
+        await fetch(`/api/v1/workspace/tasks/${taskId}/`, {
+          method: 'DELETE',
+          headers: { 'X-CSRFToken': this.getCSRFToken() },
+        });
+      } catch (e) {
+        console.error('Error eliminando tarea:', e);
+      }
+    },
+
+    // ─── EVENTOS ACTIONS ───
+    openEventModal() {
+      const nowStr = new Date().toISOString().slice(0, 16);
+      this.eventForm = {
+        title: '',
+        description: '',
+        event_type: 'tax_arca',
+        start_date: nowStr,
+        end_date: '',
+        all_day: false,
+      };
+      this.showEventModal = true;
+      this.rehydrateIcons();
+    },
+
+    async createEvent() {
+      this.saving = true;
+      try {
+        const payload = { ...this.eventForm };
+        if (payload.all_day && payload.start_date && !payload.start_date.includes('T')) {
+          payload.start_date = payload.start_date + 'T00:00:00';
+        }
+        if (!payload.end_date) {
+          delete payload.end_date;
+        } else if (payload.all_day && !payload.end_date.includes('T')) {
+          payload.end_date = payload.end_date + 'T23:59:59';
+        }
+
+        const res = await fetch('/api/v1/workspace/events/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': this.getCSRFToken(),
+          },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          const newEvent = await res.json();
+          this.monthEvents.push(newEvent);
+          this.upcomingEvents.push(newEvent);
+          this.showEventModal = false;
+          this.computeCalendarGrid();
+          this.rehydrateIcons();
+        } else {
+          const err = await res.json();
+          alert('Error creando evento: ' + JSON.stringify(err));
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        this.saving = false;
+      }
+    },
+
+    async deleteEvent(eventId) {
+      if (!confirm('¿Eliminar este evento?')) return;
+      this.monthEvents = this.monthEvents.filter(e => e.id !== eventId);
+      this.upcomingEvents = this.upcomingEvents.filter(e => e.id !== eventId);
+      this.urgentEvents = this.urgentEvents.filter(e => e.id !== eventId);
+      this.computeCalendarGrid();
+      this.rehydrateIcons();
+
+      try {
+        await fetch(`/api/v1/workspace/events/${eventId}/`, {
+          method: 'DELETE',
+          headers: { 'X-CSRFToken': this.getCSRFToken() },
+        });
+      } catch (e) {
+        console.error('Error eliminando evento:', e);
+      }
+    },
+  };
+}
+</script>
+{% endblock %}

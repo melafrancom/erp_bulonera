@@ -20,12 +20,7 @@ from core.models import User, RegistrationRequest
 def home(request):
     """Página principal adaptativa"""
     if request.user.is_authenticated:
-        # Mostrar home post-login simple
-        context = {
-            'recent_sales': 5,  # TODO: Obtener de la BD cuando exista el modelo
-            'pending_tasks': 3,  # TODO: Obtener tareas del usuario
-        }
-        return render(request, 'core/public/home.html', context)
+        return redirect('workspace:home')
     
     # Mostrar landing page para usuarios no autenticados
     context = {

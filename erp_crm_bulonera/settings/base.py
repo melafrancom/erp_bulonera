@@ -71,6 +71,7 @@ SHARED_APPS = [
     'suppliers',
     'expenses',
     'reports',
+    'workspace',
 ]
 
 # ALL APPS

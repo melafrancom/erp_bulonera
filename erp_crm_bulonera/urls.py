@@ -73,8 +73,10 @@ urlpatterns = [
     path('api/v1/expenses/', include('expenses.api.urls', namespace='expenses_api')),
     path('api/v1/afip/', include('afip.api.urls', namespace='afip_api')),
     path('api/v1/reports/', include('reports.api.urls', namespace='reports_api')),
+    path('api/v1/workspace/', include('workspace.api.urls.urls', namespace='workspace_api')),
 
     # Vistas web (templates)
+    path('workspace/', include('workspace.web.urls.urls', namespace='workspace')),
     path('customers/', include('customers.web.urls.urls', namespace='customers')),
     path('sales/', include('sales.web.urls.urls_web', namespace='sales_web')),
     path('products/', include('products.web.urls')),
