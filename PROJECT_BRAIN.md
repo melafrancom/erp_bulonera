@@ -29,10 +29,11 @@ bills  logs  media  src  static  uwsgi.production.ini
 Acceso a la web actual:
 https://buloneraalvear.online/   ---> cuenta con SSL
 Acceso al panel de control de OpenLiteSpeed:
-http://212.85.12.132:7080/
+Puerto 7080 cerrado por defecto. Abrir bajo demanda: `sudo ols-open` / `sudo ols-close`
+Alternativa: `ssh -L 7080:127.0.0.1:7080 adminbuloneraalvear@erp.buloneraalvear.online` → `https://127.0.0.1:7080`
 
-Acceso a ssh:
-ssh adminbuloneraalvear@212.85.12.132
+Acceso a ssh (solo llave pública Ed25519, contraseñas deshabilitadas):
+ssh adminbuloneraalvear@erp.buloneraalvear.online
 
 ---
 
@@ -183,31 +184,46 @@ docker exec erp_web python manage.py check
 docker exec -it erp_web python manage.py shell
 ```
 
-### Base de Datos (Producción)
+### Base de Datos y Backups Cifrados (Producción)
 
 ```bash
 # Conectar a MariaDB
 sudo mysql -u erp_user -p erp_db
 
-# Backup manual
+# Backup cifrado bajo demanda (AES-256-CBC + SHA-256 + shred)
 sudo ~/backup_databases.sh
 
-# Ver backups existentes
+# Ver backups cifrados existentes
 ls -lh /var/backups/databases/erp_db/
+
+# Verificar integridad del último backup
+cd /var/backups/databases/erp_db/ && sha256sum -c $(ls -t *.sha256 | head -1)
 ```
 
-### Seguridad (Producción)
+> Clave maestra en `/root/.backup_vault_key` (permisos `0400`). Procedimiento completo de restauración en [SecurityChecklist.md](SecurityChecklist.md).
+
+### Seguridad Perimetral (Producción)
 
 ```bash
-# Ver IPs baneadas por Fail2ban
-sudo fail2ban-client status django-erp | grep "Banned IP"
+# Estado del firewall (Zero-Trust: solo 22/LIMIT, 80, 443 abiertos a WAN)
+sudo ufw status
+
+# Fail2ban — 3 jails activas: sshd (24h), recidive (7d), django-erp
+sudo fail2ban-client status
+sudo fail2ban-client status sshd
+
+# IPs baneadas
+sudo fail2ban-client status sshd | grep "Banned IP"
 
 # Desbanear una IP
-sudo fail2ban-client set django-erp unbanip <IP>
+sudo fail2ban-client set sshd unbanip <IP>
 
-# Ver firewall
-sudo ufw status numbered
+# OLS Admin bajo demanda (cerrado por defecto)
+sudo ols-open        # Abre 7080 temporalmente (auto-cierre 60 min)
+sudo ols-close       # Cierra inmediatamente
 ```
+
+> 📖 **Manual completo de seguridad y operaciones:** [SecurityChecklist.md](SecurityChecklist.md)
 
 ### Infraestructura de Volúmenes Compartida (Producción)
 
@@ -454,6 +470,7 @@ if (localStorage.getItem('theme') === 'dark' ||
 | [`expenses`](expenses/README.md) | Gastos operativos (OPEX) y clasificación en P&L |
 | [`afip`](afip/README.md) | Integración fiscal Argentina (AFIP/ARCA) |
 | [`reports`](reports/README.md) | Dashboard y reportes |
+| [`workspace`](workspace/README.md) | Escritorio personal (notas rápidas, to-do list interactivo y calendario de vencimientos fiscales/comerciales) |
 | [`api`](api/README.md) | Configuración central de la API REST |
 | [`erp_crm_bulonera`](erp_crm_bulonera/README.md) | Configuración raíz del proyecto y Celery |
 | [`templates`](templates/README.md) | UI: Plantillas HTML, Tailwind y Alpine.js |
@@ -468,6 +485,8 @@ if (localStorage.getItem('theme') === 'dark' ||
 
 ### Web (Templates HTML)
 ```
+GET /                 → Redirección a /workspace/ si autenticado; landing anónima si no
+GET /workspace/       → workspace/web/views/ (Mi Escritorio)
 GET /sales/           → sales/web/views/
 GET /products/        → products/web/views/
 GET /bills/           → bills/web/views/
@@ -482,6 +501,9 @@ GET /afip/            → afip/web/views/
 
 ### API REST (JSON/DRF)
 ```
+/api/v1/workspace/notes/     → NoteViewSet
+/api/v1/workspace/tasks/     → TaskViewSet
+/api/v1/workspace/events/    → EventViewSet
 /api/v1/sales/quotes/       → QuoteViewSet
 /api/v1/sales/sales/        → SaleViewSet
 /api/v1/sales/sync/         → SaleSyncViewSet
@@ -627,6 +649,7 @@ Estructura de documentación distribuida por módulos para entender el **por qu�
 | [ARCHITECTURE_VIEWS.md](ARCHITECTURE_VIEWS.md) | Separación Web vs API explicada |
 | [ROLES_Y_PROMPTS.md](ROLES_Y_PROMPTS.md) | Framework de Prompts y Roles (XML) |
 | [VALIDATION_CHECKLIST.md](VALIDATION_CHECKLIST.md) | Checklist de QA antes de mergear |
+| [SecurityChecklist.md](SecurityChecklist.md) | Manual central de seguridad y operaciones del servidor (SSH, UFW, Fail2ban, backups, logs, Redis, Docker) |
 | [PWA-IMPLEMENTATION.md](PWA-IMPLEMENTATION.md) | Implementación PWA offline-first |
 | [docs/infra/script_creados.md](docs/infra/script_creados.md) | Historial de scripts de infraestructura creados |
 | [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) | Sistema de diseño Tailwind + Alpine.js, Dark Mode y formularios fluidos |
@@ -678,7 +701,13 @@ Estructura de documentación distribuida por módulos para entender el **por qu�
   4. *Detalle Web:* `invoice_detail.html` adapta la tabla y los totales dinámicamente con badges visuales distintivos (`Factura A (Discrimina IVA)` vs `Factura B (IVA Incluido)`).
   5. *Suite de Tests bills:* 48 tests ejecutados y aprobados (**100% PASSED**) en Docker (`TestFacturaPricingAndDifferentiation`).
 - **Suite de Tests Global:** 490+ tests ejecutados y aprobados (**100% PASSED**) en Docker.
+- **Hardening Perimetral del VPS (InfraSec) (Completada):**
+  1. *SSH Hardening:* Acceso restringido exclusivamente a llaves públicas Ed25519 (`PasswordAuthentication no`). Drop-in modular en `/etc/ssh/sshd_config.d/01-hardening.conf` con prioridad máxima. Rate-limit en UFW.
+  2. *Fail2ban Reforzado:* 3 jails activas (`sshd`, `recidive`, `django-erp`). Política `recidive` aplica baneo de 7 días a atacantes reincidentes.
+  3. *Firewall UFW Zero-Trust:* Política `deny incoming` por defecto. Solo puertos 22 (LIMIT), 80 y 443 abiertos a WAN. Puerto 7080 (OLS Admin) cerrado permanentemente.
+  4. *Scripts `ols-open` / `ols-close`:* Gestión bajo demanda del puerto 7080 con auto-cierre programado (default 60 min) instalados en `/usr/local/bin/`.
+  5. *Backups Cifrados AES-256:* Pipeline `backup_databases.sh` con cifrado AES-256-CBC + PBKDF2 (100k iteraciones), checksums SHA-256, trituración segura (`shred`) y retención de 7 días. Clave maestra en `/root/.backup_vault_key`. Prueba de restauración exitosa (622 MB + 1.1 MB).
 
 ---
 
-*Última actualización: Septiembre 2026 (Selector de Listas de Precios en Facturación, Diferenciación Normativa Factura A vs B y Suite de Facturación 100% Green)*
+*Última actualización: Septiembre 2026 (Hardening Perimetral VPS: SSH Ed25519, Fail2ban, UFW Zero-Trust, OLS bajo demanda, Backups AES-256)*
