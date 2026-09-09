@@ -91,7 +91,9 @@
             <th scope="col" class="w-24 px-6 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Identificación</th>
             <th scope="col" class="px-6 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Nombre</th>
             <th scope="col" class="px-6 py-5 text-left text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Medidas</th>
+            {% if can_see_cost %}
             <th scope="col" class="px-6 py-5 text-right text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">P. Costo</th>
+            {% endif %}
             <th scope="col" class="px-6 py-5 text-right text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">P. Venta</th>
             <th scope="col" class="px-6 py-5 text-right text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Final (c/IVA)</th>
             <th scope="col" class="px-6 py-5 text-center text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Acción</th>
@@ -145,9 +147,11 @@
               </div>
             </td>
             
+            {% if can_see_cost %}
             <td class="px-6 py-5 whitespace-nowrap text-right font-medium text-gray-500 dark:text-slate-500 text-sm">
               {{ product.cost|price_display:'compact' }}
             </td>
+            {% endif %}
             
             <td class="px-6 py-5 whitespace-nowrap text-right font-bold text-gray-900 dark:text-slate-100 text-sm">
               {{ product.price|price_display:'compact' }}
@@ -181,7 +185,7 @@
               x-transition:enter-start="opacity-0 transform -translate-y-2"
               x-transition:enter-end="opacity-100 transform translate-y-0"
               class="group/expand bg-gray-50/50 dark:bg-slate-900/40 border-l-4 border-l-blue-500">
-                <td colspan="8" class="p-0">
+                <td colspan="{% if can_see_cost %}8{% else %}7{% endif %}" class="p-0">
                   
                   <!-- Bloque Horizontal: Descripción Completa -->
                   <div class="px-12 pt-6 pb-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/30 dark:bg-slate-900/10">
@@ -224,6 +228,7 @@
                             {{ product.stock_quantity|default:"0" }} UN.
                           </span>
                         </div>
+                        {% if can_see_cost %}
                         <div class="flex justify-between items-center group/item border-t dark:border-slate-800 pt-3">
                           <span class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-tight">Margen Base</span>
                           <span class="text-xs font-bold tabular-nums">
@@ -236,6 +241,7 @@
                             {% endif %}
                           </span>
                         </div>
+                        {% endif %}
                         <div class="flex justify-between items-center group/item border-t dark:border-slate-800 pt-3 mt-3">
                           <span class="text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-tight">Último Cambio</span>
                           <span class="text-[10px] font-bold text-gray-400 dark:text-slate-600 tabular-nums">{{ product.updated_at|date:"d/m/Y - H:i" }}</span>
@@ -276,7 +282,9 @@
                               <th class="px-4 py-3 text-left font-black text-gray-500 dark:text-slate-400 uppercase tracking-tighter">Lista de Precios</th>
                               <th class="px-4 py-3 text-right font-black text-gray-500 dark:text-slate-400 uppercase tracking-tighter">Impacto</th>
                               <th class="px-4 py-3 text-right font-black text-gray-500 dark:text-slate-400 uppercase tracking-tighter">Base s/IVA</th>
+                              {% if can_see_cost %}
                               <th class="px-4 py-3 text-right font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-tighter">Margen</th>
+                              {% endif %}
                               <th class="px-4 py-3 text-right font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-tighter">Final c/IVA</th>
                             </tr>
                           </thead>
@@ -292,6 +300,7 @@
                                 {% endif %}
                               </td>
                               <td class="px-4 py-3 text-right text-gray-500 dark:text-slate-500 whitespace-nowrap">{{ cp.price_without_tax|price_display:'compact' }}</td>
+                              {% if can_see_cost %}
                               <td class="px-4 py-3 text-right whitespace-nowrap font-bold">
                                 {% if cp.margin > 0 %}
                                   <span class="text-emerald-600 dark:text-emerald-400">↑ {{ cp.margin }}%</span>
@@ -301,6 +310,7 @@
                                   <span class="text-gray-500">0.0%</span>
                                 {% endif %}
                               </td>
+                              {% endif %}
                               <td class="px-4 py-3 text-right font-black text-gray-900 dark:text-slate-100 bg-gray-50/30 dark:bg-slate-900/30 whitespace-nowrap">{{ cp.price_with_tax|price_display:'compact' }}</td>
                             </tr>
                             {% endfor %}

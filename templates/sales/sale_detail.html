@@ -32,9 +32,9 @@ function saleDetailComponent() {
         name: '{{ item.display_name|escapejs }}',
         quantity: {{ item.quantity|default:0 }},
         unitPrice: {{ item.unit_price|default:0 }},
-        unitCost: {{ item.unit_cost|default:0 }},
+        unitCost: {% if user.is_manager or user.is_admin or user.is_superuser %}{{ item.unit_cost|default:0 }}{% else %}0{% endif %},
         subtotalWithDiscount: {{ item.subtotal_with_discount|default:0 }},
-        profit: {{ item.profit|default:0 }}
+        profit: {% if user.is_manager or user.is_admin or user.is_superuser %}{{ item.profit|default:0 }}{% else %}0{% endif %}
       }{% if not forloop.last %},{% endif %}
       {% endfor %}
       {% endlocalize %}

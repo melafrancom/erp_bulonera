@@ -108,10 +108,18 @@ class ConfiguracionARCAForm(forms.ModelForm):
             'ruta_certificado', 'password_certificado',
             'activo',
         ]
+        widgets = {
+            'password_certificado': forms.PasswordInput(
+                attrs={'autocomplete': 'off', 'placeholder': '••••••••'},
+                render_value=False,
+            ),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['ruta_certificado'].choices = descubrir_certificados_pem()
+        if self.instance and self.instance.pk:
+            self.fields['password_certificado'].required = False
 
     def clean_ruta_certificado(self):
         ruta = self.cleaned_data.get('ruta_certificado')
@@ -120,6 +128,17 @@ class ConfiguracionARCAForm(forms.ModelForm):
                 f'El archivo no existe en el servidor: {ruta}'
             )
         return ruta
+
+    def save(self, commit=True):
+        """Conserva la contraseña existente si el campo se deja vacío al actualizar."""
+        instance = super().save(commit=False)
+        if not self.cleaned_data.get('password_certificado') and not instance._state.adding and ConfiguracionARCA.objects.filter(pk=instance.pk).exists():
+            instance.password_certificado = ConfiguracionARCA.objects.values_list(
+                'password_certificado', flat=True
+            ).get(pk=instance.pk)
+        if commit:
+            instance.save()
+        return instance
 
 
 class ConfiguracionARCAFormUpdate(ConfiguracionARCAForm):

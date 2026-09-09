@@ -87,6 +87,26 @@ class TestQuoteWebViews:
         assert 'PRESUPUESTO' in content
         assert 'No Válido como Factura' in content
 
+    def test_quote_public_does_not_reveal_discount_reason(self, client, quote, product):
+        """Verificar que el template quote_public no expone discount_reason."""
+        from sales.models import QuoteItem
+        QuoteItem.objects.create(
+            quote=quote,
+            product=product,
+            quantity=10,
+            unit_price=Decimal("100.00"),
+            discount_type="percentage",
+            discount_value=Decimal("15.00"),
+            discount_reason="Cliente amigo del dueño - precio especial",
+            tax_percentage=Decimal("21.00"),
+        )
+        url = reverse('sales_web:quote_public', kwargs={'uuid': quote.uuid})
+        response = client.get(url)
+        assert response.status_code == 200
+        content = response.content.decode('utf-8')
+        assert "Cliente amigo del dueño - precio especial" not in content
+        assert "Bonificación:" not in content
+
     def test_quote_pdf_generation(self, quote, product):
         """Generación de PDF con ReportLab estructura oficial clase 'X'."""
         from sales.models import QuoteItem
@@ -152,6 +172,46 @@ class TestSaleWebViews:
         assert response.status_code == 200
         assert str(sale_with_items.number) in response.content.decode('utf-8')
         assert str(sale_with_items.items.first().product.name) in response.content.decode('utf-8')
+
+    def test_sale_detail_items_map_hides_cost_and_profit_for_operator(self, client, sale, product, operator_user):
+        """Para operador, itemsMap en JavaScript debe tener unitCost y profit en 0."""
+        from sales.models import SaleItem
+        sale.created_by = operator_user
+        sale.save()
+        SaleItem.objects.create(
+            sale=sale,
+            product=product,
+            quantity=2,
+            unit_price=Decimal("200.00"),
+            unit_cost=Decimal("120.00"),
+            tax_percentage=Decimal("21.00"),
+        )
+        client.force_login(operator_user)
+        url = reverse('sales_web:sale_detail', kwargs={'pk': sale.pk})
+        response = client.get(url)
+        assert response.status_code == 200
+        content = response.content.decode('utf-8')
+        assert "unitCost: 0" in content
+        assert "profit: 0" in content
+        assert "unitCost: 120" not in content
+
+    def test_sale_detail_items_map_shows_cost_and_profit_for_manager(self, client, sale, product, manager_user):
+        """Para manager, itemsMap en JavaScript sí debe incluir los costos y ganancias reales."""
+        from sales.models import SaleItem
+        SaleItem.objects.create(
+            sale=sale,
+            product=product,
+            quantity=2,
+            unit_price=Decimal("200.00"),
+            unit_cost=Decimal("120.00"),
+            tax_percentage=Decimal("21.00"),
+        )
+        client.force_login(manager_user)
+        url = reverse('sales_web:sale_detail', kwargs={'pk': sale.pk})
+        response = client.get(url)
+        assert response.status_code == 200
+        content = response.content.decode('utf-8')
+        assert "unitCost: 120" in content
 
     def test_sale_create_permission_denied(self, client, viewer_user):
         """Verificar C-06: usuario sin permiso al ingresar a sale_create redirige a sale_list con mensaje de ventas."""

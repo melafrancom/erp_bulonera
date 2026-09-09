@@ -67,6 +67,26 @@ class TestProductListView:
         resp = client.get(url, {'category': category.id})
         assert resp.status_code in (200, 500)
 
+    def test_cost_hidden_for_viewer_in_product_list(self, viewer_user):
+        """Usuario viewer no debe ver la columna P. Costo."""
+        client = _login_client(viewer_user)
+        url = reverse('products:product_list')
+        resp = client.get(url)
+        assert resp.status_code == 200
+        assert resp.context['can_see_cost'] is False
+        content = resp.content.decode('utf-8')
+        assert 'P. Costo' not in content
+
+    def test_cost_visible_for_admin_in_product_list(self, admin_user):
+        """Usuario admin sí debe ver la columna P. Costo."""
+        client = _login_client(admin_user)
+        url = reverse('products:product_list')
+        resp = client.get(url)
+        assert resp.status_code == 200
+        assert resp.context['can_see_cost'] is True
+        content = resp.content.decode('utf-8')
+        assert 'P. Costo' in content
+
 
 # =============================================================================
 # Detalle
@@ -89,6 +109,26 @@ class TestProductDetailView:
         url = reverse('products:product_detail', kwargs={'pk': 99999})
         resp = client.get(url)
         assert resp.status_code == 404
+
+    def test_commercial_intelligence_hidden_for_viewer(self, viewer_user, product):
+        """Usuario viewer no debe ver sección Inteligencia Comercial."""
+        client = _login_client(viewer_user)
+        url = reverse('products:product_detail', kwargs={'pk': product.pk})
+        resp = client.get(url)
+        assert resp.status_code == 200
+        assert resp.context['can_see_cost'] is False
+        content = resp.content.decode('utf-8')
+        assert 'Inteligencia Comercial' not in content
+
+    def test_commercial_intelligence_visible_for_admin(self, admin_user, product):
+        """Usuario admin sí debe ver sección Inteligencia Comercial."""
+        client = _login_client(admin_user)
+        url = reverse('products:product_detail', kwargs={'pk': product.pk})
+        resp = client.get(url)
+        assert resp.status_code == 200
+        assert resp.context['can_see_cost'] is True
+        content = resp.content.decode('utf-8')
+        assert 'Inteligencia Comercial' in content
 
 
 # =============================================================================

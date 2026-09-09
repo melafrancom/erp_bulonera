@@ -313,6 +313,7 @@
         </a>
       </section>
 
+      {% if can_see_cost %}
       <!-- Panel: Análisis de Costo & Margen -->
       <section class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-200 dark:border-slate-700 p-8 transition-colors relative overflow-hidden group/pricing">
         <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 -mr-16 -mt-16 rounded-full blur-3xl group-hover/pricing:scale-150 transition-all"></div>
@@ -355,6 +356,7 @@
           </div>
         </div>
       </section>
+      {% endif %}
 
       <!-- Proveedor Compacto -->
       <section class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-gray-200 dark:border-slate-700 p-8 transition-colors">

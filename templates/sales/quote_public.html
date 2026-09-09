@@ -121,9 +121,6 @@
                             <td class="py-3.5 px-3">
                                 <p class="font-semibold text-slate-900 dark:text-slate-100 text-sm">{{ item.product.name }}</p>
                                 <p class="text-xs text-slate-400 dark:text-slate-500 font-mono mt-0.5">Código: {{ item.product.sku|default:item.product.code|default:"-" }}</p>
-                                {% if item.discount_reason %}
-                                <p class="text-xs text-[#D42B1E] font-medium mt-0.5">Bonificación: {{ item.discount_reason }}</p>
-                                {% endif %}
                             </td>
                             <td class="py-3.5 px-3 text-center text-slate-800 dark:text-slate-200 font-bold text-sm tabular-nums whitespace-nowrap">
                                 {{ item.quantity_display }}
