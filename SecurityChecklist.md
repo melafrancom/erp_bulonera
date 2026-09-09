@@ -269,6 +269,11 @@ docker compose -f /var/www/erp/src/docker-compose.production.yml restart celery_
 
 MariaDB corre directamente en el host (no en Docker). El ERP se conecta vía `host-gateway`.
 
+### Configuración de Red y Blindaje
+* **Bind Address:** `127.0.0.1,172.17.0.1` configurado en `/etc/mysql/mariadb.conf.d/50-server.cnf`
+* **Defensa en Profundidad:** El puerto 3306 **no escucha en `0.0.0.0`**. Solo admite tráfico desde `localhost` (`127.0.0.1`) y la red bridge interna de Docker (`172.17.0.1`).
+* **Verificación de escucha:** `sudo ss -tulpn | grep 3306` (debe mostrar únicamente `127.0.0.1:3306` y `172.17.0.1:3306`).
+
 ### Bases de datos
 
 | Base de Datos | Usuario | Aplicación |
@@ -519,7 +524,7 @@ sudo cat /home/ubuntu/.litespeed_password
 |---|---|---|
 | `PasswordAuthentication` | `no` | `/etc/ssh/sshd_config.d/01-hardening.conf` |
 | `PubkeyAuthentication` | `yes` | `/etc/ssh/sshd_config.d/01-hardening.conf` |
-| `PermitRootLogin` | `prohibit-password` | `/etc/ssh/sshd_config.d/01-hardening.conf` |
+| `PermitRootLogin` | `no` | `/etc/ssh/sshd_config.d/01-hardening.conf` |
 | `MaxAuthTries` | `4` | `/etc/ssh/sshd_config.d/01-hardening.conf` |
 | `X11Forwarding` | `no` | `/etc/ssh/sshd_config.d/01-hardening.conf` |
 | `AllowTcpForwarding` | `yes` | `/etc/ssh/sshd_config.d/01-hardening.conf` |
@@ -653,14 +658,18 @@ sudo ufw status
 # 7. OLS Admin cerrado por defecto
 sudo ufw status | grep 7080 || echo "✅ Puerto 7080 correctamente bloqueado"
 
-# 8. SSH no acepta contraseñas
-sudo sshd -T | grep passwordauthentication
-# Esperado: passwordauthentication no
+# 8. SSH no acepta contraseñas ni login directo de root
+sudo sshd -T | grep -E "passwordauthentication|permitrootlogin"
+# Esperado: passwordauthentication no, permitrootlogin no
 
-# 9. Fail2ban activo con jails correctas
+# 9. MariaDB blindado (solo localhost y red Docker, nunca 0.0.0.0)
+sudo ss -tulpn | grep 3306
+# Esperado: 127.0.0.1:3306 y 172.17.0.1:3306
+
+# 10. Fail2ban activo con jails correctas
 sudo fail2ban-client status
 
-# 10. IPs baneadas recientemente
+# 11. IPs baneadas recientemente
 sudo tail -n 20 /var/log/fail2ban.log | grep Ban
 ```
 
@@ -687,4 +696,4 @@ sudo stat -c "%a" /root/.backup_vault_key
 ---
 
 *Este documento debe ser auditado periódicamente y es mantenido por el **Auditor de Producción e Infraestructura**.*
-*Última actualización: Septiembre 2026 (Hardening Perimetral SSH + Fail2ban + UFW + OLS + Backups AES-256)*
+*Última actualización: Septiembre 2026 (Hardening Perimetral SSH Ed25519/Root-disabled + Fail2ban + UFW + OLS + Backups AES-256 + MariaDB Localhost/Docker-only)*
