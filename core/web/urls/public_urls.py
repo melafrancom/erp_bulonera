@@ -6,6 +6,7 @@ URLs públicas accesibles para usuarios autenticados
 from django.urls import path
 from core.web.views import public_views
 from core.web.views import search_views
+from core.web.views import notification_views
 
 urlpatterns = [
     # Home (adaptativo: anónimo o logueado)
@@ -14,8 +15,15 @@ urlpatterns = [
     # Dashboard
     path('dashboard/', public_views.dashboard_view, name='dashboard'),
     
-    # Settings (futuro)
+    # Settings (Ajustes de usuario)
     path('settings/', public_views.settings_view, name='settings'),
+
+    # Notificaciones internas
+    path('notifications/', notification_views.notifications_list_view, name='notifications_list'),
+    path('notifications/unread-count/', notification_views.get_unread_count, name='notifications_unread_count'),
+    path('notifications/recent/', notification_views.get_recent_notifications, name='notifications_recent'),
+    path('notifications/<int:pk>/mark-read/', notification_views.mark_as_read, name='notification_mark_read'),
+    path('notifications/mark-all-read/', notification_views.mark_all_as_read, name='notifications_mark_all_read'),
 
     # offline
     path('offline/', public_views.offline_view, name='offline'),

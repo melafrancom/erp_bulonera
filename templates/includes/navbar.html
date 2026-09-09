@@ -59,12 +59,111 @@
       {% include 'includes/_dark_mode_toggle.html' %}
 
       <!-- Actions (Notifications + User Menu) -->
-      <div class="flex items-center space-x-4">
-        <!-- Notifications -->
-        <button class="relative p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition">
-          <i data-lucide="bell" class="w-5 h-5"></i>
-          <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-        </button>
+      <div class="flex items-center space-x-3 sm:space-x-4">
+        <!-- Notifications Dropdown (Alpine.js) -->
+        <div class="relative" 
+             x-data="notificationBell()" 
+             x-init="init()" 
+             @click.outside="open = false">
+          
+          <button @click="toggle()" 
+                  type="button"
+                  class="relative p-2 text-gray-600 dark:text-slate-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700/60 rounded-xl transition-all duration-200"
+                  aria-label="Ver notificaciones">
+            <i data-lucide="bell" class="w-5 h-5"></i>
+            
+            <!-- Badge Dinámico -->
+            <span x-show="unreadCount > 0" 
+                  x-cloak 
+                  class="absolute -top-0.5 -right-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-800 animate-pulse"
+                  x-text="unreadCount > 99 ? '99+' : unreadCount">
+            </span>
+          </button>
+
+          <!-- Dropdown Menu -->
+          <div x-show="open" 
+               x-cloak
+               x-transition:enter="transition ease-out duration-200"
+               x-transition:enter-start="opacity-0 translate-y-2 scale-95"
+               x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+               x-transition:leave="transition ease-in duration-150"
+               x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+               x-transition:leave-end="opacity-0 translate-y-2 scale-95"
+               class="absolute right-0 mt-3 w-80 sm:w-96 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-700 z-50 overflow-hidden">
+            
+            <!-- Dropdown Header -->
+            <div class="px-4 py-3 bg-gray-50/70 dark:bg-slate-800/80 border-b border-gray-100 dark:border-slate-700/80 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-bold text-gray-900 dark:text-slate-100">Notificaciones</span>
+                <span x-show="unreadCount > 0" x-cloak class="px-2 py-0.5 text-[10px] font-bold bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 rounded-full" x-text="unreadCount + ' nuevas'"></span>
+              </div>
+              <button x-show="unreadCount > 0" 
+                      @click="markAllAsRead()" 
+                      type="button" 
+                      class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-semibold transition">
+                Marcar leídas
+              </button>
+            </div>
+
+            <!-- Notifications List -->
+            <div class="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-slate-700/50">
+              <template x-if="loading && items.length === 0">
+                <div class="p-8 text-center text-gray-400 dark:text-slate-500 text-xs">
+                  <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                  Cargando notificaciones...
+                </div>
+              </template>
+
+              <template x-if="!loading && items.length === 0">
+                <div class="p-8 text-center">
+                  <div class="w-10 h-10 bg-gray-100 dark:bg-slate-700/50 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i data-lucide="bell-off" class="w-5 h-5"></i>
+                  </div>
+                  <p class="text-xs font-semibold text-gray-700 dark:text-slate-300">No hay notificaciones</p>
+                  <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">Estás al día con tus actividades.</p>
+                </div>
+              </template>
+
+              <template x-for="item in items" :key="item.id">
+                <div @click="handleClick(item)" 
+                     class="p-3.5 hover:bg-gray-50 dark:hover:bg-slate-700/40 transition cursor-pointer flex items-start gap-3 relative"
+                     :class="{'bg-blue-50/30 dark:bg-blue-950/20': !item.is_read}">
+                  
+                  <!-- Type Icon indicator -->
+                  <div class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs mt-0.5"
+                       :class="{
+                          'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400': item.level === 'error' || item.type === 'afip_error',
+                          'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400': item.level === 'success' || item.type === 'quote_converted',
+                          'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400': item.type === 'payment_received',
+                          'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300': item.level === 'info' && item.type !== 'payment_received'
+                       }">
+                    <span x-text="item.level === 'error' ? '⚠️' : (item.type === 'quote_converted' ? '📋' : (item.type === 'payment_received' ? '💰' : '🔔'))"></span>
+                  </div>
+
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-1">
+                      <p class="text-xs font-bold text-gray-900 dark:text-slate-100 truncate" x-text="item.title"></p>
+                      <span class="text-[10px] text-gray-400 dark:text-slate-500 whitespace-nowrap" x-text="item.time_ago"></span>
+                    </div>
+                    <p class="text-[11px] text-gray-600 dark:text-slate-300 line-clamp-2 mt-0.5" x-text="item.message"></p>
+                  </div>
+
+                  <!-- Unread dot -->
+                  <div x-show="!item.is_read" class="w-2 h-2 rounded-full bg-blue-600 mt-1.5 flex-shrink-0"></div>
+                </div>
+              </template>
+            </div>
+
+            <!-- Dropdown Footer -->
+            <div class="p-2.5 bg-gray-50 dark:bg-slate-800/80 border-t border-gray-100 dark:border-slate-700/80 text-center">
+              <a href="{% url 'core_web:notifications_list' %}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 transition">
+                <span>Ver todas las notificaciones</span>
+                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+              </a>
+            </div>
+
+          </div>
+        </div>
 
         <!-- User Dropdown -->
         <div class="relative group">
@@ -151,9 +250,121 @@
   </div>
 </header>
 
-<!-- Inicializar iconos de Lucide en navbar -->
+<!-- Inicializar iconos de Lucide y lógica de notificaciones en navbar -->
 <script>
+  function getCsrfToken() {
+    const cookieValue = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('csrftoken='))
+      ?.split('=')[1];
+    return cookieValue || document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+  }
+
+  function notificationBell() {
+    return {
+      open: false,
+      unreadCount: 0,
+      items: [],
+      loading: false,
+      pollTimer: null,
+
+      init() {
+        this.fetchCount();
+        this.pollTimer = setInterval(() => {
+          if (!document.hidden) {
+            this.fetchCount();
+          }
+        }, 45000);
+      },
+
+      toggle() {
+        this.open = !this.open;
+        if (this.open) {
+          this.fetchRecent();
+        }
+      },
+
+      async fetchCount() {
+        try {
+          const res = await fetch("{% url 'core_web:notifications_unread_count' %}", {
+            headers: { 'Accept': 'application/json' }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            this.unreadCount = data.unread_count || 0;
+          }
+        } catch (err) {
+          console.error('Error fetching notification count:', err);
+        }
+      },
+
+      async fetchRecent() {
+        this.loading = true;
+        try {
+          const res = await fetch("{% url 'core_web:notifications_recent' %}", {
+            headers: { 'Accept': 'application/json' }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            this.items = data.notifications || [];
+            this.unreadCount = data.unread_count || 0;
+            this.$nextTick(() => {
+              if (typeof lucide !== "undefined") {
+                lucide.createIcons();
+              }
+            });
+          }
+        } catch (err) {
+          console.error('Error fetching recent notifications:', err);
+        } finally {
+          this.loading = false;
+        }
+      },
+
+      async handleClick(item) {
+        if (!item.is_read) {
+          try {
+            await fetch(`/notifications/${item.id}/mark-read/`, {
+              method: 'POST',
+              headers: {
+                'X-CSRFToken': getCsrfToken(),
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+              }
+            });
+            item.is_read = true;
+            if (this.unreadCount > 0) this.unreadCount--;
+          } catch (err) {
+            console.error('Error marking notification read:', err);
+          }
+        }
+        if (item.link) {
+          window.location.href = item.link;
+        }
+      },
+
+      async markAllAsRead() {
+        try {
+          const res = await fetch("{% url 'core_web:notifications_mark_all_read' %}", {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': getCsrfToken(),
+              'X-Requested-With': 'XMLHttpRequest',
+              'Accept': 'application/json',
+            }
+          });
+          if (res.ok) {
+            this.items.forEach(it => it.is_read = true);
+            this.unreadCount = 0;
+          }
+        } catch (err) {
+          console.error('Error marking all read:', err);
+        }
+      }
+    };
+  }
+
   if (typeof lucide !== "undefined") {
     lucide.createIcons();
   }
-</script>
+</script>

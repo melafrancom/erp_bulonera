@@ -3,9 +3,12 @@
 from django.db import transaction
 from django.utils import timezone
 import json
+import logging
 
 # from locall apps
 from .models import Sale, SaleItem, Quote, QuoteConversion
+
+logger = logging.getLogger(__name__)
 
 def convert_quote_to_sale(quote, user, modifications=None):
     """
@@ -118,6 +121,13 @@ def convert_quote_to_sale(quote, user, modifications=None):
         quote.status = 'converted'
         quote.save(update_fields=['status'])
         
+        # 5. Notificar conversión de presupuesto
+        try:
+            from core.services.notification_service import NotificationService
+            NotificationService.notify_quote_converted(quote, sale, user)
+        except Exception as e:
+            logger.error(f"[convert_quote_to_sale] Error al emitir notificación: {e}", exc_info=True)
+
         return sale
 
 

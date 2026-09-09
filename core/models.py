@@ -77,6 +77,14 @@ class User(BaseModel, AbstractUser):
     def is_viewer(self):
         return self.role == 'viewer' or self.is_operator
 
+    @property
+    def preferences(self):
+        """Retorna o inicializa las preferencias del usuario."""
+        try:
+            return self.user_preferences
+        except UserPreference.DoesNotExist:
+            return UserPreference.objects.create(user=self)
+
     def sync_permissions_from_role(self):
         """Establece los flags can_manage_* automáticamente según el rol."""
         if self.role in ('admin', 'manager'):
@@ -265,3 +273,155 @@ class EmailLog(BaseModel):
     
     def __str__(self):
         return f"{self.recipient}: {self.subject}"
+
+
+# ================================
+# PREFERENCIAS Y NOTIFICACIONES
+# ================================
+
+class UserPreference(BaseModel):
+    """Preferencias operativas y visuales individuales de cada usuario."""
+    THEME_CHOICES = (
+        ('system', 'Automático (Sistema)'),
+        ('light', 'Claro'),
+        ('dark', 'Oscuro'),
+    )
+    FONT_SIZE_CHOICES = (
+        ('sm', 'Pequeño'),
+        ('md', 'Mediano'),
+        ('lg', 'Grande'),
+    )
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='user_preferences',
+        verbose_name="Usuario"
+    )
+    notify_afip_errors = models.BooleanField(
+        default=True,
+        verbose_name="Alertas de Rechazo AFIP/ARCA"
+    )
+    notify_quote_converted = models.BooleanField(
+        default=True,
+        verbose_name="Presupuestos Convertidos a Venta"
+    )
+    notify_cc_payments = models.BooleanField(
+        default=True,
+        verbose_name="Cobros en Cuenta Corriente"
+    )
+    email_notifications = models.BooleanField(
+        default=False,
+        verbose_name="Notificaciones por Email"
+    )
+    theme = models.CharField(
+        max_length=20,
+        choices=THEME_CHOICES,
+        default='system',
+        verbose_name="Tema de Interfaz"
+    )
+    font_size = models.CharField(
+        max_length=20,
+        choices=FONT_SIZE_CHOICES,
+        default='md',
+        verbose_name="Tamaño de Fuente"
+    )
+    show_email = models.BooleanField(
+        default=True,
+        verbose_name="Mostrar Email en Perfil"
+    )
+
+    class Meta:
+        verbose_name = "Preferencia de Usuario"
+        verbose_name_plural = "Preferencias de Usuarios"
+        db_table = 'core_user_preferences'
+
+    def __str__(self):
+        return f"Preferencias de {self.user.username}"
+
+
+class Notification(BaseModel):
+    """
+    Notificación interna generada por eventos de negocio del ERP.
+    """
+    TYPE_CHOICES = (
+        ('afip_error', 'Rechazo AFIP/ARCA'),
+        ('quote_converted', 'Presupuesto Convertido'),
+        ('payment_received', 'Cobro Cuenta Corriente'),
+        ('stock_alert', 'Alerta de Stock'),
+        ('system', 'Sistema'),
+    )
+    LEVEL_CHOICES = (
+        ('info', 'Información'),
+        ('success', 'Éxito'),
+        ('warning', 'Advertencia'),
+        ('error', 'Error / Urgente'),
+    )
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='notifications',
+        verbose_name="Usuario"
+    )
+    notification_type = models.CharField(
+        max_length=30,
+        choices=TYPE_CHOICES,
+        default='system',
+        db_index=True,
+        verbose_name="Tipo de Notificación"
+    )
+    level = models.CharField(
+        max_length=20,
+        choices=LEVEL_CHOICES,
+        default='info',
+        verbose_name="Nivel de Prioridad"
+    )
+    title = models.CharField(
+        max_length=200,
+        verbose_name="Título"
+    )
+    message = models.TextField(
+        verbose_name="Mensaje"
+    )
+    link = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        verbose_name="Enlace de Acción"
+    )
+    is_read = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name="Leída"
+    )
+    read_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de Lectura"
+    )
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="Metadatos Adicionales"
+    )
+
+    class Meta:
+        verbose_name = "Notificación"
+        verbose_name_plural = "Notificaciones"
+        db_table = 'core_notifications'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_read', '-created_at']),
+            models.Index(fields=['notification_type', '-created_at']),
+        ]
+
+    def __str__(self):
+        status = "Leída" if self.is_read else "No leída"
+        return f"[{self.get_level_display()}] {self.title} -> {self.user.username} ({status})"
+
+    def mark_as_read(self):
+        """Marca la notificación como leída con timestamp."""
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = timezone.now()
+            self.save(update_fields=['is_read', 'read_at', 'updated_at'])

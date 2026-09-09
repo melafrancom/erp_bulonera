@@ -1,7 +1,7 @@
 from django import forms
 
 # from Local apps
-from .models import RegistrationRequest, User  # Agregado User
+from .models import RegistrationRequest, User, UserPreference
 
 
 class LoginForm(forms.Form):
@@ -111,3 +111,41 @@ class UserEditForm(forms.ModelForm):
             'last_name': 'Apellido',
             'email': 'Email',
         }
+
+
+class UserPreferenceForm(forms.ModelForm):
+    """Formulario para editar las preferencias de usuario y alertas del sistema."""
+    class Meta:
+        model = UserPreference
+        fields = [
+            'notify_afip_errors',
+            'notify_quote_converted',
+            'notify_cc_payments',
+            'email_notifications',
+            'theme',
+            'font_size',
+            'show_email',
+        ]
+        widgets = {
+            'theme': forms.Select(attrs={
+                'class': 'w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 py-2.5 px-4 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm transition',
+            }),
+            'font_size': forms.Select(attrs={
+                'class': 'w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 py-2.5 px-4 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm transition',
+            }),
+            'notify_afip_errors': forms.CheckboxInput(attrs={
+                'class': 'sr-only peer',
+            }),
+            'notify_quote_converted': forms.CheckboxInput(attrs={
+                'class': 'sr-only peer',
+            }),
+            'notify_cc_payments': forms.CheckboxInput(attrs={
+                'class': 'sr-only peer',
+            }),
+            'email_notifications': forms.CheckboxInput(attrs={
+                'class': 'sr-only peer',
+            }),
+            'show_email': forms.CheckboxInput(attrs={
+                'class': 'sr-only peer',
+            }),
+        }

@@ -99,3 +99,11 @@ def _sync_rechazo(comprobante):
         logger.warning(
             f'[SIGNAL] Sale {comprobante.sale_id} → fiscal_status=rejected'
         )
+
+    # Disparar notificación interna
+    try:
+        from core.services.notification_service import NotificationService
+        NotificationService.notify_afip_error(comprobante)
+    except Exception as e:
+        logger.error(f"[SIGNAL] Error al emitir notificación AFIP: {e}", exc_info=True)
+

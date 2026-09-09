@@ -1,233 +1,357 @@
 {% extends 'base/base.html' %}
 {% load static %}
 
-{% block title %}Configuración - ERP Bulonera Alvear{% endblock %}
+{% block title %}Configuración y Preferencias - ERP Bulonera Alvear{% endblock %}
 
 {% block breadcrumb_items %}
   <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-  <span class="text-gray-900 font-medium">Configuración</span>
+  <span class="text-gray-900 dark:text-slate-100 font-medium">Configuración</span>
 {% endblock %}
 
 {% block mobile_title %}Configuración{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto">
-    
-    <!-- Info Banner -->
-    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg shadow-sm">
-        <div class="flex items-start">
-            <div class="flex-shrink-0">
-                <i data-lucide="alert-triangle" class="h-5 w-5 text-yellow-500"></i>
-            </div>
-            <div class="ml-3">
-                <p class="text-sm text-yellow-700">
-                    <span class="font-bold">Próximamente:</span> Estas configuraciones aún están en desarrollo y no tienen efecto en el sistema.
-                </p>
-            </div>
-        </div>
+<div class="max-w-5xl mx-auto space-y-6" x-data="{ currentTab: 'notifications' }">
+
+  <!-- Encabezado de Página -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center shadow-inner">
+        <i data-lucide="sliders" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-bold text-gray-900 dark:text-slate-100">Ajustes y Preferencias de Usuario</h1>
+        <p class="text-sm text-gray-500 dark:text-slate-400">
+          Personaliza tus alertas de negocio, interfaz visual y datos personales de acceso.
+        </p>
+      </div>
     </div>
+  </div>
+
+  <form method="POST" action="{% url 'core_web:settings' %}" class="space-y-6">
+    {% csrf_token %}
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        <!-- Sidebar de Navegación (Visual) -->
-        <div class="md:col-span-1">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="p-4 border-b border-gray-100">
-                    <h3 class="text-lg font-bold text-gray-900">Ajustes</h3>
-                </div>
-                <nav class="p-2 space-y-1">
-                    <button class="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg">
-                        <i data-lucide="bell" class="w-4 h-4"></i>
-                        Notificaciones
-                    </button>
-                    <button class="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition">
-                        <i data-lucide="monitor" class="w-4 h-4"></i>
-                        Apariencia
-                    </button>
-                    <button class="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition">
-                        <i data-lucide="lock" class="w-4 h-4"></i>
-                        Privacidad
-                    </button>
-                </nav>
-            </div>
+      
+      <!-- Sidebar de Navegación por Tabs (Alpine.js) -->
+      <div class="md:col-span-1 space-y-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden p-2 space-y-1">
+          <button type="button" 
+                  @click="currentTab = 'notifications'"
+                  class="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-150"
+                  :class="currentTab === 'notifications' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700/50 hover:text-gray-900 dark:hover:text-slate-200'">
+            <i data-lucide="bell" class="w-5 h-5"></i>
+            <span>Notificaciones</span>
+          </button>
+
+          <button type="button" 
+                  @click="currentTab = 'appearance'"
+                  class="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-150"
+                  :class="currentTab === 'appearance' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700/50 hover:text-gray-900 dark:hover:text-slate-200'">
+            <i data-lucide="monitor" class="w-5 h-5"></i>
+            <span>Apariencia</span>
+          </button>
+
+          <button type="button" 
+                  @click="currentTab = 'profile'"
+                  class="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-150"
+                  :class="currentTab === 'profile' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700/50 hover:text-gray-900 dark:hover:text-slate-200'">
+            <i data-lucide="user-check" class="w-5 h-5"></i>
+            <span>Perfil y Privacidad</span>
+          </button>
         </div>
 
-        <!-- Panel de Configuración -->
-        <div class="md:col-span-2 space-y-6">
-            
-            <!-- Card Notificaciones -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="px-4 md:px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-                    <i data-lucide="bell" class="w-5 h-5 text-gray-400"></i>
-                    <h3 class="font-semibold text-gray-900">Preferencias de Notificación</h3>
-                </div>
-                <div class="p-4 md:p-6 space-y-6">
-                    
-                    <!-- Email Notifications -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex-1 pr-4">
-                            <p class="text-sm font-medium text-gray-900">Notificaciones por Email</p>
-                            <p class="text-xs md:text-sm text-gray-500 mt-1">Recibir resúmenes semanales y alertas de seguridad.</p>
-                        </div>
-                        <!-- Toggle Mockup -->
-                        <button type="button" 
-                                class="bg-blue-600 relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2" 
-                                role="switch" 
-                                aria-checked="true"
-                                disabled
-                                title="Próximamente">
-                            <span aria-hidden="true" class="translate-x-5 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
-                        </button>
-                    </div>
+        <!-- Resumen de Cuenta -->
+        <div class="bg-gray-50 dark:bg-slate-800/60 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 space-y-2">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+              {{ user.first_name|slice:":1"|upper|default:user.username|slice:":1"|upper }}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-bold text-gray-900 dark:text-slate-100 truncate">{{ user.get_full_name|default:user.username }}</p>
+              <p class="text-xs text-gray-500 dark:text-slate-400 capitalize">{{ user.get_role_display }}</p>
+            </div>
+          </div>
+          <div class="pt-2 border-t border-gray-200 dark:border-slate-700 text-[11px] text-gray-500 dark:text-slate-400 space-y-1">
+            <p>Usuario: <span class="font-mono text-gray-700 dark:text-slate-300 font-semibold">{{ user.username }}</span></p>
+            <p>Último acceso: {{ user.last_access|date:"d/m/Y H:i"|default:"Hoy" }}</p>
+          </div>
+        </div>
+      </div>
 
-                    <!-- Push Notifications -->
-                    <div class="border-t border-gray-100 pt-4 flex items-center justify-between">
-                        <div class="flex-1 pr-4">
-                            <p class="text-sm font-medium text-gray-900">Notificaciones Push</p>
-                            <p class="text-xs md:text-sm text-gray-500 mt-1">Alertas en tiempo real en tu navegador o móvil.</p>
-                        </div>
-                        <button type="button" 
-                                class="bg-gray-200 relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none" 
-                                role="switch" 
-                                aria-checked="false"
-                                disabled
-                                title="Próximamente">
-                            <span aria-hidden="true" class="translate-x-0 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
-                        </button>
-                    </div>
+      <!-- Panel de Contenido de Configuración -->
+      <div class="md:col-span-2 space-y-6">
 
-                    <!-- Alertas de Sistema -->
-                    <div class="border-t border-gray-100 pt-4 flex items-center justify-between">
-                        <div class="flex-1 pr-4">
-                            <p class="text-sm font-medium text-gray-900">Alertas de Sistema</p>
-                            <p class="text-xs md:text-sm text-gray-500 mt-1">Recibir notificaciones de actualizaciones y mantenimiento.</p>
-                        </div>
-                        <button type="button" 
-                                class="bg-blue-600 relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2" 
-                                role="switch" 
-                                aria-checked="true"
-                                disabled
-                                title="Próximamente">
-                            <span aria-hidden="true" class="translate-x-5 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
-                        </button>
-                    </div>
-                </div>
+        <!-- TAB 1: NOTIFICACIONES -->
+        <div x-show="currentTab === 'notifications'" x-cloak class="space-y-6">
+          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex items-center gap-3 bg-gray-50/50 dark:bg-slate-800/50">
+              <i data-lucide="bell" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+              <div>
+                <h2 class="font-bold text-gray-900 dark:text-slate-100 text-base">Alertas y Notificaciones de Negocio</h2>
+                <p class="text-xs text-gray-500 dark:text-slate-400">Elige qué eventos operativos generarán avisos en tu campana de notificaciones.</p>
+              </div>
             </div>
 
-            <!-- Card Apariencia -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="px-4 md:px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-                    <i data-lucide="monitor" class="w-5 h-5 text-gray-400"></i>
-                    <h3 class="font-semibold text-gray-900">Apariencia</h3>
+            <div class="p-6 space-y-6 divide-y divide-gray-100 dark:divide-slate-700/60">
+              
+              <!-- 1. Alertas AFIP / ARCA -->
+              <div class="flex items-center justify-between pt-2 first:pt-0">
+                <div class="flex-1 pr-6">
+                  <div class="flex items-center gap-2">
+                    <span class="text-base">⚠️</span>
+                    <label for="{{ pref_form.notify_afip_errors.id_for_label }}" class="text-sm font-bold text-gray-900 dark:text-slate-100 cursor-pointer">
+                      Rechazos y Errores de AFIP / ARCA
+                    </label>
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                    Recibir aviso inmediato si un comprobante es rechazado o falla la obtención de CAE.
+                  </p>
                 </div>
-                <div class="p-4 md:p-6 space-y-4">
-                    
-                    <!-- Tema -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Tema de la interfaz</label>
-                        <select disabled 
-                                class="mt-1 block w-full rounded-lg border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm bg-gray-50 cursor-not-allowed"
-                                title="Próximamente">
-                            <option selected>Automático (Sistema)</option>
-                            <option>Claro</option>
-                            <option>Oscuro</option>
-                        </select>
-                        <p class="mt-1 text-xs text-gray-500">El tema se ajustará según las preferencias de tu sistema.</p>
-                    </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" name="notify_afip_errors" id="{{ pref_form.notify_afip_errors.id_for_label }}"
+                         {% if pref_form.notify_afip_errors.value %}checked{% endif %}
+                         class="sr-only peer">
+                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
 
-                    <!-- Idioma -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Idioma</label>
-                        <select disabled 
-                                class="mt-1 block w-full rounded-lg border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm bg-gray-50 cursor-not-allowed"
-                                title="Próximamente">
-                            <option selected>Español (Argentina)</option>
-                            <option>English (US)</option>
-                        </select>
-                        <p class="mt-1 text-xs text-gray-500">El idioma de la interfaz y las notificaciones.</p>
-                    </div>
-
-                    <!-- Tamaño de Fuente -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Tamaño de fuente</label>
-                        <select disabled 
-                                class="mt-1 block w-full rounded-lg border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm bg-gray-50 cursor-not-allowed"
-                                title="Próximamente">
-                            <option>Pequeño</option>
-                            <option selected>Mediano</option>
-                            <option>Grande</option>
-                        </select>
-                    </div>
+              <!-- 2. Presupuestos Convertidos -->
+              <div class="flex items-center justify-between pt-6">
+                <div class="flex-1 pr-6">
+                  <div class="flex items-center gap-2">
+                    <span class="text-base">📋</span>
+                    <label for="{{ pref_form.notify_quote_converted.id_for_label }}" class="text-sm font-bold text-gray-900 dark:text-slate-100 cursor-pointer">
+                      Presupuestos Convertidos a Venta
+                    </label>
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                    Avisar cuando un presupuesto comercial se transforme formalmente en una orden de venta.
+                  </p>
                 </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" name="notify_quote_converted" id="{{ pref_form.notify_quote_converted.id_for_label }}"
+                         {% if pref_form.notify_quote_converted.value %}checked{% endif %}
+                         class="sr-only peer">
+                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              <!-- 3. Cobros de Cuenta Corriente -->
+              <div class="flex items-center justify-between pt-6">
+                <div class="flex-1 pr-6">
+                  <div class="flex items-center gap-2">
+                    <span class="text-base">💰</span>
+                    <label for="{{ pref_form.notify_cc_payments.id_for_label }}" class="text-sm font-bold text-gray-900 dark:text-slate-100 cursor-pointer">
+                      Cobros en Cuenta Corriente
+                    </label>
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                    Notificar cuando se registre e impute un cobro de cliente con saldo en cuenta corriente.
+                  </p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" name="notify_cc_payments" id="{{ pref_form.notify_cc_payments.id_for_label }}"
+                         {% if pref_form.notify_cc_payments.value %}checked{% endif %}
+                         class="sr-only peer">
+                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              <!-- 4. Notificaciones por Email -->
+              <div class="flex items-center justify-between pt-6">
+                <div class="flex-1 pr-6">
+                  <div class="flex items-center gap-2">
+                    <span class="text-base">✉️</span>
+                    <label for="{{ pref_form.email_notifications.id_for_label }}" class="text-sm font-bold text-gray-900 dark:text-slate-100 cursor-pointer">
+                      Notificaciones por Email
+                    </label>
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                    Recibir copias de las alertas críticas directamente en tu correo electrónico.
+                  </p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" name="email_notifications" id="{{ pref_form.email_notifications.id_for_label }}"
+                         {% if pref_form.email_notifications.value %}checked{% endif %}
+                         class="sr-only peer">
+                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: APARIENCIA -->
+        <div x-show="currentTab === 'appearance'" x-cloak class="space-y-6">
+          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex items-center gap-3 bg-gray-50/50 dark:bg-slate-800/50">
+              <i data-lucide="monitor" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+              <div>
+                <h2 class="font-bold text-gray-900 dark:text-slate-100 text-base">Apariencia y Visualización</h2>
+                <p class="text-xs text-gray-500 dark:text-slate-400">Ajusta el tema gráfico y tamaño de texto para tu comodidad de trabajo.</p>
+              </div>
             </div>
 
-            <!-- Card Privacidad -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="px-4 md:px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-                    <i data-lucide="lock" class="w-5 h-5 text-gray-400"></i>
-                    <h3 class="font-semibold text-gray-900">Privacidad y Seguridad</h3>
-                </div>
-                <div class="p-4 md:p-6 space-y-6">
-                    
-                    <!-- Perfil Público -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex-1 pr-4">
-                            <p class="text-sm font-medium text-gray-900">Perfil Público</p>
-                            <p class="text-xs md:text-sm text-gray-500 mt-1">Permitir que otros usuarios vean tu perfil.</p>
-                        </div>
-                        <button type="button" 
-                                class="bg-gray-200 relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none" 
-                                role="switch" 
-                                aria-checked="false"
-                                disabled
-                                title="Próximamente">
-                            <span aria-hidden="true" class="translate-x-0 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
-                        </button>
-                    </div>
+            <div class="p-6 space-y-6">
+              
+              <!-- Tema -->
+              <div>
+                <label for="{{ pref_form.theme.id_for_label }}" class="block text-sm font-bold text-gray-900 dark:text-slate-100 mb-1">
+                  Tema de la Interfaz
+                </label>
+                <p class="text-xs text-gray-500 dark:text-slate-400 mb-2">Selecciona el modo visual predeterminado para tus sesiones.</p>
+                <select name="theme" id="{{ pref_form.theme.id_for_label }}" 
+                        onchange="handleThemeChange(this.value)"
+                        class="w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 py-2.5 px-4 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm transition">
+                  <option value="system" {% if pref_form.theme.value == 'system' %}selected{% endif %}>Automático (Según el sistema operativo)</option>
+                  <option value="light" {% if pref_form.theme.value == 'light' %}selected{% endif %}>Claro (Fondo blanco / luminoso)</option>
+                  <option value="dark" {% if pref_form.theme.value == 'dark' %}selected{% endif %}>Oscuro (Modo noche / alta legibilidad)</option>
+                </select>
+              </div>
 
-                    <!-- Mostrar Email -->
-                    <div class="border-t border-gray-100 pt-4 flex items-center justify-between">
-                        <div class="flex-1 pr-4">
-                            <p class="text-sm font-medium text-gray-900">Mostrar Email</p>
-                            <p class="text-xs md:text-sm text-gray-500 mt-1">Hacer visible tu correo electrónico en el perfil.</p>
-                        </div>
-                        <button type="button" 
-                                class="bg-gray-200 relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none" 
-                                role="switch" 
-                                aria-checked="false"
-                                disabled
-                                title="Próximamente">
-                            <span aria-hidden="true" class="translate-x-0 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
-                        </button>
-                    </div>
+              <!-- Tamaño de Fuente -->
+              <div class="pt-4 border-t border-gray-100 dark:border-slate-700">
+                <label for="{{ pref_form.font_size.id_for_label }}" class="block text-sm font-bold text-gray-900 dark:text-slate-100 mb-1">
+                  Escala de Texto
+                </label>
+                <p class="text-xs text-gray-500 dark:text-slate-400 mb-2">Ajuste de densidad tipográfica para la visualización de datos de tablas y fichas.</p>
+                <select name="font_size" id="{{ pref_form.font_size.id_for_label }}" 
+                        class="w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 py-2.5 px-4 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm transition">
+                  <option value="sm" {% if pref_form.font_size.value == 'sm' %}selected{% endif %}>Compacto (Mayor densidad de información)</option>
+                  <option value="md" {% if pref_form.font_size.value == 'md' or not pref_form.font_size.value %}selected{% endif %}>Estándar (Recomendado)</option>
+                  <option value="lg" {% if pref_form.font_size.value == 'lg' %}selected{% endif %}>Grande (Mayor legibilidad)</option>
+                </select>
+              </div>
 
-                    <!-- Link a Cambiar Contraseña -->
-                    <div class="border-t border-gray-100 pt-4">
-                        <a href="{% url 'core_web:password_change' %}" 
-                           class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition">
-                            <i data-lucide="key" class="w-4 h-4 mr-2"></i>
-                            Cambiar contraseña
-                        </a>
-                    </div>
-                </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: PERFIL Y PRIVACIDAD -->
+        <div x-show="currentTab === 'profile'" x-cloak class="space-y-6">
+          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex items-center gap-3 bg-gray-50/50 dark:bg-slate-800/50">
+              <i data-lucide="user-check" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+              <div>
+                <h2 class="font-bold text-gray-900 dark:text-slate-100 text-base">Datos Personales y Privacidad</h2>
+                <p class="text-xs text-gray-500 dark:text-slate-400">Información de identidad y visibilidad de tu cuenta.</p>
+              </div>
             </div>
 
-            <!-- Botón Guardar (Deshabilitado) -->
-            <div class="flex flex-col sm:flex-row justify-end gap-3">
-                <a href="{% url 'core_web:dashboard' %}" 
-                   class="w-full sm:w-auto text-center inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">
-                    Volver
+            <div class="p-6 space-y-6">
+              
+              <!-- Nombres -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="{{ user_form.first_name.id_for_label }}" class="block text-sm font-bold text-gray-900 dark:text-slate-100 mb-1">
+                    Nombre
+                  </label>
+                  <input type="text" name="first_name" id="{{ user_form.first_name.id_for_label }}"
+                         value="{{ user_form.first_name.value|default:'' }}"
+                         class="w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 py-2.5 px-4 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm transition"
+                         placeholder="Tu nombre">
+                </div>
+                <div>
+                  <label for="{{ user_form.last_name.id_for_label }}" class="block text-sm font-bold text-gray-900 dark:text-slate-100 mb-1">
+                    Apellido
+                  </label>
+                  <input type="text" name="last_name" id="{{ user_form.last_name.id_for_label }}"
+                         value="{{ user_form.last_name.value|default:'' }}"
+                         class="w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 py-2.5 px-4 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm transition"
+                         placeholder="Tu apellido">
+                </div>
+              </div>
+
+              <!-- Email -->
+              <div>
+                <label for="{{ user_form.email.id_for_label }}" class="block text-sm font-bold text-gray-900 dark:text-slate-100 mb-1">
+                  Correo Electrónico
+                </label>
+                <input type="email" name="email" id="{{ user_form.email.id_for_label }}"
+                       value="{{ user_form.email.value|default:'' }}"
+                       class="w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 py-2.5 px-4 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm transition"
+                       placeholder="tu@email.com">
+                <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">Utilizado para login, notificaciones y contacto administrativo.</p>
+              </div>
+
+              <!-- Mostrar Email -->
+              <div class="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-slate-700">
+                <div class="flex-1 pr-6">
+                  <label for="{{ pref_form.show_email.id_for_label }}" class="text-sm font-bold text-gray-900 dark:text-slate-100 cursor-pointer">
+                    Hacer visible mi email a otros operadores
+                  </label>
+                  <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                    Muestra tu correo en las fichas internas de contacto de usuarios.
+                  </p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" name="show_email" id="{{ pref_form.show_email.id_for_label }}"
+                         {% if pref_form.show_email.value %}checked{% endif %}
+                         class="sr-only peer">
+                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              <!-- Cambiar Contraseña -->
+              <div class="pt-4 border-t border-gray-100 dark:border-slate-700 flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-bold text-gray-900 dark:text-slate-100">Seguridad de la Cuenta</p>
+                  <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Puedes cambiar tu clave periódicamente para proteger tu acceso.</p>
+                </div>
+                <a href="{% url 'core_web:password_change' %}" 
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-200 text-xs font-bold rounded-xl transition">
+                  <i data-lucide="key" class="w-4 h-4 text-gray-500"></i>
+                  Cambiar Contraseña
                 </a>
-                <button type="button" 
-                        disabled 
-                        class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 opacity-50 cursor-not-allowed" 
-                        title="Próximamente">
-                    <i data-lucide="save" class="w-4 h-4 mr-2"></i>
-                    Guardar Cambios
-                </button>
-            </div>
+              </div>
 
+            </div>
+          </div>
         </div>
+
+        <!-- Barra de Acciones y Guardado -->
+        <div class="flex flex-col sm:flex-row justify-end items-center gap-3 pt-2">
+          <a href="{% url 'core_web:dashboard' %}" 
+             class="w-full sm:w-auto text-center inline-flex items-center justify-center px-5 py-2.5 border border-gray-300 dark:border-slate-700 shadow-sm text-sm font-semibold rounded-xl text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 transition">
+            Volver
+          </a>
+          <button type="submit" 
+                  class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 border border-transparent text-sm font-bold rounded-xl shadow-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition active:scale-[0.98]">
+            <i data-lucide="save" class="w-4 h-4"></i>
+            Guardar Cambios
+          </button>
+        </div>
+
+      </div>
     </div>
+  </form>
 </div>
+
+<script>
+  function handleThemeChange(val) {
+    if (val === 'dark') {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else if (val === 'light') {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    } else {
+      // system
+      localStorage.removeItem('theme');
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
+  });
+</script>
 {% endblock %}

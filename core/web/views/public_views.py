@@ -87,17 +87,39 @@ def dashboard_view(request):
 @login_required
 def settings_view(request):
     """
-    Configuraciones generales del usuario
-    - Preferencias de notificaciones
-    - Tema (claro/oscuro)
-    - Idioma
-    - Etc.
+    Configuraciones generales del usuario:
+    - Perfil personal (nombre, apellido, email)
+    - Preferencias operativas de alertas y notificaciones
+    - Tema visual (claro/oscuro) y tamaño de fuente
     """
-    # TODO: Implementar cuando sea necesario
+    from core.forms import UserEditForm, UserPreferenceForm
+    from django.contrib import messages
+    from core.models import UserPreference
+
+    pref, _ = UserPreference.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        user_form = UserEditForm(request.POST, instance=request.user)
+        pref_form = UserPreferenceForm(request.POST, instance=pref)
+
+        if user_form.is_valid() and pref_form.is_valid():
+            user_form.save()
+            pref_form.save()
+            messages.success(request, 'Configuración actualizada exitosamente.')
+            return redirect('core_web:settings')
+        else:
+            messages.error(request, 'Por favor corrige los errores indicados en el formulario.')
+    else:
+        user_form = UserEditForm(instance=request.user)
+        pref_form = UserPreferenceForm(instance=pref)
+
     context = {
         'user': request.user,
+        'user_form': user_form,
+        'pref_form': pref_form,
     }
     return render(request, 'core/public/settings.html', context)
+
 
 
 # Handlers de error centralizados en core.web.views.errors (handler403, handler404, handler500)
