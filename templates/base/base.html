@@ -87,9 +87,13 @@
     <link rel="stylesheet" href="{% static 'css/base.css' %}" />
     <link rel="stylesheet" href="{% static 'css/forms.css' %}" />
 
+    <!-- Native Cloak Style (prevents FOUC before Alpine initializes) -->
+    <style>
+      [x-cloak] { display: none !important; }
+    </style>
+
     <!-- Custom Inline Styles -->
     <style type="text/tailwindcss">
-      [x-cloak] { display: none !important; }
 
       :root {
         --sat: env(safe-area-inset-top);

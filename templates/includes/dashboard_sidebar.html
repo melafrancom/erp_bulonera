@@ -7,7 +7,7 @@
          'lg:w-0 lg:opacity-0 lg:overflow-hidden lg:p-0 lg:border-none': sidebarCollapsed,
          'lg:w-[260px] lg:opacity-100': !sidebarCollapsed
        }"
-       class="sidebar fixed inset-y-0 left-0 z-50 flex flex-col lg:static lg:translate-x-0 transition-all duration-300 ease-in-out w-[260px]">
+        class="sidebar fixed inset-y-0 left-0 -translate-x-full z-50 flex flex-col lg:static lg:translate-x-0 transition-all duration-300 ease-in-out w-[260px]">
   <!-- Logo y Nombre de Empresa / Botón de Cierre Mobile -->
   <div class="p-4 sm:p-6 border-b border-white/10 flex items-center justify-between">
     <a href="{% url 'core_web:dashboard' %}" @click="sidebarOpen = false" class="flex items-center space-x-3 min-w-0">
@@ -28,10 +28,10 @@
 
     <!-- Botón Cerrar (Solo Mobile) -->
     <button type="button"
-            @click="sidebarOpen = false"
+            @click.stop="sidebarOpen = false"
             class="lg:hidden p-2 text-white/80 hover:text-white hover:bg-white/10 active:bg-white/20 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white/30 ml-2 flex-shrink-0 cursor-pointer"
             aria-label="Cerrar menú lateral">
-      <i data-lucide="x" class="w-6 h-6"></i>
+      <i data-lucide="x" class="w-6 h-6 pointer-events-none"></i>
     </button>
   </div>
 

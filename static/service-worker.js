@@ -12,7 +12,7 @@
  */
 
 // ─── CONSTANTES ─────────────────────────────────────────────────
-const APP_VERSION   = 'v2.0.2';
+const APP_VERSION   = 'v2.0.3';
 const STATIC_CACHE  = `bulonera-static-${APP_VERSION}`;
 const DYNAMIC_CACHE = `bulonera-dynamic-${APP_VERSION}`;
 const API_CACHE     = `bulonera-api-${APP_VERSION}`;
