@@ -170,6 +170,7 @@
   </head>
   
   <body class="flex flex-col bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 font-sans transition-colors duration-200"
+        @keydown.escape.window="sidebarOpen = false"
         x-data="{ 
            sidebarOpen: false,
            sidebarCollapsed: localStorage.getItem('sidebar_collapsed') === 'true',
@@ -322,28 +323,23 @@
         observer.observe(document.body, { childList: true, subtree: true });
       }
 
-      // Cerrar sidebar al hacer clic en un link (mobile)
-      document.addEventListener('alpine:init', () => {
-        Alpine.data('sidebarState', () => ({
-          open: false,
-          toggle() {
-            this.open = !this.open;
-          },
-          close() {
-            this.open = false;
-          }
-        }));
-      });
-
-      // Auto-cerrar sidebar en mobile al navegar
-      const navLinks = document.querySelectorAll('.sidebar .nav-item');
-      navLinks.forEach(link => {
-        link.addEventListener('click', () => {
-          if (window.innerWidth < 1024) {
-            // Trigger Alpine close
-            document.querySelector('[x-data]').__x.$data.sidebarOpen = false;
-          }
-        });
+      // Auto-cerrar sidebar en mobile al navegar (delegación complementaria)
+      document.addEventListener('DOMContentLoaded', () => {
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar) {
+          sidebar.addEventListener('click', (e) => {
+            if (window.innerWidth < 1024 && e.target.closest('a')) {
+              const root = document.querySelector('[x-data]');
+              if (root && window.Alpine) {
+                try {
+                  Alpine.$data(root).sidebarOpen = false;
+                } catch (err) {
+                  // Fallback silencioso si Alpine aún no está listo
+                }
+              }
+            }
+          });
+        }
       });
     </script>
 

@@ -458,7 +458,7 @@ if (localStorage.getItem('theme') === 'dark' ||
 
 | App | Propósito |
 |---|---|
-| [`core`](core/README.md) | Modelos base (BaseModel, soft-delete, audit) |
+| [`core`](core/README.md) | Usuarios, autenticación, RBAC, notificaciones internas (`Notification`) y configuración de usuario (`UserPreference`) |
 | [`common`](common/README.md) | Middleware, excepciones, permisos globales y utilidades (`format_quantity`, `format_currency`) |
 | [`products`](products/README.md) | Catálogo de productos, listas de precio, costeo y control de acceso canónico (`can_manage_products`) |
 | [`sales`](sales/README.md) | Ventas y presupuestos (sync PWA offline, PDF Comprobante Clase 'X' y vistas públicas de presupuestos) |
@@ -487,6 +487,8 @@ if (localStorage.getItem('theme') === 'dark' ||
 ```
 GET /                 → Redirección a /workspace/ si autenticado; landing anónima si no
 GET /workspace/       → workspace/web/views/ (Mi Escritorio)
+GET /settings/        → core/web/views/ (Configuración y Preferencias de Usuario)
+GET /notifications/   → core/web/views/ (Bandeja de Notificaciones)
 GET /sales/           → sales/web/views/
 GET /products/        → products/web/views/
 GET /bills/           → bills/web/views/
