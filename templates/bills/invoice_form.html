@@ -558,9 +558,9 @@ function directInvoiceForm() {
       const desc = parseFloat(item.discount_value) || 0;
       const tax = parseFloat(item.tax_percentage) || 0;
 
-      const subtotal = Math.max(0, (qty * price) - desc);
-      const iva = subtotal * (tax / 100);
-      return subtotal + iva;
+      const subtotal = Math.round(Math.max(0, (qty * price) - desc) * 100) / 100;
+      const iva = Math.round((subtotal * (tax / 100)) * 100) / 100;
+      return Math.round((subtotal + iva) * 100) / 100;
     },
 
     get summary() {
@@ -574,19 +574,23 @@ function directInvoiceForm() {
         const desc = parseFloat(item.discount_value) || 0;
         const tax = parseFloat(item.tax_percentage) || 0;
 
-        const subtotal = Math.max(0, (qty * price) - desc);
-        const ivaMonto = subtotal * (tax / 100);
+        const subtotal = Math.round(Math.max(0, (qty * price) - desc) * 100) / 100;
+        const ivaMonto = Math.round((subtotal * (tax / 100)) * 100) / 100;
 
         neto += subtotal;
         descuento += desc;
         iva += ivaMonto;
       });
 
+      neto = Math.round(neto * 100) / 100;
+      descuento = Math.round(descuento * 100) / 100;
+      iva = Math.round(iva * 100) / 100;
+
       return {
         neto: neto,
         descuento: descuento,
         iva: iva,
-        total: neto + iva
+        total: Math.round((neto + iva) * 100) / 100
       };
     },
 

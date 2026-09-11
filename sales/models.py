@@ -4,7 +4,7 @@ import uuid
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from django.utils import timezone
 
 # from local apps
@@ -243,27 +243,29 @@ class QuoteItem(BaseModel):
     # === PROPERTIES ===
     @property
     def line_subtotal(self):
-        return self.unit_price * self.quantity
+        if self.unit_price is None or self.quantity is None:
+            return Decimal('0.00')
+        return (self.unit_price * self.quantity).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     
     @property
     def discount_amount(self):
         if self.discount_type == 'percentage':
-            return self.line_subtotal * (self.discount_value / Decimal('100'))
+            return (self.line_subtotal * (self.discount_value / Decimal('100'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         elif self.discount_type == 'fixed':
-            return self.discount_value
-        return Decimal('0')
+            return self.discount_value.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        return Decimal('0.00')
     
     @property
     def subtotal_with_discount(self):
-        return self.line_subtotal - self.discount_amount
+        return (self.line_subtotal - self.discount_amount).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     
     @property
     def tax_amount(self):
-        return self.subtotal_with_discount * (self.tax_percentage / Decimal('100'))
+        return (self.subtotal_with_discount * (self.tax_percentage / Decimal('100'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     
     @property
     def total(self):
-        return self.subtotal_with_discount + self.tax_amount
+        return (self.subtotal_with_discount + self.tax_amount).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     @property
     def display_name(self):
@@ -734,28 +736,28 @@ class SaleItem(BaseModel):
     @property
     def line_subtotal(self):
         if self.unit_price is None or self.quantity is None:
-            return Decimal('0')
-        return self.unit_price * self.quantity
+            return Decimal('0.00')
+        return (self.unit_price * self.quantity).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     
     @property
     def discount_amount(self):
         if self.discount_type == 'percentage':
-            return self.line_subtotal * (self.discount_value / Decimal('100'))
+            return (self.line_subtotal * (self.discount_value / Decimal('100'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         elif self.discount_type == 'fixed':
-            return self.discount_value
-        return Decimal('0')
+            return self.discount_value.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        return Decimal('0.00')
     
     @property
     def subtotal_with_discount(self):
-        return self.line_subtotal - self.discount_amount
+        return (self.line_subtotal - self.discount_amount).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     
     @property
     def tax_amount(self):
-        return self.subtotal_with_discount * (self.tax_percentage / Decimal('100'))
+        return (self.subtotal_with_discount * (self.tax_percentage / Decimal('100'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     
     @property
     def total(self):
-        return self.subtotal_with_discount + self.tax_amount
+        return (self.subtotal_with_discount + self.tax_amount).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     @property
     def quantity_display(self):
@@ -765,9 +767,9 @@ class SaleItem(BaseModel):
     def profit(self):
         """Ganancia bruta del item"""
         if self.unit_cost is None or self.quantity is None:
-            return Decimal('0')
-        cost_total = self.unit_cost * self.quantity
-        return self.subtotal_with_discount - cost_total
+            return Decimal('0.00')
+        cost_total = (self.unit_cost * self.quantity).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        return (self.subtotal_with_discount - cost_total).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
 
 class QuoteConversion(BaseModel):

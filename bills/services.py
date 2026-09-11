@@ -888,6 +888,15 @@ def crear_factura_directa(data: dict, user, emitir_arca: bool = True, async_emis
                 line_order=linea['numero_linea']
             )
 
+        # Sincronizar explícitamente totales cacheados de Sale con los calculados de la Factura (Fiscal AFIP/ARCA)
+        Sale.objects.filter(pk=sale.pk).update(
+            _cached_subtotal=total_neto + total_descuento,
+            _cached_discount=total_descuento,
+            _cached_tax=total_iva,
+            _cached_total=monto_total
+        )
+        sale.refresh_from_db()
+
         # C) Deducir stock real en depósito
         InventoryService().decrease_stock_from_sale(sale)
 

@@ -2,7 +2,7 @@
 
 from django.db.models.signals import post_save, pre_save, post_delete
 from django.dispatch import receiver
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from django.utils import timezone
 
 #from local apps
@@ -32,19 +32,19 @@ def update_quote_totals(sender, instance, **kwargs):
     quote = instance.quote
     
     items = quote.items.all()
-    subtotal = sum(item.line_subtotal for item in items)
-    item_discounts = sum(item.discount_amount for item in items)
-    tax = sum(item.tax_amount for item in items)
-    items_total = sum(item.total for item in items)
+    subtotal = sum((item.line_subtotal for item in items), Decimal('0.00')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    item_discounts = sum((item.discount_amount for item in items), Decimal('0.00')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    tax = sum((item.tax_amount for item in items), Decimal('0.00')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    items_total = sum((item.total for item in items), Decimal('0.00')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     
-    global_disc = Decimal('0')
+    global_disc = Decimal('0.00')
     if quote.global_discount_type == 'percentage' and quote.global_discount_value > 0:
-        global_disc = subtotal * (Decimal(str(quote.global_discount_value)) / Decimal('100'))
+        global_disc = (subtotal * (Decimal(str(quote.global_discount_value)) / Decimal('100'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     elif quote.global_discount_type == 'fixed' and quote.global_discount_value > 0:
-        global_disc = Decimal(str(quote.global_discount_value))
+        global_disc = Decimal(str(quote.global_discount_value)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     
-    discount = item_discounts + global_disc
-    total = max(Decimal('0'), items_total - global_disc)
+    discount = (item_discounts + global_disc).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    total = max(Decimal('0.00'), (items_total - global_disc).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
     
     Quote.objects.filter(pk=quote.pk).update(
         _cached_subtotal=subtotal,
@@ -60,19 +60,19 @@ def update_sale_totals(sender, instance, **kwargs):
     sale = instance.sale
     
     items = sale.items.all()
-    subtotal = sum(item.line_subtotal for item in items)
-    item_discounts = sum(item.discount_amount for item in items)
-    tax = sum(item.tax_amount for item in items)
-    items_total = sum(item.total for item in items)
+    subtotal = sum((item.line_subtotal for item in items), Decimal('0.00')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    item_discounts = sum((item.discount_amount for item in items), Decimal('0.00')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    tax = sum((item.tax_amount for item in items), Decimal('0.00')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    items_total = sum((item.total for item in items), Decimal('0.00')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     
-    global_disc = Decimal('0')
+    global_disc = Decimal('0.00')
     if sale.global_discount_type == 'percentage' and sale.global_discount_value > 0:
-        global_disc = subtotal * (Decimal(str(sale.global_discount_value)) / Decimal('100'))
+        global_disc = (subtotal * (Decimal(str(sale.global_discount_value)) / Decimal('100'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     elif sale.global_discount_type == 'fixed' and sale.global_discount_value > 0:
-        global_disc = Decimal(str(sale.global_discount_value))
+        global_disc = Decimal(str(sale.global_discount_value)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     
-    discount = item_discounts + global_disc
-    total = max(Decimal('0'), items_total - global_disc)
+    discount = (item_discounts + global_disc).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    total = max(Decimal('0.00'), (items_total - global_disc).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
     
     Sale.objects.filter(pk=sale.pk).update(
         _cached_subtotal=subtotal,

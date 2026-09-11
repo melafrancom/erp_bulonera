@@ -524,6 +524,75 @@ class TestCrearFacturaDirecta(TestCase):
         self.assertTrue(sale.is_credit_sale)
         self.assertEqual(sale.payment_status, 'unpaid')
 
+    def test_crear_factura_directa_rounding_half_up_exact_parity_ok(self):
+        """
+        Verifica que una factura directa con renglones de redondeo AFIP (ej. caso real prod de $9858.85)
+        alinee exactamente Sale.total, Invoice.total y permita el cobro inmediato (PaymentAllocation)
+        sin error de excedente de saldo de $0.01.
+        """
+        from products.models import Product
+        from bills.services import crear_factura_directa
+        from bills.models import Invoice
+        from sales.models import Sale
+        from payments.models import Payment, PaymentAllocation
+
+        Product.objects.create(code='PROD-R1', name='Producto R1', price=Decimal('256.90'), cost=Decimal('100.00'), tax_rate=Decimal('21.00'))
+        Product.objects.create(code='PROD-R2', name='Producto R2', price=Decimal('573.15'), cost=Decimal('200.00'), tax_rate=Decimal('21.00'))
+        Product.objects.create(code='PROD-R3', name='Producto R3', price=Decimal('402.30'), cost=Decimal('150.00'), tax_rate=Decimal('21.00'))
+
+        payload = {
+            'customer_id': self.customer_ri.id,
+            'payment_method': 'cash',
+            'is_paid': True,
+            'items': [
+                {
+                    'product_code': 'PROD-R1',
+                    'quantity': 4,
+                    'unit_price': '256.90',
+                    'tax_percentage': '21.00',
+                    'discount_value': '0',
+                },
+                {
+                    'product_code': 'PROD-R2',
+                    'quantity': 4,
+                    'unit_price': '573.15',
+                    'tax_percentage': '21.00',
+                    'discount_value': '0',
+                },
+                {
+                    'product_code': 'PROD-R3',
+                    'quantity': 12,
+                    'unit_price': '402.30',
+                    'tax_percentage': '21.00',
+                    'discount_value': '0',
+                },
+            ],
+            'observaciones': 'Test caso de producción discrepancia $0.01'
+        }
+
+        res = crear_factura_directa(data=payload, user=self.user, emitir_arca=False)
+        self.assertTrue(res['success'])
+
+        invoice = Invoice.objects.get(id=res['invoice_id'])
+        sale = Sale.objects.get(id=res['sale_id'])
+
+        # Paridad matemática exacta de $9858.85 a favor de AFIP
+        self.assertEqual(invoice.neto_gravado, Decimal('8147.80'))
+        self.assertEqual(invoice.monto_iva, Decimal('1711.05'))
+        self.assertEqual(invoice.total, Decimal('9858.85'))
+
+        self.assertEqual(sale._cached_subtotal, Decimal('8147.80'))
+        self.assertEqual(sale._cached_tax, Decimal('1711.05'))
+        self.assertEqual(sale.total, Decimal('9858.85'))
+        self.assertEqual(sale.payment_status, 'paid')
+
+        # Verificar cobro automático
+        payment = Payment.objects.filter(customer=self.customer_ri, amount=Decimal('9858.85')).first()
+        self.assertIsNotNone(payment)
+        allocation = PaymentAllocation.objects.filter(payment=payment, sale=sale).first()
+        self.assertIsNotNone(allocation)
+        self.assertEqual(allocation.allocated_amount, Decimal('9858.85'))
+
 
 class TestEmitirNotaCreditoStandalone(TestCase):
     """Pruebas para emitir_nota_credito_standalone (Feature 3)"""

@@ -12,6 +12,8 @@ from bills.models import Invoice
 
 logger = logging.getLogger(__name__)
 
+ROUNDING_TOLERANCE = Decimal('0.02')
+
 
 class PaymentService:
     """
@@ -158,11 +160,15 @@ class PaymentService:
 
             # Validar que el monto (más lo acumulado en este mismo pago para la misma venta) no excede el saldo
             already_allocated = accumulated_by_sale.get(sale_id, Decimal('0.00'))
-            if (alloc_amount + already_allocated) > effective_balance:
-                raise ValueError(
-                    f"Alocación ${alloc_amount} (acumulado: ${alloc_amount + already_allocated}) "
-                    f"excede saldo de Venta #{sale.number} (saldo: ${effective_balance})"
-                )
+            excess = (alloc_amount + already_allocated) - effective_balance
+            if excess > Decimal('0.00'):
+                if excess <= ROUNDING_TOLERANCE:
+                    alloc_amount = effective_balance - already_allocated
+                else:
+                    raise ValueError(
+                        f"Alocación ${alloc_amount} (acumulado: ${alloc_amount + already_allocated}) "
+                        f"excede saldo de Venta #{sale.number} (saldo: ${effective_balance})"
+                    )
             
             accumulated_by_sale[sale_id] = already_allocated + alloc_amount
             
@@ -192,10 +198,14 @@ class PaymentService:
                     invoice_id=invoice_id, is_active=True, payment__status='confirmed'
                 ).aggregate(total=models.Sum('allocated_amount'))['total'] or Decimal('0.00')
                 invoice_balance = invoice.total - invoice_allocated
-                if alloc_amount > invoice_balance:
-                    raise ValueError(
-                        f"Alocación ${alloc_amount} excede saldo de Factura #{invoice.number} (saldo: ${invoice_balance})"
-                    )
+                inv_excess = alloc_amount - invoice_balance
+                if inv_excess > Decimal('0.00'):
+                    if inv_excess <= ROUNDING_TOLERANCE:
+                        alloc_amount = invoice_balance
+                    else:
+                        raise ValueError(
+                            f"Alocación ${alloc_amount} excede saldo de Factura #{invoice.number} (saldo: ${invoice_balance})"
+                        )
             
             total_allocated += alloc_amount
             allocation_objects.append({
@@ -334,10 +344,14 @@ class PaymentService:
         
         sale_total = abs(sale.total)
         
-        if total_paid >= sale_total:
-            new_status = 'paid' if total_paid == sale_total else 'overpaid'
-        elif total_paid > 0:
-            new_status = 'partially_paid'
+        diff = total_paid - sale_total
+        if diff >= Decimal('0.00'):
+            new_status = 'paid' if diff <= ROUNDING_TOLERANCE else 'overpaid'
+        elif total_paid > Decimal('0.00'):
+            if abs(diff) <= ROUNDING_TOLERANCE:
+                new_status = 'paid'
+            else:
+                new_status = 'partially_paid'
         else:
             new_status = 'unpaid'
         
