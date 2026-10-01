@@ -19,6 +19,7 @@ ALLOWED_HOSTS.extend(['localhost', '127.0.0.1', '[::1]'])
 
 # Necesario cuando hay un reverse proxy (OLS) delante de uWSGI/Docker
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_REDIRECT_EXEMPT = [r'^api/health/$', r'^health/$', r'^$']
 
 # Evita exponer el Browsable API de DRF en producción
 SECURE_CONTENT_TYPE_NOSNIFF = True

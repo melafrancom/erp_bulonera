@@ -703,13 +703,20 @@ Estructura de documentación distribuida por módulos para entender el **por qu�
   4. *Detalle Web:* `invoice_detail.html` adapta la tabla y los totales dinámicamente con badges visuales distintivos (`Factura A (Discrimina IVA)` vs `Factura B (IVA Incluido)`).
   5. *Suite de Tests bills:* 48 tests ejecutados y aprobados (**100% PASSED**) en Docker (`TestFacturaPricingAndDifferentiation`).
 - **Suite de Tests Global:** 490+ tests ejecutados y aprobados (**100% PASSED**) en Docker.
-- **Hardening Perimetral del VPS (InfraSec) (Completada):**
+- **Hardening Perimetral del VPS e Infraestructura (InfraSec V1) (Completada):**
   1. *SSH Hardening:* Acceso restringido exclusivamente a llaves públicas Ed25519 (`PasswordAuthentication no`). Drop-in modular en `/etc/ssh/sshd_config.d/01-hardening.conf` con prioridad máxima. Rate-limit en UFW.
   2. *Fail2ban Reforzado:* 3 jails activas (`sshd`, `recidive`, `django-erp`). Política `recidive` aplica baneo de 7 días a atacantes reincidentes.
   3. *Firewall UFW Zero-Trust:* Política `deny incoming` por defecto. Solo puertos 22 (LIMIT), 80 y 443 abiertos a WAN. Puerto 7080 (OLS Admin) cerrado permanentemente.
   4. *Scripts `ols-open` / `ols-close`:* Gestión bajo demanda del puerto 7080 con auto-cierre programado (default 60 min) instalados en `/usr/local/bin/`.
   5. *Backups Cifrados AES-256:* Pipeline `backup_databases.sh` con cifrado AES-256-CBC + PBKDF2 (100k iteraciones), checksums SHA-256, trituración segura (`shred`) y retención de 7 días. Clave maestra en `/root/.backup_vault_key`. Prueba de restauración exitosa (622 MB + 1.1 MB).
+- **Hardening Integral Aplicativo y Arquitectura (AppSec & InfraSec V2) (Completada):**
+  1. *Control de Acceso (IDOR):* Implementación de `WorkspaceOwnerPermission` y roles en todos los ViewSets (workspace y reports).
+  2. *Defensa en Profundidad y JWT:* Configuración de throttling estricto (5/min) para endpoints de login (`LoginRateThrottle`), ofuscación de la ruta `/admin/` (Honeypot) y políticas explícitas en cookies de sesión (SAMESITE Lax, HttpOnly, expiración en 8h).
+  3. *Cabeceras CSP (Content-Security-Policy):* Middleware activado en modo restrictivo protegiendo el entorno frontend contra inyección de scripts externos.
+  4. *Monitoreo Activo (Deep Health Check):* Endpoint de salud `/api/health/` integrado al `docker-compose.production.yml` validando conectividad real de MariaDB y Redis antes de que Docker reporte `healthy`. Script `erp_status.sh` actualizado.
+  5. *Redis Auth Seguro:* Modificación de los settings de base para la lectura directa y prioritaria de `REDIS_URL`, `CELERY_BROKER_URL` y `CELERY_RESULT_BACKEND` desde el archivo `.env`, previniendo errores silenciosos por parseo de passwords complejos.
+  6. *Sincronización Offsite (Regla 3-2-1):* Modificación del script `backup_databases.sh` integrando `rclone` para la subida autónoma, cifrada y automatizada a Google Drive (`web_db` y `erp_db`), respetando ciclos de retención remota de 7 días.
 
 ---
 
-*Última actualización: Septiembre 2026 (Hardening Perimetral VPS: SSH Ed25519, Fail2ban, UFW Zero-Trust, OLS bajo demanda, Backups AES-256)*
+*Última actualización: Octubre 2026 (Hardening Integral V2: CSP, Deep Healthchecks, Rate Limiting estricto, IDOR protection, Offsite Backups Rclone/Google Drive)*
