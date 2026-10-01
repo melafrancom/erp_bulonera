@@ -15,9 +15,30 @@ from drf_spectacular.views import (
     SpectacularRedocView,
 )
 
+from erp_crm_bulonera.health import deep_health_check
+
 
 def health_check(request):
+    """Health check ligero (HTTP 200 ping)."""
     return JsonResponse({'status': 'ok', 'service': 'erp_bulonera'})
+
+
+def admin_honeypot(request):
+    """Honeypot para registrar y descartar intentos de acceso automatizados a /admin/."""
+    return JsonResponse({'detail': 'Not found'}, status=404)
+
+
+# Configuración dinámica de la ruta del panel de administración
+_admin_slug = getattr(settings, 'ADMIN_URL', 'admin/').strip('/') + '/'
+if _admin_slug != 'admin/':
+    admin_routes = [
+        path(_admin_slug, admin.site.urls),
+        path('admin/', admin_honeypot, name='admin_honeypot'),
+    ]
+else:
+    admin_routes = [
+        path('admin/', admin.site.urls),
+    ]
 
 
 def serve_service_worker(request):
@@ -48,10 +69,12 @@ urlpatterns = [
     # ── PWA: Service Worker en la raíz del scope ────────────────
     path('service-worker.js', serve_service_worker, name='service_worker'),
 
-    # Health Check
+    # Health Checks (Ligero y Profundo)
     path('health/', health_check, name='health_check'),
-    # Admin
-    path('admin/', admin.site.urls),
+    path('api/health/', deep_health_check, name='deep_health'),
+
+    # Panel de administración (dinámico / ofuscado)
+    *admin_routes,
     
     # OpenAPI / Swagger
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

@@ -39,7 +39,13 @@ SECURE_HSTS_PRELOAD = False
 # REST Framework: Desactivar throttling y usar renderers estándar para tests
 REST_FRAMEWORK.update({
     'DEFAULT_THROTTLE_CLASSES': [],
-    'DEFAULT_THROTTLE_RATES': {},
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': None,
+        'user': None,
+        'sync': None,
+        'burst': None,
+        'login': None,
+    },
     # Usar renderers estándar para que los tests que esperan datos sin "envelope" funcionen
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',

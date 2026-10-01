@@ -1,6 +1,6 @@
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 
 from workspace.api.serializers import EventSerializer, NoteSerializer, TaskSerializer
@@ -8,11 +8,28 @@ from workspace.models import Event, Note, Task
 from workspace.services import EventService, NoteService, TaskService
 
 
+class WorkspaceOwnerPermission(BasePermission):
+    """
+    Control de acceso estricto a nivel de objeto para recursos de Workspace.
+
+    REGLA: Cada usuario solo puede consultar, mutar o eliminar sus propios
+    elementos de notas, tareas y eventos de calendario (prevención IDOR).
+    """
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated)
+
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_superuser:
+            return True
+        return getattr(obj, "user_id", None) == request.user.id
+
+
 class NoteViewSet(viewsets.ModelViewSet):
     """CRUD de notas del usuario autenticado."""
 
     serializer_class = NoteSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, WorkspaceOwnerPermission]
 
     def get_queryset(self):
         return Note.objects.filter(user=self.request.user)
@@ -43,7 +60,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     """CRUD de tareas del usuario autenticado."""
 
     serializer_class = TaskSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, WorkspaceOwnerPermission]
 
     def get_queryset(self):
         qs = Task.objects.filter(user=self.request.user)
@@ -94,7 +111,7 @@ class EventViewSet(viewsets.ModelViewSet):
     """CRUD de eventos del usuario autenticado."""
 
     serializer_class = EventSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, WorkspaceOwnerPermission]
 
     def get_queryset(self):
         year = self.request.query_params.get("year")

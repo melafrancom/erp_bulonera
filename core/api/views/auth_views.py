@@ -10,6 +10,7 @@ from rest_framework.generics import RetrieveAPIView
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from api.throttling import LoginRateThrottle
 from core.api.serializers import (
     CustomTokenObtainSerializer,
     UserMeSerializer,
@@ -19,8 +20,11 @@ from core.api.serializers import (
 class CustomTokenObtainView(TokenObtainPairView):
     """
     POST /api/v1/auth/token/
+
+    Protegido contra fuerza bruta con LoginRateThrottle (5 req/min).
     """
     serializer_class = CustomTokenObtainSerializer
+    throttle_classes = [LoginRateThrottle]
 
 
 class MeView(RetrieveAPIView):

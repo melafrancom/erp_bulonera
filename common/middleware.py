@@ -41,3 +41,49 @@ class RequestLoggingMiddleware(MiddlewareMixin):
         else:
             ip = request.META.get('REMOTE_ADDR')
         return ip
+
+
+class ContentSecurityPolicyMiddleware:
+    """
+    Middleware para inyectar encabezados Content-Security-Policy (CSP).
+
+    QUÉ:
+        Añade Content-Security-Policy o Content-Security-Policy-Report-Only
+        para mitigar ataques de inyección de código (XSS) y Clickjacking.
+
+    POR QUÉ:
+        En producción protege las sesiones del ERP. Se opera en modo
+        Report-Only inicialmente para validar sin riesgo de disrupción.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+
+        csp_directives = getattr(settings, 'CSP_DIRECTIVES', None)
+        if not csp_directives:
+            return response
+
+        policy_parts = []
+        for directive, sources in csp_directives.items():
+            if isinstance(sources, (list, tuple)):
+                sources_str = " ".join(sources)
+            else:
+                sources_str = str(sources)
+            policy_parts.append(f"{directive} {sources_str}")
+
+        policy_header = "; ".join(policy_parts)
+        report_only = getattr(settings, 'CSP_REPORT_ONLY', True)
+        header_name = (
+            'Content-Security-Policy-Report-Only'
+            if report_only
+            else 'Content-Security-Policy'
+        )
+
+        if header_name not in response:
+            response[header_name] = policy_header
+
+        return response
+

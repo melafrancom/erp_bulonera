@@ -137,6 +137,29 @@ else:
 # Aumentar límite para operaciones masivas en Admin (ej: borrar 14,000 items)
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 20000 
 
+# ============================================================================
+# Session & Cookie Hardening (Defense in Depth)
+# ============================================================================
+# REGLA: Forzar HttpOnly y SameSite=Lax para mitigar session hijacking y CSRF.
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Lax'
+
+# POR QUÉ: En un entorno ERP con terminales POS, mantener sesiones abiertas
+# indefinidamente es un riesgo físico y operativo. Expiración en 8h (jornada laboral).
+SESSION_COOKIE_AGE = 28800  # 8 horas en segundos
+
+# POR QUÉ: Límites de payload para mitigar denegación de servicio (DoS) por memoria.
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880   # 5MB en RAM antes de volcar a disco
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB payload máximo
+
+# ============================================================================
+# Administration Panel Route
+# ============================================================================
+# POR QUÉ: Permite configurar y ofuscar la ruta del admin panel contra escáneres automáticos.
+ADMIN_URL = env('DJANGO_ADMIN_URL', default='admin/')
+
 ROOT_URLCONF = 'erp_crm_bulonera.urls'
 
 # Templates configuration - only include templates dir if it exists
@@ -194,6 +217,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {'min_length': 10},
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -276,6 +300,7 @@ REST_FRAMEWORK = {
         'user': '1000/hour',            # Usuarios autenticados normales
         'sync': '50/hour',              # PWA sync endpoint (api.throttling.SyncThrottle)
         'burst': '10/hour',             # Reports/exports (api.throttling.BurstThrottle)
+        'login': '5/min',               # Login JWT / CustomTokenObtainView (brute force protection)
     },
     
     # ─────────────────────────────────────────────────────────────────────
@@ -406,10 +431,26 @@ SPECTACULAR_SETTINGS = {
 }
 
 # ============================================================================
+# REDIS & Celery Base Connection
+# ============================================================================
+# POR QUÉ: Redis en producción corre con --requirepass ${REDIS_PASSWORD}.
+# Si no construimos la URL con password, Django y Celery reciben NOAUTH.
+# El flag IGNORE_EXCEPTIONS silencia el fallo en Django, dejando al ERP
+# corriendo sin caché de forma inadvertida.
+REDIS_HOST = env('REDIS_HOST', default='redis')
+REDIS_PORT = env('REDIS_PORT', default=6379)
+REDIS_DB = env('REDIS_DB', default=0)
+REDIS_PASSWORD = env('REDIS_PASSWORD', default='')
+
+_redis_auth = f':{REDIS_PASSWORD}@' if REDIS_PASSWORD else ''
+# Priorizamos REDIS_URL completo desde el .env (recomendado para evitar problemas con la password)
+REDIS_BASE_URL = env('REDIS_URL', default=f'redis://{_redis_auth}{REDIS_HOST}:{REDIS_PORT}')
+
+# ============================================================================
 # Celery Configuration (Async Task Queue)
 # ============================================================================
-CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://redis:6379/1')
-CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://redis:6379/1')
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', default=f'{REDIS_BASE_URL}/1')
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default=f'{REDIS_BASE_URL}/1')
 
 # Serialization
 CELERY_ACCEPT_CONTENT = ['json']
@@ -469,14 +510,10 @@ CELERY_BEAT_SCHEDULE = {
 # ============================================================================
 # REDIS Cache Configuration
 # ============================================================================
-REDIS_HOST = env('REDIS_HOST', default='redis')
-REDIS_PORT = env('REDIS_PORT', default=6379)
-REDIS_DB = env('REDIS_DB', default=0)
-
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}',
+        'LOCATION': env('REDIS_URL', default=f'{REDIS_BASE_URL}/{REDIS_DB}'),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
             'CONNECTION_POOL_KWARGS': {

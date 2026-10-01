@@ -29,6 +29,9 @@ CSRF_TRUSTED_ORIGINS = env(
     default='https://erp.buloneraalvear.online'
 ).split(',')
 
+# Ofuscación del panel de administración en producción
+ADMIN_URL = env('DJANGO_ADMIN_URL', default='gestion-erp-panel/')
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # BASE DE DATOS
 # Sobreescribir la de base.py apuntando a host-gateway
@@ -116,7 +119,7 @@ if admin_email:
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': env('REDIS_URL', default='redis://redis:6379/0'),
+        'LOCATION': env('REDIS_URL', default=f'{REDIS_BASE_URL}/0'),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
             'CONNECTION_POOL_KWARGS': {
@@ -148,3 +151,24 @@ LOGGING['handlers']['prod_file'] = {
 # Agregar prod_file al logger raíz de Django
 LOGGING['loggers']['django']['handlers'].append('prod_file')
 LOGGING['loggers']['django.request']['handlers'].append('prod_file')
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# CONTENT SECURITY POLICY (CSP)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MIDDLEWARE.insert(0, 'common.middleware.ContentSecurityPolicyMiddleware')
+
+# POR QUÉ: Modo Report-Only inicialmente (Fase 1) para validar que no
+# bloquea scripts legítimos del ERP ni llamadas de API.
+CSP_REPORT_ONLY = env.bool('CSP_REPORT_ONLY', default=True)
+
+CSP_DIRECTIVES = {
+    'default-src': ["'self'"],
+    'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+    'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+    'font-src': ["'self'", "data:", "https://fonts.gstatic.com"],
+    'img-src': ["'self'", "data:", "blob:", "https://erp.buloneraalvear.online"],
+    'connect-src': ["'self'", "https://erp.buloneraalvear.online"],
+    'frame-ancestors': ["'none'"],
+    'base-uri': ["'self'"],
+    'form-action': ["'self'"],
+}
